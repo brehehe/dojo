@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('leader_name');
             $table->string('leader_phone');
-            $table->string('email')->nullable();
+            $table->string('leader_email')->nullable();
             $table->text('address')->nullable();
             $table->integer('total_cost')->default(0);
             $table->enum('status', ['pending', 'confirmed', 'rejected'])->default('pending');

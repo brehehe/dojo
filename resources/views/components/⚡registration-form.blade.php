@@ -85,7 +85,7 @@ new class extends Component
 
     public function addAthlete()
     {
-        $this->athletes[] = ['name' => '', 'nik' => '', 'gender' => 'Male', 'birth_date' => '', 'weight' => '', 'kyu' => '', 'dojo_origin' => '', 'city' => '', 'bpjs_number' => '', 'bpjs_status' => false, 'bpjs_card' => null, 'category_ids' => []];
+        $this->athletes[] = ['name' => '', 'nik' => '', 'gender' => 'Male', 'birth_date' => '', 'weight' => '', 'kyu' => '', 'dojo_origin' => '', 'city' => '', 'bpjs_number' => '', 'bpjs_status' => false, 'bpjs_card' => null, 'match_type' => 'Pemula', 'category_ids' => []];
     }
     
     public function removeAthlete($index)
