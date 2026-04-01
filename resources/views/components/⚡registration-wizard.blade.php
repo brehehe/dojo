@@ -141,7 +141,7 @@ new class extends Component
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nama Kontingen / Dojo</label>
+                    <label class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nama Kontingen / Perkemi</label>
                     <input type="text" wire:model="contingent_name" class="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-indigo-500 transition-all outline-none" placeholder="Masukkan nama dojo">
                     @error('contingent_name') <span class="text-rose-500 text-xs">{{ $message }}</span> @enderror
                 </div>
@@ -263,7 +263,7 @@ new class extends Component
                 <div class="bg-zinc-50 dark:bg-zinc-800/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
                     <h3 class="text-lg font-bold mb-4 border-b border-zinc-200 pb-2">Info Kontingen</h3>
                     <dl class="space-y-2">
-                        <div class="flex justify-between"><dt class="text-zinc-500">Dojo:</dt> <dd class="font-bold">{{ $contingent_name }}</dd></div>
+                        <div class="flex justify-between"><dt class="text-zinc-500">Perkemi:</dt> <dd class="font-bold">{{ $contingent_name }}</dd></div>
                         <div class="flex justify-between"><dt class="text-zinc-500">Penanggung Jawab:</dt> <dd class="font-bold">{{ $leader_name }}</dd></div>
                         <div class="flex justify-between"><dt class="text-zinc-500">WA:</dt> <dd class="font-bold">{{ $leader_phone }}</dd></div>
                     </dl>

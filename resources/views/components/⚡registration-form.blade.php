@@ -181,7 +181,7 @@ new class extends Component
                     <div class="relative z-10">
                         <h1 class="text-4xl font-black font-title uppercase tracking-tighter mb-2">Registarsi Portal</h1>
                         <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">🏆 PIALA WALIKOTA SURABAYA 2026</p>
-                        <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">CABANG OLAHRAGA SHORINJI KEMPO | "Generasi Juara, Inspirasi Nusantara"</p>
+                        <span class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">CABANG OLAHRAGA SHORINJI KEMPO | "Generasi Juara, Inspirasi Nusantara"</span><br>
                         <span class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">Surabaya, 29-31 Mei 2026 - Gelora Pancasila</span>
                     </div>
                 </div>
@@ -199,8 +199,8 @@ new class extends Component
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block ml-1">Nama Dojo / Klub</label>
-                            <input type="text" wire:model="contingent_name" class="w-full px-6 py-4 rounded-2xl border border-zinc-200 bg-white dark:bg-white text-zinc-900 outline-none focus:border-indigo-600 transition-all font-bold" placeholder="Dojo Garuda">
+                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block ml-1">Nama Perkemi / Klub</label>
+                            <input type="text" wire:model="contingent_name" class="w-full px-6 py-4 rounded-2xl border border-zinc-200 bg-white dark:bg-white text-zinc-900 outline-none focus:border-indigo-600 transition-all font-bold" placeholder="Perkemi Garuda">
                             @error('contingent_name') <span class="text-rose-500 text-[10px] font-bold italic ml-1">{{ $message }}</span> @enderror
                         </div>
                         <div class="space-y-2">
@@ -324,7 +324,7 @@ new class extends Component
                                     </div>
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Asal Dojo</label>
+                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Asal Perkemi</label>
                                     <input type="text" wire:model="athletes.{{ $index }}.dojo_origin" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
                                 </div>
                                 <div class="space-y-2">

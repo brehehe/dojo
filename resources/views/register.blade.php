@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Registrasi - Dojo Championship 2026</title>
+        <title>Registrasi - Perkemi Championship 2026</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=outfit:400,600,800|plus-jakarta-sans:400,500,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -24,7 +24,7 @@
                     <div class="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center text-white">
                         <span class="text-xl font-black italic">D</span>
                     </div>
-                    <span class="text-lg font-bold tracking-tighter uppercase font-title">Dojo <span class="text-rose-500">Cup</span> 2026</span>
+                    <span class="text-lg font-bold tracking-tighter uppercase font-title">Perkemi <span class="text-rose-500">Cup</span> 2026</span>
                 </div>
             </div>
 
@@ -33,7 +33,7 @@
             </main>
 
             <footer class="mt-20 text-center text-zinc-400 text-xs uppercase tracking-widest font-bold">
-                Dojo Cup Committee — Registration System v1.0
+                Perkemi Cup Committee — Registration System v1.0
             </footer>
         </div>
     </body>

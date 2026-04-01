@@ -26,7 +26,7 @@ class AthleteFactory extends Factory
             'birth_date' => fake()->date('Y-m-d', '2015-01-01'),
             'weight' => fake()->numberBetween(25, 80),
             'kyu' => fake()->randomElement(['Kyu 10', 'Kyu 5', 'Kyu 1']),
-            'dojo_origin' => fake()->company() . ' Dojo',
+            'dojo_origin' => fake()->company() . ' Perkemi',
             'city' => fake()->city(),
             'bpjs_number' => fake()->numerify('#############'),
             'bpjs_status' => fake()->boolean(80),
