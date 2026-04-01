@@ -20,12 +20,12 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     <span class="font-bold text-sm uppercase tracking-widest">Kembali</span>
                 </a>
-                <div class="flex items-center gap-3">
+                {{--<div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center text-white">
                         <span class="text-xl font-black italic">D</span>
                     </div>
                     <span class="text-lg font-bold tracking-tighter uppercase font-title">Perkemi <span class="text-rose-500">Cup</span> 2026</span>
-                </div>
+                </div>--}}
             </div>
 
             <main>
