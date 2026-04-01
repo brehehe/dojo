@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $title ?? 'Dojo Cup 2026' }}</title>
+        <title>{{ $title ?? 'Perkemi Cup 2026' }}</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=outfit:400,600,800|plus-jakarta-sans:400,500,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])

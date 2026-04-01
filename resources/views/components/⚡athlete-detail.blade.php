@@ -108,7 +108,7 @@ new class extends Component
                 </div>
 
                 <div class="p-8 rounded-[2rem] bg-rose-600/5 border border-rose-600/20 text-center">
-                    <p class="text-xs font-bold text-rose-500 uppercase tracking-widest leading-relaxed">Seluruh data yang ditampilkan telah melalui proses verifikasi panitia Dojo Cup 2026.</p>
+                    <p class="text-xs font-bold text-rose-500 uppercase tracking-widest leading-relaxed">Seluruh data yang ditampilkan telah melalui proses verifikasi panitia Perkemi Cup 2026.</p>
                 </div>
             </div>
         </div>

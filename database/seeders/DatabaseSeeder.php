@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'name' => 'Admin Dojo',
+            'name' => 'Admin Perkemi',
             'email' => 'admin@dojo.com',
         ]);
     }

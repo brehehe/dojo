@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Dojo Championship 2026 - Portal Resmi</title>
+        <title>Perkemi Championship 2026 - Portal Resmi</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=outfit:400,600,800|plus-jakarta-sans:400,500,700" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -38,7 +38,7 @@
                     <div class="w-12 h-12 bg-rose-600 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/20 rotate-3 transition-transform hover:rotate-0">
                         <span class="text-2xl font-black italic">D</span>
                     </div>
-                    <span class="text-xl font-bold tracking-tighter uppercase font-title">Dojo <span class="text-rose-500">Cup</span> 2026</span>
+                    <span class="text-xl font-bold tracking-tighter uppercase font-title">Perkemi <span class="text-rose-500">Cup</span> 2026</span>
                 </div>
                 <div class="hidden lg:flex gap-10 text-xs font-black uppercase tracking-widest opacity-60">
                     <a href="#history" class="hover:text-rose-500 transition-colors">History</a>
@@ -78,7 +78,7 @@
                 <div class="text-center mb-16">
                     <span class="text-rose-500 font-bold uppercase tracking-widest mb-4 block">Archive Record</span>
                     <h2 class="text-5xl font-black font-title uppercase tracking-tight">CARI HISTORI ATLET</h2>
-                    <p class="text-zinc-500 mt-4">Masukkan nama lengkap atlet untuk melihat rekor pertandingan di Dojo Cup.</p>
+                    <p class="text-zinc-500 mt-4">Masukkan nama lengkap atlet untuk melihat rekor pertandingan di Perkemi Cup.</p>
                 </div>
                 
                 <livewire:athlete-search />
@@ -210,10 +210,10 @@
                 <div class="w-8 h-8 bg-rose-600 rounded flex items-center justify-center">
                     <span class="text-lg font-black italic">D</span>
                 </div>
-                <span class="text-lg font-bold tracking-tighter uppercase font-title">Dojo <span class="text-rose-500">Cup</span> 2026</span>
+                <span class="text-lg font-bold tracking-tighter uppercase font-title">Perkemi <span class="text-rose-500">Cup</span> 2026</span>
             </div>
             <p class="text-zinc-600 font-medium tracking-widest text-[10px] uppercase mb-4">Developed for Martial Arts Excellence</p>
-            <p class="text-zinc-500 font-medium tracking-widest text-[10px] uppercase">© 2026 Dojo Cup Committee. All Rights Reserved.</p>
+            <p class="text-zinc-500 font-medium tracking-widest text-[10px] uppercase">© 2026 Perkemi Cup Committee. All Rights Reserved.</p>
         </footer>
     </body>
 </html>
