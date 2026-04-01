@@ -25,6 +25,9 @@ class Athlete extends Model
         'age',
         'age_group',
         'match_type',
+        'rank',
+        'identity_card_path',
+        'identity_document_path',
     ];
 
     public function contingent()

@@ -13,66 +13,77 @@ new class extends Component
 {
     use WithFileUploads;
 
-    // Contingent Info
+    // A. DATA KONTINGEN
+    public string $contingent_city = '';
     public string $contingent_name = '';
     public string $leader_name = '';
     public string $leader_phone = '';
     public string $leader_email = '';
     public string $address = '';
-    
-    // Officials
+    public $transfer_proof;
+
+    // B. OFFICIAL 
     public array $officials = [
-        ['name' => '', 'role' => 'Official', 'phone' => '']
+        ['name' => '', 'role' => '', 'phone' => '']
     ];
 
-    // Athletes
+    // C. ATLET
     public array $athletes = [
-        ['name' => '', 'nik' => '', 'gender' => 'Male', 'birth_date' => '', 'weight' => '', 'kyu' => '', 'dojo_origin' => '', 'city' => '', 'bpjs_number' => '', 'bpjs_status' => false, 'bpjs_card' => null, 'match_type' => 'Pemula', 'category_ids' => []]
+        [
+            'name' => '', 'gender' => 'Male', 'birth_date' => '', 'age_group' => 'Pemula',
+            'rank' => 'Kyu 6', 'dojo_origin' => '', 'city' => '', 'nik' => '',
+            'bpjs_number' => '', 'bpjs_status' => 'Aktif', 'bpjs_card' => null,
+            'event1' => '', 'event2' => '', 'event3' => '', 'identity_document' => null
+        ]
     ];
     
-    public $kyuLevels;
+    // D. PERNYATAAN
+    public string $sim_perkemi_confirm = 'Ya';
 
-    // Payment
+    public $kyuLevels;
+    public bool $is_success = false;
+    
+    // Payment & Pricing
     public string $payment_method = 'BCA';
     public int $unique_code = 0;
-    
-    // UI state
-    public bool $is_success = false;
     public string $referral_code = '';
-    
-    // Pricing constants
-    public int $contingent_fee = 300000;
-    public int $athlete_fee = 300000;
+    public int $contingent_fee = 500000;
+    public int $athlete_fee = 400000;
 
     public function mount()
     {
         $this->unique_code = rand(100, 999);
-        $this->kyuLevels = App\Models\KyuLevel::orderBy('order', 'desc')->get();
+        $this->kyuLevels = App\Models\KyuLevel::orderBy('order', 'asc')->get();
     }
 
     protected function rules()
     {
         return [
+            'contingent_city' => 'required',
             'contingent_name' => 'required|min:3',
             'leader_name' => 'required|min:3',
             'leader_phone' => 'required',
-            'leader_email' => 'required|email',
-            'address' => 'required',
-            'payment_method' => 'required',
+            'transfer_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            
             'officials.*.name' => 'required|min:3',
+            'officials.*.role' => 'required',
+            
             'athletes.*.name' => 'required|min:3',
-            'athletes.*.nik' => 'required|digits:16',
             'athletes.*.gender' => 'required|in:Male,Female',
-            'athletes.*.birth_date' => 'required|date',
-            'athletes.*.match_type' => 'required|in:Pemula,Remaja,Dewasa',
-            'athletes.*.category_ids' => 'required|array|min:1|max:3',
-            'athletes.*.bpjs_card' => 'nullable|image|max:2048',
+            'athletes.*.age_group' => 'required',
+            'athletes.*.rank' => 'required',
+            'athletes.*.dojo_origin' => 'required',
+            'athletes.*.nik' => 'required',
+            'athletes.*.bpjs_number' => 'required',
+            'athletes.*.bpjs_status' => 'required|in:Aktif',
+            'athletes.*.bpjs_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'athletes.*.identity_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ];
     }
 
     public function addOfficial()
     {
-        $this->officials[] = ['name' => '', 'role' => 'Official', 'phone' => ''];
+        $this->officials[] = ['name' => '', 'role' => '', 'phone' => ''];
     }
 
     public function removeOfficial($index)
@@ -85,7 +96,12 @@ new class extends Component
 
     public function addAthlete()
     {
-        $this->athletes[] = ['name' => '', 'nik' => '', 'gender' => 'Male', 'birth_date' => '', 'weight' => '', 'kyu' => '', 'dojo_origin' => '', 'city' => '', 'bpjs_number' => '', 'bpjs_status' => false, 'bpjs_card' => null, 'match_type' => 'Pemula', 'category_ids' => []];
+        $this->athletes[] = [
+            'name' => '', 'gender' => 'Male', 'birth_date' => '', 'age_group' => 'Pemula',
+            'rank' => 'Kyu 6', 'dojo_origin' => '', 'city' => '', 'nik' => '',
+            'bpjs_number' => '', 'bpjs_status' => 'Aktif', 'bpjs_card' => null,
+            'event1' => '', 'event2' => '', 'event3' => '', 'identity_document' => null
+        ];
     }
     
     public function removeAthlete($index)
@@ -96,6 +112,13 @@ new class extends Component
         }
     }
     
+    public function getEventOptions($ageGroup, $gender)
+    {
+        return Category::where('age_group', $ageGroup)
+            ->where('gender', $gender)
+            ->pluck('name', 'id');
+    }
+
     public function getTotalProperty()
     {
         return $this->contingent_fee + (count($this->athletes) * $this->athlete_fee);
@@ -106,26 +129,41 @@ new class extends Component
         return $this->getTotalProperty() + $this->unique_code;
     }
 
-    public function getAge($birthDate)
-    {
-        if (!$birthDate) return null;
-        return \Carbon\Carbon::parse($birthDate)->age;
-    }
-    
     public function submit()
     {
         $this->validate();
         
+        foreach ($this->athletes as $index => $athlete) {
+            if ($athlete['bpjs_status'] !== 'Aktif') {
+                $this->addError("athletes.{$index}.bpjs_status", 'Status BPJS harus Aktif.');
+                return;
+            }
+            if (empty($athlete['event1']) && empty($athlete['event2']) && empty($athlete['event3'])) {
+                $this->addError("athletes.{$index}.events", 'Minimal 1 nomor pertandingan harus dipilih.');
+                return;
+            }
+            $events = array_filter([$athlete['event1'], $athlete['event2'], $athlete['event3']]);
+            if (count($events) !== count(array_unique($events))) {
+                $this->addError("athletes.{$index}.events", 'Nomor pertandingan tidak boleh ganda.');
+                return;
+            }
+        }
+        
         DB::transaction(function () {
+            $transferPath = $this->transfer_proof ? $this->transfer_proof->store('transfer_proofs', 'public') : null;
+
             $contingent = Contingent::create([
                 'name' => $this->contingent_name,
+                'kab_kota' => $this->contingent_city,
                 'leader_name' => $this->leader_name,
                 'leader_phone' => $this->leader_phone,
                 'email' => $this->leader_email,
                 'address' => $this->address,
+                'transfer_proof_path' => $transferPath,
+                'sim_perkemi_confirm' => $this->sim_perkemi_confirm,
                 'total_cost' => $this->getTotalProperty(),
                 'status' => 'pending',
-                'referral_code' => 'DOJO-' . strtoupper(Str::random(5)),
+                'referral_code' => 'KEMPO-' . strtoupper(Str::random(5)),
                 'payment_method' => $this->payment_method,
                 'unique_code' => $this->unique_code,
                 'final_amount' => $this->getFinalTotalProperty(),
@@ -133,35 +171,33 @@ new class extends Component
             
             $this->referral_code = $contingent->referral_code;
 
-            // Save Officials
             foreach ($this->officials as $officialData) {
                 $contingent->officials()->create($officialData);
             }
 
-            // Save Athletes
             foreach ($this->athletes as $athleteData) {
-                $bpjsPath = null;
-                if ($athleteData['bpjs_card']) {
-                    $bpjsPath = $athleteData['bpjs_card']->store('bpjs_cards', 'public');
-                }
+                $bpjsPath = $athleteData['bpjs_card'] ? $athleteData['bpjs_card']->store('bpjs_cards', 'public') : null;
+                $identityPath = $athleteData['identity_document'] ? $athleteData['identity_document']->store('identity_docs', 'public') : null;
 
                 $athlete = $contingent->athletes()->create([
                     'name' => $athleteData['name'],
-                    'nik' => $athleteData['nik'],
                     'gender' => $athleteData['gender'],
                     'birth_date' => $athleteData['birth_date'],
-                    'weight' => $athleteData['weight'],
-                    'kyu' => $athleteData['kyu'],
+                    'age_group' => $athleteData['age_group'],
+                    'rank' => $athleteData['rank'],
                     'dojo_origin' => $athleteData['dojo_origin'],
                     'city' => $athleteData['city'],
+                    'nik' => $athleteData['nik'],
                     'bpjs_number' => $athleteData['bpjs_number'],
                     'bpjs_status' => $athleteData['bpjs_status'],
                     'bpjs_card_path' => $bpjsPath,
-                    'age' => $this->getAge($athleteData['birth_date']),
-                    'match_type' => $athleteData['match_type'],
+                    'identity_document_path' => $identityPath,
                 ]);
                 
-                $athlete->categories()->attach($athleteData['category_ids']);
+                $events = array_filter([$athleteData['event1'], $athleteData['event2'], $athleteData['event3']]);
+                if (!empty($events)) {
+                    $athlete->categories()->attach($events);
+                }
             }
         });
         
@@ -170,350 +206,617 @@ new class extends Component
 };
 ?>
 
-<div class="max-w-full mx-auto-">
-    @if(!$is_success)
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Main Form Column -->
-            <div class="lg:col-span-2 space-y-8">
-                <!-- Header -->
-                <div class="bg-indigo-600 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/20">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                    <div class="relative z-10">
-                        <h1 class="text-4xl font-black font-title uppercase tracking-tighter mb-2">Registarsi Portal</h1>
-                        <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">🏆 PIALA WALIKOTA SURABAYA 2026</p>
-                        <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">CABANG OLAHRAGA SHORINJI KEMPO | "Generasi Juara, Inspirasi Nusantara"</p>
-                        <span class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">Surabaya, 29-31 Mei 2026 - Gelora Pancasila</span>
-                    </div>
-                </div>
+<div>
+    <style>
+        .kempo-form-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #eef2f7;
+            padding: 30px 20px;
+            color: #1a2a3a;
+            min-height: 100vh;
+        }
 
-                <!-- Section 1: Data Kontingen -->
-                <div class="glass p-10 rounded-[2.5rem] border-indigo-500/10">
-                    <div class="flex items-center gap-4 mb-8">
-                        <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-black font-title uppercase tracking-tight">1. DATA KONTINGEN</h2>
-                        </div>
-                    </div>
+        .kempo-form-container * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block ml-1">Nama Dojo / Klub</label>
-                            <input type="text" wire:model="contingent_name" class="w-full px-6 py-4 rounded-2xl border border-zinc-200 bg-white dark:bg-white text-zinc-900 outline-none focus:border-indigo-600 transition-all font-bold" placeholder="Dojo Garuda">
-                            @error('contingent_name') <span class="text-rose-500 text-[10px] font-bold italic ml-1">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block ml-1">Penanggung Jawab</label>
-                            <input type="text" wire:model="leader_name" class="w-full px-6 py-4 rounded-2xl border border-zinc-200 bg-white dark:bg-white text-zinc-900 outline-none focus:border-indigo-600 transition-all font-bold" placeholder="Nama Lengkap">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block ml-1">Email</label>
-                            <input type="email" wire:model="leader_email" class="w-full px-6 py-4 rounded-2xl border border-zinc-200 bg-white dark:bg-white text-zinc-900 outline-none focus:border-indigo-600 transition-all font-bold">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block ml-1">No WhatsApp</label>
-                            <input type="text" wire:model="leader_phone" class="w-full px-6 py-4 rounded-2xl border border-zinc-200 bg-white dark:bg-white text-zinc-900 outline-none focus:border-indigo-600 transition-all font-bold">
-                        </div>
-                    </div>
-                </div>
+        .kempo-form-container .form-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 25px 30px 45px;
+        }
 
-                <!-- Section 2: Data Official -->
-                <div class="glass p-10 rounded-[2.5rem] border-indigo-500/10">
-                    <div class="flex items-center justify-between mb-8">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        .kempo-form-container h1 {
+            font-size: 1.9rem;
+            color: #b22234;
+            border-left: 8px solid #ffcc00;
+            padding-left: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .kempo-form-container .subhead {
+            color: #2c5282;
+            margin-bottom: 25px;
+            font-weight: 500;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+
+        .kempo-form-container .section {
+            background: #f9fafc;
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2edf2;
+        }
+
+        .kempo-form-container .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #0f3b5c;
+            background: #e6f0fa;
+            display: inline-block;
+            padding: 5px 18px;
+            border-radius: 40px;
+            letter-spacing: -0.2px;
+        }
+
+        .kempo-form-container .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .kempo-form-container .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .kempo-form-container label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            color: #1e4663;
+            font-size: 0.9rem;
+        }
+
+        .kempo-form-container label .required {
+            color: #e53e3e;
+            margin-left: 3px;
+        }
+
+        .kempo-form-container input, 
+        .kempo-form-container select, 
+        .kempo-form-container textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid #cbd5e1;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            background: white;
+            color: #1a2a3a;
+        }
+
+        .kempo-form-container input:focus, 
+        .kempo-form-container select:focus, 
+        .kempo-form-container textarea:focus {
+            outline: none;
+            border-color: #b22234;
+            box-shadow: 0 0 0 3px rgba(178,34,52,0.2);
+        }
+        
+        .kempo-form-container input[type="file"] {
+            padding: 9px 14px;
+        }
+
+        .kempo-form-container .inline-hint {
+            font-size: 0.75rem;
+            color: #5a6e7c;
+            margin-top: 5px;
+        }
+
+        .kempo-form-container .atlet-card {
+            background: #ffffff;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #cfdfed;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+
+        .kempo-form-container .atlet-card:hover {
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        }
+
+        .kempo-form-container .atlet-header {
+            font-weight: bold;
+            font-size: 1.2rem;
+            background: #eef3fc;
+            padding: 8px 15px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            color: #004070;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .kempo-form-container .btn-add, 
+        .kempo-form-container .btn-remove, 
+        .kempo-form-container .submit-btn, 
+        .kempo-form-container .reset-btn {
+            border: none;
+            padding: 10px 22px;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .kempo-form-container .btn-add {
+            background: #1e6f3f;
+            color: white;
+            margin-top: 8px;
+        }
+
+        .kempo-form-container .btn-add:hover {
+            background: #0f5a34;
+            transform: translateY(-1px);
+        }
+
+        .kempo-form-container .btn-remove {
+            background: #b91c1c;
+            color: white;
+            font-size: 0.8rem;
+            padding: 5px 15px;
+            margin-top: 12px;
+        }
+
+        .kempo-form-container .btn-remove:hover {
+            background: #991b1b;
+        }
+
+        .kempo-form-container .submit-btn {
+            background: #b22234;
+            color: white;
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            margin-right: 15px;
+        }
+
+        .kempo-form-container .submit-btn:hover {
+            background: #8b1a1a;
+        }
+
+        .kempo-form-container .reset-btn {
+            background: #4a5568;
+            color: white;
+        }
+
+        .kempo-form-container .reset-btn:hover {
+            background: #2d3748;
+        }
+
+        .kempo-form-container .button-group {
+            margin-top: 25px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .kempo-form-container .info-box {
+            background: #fef9e6;
+            border-left: 6px solid #ffb347;
+            padding: 12px 20px;
+            border-radius: 14px;
+            margin: 20px 0;
+            font-size: 0.85rem;
+        }
+
+        .kempo-form-container .warning-box {
+            background: #fee2e2;
+            border-left: 6px solid #dc2626;
+            padding: 12px 20px;
+            border-radius: 14px;
+            margin: 15px 0;
+            font-size: 0.85rem;
+        }
+
+        .kempo-form-container .footer-note {
+            margin-top: 35px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #5a6874;
+            border-top: 1px solid #dce5ec;
+            padding-top: 20px;
+        }
+
+        .kempo-form-container .bpjs-status {
+            background: #f0f9ff;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+        
+        .kempo-form-container .error-msg {
+            color: #e53e3e;
+            font-size: 0.8rem;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 700px) {
+            .kempo-form-container .form-inner {
+                padding: 15px;
+            }
+            .kempo-form-container .section {
+                padding: 15px;
+            }
+        }
+    </style>
+
+    <div class="kempo-form-container">
+        <div class="form-inner">
+            @if(!$is_success)
+                <h1>🏆 PIALA WALIKOTA SURABAYA 2026</h1>
+                <div class="subhead">CABANG OLAHRAGA SHORINJI KEMPO | "Generasi Juara, Inspirasi Nusantara" <br> Surabaya, 29-31 Mei 2026 - Gelora Pancasila</div>
+
+                <form wire:submit.prevent="submit">
+                    <!-- ==================== DATA KONTINGEN ==================== -->
+                    <div class="section">
+                        <div class="section-title">A. DATA KONTINGEN (PERKEMI KABUPATEN/KOTA)</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Kabupaten / Kota <span class="required">*</span></label>
+                                <select wire:model="contingent_city" required>
+                                    <option value="">Pilih Kabupaten/Kota</option>
+                                    <option value="Kota Surabaya">Kota Surabaya</option>
+                                    <option value="Kota Malang">Kota Malang</option>
+                                    <option value="Kota Kediri">Kota Kediri</option>
+                                    <option value="Kabupaten Sidoarjo">Kabupaten Sidoarjo</option>
+                                    <option value="Kabupaten Gresik">Kabupaten Gresik</option>
+                                    <!-- Simplified list for brevity -->
+                                    <option value="Lainnya">Lainnya...</option>
+                                </select>
+                                @error('contingent_city') <div class="error-msg">{{ $message }}</div> @enderror
                             </div>
-                            <h2 class="text-2xl font-black font-title uppercase tracking-tight">2. DATA OFFICIAL</h2>
+                            <div class="form-group">
+                                <label>Nama Kontingen (boleh lebih dari 1 tim) <span class="required">*</span></label>
+                                <input type="text" wire:model="contingent_name" placeholder="Contoh: PERKEMI SURABAYA 1" required>
+                                @error('contingent_name') <div class="error-msg">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="form-group">
+                                <label>Manager Tim / Penanggung Jawab <span class="required">*</span></label>
+                                <input type="text" wire:model="leader_name" required>
+                                @error('leader_name') <div class="error-msg">{{ $message }}</div> @enderror
+                            </div>
                         </div>
-                        <button wire:click="addOfficial" class="text-xs font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-400 transition-colors">+ Tambah Official</button>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nomor HP/WA Manager <span class="required">*</span></label>
+                                <input type="tel" wire:model="leader_phone" required>
+                                @error('leader_phone') <div class="error-msg">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="form-group">
+                                <label>Email Official</label>
+                                <input type="email" wire:model="leader_email">
+                            </div>
+                            <div class="form-group">
+                                <label>Alamat Lengkap Sekretariat</label>
+                                <input type="text" wire:model="address">
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            ✅ Berdasarkan THB: Setiap kontingen wajib membayar kontribusi kontingen Rp 500.000,- dan biaya per atlet Rp 400.000,-. <br>
+                            <!-- 📌 Silakan totalkan pembayaran di bawah (sebelum D) dan transfer ke Rekening yang Anda pilih. -->
+                        </div>
                     </div>
 
-                    <div class="space-y-4">
-                        @foreach($officials as $index => $official)
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-white rounded-3xl border border-zinc-200 relative">
-                                @if(count($officials) > 1)
-                                    <button wire:click="removeOfficial({{ $index }})" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs">×</button>
-                                @endif
-                                <div class="space-y-1">
-                                    <label class="text-[9px] font-black uppercase text-zinc-400">Nama Official</label>
-                                    <input type="text" wire:model="officials.{{ $index }}.name" class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-zinc-900" placeholder="Nama Lengkap">
-                                </div>
-                                <div class="space-y-1 border-l border-zinc-100 pl-4">
-                                    <label class="text-[9px] font-black uppercase text-zinc-400">Jabatan</label>
-                                    <input type="text" wire:model="officials.{{ $index }}.role" class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-zinc-900" placeholder="Manager/Sensei">
-                                </div>
-                                <div class="space-y-1 border-l border-zinc-100 pl-4">
-                                    <label class="text-[9px] font-black uppercase text-zinc-400">No HP</label>
-                                    <input type="text" wire:model="officials.{{ $index }}.phone" class="w-full bg-transparent border-none p-0 focus:ring-0 font-bold text-zinc-900" placeholder="08xxx">
+                    <!-- ==================== OFFICIAL PENDAMPING ==================== -->
+                    <div class="section">
+                        <div class="section-title">B. OFFICIAL PENDAMPING (min 1 per kontingen)</div>
+                        <div id="officialsContainer">
+                            @foreach($officials as $index => $official)
+                            <div class="official-entry" style="margin-bottom: 15px; background:#fefdf7; padding:12px; border-radius:16px;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nama Official</label>
+                                        <input type="text" wire:model="officials.{{ $index }}.name" placeholder="Nama Lengkap">
+                                        @error('officials.'.$index.'.name') <div class="error-msg">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Jabatan (Pelatih/Wasit/Manager)</label>
+                                        <input type="text" wire:model="officials.{{ $index }}.role" placeholder="Pelatih / Asisten">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>No. HP / ID</label>
+                                        <input type="text" wire:model="officials.{{ $index }}.phone">
+                                    </div>
+                                    @if(count($officials) > 1)
+                                    <div style="display:flex; align-items:center;">
+                                        <button type="button" class="btn-remove" wire:click="removeOfficial({{ $index }})">Hapus</button>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Section 3: Data Atlet -->
-                <div class="space-y-6">
-                    <div class="flex items-center justify-between px-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-indigo-600/20 rounded-xl flex items-center justify-center text-indigo-500 font-black">3</div>
-                            <h2 class="text-xl font-black font-title uppercase tracking-tight">3. DATA ATLET</h2>
+                            @endforeach
                         </div>
-                        <button wire:click="addAthlete" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Tambah Atlet</button>
+                        <button type="button" class="btn-add" wire:click="addOfficial">+ Tambah Official</button>
+                        <div class="inline-hint">Setiap atlet wajib didampingi minimal 1 official saat bertanding (THB Pasal K).</div>
                     </div>
 
-                    @foreach($athletes as $index => $athlete)
-                        <div wire:key="athlete-{{ $index }}" class="glass p-10 rounded-[2.5rem] relative">
-                             @if(count($athletes) > 1)
-                                <button wire:click="removeAthlete({{ $index }})" class="absolute top-8 right-8 text-zinc-400 hover:text-rose-500 transition-colors">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                </button>
-                            @endif
+                    <!-- ==================== DAFTAR ATLET DINAMIS ==================== -->
+                    <div class="section">
+                        <div class="section-title">C. DATA ATLET (PESERTA) - Maks 3 nomor pertandingan per atlet</div>
+                        
+                        @if($errors->has('athletes.*.events') || $errors->has('athletes.*.bpjs_status'))
+                            <div class="warning-box">
+                                Terdapat kesalahan pada kelengkapan data BPJS atau Nomor Pertandingan Atlet di bawah ini. Harap periksa kembali.
+                            </div>
+                        @endif
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Nama Lengkap</label>
-                                    <input type="text" wire:model.live="athletes.{{ $index }}.name" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold outline-none focus:border-indigo-600">
+                        <div id="athletesContainer">
+                            @foreach($athletes as $index => $athlete)
+                            <div class="atlet-card" wire:key="athlete-{{ $index }}">
+                                <div class="atlet-header">
+                                    <span>🥋 ATLET #{{ $index + 1 }}</span>
+                                    @if(count($athletes) > 1)
+                                        <button type="button" class="btn-remove" wire:click="removeAthlete({{ $index }})" style="margin:0; padding: 4px 12px;">Hapus Atlet</button>
+                                    @endif
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">NIK (16 Digit)</label>
-                                    <input type="text" wire:model="athletes.{{ $index }}.nik" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold outline-none focus:border-indigo-600">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
-                                        <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Jenis Kelamin</label>
-                                        <select wire:model.live="athletes.{{ $index }}.gender" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
-                                            <option value="Male">PUTRA</option>
-                                            <option value="Female">PUTRI</option>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nama Lengkap <span class="required">*</span></label>
+                                        <input type="text" wire:model="athletes.{{ $index }}.name" required>
+                                        @error('athletes.'.$index.'.name') <div class="error-msg">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Jenis Kelamin <span class="required">*</span></label>
+                                        <select wire:model.live="athletes.{{ $index }}.gender">
+                                            <option value="Male">Laki-laki</option>
+                                            <option value="Female">Perempuan</option>
                                         </select>
                                     </div>
-                                    <div class="space-y-2">
-                                        <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Tgl Lahir</label>
-                                        <input type="date" wire:model.live="athletes.{{ $index }}.birth_date" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
+                                    <div class="form-group">
+                                        <label>Tanggal Lahir</label>
+                                        <input type="date" wire:model="athletes.{{ $index }}.birth_date">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                     <div class="space-y-2">
-                                        <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Usia</label>
-                                        <div class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-900 font-black">{{ $this->getAge($athlete['birth_date']) ?? '-' }} Tahun</div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Kelompok Usia (sesuai THB) <span class="required">*</span></label>
+                                        <select wire:model.live="athletes.{{ $index }}.age_group">
+                                            <option value="Pemula">Pemula (8-12 th)</option>
+                                            <option value="Remaja A">Remaja A (>12-15 th)</option>
+                                            <option value="Remaja B">Remaja B (>15-18 th)</option>
+                                            <option value="Dewasa A">Dewasa A (>18-23 th)</option>
+                                            <option value="Dewasa B (Senior)">Dewasa B (24-35 th)</option>
+                                        </select>
                                     </div>
-                                    <div class="space-y-2">
-                                        <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Tingkatan Kyu</label>
-                                        <select wire:model="athletes.{{ $index }}.kyu" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
-                                            <option value="">Pilih Kyu</option>
+                                    <div class="form-group">
+                                        <label>Tingkatan Kyu / Dan (SIM PERKEMI) <span class="required">*</span></label>
+                                        <select wire:model="athletes.{{ $index }}.rank">
                                             @foreach($kyuLevels as $kyu)
-                                                <option value="{{ $kyu->name }}">{{ $kyu->name }} ({{ $kyu->color }})</option>
+                                                <option value="{{ $kyu->name }}">{{ $kyu->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Asal Dojo <span class="required">*</span></label>
+                                        <input type="text" wire:model="athletes.{{ $index }}.dojo_origin" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Asal Kota/Kabupaten <span class="required">*</span></label>
+                                        <input type="text" wire:model="athletes.{{ $index }}.city" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>NIK / Nomor Induk Kenshi <span class="required">*</span></label>
+                                        <input type="text" wire:model="athletes.{{ $index }}.nik" required>
+                                    </div>
+                                </div>
+                                
+                                <!-- SECTION BPJS KETENAGAKERJAAN -->
+                                <div class="bpjs-status" style="background: #eef8ff; padding: 16px; border-radius: 12px; margin: 15px 0; border:1px solid #c2e2f5;">
+                                    <div style="font-weight: 700; margin-bottom: 12px; color: #1e4663;">🛡️ DATA BPJS KETENAGAKERJAAN (WAJIB)</div>
+                                    <div class="form-row" style="margin-bottom:0;">
+                                        <div class="form-group">
+                                            <label>Nomor BPJS Ketenagakerjaan <span class="required">*</span></label>
+                                            <input type="text" wire:model="athletes.{{ $index }}.bpjs_number" placeholder="Contoh: 123456789012345" required>
+                                            <div class="inline-hint">Nomor kepesertaan aktif</div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Status Kepesertaan BPJS <span class="required">*</span></label>
+                                            <select wire:model="athletes.{{ $index }}.bpjs_status">
+                                                <option value="Aktif">Aktif</option>
+                                                <option value="Tidak Aktif">Tidak Aktif</option>
+                                                <option value="Dalam Proses">Dalam Proses</option>
+                                            </select>
+                                            @error('athletes.'.$index.'.bpjs_status') <div class="error-msg">{{ $message }}</div> @enderror
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Upload Kartu BPJS (softcopy)</label>
+                                            <input type="file" wire:model="athletes.{{ $index }}.bpjs_card" accept="image/*,.pdf">
+                                            @error('athletes.'.$index.'.bpjs_card') <div class="error-msg">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nomor Pertandingan 1</label>
+                                        <select wire:model="athletes.{{ $index }}.event1">
+                                            <option value="">Pilih nomor</option>
+                                            @foreach($this->getEventOptions($athlete['age_group'], $athlete['gender']) as $id => $name)
+                                                <option value="{{ $id }}">{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('athletes.'.$index.'.events') <div class="error-msg">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nomor Pertandingan 2 (opsional)</label>
+                                        <select wire:model="athletes.{{ $index }}.event2">
+                                            <option value="">Pilih nomor</option>
+                                            @foreach($this->getEventOptions($athlete['age_group'], $athlete['gender']) as $id => $name)
+                                                <option value="{{ $id }}">{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nomor Pertandingan 3 (opsional)</label>
+                                        <select wire:model="athletes.{{ $index }}.event3">
+                                            <option value="">Pilih nomor</option>
+                                            @foreach($this->getEventOptions($athlete['age_group'], $athlete['gender']) as $id => $name)
+                                                <option value="{{ $id }}">{{ $name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                 </div>
-                                <div class="md:col-span-2 space-y-4">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Tipe Pertandingan</label>
-                                    <div class="flex gap-4">
-                                        @foreach(['Pemula', 'Remaja', 'Dewasa'] as $type)
-                                            <label @class([
-                                                'flex-1 flex items-center justify-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer font-black uppercase text-xs',
-                                                'bg-indigo-600 border-indigo-600 text-white shadow-lg' => $athlete['match_type'] === $type,
-                                                'bg-white border-zinc-200 text-zinc-400' => $athlete['match_type'] !== $type
-                                            ])>
-                                                <input type="radio" wire:model.live="athletes.{{ $index }}.match_type" value="{{ $type }}" class="hidden">
-                                                {{ $type }}
-                                            </label>
-                                        @endforeach
+                                <div class="form-row" style="margin-bottom:0;">
+                                    <div class="form-group">
+                                        <label>Upload scan KTP/Akte & KK (softcopy)</label>
+                                        <input type="file" wire:model="athletes.{{ $index }}.identity_document" accept="image/*,.pdf">
+                                        @error('athletes.'.$index.'.identity_document') <div class="error-msg">{{ $message }}</div> @enderror
                                     </div>
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Asal Dojo</label>
-                                    <input type="text" wire:model="athletes.{{ $index }}.dojo_origin" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Kota</label>
-                                    <input type="text" wire:model="athletes.{{ $index }}.city" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 md:col-span-2">
-                                    <div class="space-y-2">
-                                        <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">No BPJS</label>
-                                        <input type="text" wire:model="athletes.{{ $index }}.bpjs_number" class="w-full px-5 py-3 rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold">
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Status BPJS</label>
-                                        <label class="flex items-center gap-3 p-3 bg-white rounded-xl border border-zinc-200 cursor-pointer">
-                                            <input type="checkbox" wire:model="athletes.{{ $index }}.bpjs_status" class="w-5 h-5 rounded text-indigo-600">
-                                            <span class="text-xs font-bold uppercase">AKTIFF</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="md:col-span-2 space-y-2">
-                                    <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block">Upload Kartu BPJS (Opsional)</label>
-                                    <input type="file" wire:model="athletes.{{ $index }}.bpjs_card" class="w-full text-xs text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                                 </div>
                             </div>
-
-                            <div class="mt-8 pt-8 border-t border-zinc-100">
-                                <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-4">Pilih Pertandingan (Maks 3 Kategori)</label>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    @php
-                                        $filteredCategories = App\Models\Category::where('gender', $athlete['gender'])
-                                            ->where('match_type', $athlete['match_type'])
-                                            ->get();
-                                    @endphp
-                                    @foreach($filteredCategories as $category)
-                                        <label @class([
-                                            'flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group',
-                                            'bg-indigo-600/5 border-indigo-600' => in_array($category->id, $athlete['category_ids']),
-                                            'bg-white border-zinc-100 opacity-50 grayscale pointer-events-none' => count($athlete['category_ids']) >= 3 && !in_array($category->id, $athlete['category_ids']),
-                                            'bg-white border-zinc-100' => !in_array($category->id, $athlete['category_ids']) && count($athlete['category_ids']) < 3
-                                        ])>
-                                            <input type="checkbox" wire:model.live="athletes.{{ $index }}.category_ids" value="{{ $category->id }}" class="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-0">
-                                            <div class="flex-1">
-                                                <span class="block text-sm font-bold uppercase tracking-tight">{{ $category->name }}</span>
-                                                <span class="block text-[10px] text-zinc-400 font-black uppercase">{{ $category->type }} - {{ $category->age_group }}</span>
-                                            </div>
-                                        </label>
-                                    @endforeach
-
-                                    @if($filteredCategories->isEmpty())
-                                        <div class="md:col-span-2 p-8 text-center bg-zinc-50 rounded-3xl border border-dashed border-zinc-200">
-                                            <p class="text-[10px] font-black uppercase text-zinc-400 tracking-widest leading-relaxed">
-                                                Tidak ada kategori tersedia untuk<br>
-                                                <span class="text-indigo-600">{{ $athlete['match_type'] }} ({{ $athlete['gender'] == 'Male' ? 'PUTRA' : 'PUTRI' }})</span>
-                                            </p>
-                                        </div>
-                                    @endif
-                                </div>
-                                @if(count($athlete['category_ids']) >= 3)
-                                    <p class="text-[9px] text-amber-600 font-black uppercase mt-2">Maksimal 3 kategori tercapai.</p>
-                                @endif
-                                @error('athletes.'.$index.'.category_ids') <span class="text-rose-500 text-[10px] font-bold mt-2 block">{{ $message }}</span> @enderror
-                            </div>
+                            @endforeach
                         </div>
-                    @endforeach
-                </div>
-            </div>
+                        <button type="button" class="btn-add" wire:click="addAthlete" style="margin-top: 10px;">+ Tambah Atlet Baru</button>
+                        <div class="inline-hint">* Setiap atlet wajib memenuhi syarat: Domisili Jatim, KTP/Akte, KK, SIM PERKEMI valid, batas usia sesuai kelompok.</div>
+                        <div class="warning-box">
+                            ⚠️ **PENTING:** Seluruh atlet WAJIB terdaftar sebagai peserta BPJS Ketenagakerjaan dengan status kepesertaan aktif (sesuai THB Pasal L ayat 4).
+                        </div>
+                    </div>
 
-            <!-- Sticky Summary Sidebar -->
-            <div class="lg:col-span-1">
-                <div class="sticky top-8 space-y-6">
-                    <!-- Section 4 & 5: Total & Payment -->
-                    <div class="bg-indigo-600 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
-                         <h3 class="text-lg font-black font-title uppercase tracking-tight mb-8">4. TOTAL & PEMBAYARAN</h3>
-                         
-                         <div class="space-y-4 mb-8">
-                            <div class="flex justify-between items-center text-indigo-100 text-sm italic">
-                                <span>Iuran Kontingen</span>
-                                <span class="font-bold">Rp {{ number_format($contingent_fee, 0, ',', '.') }}</span>
+                    <!-- ==================== PEMBAYARAN ==================== -->
+                    <div class="section">
+                        <div class="section-title">D. PEMBAYARAN & TOTAL BIAYA</div>
+                        <div class="atlet-card" style="background:#fefdf7; border:2px dashed #b22234;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:1.1rem;">
+                                <span>1. Kontribusi Kontingen</span>
+                                <strong>Rp {{ number_format($contingent_fee, 0, ',', '.') }}</strong>
                             </div>
-                            <div class="flex justify-between items-center text-indigo-100 text-sm italic border-b border-white/10 pb-4">
-                                <span>Atlet ({{ count($athletes) }} x Rp {{ number_format($athlete_fee, 0, ',', '.') }})</span>
-                                <span class="font-bold">Rp {{ number_format(count($athletes) * $athlete_fee, 0, ',', '.') }}</span>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:1.1rem;">
+                                <span>2. Total Atlet ({{ count($athletes) }} x Rp {{ number_format($athlete_fee, 0, ',', '.') }})</span>
+                                <strong>Rp {{ number_format(count($athletes) * $athlete_fee, 0, ',', '.') }}</strong>
                             </div>
-                            <div class="flex justify-between items-center text-indigo-100 text-xs py-2">
-                                <span class="italic">Kode Unik Verifikasi</span>
-                                <span class="font-black text-rose-300">+{{ $unique_code }}</span>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:1.1rem;">
+                                <span>3. Kode Unik Sistem</span>
+                                <strong>Rp {{ $unique_code }}</strong>
                             </div>
-                            <div class="flex justify-between items-center pt-2">
-                                <span class="text-[10px] font-black uppercase tracking-widest">TOTAL AKHIR</span>
-                                <span class="text-2xl font-black font-title">Rp {{ number_format($this->getFinalTotalProperty(), 0, ',', '.') }}</span>
+                            <div style="display:flex; justify-content:space-between; border-top:2px solid #cbd5e1; padding-top:15px; font-size:1.4rem; color:#b22234;">
+                                <strong>TOTAL YANG HARUS DITRANSFER</strong>
+                                <strong>Rp {{ number_format($this->getFinalTotalProperty(), 0, ',', '.') }}</strong>
                             </div>
-                         </div>
-
-                         <div class="space-y-4 pt-6 border-t border-white/10">
-                            <label class="text-[10px] font-black uppercase tracking-widest">5. METODE BAYAR</label>
-                            <select wire:model.live="payment_method" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold outline-none">
-                                <option value="BCA" class="text-zinc-900">BCA (Manual Transfer)</option>
-                                <option value="MANDIRI" class="text-zinc-900">MANDIRI (Manual Transfer)</option>
-                                <option value="QRIS" class="text-zinc-900">QRIS (Auto-Confirm)</option>
-                            </select>
                             
-                            <div class="p-4 bg-white/5 rounded-2xl text-[10px] space-y-2 border border-white/5">
-                                @if($payment_method === 'BCA')
-                                    <p class="font-bold">BCA: 123456789</p>
-                                    <p class="opacity-70">A/N: PANITIA DOJO CUP</p>
-                                @elseif($payment_method === 'MANDIRI')
-                                    <p class="font-bold">MANDIRI: 987654321</p>
-                                    <p class="opacity-70">A/N: PANITIA DOJO CUP</p>
-                                @endif
+                            <div class="form-group" style="margin-top:25px;">
+                                <label>Pilih Metode Pembayaran / Tujuan Transfer <span class="required">*</span></label>
+                                <select wire:model.live="payment_method" required>
+                                    <option value="BCA">BCA</option>
+                                    <option value="MANDIRI">MANDIRI</option>
+                                    <option value="CASH">Tunai (Di Sekretariat)</option>
+                                </select>
                             </div>
-                         </div>
-
-                         <button wire:click="submit" class="w-full bg-white text-indigo-600 py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] mt-8 hover:bg-indigo-50 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3">
-                             KIRIM PENDAFTARAN
-                             <div wire:loading class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                         </button>
+                            
+                            @if($payment_method == 'BCA')
+                                <div class="info-box" style="margin-top:15px; background:#e6f0fa; border-left:6px solid #2c5282;">
+                                    BCA <br>
+                                    No Rekening: <strong>730.947.3196</strong> <br>
+                                    Atas Nama: <strong>PERKEMI PENGKOT SURABAYA</strong>
+                                </div>
+                            @elseif($payment_method == 'MANDIRI')
+                                <div class="info-box" style="margin-top:15px; background:#e6f0fa; border-left:6px solid #2c5282;">
+                                    Bank Mandiri <br>
+                                    No Rekening: <strong>141.00.xxxxxxx</strong> <br>
+                                    Atas Nama: <strong>PERKEMI SURABAYA</strong>
+                                </div>
+                            @elseif($payment_method == 'CASH')
+                                <div class="info-box" style="margin-top:15px; background:#e6f0fa; border-left:6px solid #2c5282;">
+                                    Pembayaran tunai dapat dilakukan langsung di Sekretariat PERKEMI Kota Surabaya atau On The Spot.
+                                </div>
+                            @endif
+                            
+                            <hr style="margin: 20px 0; border: 1px solid #e2edf2;">
+                            <div class="form-row" style="margin-bottom: 0;">
+                                <div class="form-group">
+                                    <label>Upload Bukti Transfer Pembayaran (Wajib untuk Non-Tunai) <span class="required">*</span></label>
+                                    <input type="file" wire:model="transfer_proof" accept="image/*,.pdf">
+                                    <div class="inline-hint">Ukuran file maksimal: 2MB. Format: JPG/PNG/PDF</div>
+                                    @error('transfer_proof') <div class="error-msg">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="p-8 rounded-[2.5rem] bg-amber-500/5 border border-amber-500/10 text-[10px] text-zinc-500 italic leading-relaxed">
-                        Data atlet dan official yang dikirimkan bersifat final. Gunakan tombol simpan draft jika pendaftaran belum lengkap (Fitur segera hadir).
+                    <!-- ==================== PERNYATAAN KELENGKAPAN ==================== -->
+                    <div class="section">
+                        <div class="section-title">E. PERNYATAAN KELENGKAPAN ADMINISTRASI</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Apakah seluruh atlet terdaftar sebagai anggota PERKEMI dan memiliki SIM PERKEMI valid?</label>
+                                <select wire:model="sim_perkemi_confirm">
+                                    <option value="Ya">Ya, semua valid</option>
+                                    <option value="Tidak">Tidak / dalam proses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            📌 Catatan: Technical Meeting akan dilaksanakan 3 kali (akhir April, pertengahan Mei, H-1). <br>
+                            📌 Pendaftaran Tahap I (by number) via website smart-perkemi.id/piala_walikotasby2026 + Lampiran A; Tahap II (by name) paling lambat 15 Mei 2026.
+                        </div>
                     </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="submit-btn" style="position:relative;">
+                            <span wire:loading.remove>Kirim Pendaftaran (Simpan Data)</span>
+                            <span wire:loading>Memproses...</span>
+                        </button>
+                        <button type="button" class="reset-btn" onclick="if(confirm('Reset semua data formulir?')) location.reload();">Reset Formulir</button>
+                    </div>
+                    <div class="footer-note">
+                        * Dengan mengirimkan formulir ini, kami menyatakan bahwa data yang diisi adalah benar sesuai dengan dokumen resmi dan siap mengikuti seluruh ketentuan dalam Technical Handbook Kejuaraan Piala Walikota 2026.<br>
+                        Panitia berhak menolak peserta jika persyaratan tidak terpenuhi. Keputusan panitia bersifat final.
+                    </div>
+                </form>
+            @else
+                <!-- Success Message Overhauled for Kempo Theme -->
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="background:#1e6f3f; color:white; width: 80px; height: 80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:35px;">✓</div>
+                    <h1 style="color:#1e6f3f; font-size: 2.2rem; margin-bottom: 20px; border-left:none; padding-left:0;">Pendaftaran Berhasil Terkirim!</h1>
+                    
+                    <div style="background:#fef9e6; border-radius:14px; padding:25px; display:inline-block; text-align:left; border:2px dashed #ffb347; margin-bottom:30px;">
+                        <h2 style="font-size:1.3rem; margin-bottom:15px; color:#b22234;">Ringkasan Pendaftaran</h2>
+                        <div style="margin-bottom:8px;">Kode Pendaftaran: <strong style="font-size:1.2rem;">{{ $referral_code }}</strong></div>
+                        <div style="margin-bottom:8px;">Nama Kontingen: <strong>{{ $contingent_name }}</strong></div>
+                        <div style="margin-bottom:8px;">Metode Pembayaran: <strong>{{ $payment_method }}</strong></div>
+                        <hr style="margin:15px 0; border:1px solid #e2e8f0;">
+                        <div style="font-size:1.1rem;">Total Tagihan: <strong style="font-size:1.4rem; color:#b22234;">Rp {{ number_format($this->getFinalTotalProperty(), 0, ',', '.') }}</strong></div>
+                        <div style="font-size:0.85rem; color:#64748b; margin-top:5px;">(Sudah termasuk kode unik dan iuran kontingen)</div>
+                    </div>
+                    
+                    <p style="font-size: 1.1rem; color: #5a6e7c; margin-bottom: 30px;">
+                        Terima kasih, data kontingen beserta kelengkapannya telah tercatat. Silakan simpan Kode Pendaftaran di atas. Jika memilih transfer manual, pastikan nominal sesuai hingga 3 digit terakhir.
+                    </p>
+                    <button type="button" class="btn-add" onclick="location.reload();" style="font-size: 1rem; padding: 12px 30px;">Daftar Kontingen Lain / Kembali</button>
                 </div>
-            </div>
+            @endif
         </div>
-    @else
-        <!-- Success Screen -->
-        <div class="max-w-3xl mx-auto py-20 text-center animate-fade-in">
-            <div class="w-24 h-24 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-2xl">
-                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <h1 class="text-4xl font-black font-title uppercase mb-4 tracking-tighter">DATA TELAH <span class="text-emerald-500 italic">DITERIMA!</span></h1>
-            <p class="text-zinc-500 uppercase tracking-widest text-xs font-bold mb-12">Segera lakukan pembayaran sesuai nominal di bawah ini.</p>
-
-            <div class="glass p-12 rounded-[3.5rem] relative overflow-hidden bg-white shadow-2xl">
-                <div class="absolute top-0 left-0 w-full h-2 bg-emerald-600"></div>
-                
-                <div class="mb-12">
-                     <span class="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-2 block">TOTAL YANG HARUS DITRANSFER</span>
-                     <h2 class="text-5xl font-black font-title text-indigo-600">Rp {{ number_format($this->getFinalTotalProperty(), 0, ',', '.') }}</h2>
-                     <p class="text-[10px] text-rose-500 font-bold mt-2 italic">*PENTING: Transfer harus tepat hingga 3 digit terakhir.</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                     <div class="space-y-4">
-                        <span class="text-[10px] font-black uppercase text-zinc-400 tracking-widest block">INFO PEMBAYARAN</span>
-                        <div class="p-6 bg-zinc-50 rounded-3xl border border-zinc-100">
-                            <p class="text-xs text-zinc-500 uppercase font-black mb-1">{{ $payment_method }}</p>
-                            <p class="text-2xl font-black font-mono tracking-widest text-zinc-900">
-                                {{ $payment_method == 'BCA' ? '123456789' : ($payment_method == 'MANDIRI' ? '987654321' : 'QRIS_CODE') }}
-                            </p>
-                            <p class="text-[10px] font-bold text-indigo-500 uppercase mt-2">A/N PANITIA DOJO CUP 2026</p>
-                        </div>
-                     </div>
-                     <div class="space-y-4">
-                        <span class="text-[10px] font-black uppercase text-zinc-400 tracking-widest block">KODE REGISTRASI</span>
-                        <div class="p-6 bg-zinc-900 text-white rounded-3xl border border-zinc-800">
-                             <p class="text-3xl font-black font-title tracking-[0.2em]">{{ $referral_code }}</p>
-                             <p class="text-[9px] text-zinc-500 uppercase font-black mt-2 italic">Screenshot & Lampirkan di WA Konfirmasi.</p>
-                        </div>
-                     </div>
-                </div>
-            </div>
-
-            <div class="mt-12 flex items-center justify-center gap-6">
-                <a href="/" class="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-indigo-600 transition-colors">Kembali ke Beranda</a>
-                <div class="w-px h-4 bg-zinc-200"></div>
-                <button class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-indigo-600/20">Konfirmasi via WhatsApp</button>
-            </div>
-        </div>
-    @endif
+    </div>
 </div>
-
-<style>
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-</style>
-
-
-<style>
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-        animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-</style>

@@ -20,6 +20,9 @@ class Contingent extends Model
         'payment_method',
         'unique_code',
         'final_amount',
+        'kab_kota',
+        'transfer_proof_path',
+        'sim_perkemi_confirm',
     ];
 
     public function athletes()

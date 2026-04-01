@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
 use Illuminate\Database\Seeder;
+use App\Models\Category;
+use Illuminate\Support\Facades\DB;
 
 class CategorySeeder extends Seeder
 {
@@ -12,31 +13,49 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        $categories = [
-            // PEMULA (Festival/Beginner)
-            ['name' => 'Kata Perorangan Pra Usia Dini Putra', 'type' => 'Kata', 'gender' => 'Male', 'age_group' => 'Pra Usia Dini', 'match_type' => 'Pemula'],
-            ['name' => 'Kata Perorangan Pra Usia Dini Putri', 'type' => 'Kata', 'gender' => 'Female', 'age_group' => 'Pra Usia Dini', 'match_type' => 'Pemula'],
-            ['name' => 'Kata Perorangan Usia Dini Putra', 'type' => 'Kata', 'gender' => 'Male', 'age_group' => 'Usia Dini', 'match_type' => 'Pemula'],
-            ['name' => 'Kata Perorangan Usia Dini Putri', 'type' => 'Kata', 'gender' => 'Female', 'age_group' => 'Usia Dini', 'match_type' => 'Pemula'],
-            
-            // REMAJA (Cadet/Junior)
-            ['name' => 'Kata Perorangan Cadet Putra', 'type' => 'Kata', 'gender' => 'Male', 'age_group' => 'Cadet', 'match_type' => 'Remaja'],
-            ['name' => 'Kata Perorangan Cadet Putri', 'type' => 'Kata', 'gender' => 'Female', 'age_group' => 'Cadet', 'match_type' => 'Remaja'],
-            ['name' => 'Kata Perorangan Junior Putra', 'type' => 'Kata', 'gender' => 'Male', 'age_group' => 'Junior', 'match_type' => 'Remaja'],
-            ['name' => 'Kata Perorangan Junior Putri', 'type' => 'Kata', 'gender' => 'Female', 'age_group' => 'Junior', 'match_type' => 'Remaja'],
-
-            // DEWASA (Senior/Under 21)
-            ['name' => 'Kata Perorangan Under 21 Putra', 'type' => 'Kata', 'gender' => 'Male', 'age_group' => 'Under 21', 'match_type' => 'Dewasa'],
-            ['name' => 'Kata Perorangan Senior Putra', 'type' => 'Kata', 'gender' => 'Male', 'age_group' => 'Senior', 'match_type' => 'Dewasa'],
-            
-            // KUMITE Examples
-            ['name' => 'Kumite -30kg Usia Dini Putra', 'type' => 'Kumite', 'gender' => 'Male', 'age_group' => 'Usia Dini', 'weight_class' => '-30kg', 'match_type' => 'Pemula'],
-            ['name' => 'Kumite -35kg Pra Pemula Putra', 'type' => 'Kumite', 'gender' => 'Male', 'age_group' => 'Pra Pemula', 'weight_class' => '-35kg', 'match_type' => 'Pemula'],
-            ['name' => 'Kumite Senior Putra -60kg', 'type' => 'Kumite', 'gender' => 'Male', 'age_group' => 'Senior', 'weight_class' => '-60kg', 'match_type' => 'Dewasa'],
+        DB::table('categories')->truncate();
+        
+        $categoriesInput = [
+            'Pemula' => [
+                'Laki-laki' => ['Embu Tandoku Kyu 6 (Eksibisi)','Embu Pasangan Kyu 6 (Eksibisi)','Embu Tandoku Kyu 5-4','Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Pasangan Kyu 5-4','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1'],
+                'Perempuan' => ['Embu Tandoku Kyu 6 (Eksibisi)','Embu Pasangan Kyu 6 (Eksibisi)','Embu Tandoku Kyu 5-4','Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Pasangan Kyu 5-4','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1'],
+            ],
+            'Remaja A' => [
+                'Laki-laki' => ['Embu Tandoku Kyu 5-4','Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Pasangan Kyu 5-4','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Beregu'],
+                'Perempuan' => ['Embu Tandoku Kyu 5-4','Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Pasangan Kyu 5-4','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Beregu'],
+            ],
+            'Remaja B' => [
+                'Laki-laki' => ['Embu Tandoku Kyu 5-4','Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Pasangan Kyu 5-4','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Beregu','Randori 45Kg','Randori 50Kg','Randori 55Kg','Randori 60Kg','Randori 65Kg','Randori 70Kg','Randori >70Kg'],
+                'Perempuan' => ['Embu Tandoku Kyu 5-4','Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Pasangan Kyu 5-4','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Beregu','Randori 45Kg','Randori 50Kg','Randori 55Kg','Randori 60Kg','Randori 65Kg','Randori 70Kg'],
+            ],
+            'Dewasa A' => [
+                'Laki-laki' => ['Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Tandoku Yudansa','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Beregu','Randori 50Kg','Randori 55Kg','Randori 60Kg','Randori 65Kg','Randori 70Kg','Randori >70Kg'],
+                'Perempuan' => ['Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Tandoku Yudansa','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Beregu','Randori 50Kg','Randori 55Kg','Randori 60Kg','Randori 65Kg','Randori 70Kg'],
+            ],
+            'Dewasa B (Senior)' => [
+                'Laki-laki' => ['Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Tandoku Yudansa','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Pasangan Yudansa','Embu Beregu','Randori 50Kg','Randori 55Kg','Randori 60Kg','Randori 65Kg','Randori 70Kg','Randori >70Kg'],
+                'Perempuan' => ['Embu Tandoku Kyu 3','Embu Tandoku Kyu 2','Embu Tandoku Kyu 1','Embu Tandoku Yudansa','Embu Pasangan Kyu 3','Embu Pasangan Kyu 2','Embu Pasangan Kyu 1','Embu Pasangan Yudansa','Embu Beregu','Randori 50Kg','Randori 55Kg','Randori 60Kg','Randori 65Kg','Randori 70Kg'],
+            ]
         ];
 
-        foreach ($categories as $category) {
-            Category::updateOrCreate(['name' => $category['name']], $category);
+        foreach ($categoriesInput as $ageGroup => $genders) {
+            foreach ($genders as $genderCode => $events) {
+                // Determine gender for DB mapping
+                $gender = ($genderCode == 'Laki-laki') ? 'Male' : 'Female';
+                
+                foreach ($events as $eventName) {
+                    // Map Embu -> Kata, Randori -> Kumite to pass DB enum contraints
+                    $type = str_contains(strtolower($eventName), 'randori') ? 'Kumite' : 'Kata';
+                    
+                    Category::create([
+                        'name' => $eventName,
+                        'type' => $type,
+                        'gender' => $gender,
+                        'age_group' => $ageGroup,
+                        'match_type' => 'Kempo' 
+                    ]);
+                }
+            }
         }
     }
 }

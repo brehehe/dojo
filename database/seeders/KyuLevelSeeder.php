@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\KyuLevel;
 use Illuminate\Database\Seeder;
+use App\Models\KyuLevel;
+use Illuminate\Support\Facades\DB;
 
 class KyuLevelSeeder extends Seeder
 {
@@ -12,21 +13,20 @@ class KyuLevelSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clear existing data
+        DB::table('kyu_levels')->truncate();
+
         $levels = [
-            ['name' => 'Kyu 10', 'color' => 'Putih', 'order' => 10],
-            ['name' => 'Kyu 9', 'color' => 'Kuning', 'order' => 9],
-            ['name' => 'Kyu 8', 'color' => 'Orange', 'order' => 8],
-            ['name' => 'Kyu 7', 'color' => 'Hijau', 'order' => 7],
-            ['name' => 'Kyu 6', 'color' => 'Biru', 'order' => 6],
-            ['name' => 'Kyu 5', 'color' => 'Biru Tua', 'order' => 5],
-            ['name' => 'Kyu 4', 'color' => 'Ungu', 'order' => 4],
-            ['name' => 'Kyu 3', 'color' => 'Coklat', 'order' => 3],
-            ['name' => 'Kyu 2', 'color' => 'Coklat', 'order' => 2],
-            ['name' => 'Kyu 1', 'color' => 'Coklat', 'order' => 1],
+            'Kyu 6', 'Kyu 5', 'Kyu 4', 'Kyu 3', 'Kyu 2', 'Kyu 1',
+            'Dan 1', 'Dan 2', 'Dan 3', 'Dan 4', 'Dan 5'
         ];
 
-        foreach ($levels as $level) {
-            KyuLevel::updateOrCreate(['name' => $level['name']], $level);
+        foreach ($levels as $index => $level) {
+            KyuLevel::create([
+                'name' => $level,
+                'color' => 'Standard', // Default color for now
+                'order' => $index + 1
+            ]);
         }
     }
 }
