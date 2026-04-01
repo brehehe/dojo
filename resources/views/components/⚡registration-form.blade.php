@@ -179,8 +179,10 @@ new class extends Component
                 <div class="bg-indigo-600 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/20">
                     <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     <div class="relative z-10">
-                        <h1 class="text-4xl font-black font-title uppercase tracking-tighter mb-2">Registration Portal</h1>
-                        <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">Dojo Cup Championship 2026</p>
+                        <h1 class="text-4xl font-black font-title uppercase tracking-tighter mb-2">Registarsi Portal</h1>
+                        <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">🏆 PIALA WALIKOTA SURABAYA 2026</p>
+                        <p class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">CABANG OLAHRAGA SHORINJI KEMPO | "Generasi Juara, Inspirasi Nusantara"</p>
+                        <span class="text-indigo-100 opacity-80 uppercase tracking-widest text-xs font-bold">Surabaya, 29-31 Mei 2026 - Gelora Pancasila</span>
                     </div>
                 </div>
 
