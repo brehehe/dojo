@@ -18,10 +18,10 @@ class ContingentFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => 'Kontingen ' . fake()->city(),
+            'name' => 'Kontingen '.fake()->city(),
             'leader_name' => fake()->name(),
             'leader_phone' => fake()->phoneNumber(),
-            'leader_email' => fake()->safeEmail(),
+            'email' => fake()->safeEmail(),
             'address' => fake()->address(),
             'payment_method' => fake()->randomElement(['BCA', 'Mandiri', 'QRIS']),
             'unique_code' => fake()->numberBetween(100, 999),

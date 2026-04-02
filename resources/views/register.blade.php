@@ -13,7 +13,7 @@
             .font-body { font-family: 'Plus Jakarta Sans', sans-serif; }
         </style>
     </head>
-    <body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-body antialiased min-h-screen py-12 px-4 shadow-inner">
+    <body class="bg-zinc-50 text-zinc-900 font-body antialiased min-h-screen py-12 px-4 shadow-inner">
         <div class="max-w-7xl mx-auto">
             <div class="mb-12 flex items-center justify-between">
                 <a href="/" class="flex items-center gap-2 text-zinc-500 hover:text-rose-600 transition-colors">

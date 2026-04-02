@@ -18,12 +18,15 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             PostSeeder::class,
             GallerySeeder::class,
+            RoleSeeder::class,
             ContingentSeeder::class,
         ]);
 
-        User::factory()->create([
+        $user = User::factory()->create([
             'name' => 'Admin Perkemi',
             'email' => 'admin@dojo.com',
         ]);
+
+        $user->assignRole('Super Admin');
     }
 }
