@@ -47,8 +47,9 @@ new class extends Component
     public string $payment_method = 'BCA';
     public int $unique_code = 0;
     public string $referral_code = '';
-    public int $contingent_fee = 500000;
-    public int $athlete_fee = 400000;
+    public int $contingent_fee = 2500000;
+    public int $athlete_fee_pemula = 400000;
+    public int $athlete_fee_lainnya = 500000;
 
     public function mount()
     {
@@ -119,9 +120,36 @@ new class extends Component
             ->pluck('name', 'id');
     }
 
+    public function getAthletePemulaCount()
+    {
+        $count = 0;
+        foreach ($this->athletes as $athlete) {
+            if ($athlete['age_group'] === 'Pemula') {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function getAthleteLainnyaCount()
+    {
+        $count = 0;
+        foreach ($this->athletes as $athlete) {
+            if ($athlete['age_group'] !== 'Pemula') {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function getTotalAthleteFee()
+    {
+        return ($this->getAthletePemulaCount() * $this->athlete_fee_pemula) + ($this->getAthleteLainnyaCount() * $this->athlete_fee_lainnya);
+    }
+
     public function getTotalProperty()
     {
-        return $this->contingent_fee + (count($this->athletes) * $this->athlete_fee);
+        return $this->contingent_fee + $this->getTotalAthleteFee();
     }
 
     public function getFinalTotalProperty()
@@ -522,7 +550,7 @@ new class extends Component
                             </div>
                         </div>
                         <div class="info-box">
-                            ✅ Berdasarkan THB: Setiap kontingen wajib membayar kontribusi kontingen Rp 500.000,- dan biaya per atlet Rp 400.000,-. <br>
+                            ✅ Berdasarkan THB: Setiap kontingen wajib membayar kontribusi kontingen Rp 2.500.000,-, biaya per atlet Pemula Rp 400.000,- dan biaya per atlet Remaja/Dewasa Rp 500.000,-. <br>
                             <!-- 📌 Silakan totalkan pembayaran di bawah (sebelum D) dan transfer ke Rekening yang Anda pilih. -->
                         </div>
                     </div>
@@ -713,12 +741,16 @@ new class extends Component
                                 <span>1. Kontribusi Kontingen</span>
                                 <strong>Rp {{ number_format($contingent_fee, 0, ',', '.') }}</strong>
                             </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:1.1rem;">
+                                <span>2. Total Atlet Pemula ({{ $this->getAthletePemulaCount() }} x Rp {{ number_format($athlete_fee_pemula, 0, ',', '.') }})</span>
+                                <strong>Rp {{ number_format($this->getAthletePemulaCount() * $athlete_fee_pemula, 0, ',', '.') }}</strong>
+                            </div>
                             <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:1.1rem;">
-                                <span>2. Total Atlet ({{ count($athletes) }} x Rp {{ number_format($athlete_fee, 0, ',', '.') }})</span>
-                                <strong>Rp {{ number_format(count($athletes) * $athlete_fee, 0, ',', '.') }}</strong>
+                                <span>3. Total Atlet Remaja & Dewasa ({{ $this->getAthleteLainnyaCount() }} x Rp {{ number_format($athlete_fee_lainnya, 0, ',', '.') }})</span>
+                                <strong>Rp {{ number_format($this->getAthleteLainnyaCount() * $athlete_fee_lainnya, 0, ',', '.') }}</strong>
                             </div>
                             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:1.1rem;">
-                                <span>3. Kode Unik Sistem</span>
+                                <span>4. Kode Unik Sistem</span>
                                 <strong>Rp {{ $unique_code }}</strong>
                             </div>
                             <div style="display:flex; justify-content:space-between; border-top:2px solid #cbd5e1; padding-top:15px; font-size:1.4rem; color:#b22234;">
