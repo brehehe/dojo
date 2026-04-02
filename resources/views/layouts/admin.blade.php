@@ -46,7 +46,7 @@
             <div class="p-8 border-b border-white/10 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <i class="fas fa-shield-alt text-xl"></i>
+                        <img src="{{ asset('build/logo.jpeg') }}" alt="Logo">
                     </div>
                     <div class="flex flex-col">
                         <span class="text-xl font-bold tracking-tighter uppercase leading-none">Smart</span>

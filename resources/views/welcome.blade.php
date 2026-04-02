@@ -31,7 +31,7 @@
         <div class="max-w-4xl mx-auto relative z-10">
             <div class="flex justify-center mb-8">
                 <div class="bg-orange-500 w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl shadow-orange-500/20 rotate-3 transition-transform hover:rotate-0">
-                    <i class="fas fa-fist-raised text-4xl text-white"></i>
+                    <img src="{{ asset('build/logo.jpeg') }}" alt="Logo">
                 </div>
             </div>
             <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tighter bg-gradient-to-r from-amber-200 via-orange-300 to-amber-200 bg-clip-text text-transparent uppercase">

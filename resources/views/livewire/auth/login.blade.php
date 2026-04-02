@@ -1,7 +1,7 @@
 <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[3rem] p-10 shadow-2xl shadow-black/50">
     <div class="flex flex-col items-center mb-10 text-center">
         <div class="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-600 rounded-3xl flex items-center justify-center mb-6 shadow-xl rotate-3">
-            <i class="fas fa-user-shield text-4xl text-white"></i>
+            <img src="{{ asset('build/logo.jpeg') }}" alt="Logo">
         </div>
         <h2 class="text-3xl font-black text-white tracking-tighter uppercase leading-none">Smart-Perkemi</h2>
         <p class="text-orange-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Portal Otentikasi Admin</p>
