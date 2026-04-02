@@ -263,6 +263,7 @@
     </div>
 
     <!-- Sticky Action Footer -->
+    @if($contingent->status === 'pending')
     <div class="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-4xl px-6 z-50">
         <div class="bg-white/80 backdrop-blur-lg rounded-[2rem] p-4 shadow-2xl border border-white/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div class="px-4 hidden sm:block">
@@ -284,4 +285,5 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
