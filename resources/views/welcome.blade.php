@@ -47,7 +47,7 @@
                 <button class="w-full sm:w-auto bg-transparent border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10 px-8 py-4 rounded-full font-bold text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-3" id="openKenshiLoginBtn">
                     <i class="fas fa-user-graduate"></i> Login Kenshi
                 </button>
-                <a href="/register" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-emerald-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
+                <a href="/piala_walikotasby2026" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-emerald-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
                     <i class="fas fa-edit"></i> Registrasi Online
                 </a>
             </div>
@@ -98,7 +98,7 @@
         </div>
 
         <div class="text-center py-10">
-            <a href="/register" class="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-emerald-600/30 transition transform hover:scale-105 no-underline">
+            <a href="/piala_walikotasby2026" class="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-emerald-600/30 transition transform hover:scale-105 no-underline">
                 <i class="fas fa-file-signature"></i> Buka Form Pendaftaran Online
             </a>
         </div>

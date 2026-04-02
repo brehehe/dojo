@@ -11,4 +11,4 @@ Route::get('/', function () {
 Route::get('/athlete/{athlete:nik}', function (\App\Models\Athlete $athlete) {
     return view('athlete-profile', ['athlete' => $athlete]);
 })->name('athlete.detail');
-Route::view('/register', 'register')->name('register');
+Route::view('/piala_walikotasby2026', 'register')->name('register');
