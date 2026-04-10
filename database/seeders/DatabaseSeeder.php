@@ -21,12 +21,5 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             ContingentSeeder::class,
         ]);
-
-        $user = User::factory()->create([
-            'name' => 'Admin Perkemi',
-            'email' => 'admin@smart-perkemi.id',
-        ]);
-
-        $user->assignRole('Super Admin');
     }
 }

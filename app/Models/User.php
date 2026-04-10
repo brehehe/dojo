@@ -32,9 +32,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
     public function initials(): string
     {
         return Str::of($this->name)
@@ -42,5 +39,13 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    /**
+     * Get the referee profile associated with the user
+     */
+    public function referee(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Referee::class);
     }
 }

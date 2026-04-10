@@ -3,7 +3,7 @@
         .kempo-form-container {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #eef2f7;
-            padding: 30px 20px;
+            padding: 30px 20px;``
             color: #1a2a3a;
             min-height: 100vh;
         }

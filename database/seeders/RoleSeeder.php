@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+use Illuminate\Support\Str;
 
 class RoleSeeder extends Seeder
 {
@@ -19,37 +20,42 @@ class RoleSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions
-        Permission::create(['name' => 'manage master data']);
-        Permission::create(['name' => 'view registrations']);
-        Permission::create(['name' => 'confirm payments']);
-        Permission::create(['name' => 'reject registrations']);
+        // Clear existing roles and permissions for a fresh start
+        Role::query()->delete();
+        Permission::query()->delete();
 
-        // Create Roles and Assign Permissions
-        $superAdmin = Role::create(['name' => 'Super Admin']);
-        $superAdmin->givePermissionTo(Permission::all());
+        // Create Roles only
+        $roles = [
+            'Super Admin',
+            'Admin',
+            'Pendaftaran',
+            'Pertandingan',
+            'Panitera',
+            'Perwasitan',
+            'Arbitrase',
+        ];
 
-        $adminPendaftaran = Role::create(['name' => 'Admin Pendaftaran']);
-        $adminPendaftaran->givePermissionTo([
-            'view registrations',
-            'confirm payments',
-            'reject registrations',
-        ]);
+        foreach ($roles as $roleName) {
+            $user = User::create([
+                'name' => $roleName,
+                'email' => Str::slug($roleName) . '@smart-perkemi.id',
+                'password' => Hash::make('password'),
+            ]);
 
-        // Create Initial Super Admin User
-        $user = User::create([
-            'name' => 'Super Admin',
-            'email' => 'admin@kempo.id',
+            Role::create(['name' => $roleName]);
+
+            $user->assignRole($roleName);
+        }
+
+        // Re-create Initial Super Admin User if doesn't exist
+        $user = User::where('email', 'admin@smart-perkemi.id')->first() ?: User::factory()->create([
+            'name' => 'Admin Perkemi',
+            'email' => 'admin@smart-perkemi.id',
             'password' => Hash::make('password'),
         ]);
-        $user->assignRole($superAdmin);
 
-        // Create Initial Admin Pendaftaran User
-        $adminReg = User::create([
-            'name' => 'Admin Pendaftaran',
-            'email' => 'pendaftaran@kempo.id',
-            'password' => Hash::make('password'),
-        ]);
-        $adminReg->assignRole($adminPendaftaran);
+        // Ensure user has super admin role (clear roles first)
+        $user->roles()->detach();
+        $user->assignRole('Super Admin');
     }
 }

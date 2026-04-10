@@ -17,7 +17,9 @@ class ContingentDetail extends Component
 
     public function confirm()
     {
-        $this->authorize('confirm payments');
+        if (!auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Pendaftaran'])) {
+            abort(403);
+        }
 
         $this->contingent->update([
             'status' => 'confirmed',
@@ -30,7 +32,9 @@ class ContingentDetail extends Component
 
     public function reject()
     {
-        $this->authorize('reject registrations');
+        if (!auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Pendaftaran'])) {
+            abort(403);
+        }
 
         $this->contingent->update([
             'status' => 'rejected',
