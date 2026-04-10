@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('match_numbers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->integer('max_athletes')->default(0);
             $table->foreignId('age_group_id')->constrained()->cascadeOnDelete();
             $table->integer('order')->default(0);
             $table->timestamps();

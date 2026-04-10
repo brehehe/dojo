@@ -134,7 +134,7 @@
                     <i class="fas fa-box text-sm opacity-50 group-hover:opacity-100"></i>
                     <span class="text-sm font-bold tracking-tight">Pendaftaran</span>
                 </a>
-                @endcan
+                @endrole
 
                 @role('Super Admin|Admin')
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
@@ -184,10 +184,24 @@
                             </div>
                             Kelompok Berat Badan
                         </a>
+
+                        <a href="{{ route('admin.master.techniques') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="fas fa-scroll text-xs"></i>
+                            </div>
+                            Teknik & Jurus
+                        </a>
+
+                        <a href="{{ route('admin.master.match-numbers') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="fas fa-list-ol text-xs"></i>
+                            </div>
+                            Nomor Pertandingan
+                        </a>
                         
                     </div>
                 </div>
-                @endcan
+                @endrole
 
                 <a href="#" class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 border-transparent text-slate-500 hover:text-orange-600">
                     <i class="fas fa-cog text-sm opacity-50 group-hover:opacity-100"></i>
@@ -222,7 +236,7 @@
                 <i class="fas fa-box text-lg"></i>
                 <span class="font-black uppercase tracking-wider text-xs">Pendaftaran</span>
             </a>
-            @endcan
+            @endrole
 
             @role('Super Admin|Admin')
             <div x-data="{ open: false }" class="space-y-2">
@@ -235,12 +249,21 @@
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
-                    <a href="{{ route('admin.master.users') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold">Users Management</a>
-                    <a href="{{ route('admin.master.referees') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold">Master Wasit</a>
-                    <a href="{{ route('admin.master.kyu-levels') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold">Kyu / Dan Levels</a>
+                    <a href="{{ route('admin.master.users') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Users Management</a>
+                    <a href="{{ route('admin.master.referees') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Wasit</a>
+                    <a href="{{ route('admin.master.kyu-levels') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kyu / Dan Levels</a>
+                    <a href="{{ route('admin.master.age-groups') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kelompok Umur</a>
+                    <a href="{{ route('admin.master.weight-groups') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kelompok Berat Badan</a>
+                    <a href="{{ route('admin.master.techniques') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Teknik & Jurus</a>
+                    <a href="{{ route('admin.master.match-numbers') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Nomor Pertandingan</a>
                 </div>
             </div>
-            @endcan
+            @endrole
+
+            <a href="#" class="flex items-center gap-4 p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
+                <i class="fas fa-cog text-lg"></i>
+                <span class="font-black uppercase tracking-wider text-xs">Settings</span>
+            </a>
         </div>
 
         <div class="mt-auto pt-8 border-t border-white/5">
