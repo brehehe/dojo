@@ -122,17 +122,30 @@
     <div class="bg-white border-b border-slate-200 hidden md:block shadow-sm">
         <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
             <nav class="flex items-center gap-2 h-14">
+                @if(auth()->user()->hasRole('Super Admin|Admin'))
                 <a href="{{ route('admin.dashboard') }}" 
                    class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
                     <i class="fas fa-th-large text-sm opacity-50 group-hover:opacity-100"></i>
                     <span class="text-sm font-bold tracking-tight">Dashboard</span>
                 </a>
+                @else
+                <a href="{{ route('contingent.dashboard') }}" 
+                   class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('contingent.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
+                    <i class="fas fa-th-large text-sm opacity-50 group-hover:opacity-100"></i>
+                    <span class="text-sm font-bold tracking-tight">Dashboard</span>
+                </a>
+                @endif
 
                 @role('Super Admin|Admin|Pendaftaran')
-                <a href="{{ route('admin.contingents.index') }}" 
-                   class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.contingents.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
-                    <i class="fas fa-box text-sm opacity-50 group-hover:opacity-100"></i>
-                    <span class="text-sm font-bold tracking-tight">Pendaftaran</span>
+                <a href="{{ route('admin.registrations.index') }}" 
+                   class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.registrations.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
+                    <i class="fas fa-file-signature text-sm opacity-50 group-hover:opacity-100"></i>
+                    <span class="text-sm font-bold tracking-tight">Data Registrasi</span>
+                </a>
+                <a href="{{ route('admin.match-numbers.verified') }}" 
+                   class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.match-numbers.verified') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
+                    <i class="fas fa-medal text-sm opacity-50 group-hover:opacity-100"></i>
+                    <span class="text-sm font-bold tracking-tight">Laporan Pertandingan</span>
                 </a>
                 @endrole
 
@@ -153,51 +166,122 @@
                          x-transition:leave-end="opacity-0 translate-y-2"
                          class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                          x-cloak>
-                        <a href="{{ route('admin.master.users') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                         <a href="{{ route('admin.master.athletes.index') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                 <i class="fas fa-running text-xs"></i>
+                             </div>
+                             Master Atlet
+                         </a>
+                         <a href="{{ route('admin.master.officials.index') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                 <i class="fas fa-user-tie text-xs"></i>
+                             </div>
+                             Master Official
+                         </a>
+                         <a href="{{ route('admin.master.users') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-users text-xs"></i>
                             </div>
-                            User
+                            User Accounts
                         </a>
-                        <a href="{{ route('admin.master.referees') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                        <a href="{{ route('admin.master.roles.index') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                 <i class="fas fa-user-shield text-xs"></i>
+                             </div>
+                             Roles & Permissions
+                         </a>
+                        <a href="{{ route('admin.master.contingents.index') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                 <i class="fas fa-users text-xs"></i>
+                             </div>
+                             Master Kontingen
+                         </a>
+                        <a href="{{ route('admin.master.referees') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-user-tie text-xs"></i>
                             </div>
                             Wasit
                         </a>
-                        <a href="{{ route('admin.master.kyu-levels') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                        <a href="{{ route('admin.master.kyu-levels') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-tags text-xs"></i>
                             </div>
                             Kyu / Dan Levels
                         </a>
                         
-                        <a href="{{ route('admin.master.age-groups') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                        <a href="{{ route('admin.master.age-groups') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-user-clock text-xs"></i>
                             </div>
                             Kelompok Umur
                         </a>
-                        <a href="{{ route('admin.master.weight-groups') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                        <a href="{{ route('admin.master.weight-groups') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-weight-hanging text-xs"></i>
                             </div>
                             Kelompok Berat Badan
                         </a>
 
-                        <a href="{{ route('admin.master.techniques') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                        <a href="{{ route('admin.master.techniques') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-scroll text-xs"></i>
                             </div>
                             Teknik & Jurus
                         </a>
 
-                        <a href="{{ route('admin.master.match-numbers') }}" class="flex items-center gap-3 px-6 py-3.5 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                        <a href="{{ route('admin.master.match-numbers') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                 <i class="fas fa-list-ol text-xs"></i>
                             </div>
                             Nomor Pertandingan
                         </a>
+
+                        <a href="{{ route('admin.master.rundown') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="fas fa-clock text-xs"></i>
+                            </div>
+                            Rundown
+                        </a>
+
+                        <a href="{{ route('admin.master.court') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="fas fa-map-marker-alt text-xs"></i>
+                            </div>
+                            Court
+                        </a>
+                    </div>
+                </div>
+                @endrole
+
+                @role('Contingent')
+                <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    <button class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.master.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-database text-sm opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-sm font-bold tracking-tight">Master Data</span>
+                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300" :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
+                    </button>
+                    
+                    <div x-show="open" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 translate-y-2"
+                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
+                         x-cloak>
+                         <a href="{{ route('admin.master.athletes.index') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                 <i class="fas fa-running text-xs"></i>
+                             </div>
+                             Master Atlet
+                         </a>
+                         <a href="{{ route('admin.master.officials.index') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                 <i class="fas fa-user-tie text-xs"></i>
+                             </div>
+                             Master Official
+                         </a>
                         
                     </div>
                 </div>
@@ -231,10 +315,15 @@
             </a>
 
             @role('Super Admin|Admin|Pendaftaran')
-            <a href="{{ route('admin.contingents.index') }}" 
-               class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.contingents.*') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
-                <i class="fas fa-box text-lg"></i>
-                <span class="font-black uppercase tracking-wider text-xs">Pendaftaran</span>
+            <a href="{{ route('admin.registrations.index') }}" 
+               class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.registrations.*') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
+                <i class="fas fa-file-signature text-lg"></i>
+                <span class="font-black uppercase tracking-wider text-xs">Data Registrasi</span>
+            </a>
+            <a href="{{ route('admin.match-numbers.verified') }}" 
+               class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.match-numbers.verified') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
+                <i class="fas fa-medal text-lg"></i>
+                <span class="font-black uppercase tracking-wider text-xs">Laporan Pertandingan</span>
             </a>
             @endrole
 
@@ -249,13 +338,36 @@
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
-                    <a href="{{ route('admin.master.users') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Users Management</a>
+                    <a href="{{ route('admin.master.athletes.index') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Atlet</a>
+                    <a href="{{ route('admin.master.officials.index') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Official</a>
+                    <a href="{{ route('admin.master.users') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">User Management</a>
+                    <a href="{{ route('admin.master.roles.index') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Roles & Permissions</a>
+                    <a href="{{ route('admin.master.contingents.index') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Kontingen</a>
                     <a href="{{ route('admin.master.referees') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Wasit</a>
                     <a href="{{ route('admin.master.kyu-levels') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kyu / Dan Levels</a>
                     <a href="{{ route('admin.master.age-groups') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kelompok Umur</a>
                     <a href="{{ route('admin.master.weight-groups') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kelompok Berat Badan</a>
                     <a href="{{ route('admin.master.techniques') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Teknik & Jurus</a>
                     <a href="{{ route('admin.master.match-numbers') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Nomor Pertandingan</a>
+                    <a href="{{ route('admin.master.rundown') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Rundown</a>
+                    <a href="{{ route('admin.master.court') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Court</a>
+                </div>
+            </div>
+            @endrole
+
+            @role('Contingent')
+            <div x-data="{ open: false }" class="space-y-2">
+                <button @click="open = !open" 
+                   class="w-full flex items-center justify-between p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-database text-lg"></i>
+                        <span class="font-black uppercase tracking-wider text-xs">Master Data</span>
+                    </div>
+                    <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
+                    <a href="{{ route('admin.master.athletes.index') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Atlet</a>
+                    <a href="{{ route('admin.master.officials.index') }}" class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master Official</a>
                 </div>
             </div>
             @endrole

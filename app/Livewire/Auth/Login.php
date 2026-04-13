@@ -29,6 +29,10 @@ class Login extends Component
         if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
 
+            if (Auth::user()->hasRole('Contingent')) {
+                return redirect()->intended(route('contingent.dashboard'));
+            }
+
             return redirect()->intended(route('admin.dashboard'));
         }
 

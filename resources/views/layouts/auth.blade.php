@@ -30,7 +30,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="relative z-10 w-full max-w-md">
+    <div class="relative z-10 w-full max-w-lg">
         {{ $slot }}
     </div>
 </body>

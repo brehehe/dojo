@@ -8,9 +8,19 @@ class GeneralDashboard extends Component
 {
     public function mount()
     {
+        $user = auth()->user();
+
         // If user has admin roles, they should probably go to the Admin Dashboard
-        if (auth()->user()->hasAnyRole(['Super Admin', 'Admin Pendaftaran'])) {
+        if ($user->hasAnyRole(['Super Admin', 'Admin'])) {
             return redirect()->route('admin.dashboard');
+        }
+
+        // Handle Contingent role
+        if ($user->hasRole('Contingent')) {
+            if (!$user->contingent()->exists()) {
+                return redirect()->route('contingent.setup');
+            }
+            return redirect()->route('contingent.dashboard');
         }
     }
 

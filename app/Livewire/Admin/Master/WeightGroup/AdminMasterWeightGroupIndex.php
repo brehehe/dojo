@@ -4,11 +4,9 @@ namespace App\Livewire\Admin\Master\WeightGroup;
 
 use App\Models\Group\WeightGroup;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.admin')]
 class AdminMasterWeightGroupIndex extends Component
@@ -21,12 +19,14 @@ class AdminMasterWeightGroupIndex extends Component
     }
 
     public $search = '';
+
     public $perPage = 5;
 
     // User Fields
     public $name;
 
-    public $showingweightGroupModal = false;
+    public $showingWeightGroupModal = false;
+
     public $weightGroupIdBeingEdited = null;
 
     protected $queryString = [
@@ -43,7 +43,7 @@ class AdminMasterWeightGroupIndex extends Component
     {
         $this->resetValidation();
         $this->reset(['name', 'weightGroupIdBeingEdited']);
-        $this->showingweightGroupModal = true;
+        $this->showingWeightGroupModal = true;
     }
 
     public function showEditModal($weightGroupId)
@@ -54,7 +54,7 @@ class AdminMasterWeightGroupIndex extends Component
 
         // Load User Data
         $this->name = $weightGroup->name;
-        $this->showingweightGroupModal = true;
+        $this->showingWeightGroupModal = true;
     }
 
     public function saveWeightGroup()
@@ -73,17 +73,17 @@ class AdminMasterWeightGroupIndex extends Component
                     'name' => $this->name,
                 ]);
 
-                $this->dispatch('swal', title: 'Berhasil!', text: 'Data wasit telah diperbarui.', icon: 'success');
+                $this->dispatch('swal', title: 'Berhasil!', text: 'Data Kelompok Berat Badan telah diperbarui.', icon: 'success');
             } else {
                 WeightGroup::create([
                     'name' => $this->name,
                 ]);
 
-                $this->dispatch('swal', title: 'Berhasil!', text: 'Wasit baru telah ditambahkan.', icon: 'success');
+                $this->dispatch('swal', title: 'Berhasil!', text: 'Kelompok Berat Badan baru telah ditambahkan.', icon: 'success');
             }
         });
 
-        $this->showingweightGroupModal = false;
+        $this->showingWeightGroupModal = false;
     }
 
     public function deleteReferee($weightGroupId)
@@ -93,17 +93,17 @@ class AdminMasterWeightGroupIndex extends Component
             $weightGroup->delete();
         });
 
-        $this->dispatch('swal', title: 'Dihapus!', text: 'Wasit dan akun login terkait telah dihapus.', icon: 'success');
+        $this->dispatch('swal', title: 'Dihapus!', text: 'Kelompok Berat Badan dan akun login terkait telah dihapus.', icon: 'success');
     }
 
     public function render()
     {
-        $weightGroups = WeightGroup::orWhere('name', 'like', '%' . $this->search . '%')
+        $weightGroups = WeightGroup::orWhere('name', 'like', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? WeightGroup::count() : $this->perPage);
 
         return view('livewire.admin.master.weight-group.admin-master-weight-group-index', [
-            'weightGroups' => $weightGroups
+            'weightGroups' => $weightGroups,
         ]);
     }
 }

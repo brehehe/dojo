@@ -41,22 +41,26 @@
                 少林寺拳法 · Sistem Informasi Terpadu <br class="hidden md:block"> Prestasi, Kegiatan & Manajemen Kenshi Nusantara
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 @auth
-                    <a href="{{ route('admin.dashboard') }}" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-orange-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
-                        <i class="fas fa-tachometer-alt"></i> Panel Admin
+                    <a href="{{ route('dashboard') }}" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-orange-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
+                        <i class="fas fa-tachometer-alt"></i> Masuk Dashbord
                     </a>
                 @else
-                    <a href="{{ route('login') }}" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-orange-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
-                        <i class="fas fa-user-shield"></i> Login Admin
-                    </a>
+                    <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <a href="{{ route('login') }}" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-orange-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
+                            <i class="fas fa-sign-in-alt"></i> Login Kontingen
+                        </a>
+                        <a href="{{ route('register') }}" class="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-white/10 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
+                            <i class="fas fa-user-plus"></i> Daftar Akun Baru
+                        </a>
+                    </div>
                 @endauth
                 
-                <button class="w-full sm:w-auto bg-transparent border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10 px-8 py-4 rounded-full font-bold text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-3" onclick="alert('Login Kenshi segera hadir!')">
+                <button class="w-full sm:w-auto bg-transparent border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10 px-8 py-4 rounded-full font-bold text-lg transition transform hover:-translate-y-1 flex items-center justify-center gap-3" onclick="alert('Portal Kenshi (Atlet) sedang dalam pengembangan!')">
                     <i class="fas fa-user-graduate"></i> Login Kenshi
                 </button>
-                <a href="/piala_walikotasby2026" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-emerald-600/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-3 no-underline">
-                    <i class="fas fa-edit"></i> Registrasi Online
-                </a>
+            </div>
             </div>
         </div>
     </section>
@@ -90,8 +94,8 @@
         </div>
         
         <div class="text-center py-10">
-            <a href="/piala_walikotasby2026" class="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-emerald-600/30 transition transform hover:scale-105 no-underline">
-                <i class="fas fa-file-signature"></i> Buka Form Pendaftaran Online
+            <a href="{{ route('register') }}" class="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-emerald-600/30 transition transform hover:scale-105 no-underline">
+                <i class="fas fa-file-signature"></i> Daftar Akun & Mulai Pendaftaran
             </a>
         </div>
     </section>

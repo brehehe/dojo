@@ -12,5 +12,6 @@ class AgeGroup extends Model
     protected $fillable = [
         'name',
         'order',
+        'price'
     ];
 }

@@ -18,46 +18,34 @@ class ContingentSeeder extends Seeder
         Contingent::factory(5)
             ->create()
             ->each(function ($contingent) {
-                // Add Officials
+                // Add Officials (Now master data, linked via registration_official pivot later)
                 Official::create([
-                    'contingent_id' => $contingent->id,
                     'name' => fake()->name(),
-                    'role' => 'Manager',
                     'phone' => fake()->phoneNumber(),
                 ]);
 
                 Official::create([
-                    'contingent_id' => $contingent->id,
                     'name' => fake()->name(),
-                    'role' => 'Pelatih',
                     'phone' => fake()->phoneNumber(),
                 ]);
 
-                // Create Athletes
-                $athletes = Athlete::factory(rand(2, 5))->create([
-                    'contingent_id' => $contingent->id
-                ]);
+                // Create Athletes (Master Data)
+                $athletes = Athlete::factory(rand(5, 10))->create();
 
-                $totalAthleteFee = 0;
+                // Assign to Contingent as Primary Members
                 foreach ($athletes as $athlete) {
-                    // Attach categories based on match_type and gender
-                    $categories = Category::where('match_type', $athlete->match_type)
-                        ->where('gender', $athlete->gender)
-                        ->get();
+                    $athlete->contingents()->attach($contingent->id, [
+                        'is_primary' => true,
+                        'joined_at' => now(),
+                    ]);
 
-                    if ($categories->isNotEmpty()) {
-                        $athlete->categories()->attach(
-                            $categories->random(min(rand(1, 3), $categories->count()))->pluck('id')->toArray()
-                        );
-                    }
-                    
-                    $totalAthleteFee += 300000;
+                    // Add some history
+                    $athlete->contingentHistories()->create([
+                        'contingent_id' => $contingent->id,
+                        'moved_at' => now(),
+                        'notes' => 'Seeded as initial member',
+                    ]);
                 }
-
-                // Update final_amount (Contingent fee 300k + Athlete fees + unique code)
-                $contingent->update([
-                    'final_amount' => 300000 + $totalAthleteFee + $contingent->unique_code
-                ]);
             });
     }
 }

@@ -4,11 +4,9 @@ namespace App\Livewire\Admin\Master\AgeGroup;
 
 use App\Models\Group\AgeGroup;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.admin')]
 class AdminMasterAgeGroupIndex extends Component
@@ -21,12 +19,15 @@ class AdminMasterAgeGroupIndex extends Component
     }
 
     public $search = '';
+
     public $perPage = 5;
 
     // User Fields
     public $name;
+    public $price = 0;
 
-    public $showingageGroupModal = false;
+    public $showingAgeGroupModal = false;
+
     public $ageGroupIdBeingEdited = null;
 
     protected $queryString = [
@@ -42,8 +43,8 @@ class AdminMasterAgeGroupIndex extends Component
     public function showCreateModal()
     {
         $this->resetValidation();
-        $this->reset(['name', 'ageGroupIdBeingEdited']);
-        $this->showingageGroupModal = true;
+        $this->reset(['name', 'price', 'ageGroupIdBeingEdited']);
+        $this->showingAgeGroupModal = true;
     }
 
     public function showEditModal($ageGroupId)
@@ -54,13 +55,15 @@ class AdminMasterAgeGroupIndex extends Component
 
         // Load User Data
         $this->name = $ageGroup->name;
-        $this->showingageGroupModal = true;
+        $this->price = (float) $ageGroup->price;
+        $this->showingAgeGroupModal = true;
     }
 
     public function saveAgeGroup()
     {
         $rules = [
             'name' => 'required|min:3',
+            'price' => 'required|numeric',
         ];
 
         $this->validate($rules);
@@ -71,19 +74,21 @@ class AdminMasterAgeGroupIndex extends Component
 
                 $ageGroup->update([
                     'name' => $this->name,
+                    'price' => $this->price,
                 ]);
 
-                $this->dispatch('swal', title: 'Berhasil!', text: 'Data wasit telah diperbarui.', icon: 'success');
+                $this->dispatch('swal', title: 'Berhasil!', text: 'Data Kelompok Umur telah diperbarui.', icon: 'success');
             } else {
                 AgeGroup::create([
                     'name' => $this->name,
+                    'price' => $this->price,
                 ]);
 
-                $this->dispatch('swal', title: 'Berhasil!', text: 'Wasit baru telah ditambahkan.', icon: 'success');
+                $this->dispatch('swal', title: 'Berhasil!', text: 'Kelompok Umur baru telah ditambahkan.', icon: 'success');
             }
         });
 
-        $this->showingageGroupModal = false;
+        $this->showingAgeGroupModal = false;
     }
 
     public function deleteReferee($ageGroupId)
@@ -93,7 +98,7 @@ class AdminMasterAgeGroupIndex extends Component
             $ageGroup->delete();
         });
 
-        $this->dispatch('swal', title: 'Dihapus!', text: 'Wasit dan akun login terkait telah dihapus.', icon: 'success');
+        $this->dispatch('swal', title: 'Dihapus!', text: 'Kelompok Umur dan akun login terkait telah dihapus.', icon: 'success');
     }
 
     public function render()
@@ -103,7 +108,7 @@ class AdminMasterAgeGroupIndex extends Component
             ->paginate($this->perPage === 'all' ? AgeGroup::count() : $this->perPage);
 
         return view('livewire.admin.master.age-group.admin-master-age-group-index', [
-            'ageGroups' => $ageGroups
+            'ageGroups' => $ageGroups,
         ]);
     }
 }

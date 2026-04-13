@@ -5,10 +5,10 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
-use Illuminate\Support\Str;
 
 class RoleSeeder extends Seeder
 {
@@ -33,12 +33,13 @@ class RoleSeeder extends Seeder
             'Panitera',
             'Perwasitan',
             'Arbitrase',
+            'Contingent',
         ];
 
         foreach ($roles as $roleName) {
             $user = User::create([
                 'name' => $roleName,
-                'email' => Str::slug($roleName) . '@smart-perkemi.id',
+                'email' => Str::slug($roleName).'@smart-perkemi.id',
                 'password' => Hash::make('password'),
             ]);
 

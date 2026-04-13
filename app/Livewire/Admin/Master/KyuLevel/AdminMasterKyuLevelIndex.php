@@ -4,11 +4,9 @@ namespace App\Livewire\Admin\Master\KyuLevel;
 
 use App\Models\KyuLevel;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.admin')]
 class AdminMasterKyuLevelIndex extends Component
@@ -21,12 +19,14 @@ class AdminMasterKyuLevelIndex extends Component
     }
 
     public $search = '';
+
     public $perPage = 5;
 
     // User Fields
     public $name;
 
-    public $showingkyuLevelModal = false;
+    public $showingKyuLevelModal = false;
+
     public $kyuLevelIdBeingEdited = null;
 
     protected $queryString = [
@@ -43,7 +43,7 @@ class AdminMasterKyuLevelIndex extends Component
     {
         $this->resetValidation();
         $this->reset(['name', 'kyuLevelIdBeingEdited']);
-        $this->showingkyuLevelModal = true;
+        $this->showingKyuLevelModal = true;
     }
 
     public function showEditModal($kyuLevelId)
@@ -54,7 +54,7 @@ class AdminMasterKyuLevelIndex extends Component
 
         // Load User Data
         $this->name = $kyuLevel->name;
-        $this->showingkyuLevelModal = true;
+        $this->showingKyuLevelModal = true;
     }
 
     public function saveKyuLevel()
@@ -73,17 +73,17 @@ class AdminMasterKyuLevelIndex extends Component
                     'name' => $this->name,
                 ]);
 
-                $this->dispatch('swal', title: 'Berhasil!', text: 'Data wasit telah diperbarui.', icon: 'success');
+                $this->dispatch('swal', title: 'Berhasil!', text: 'Data Kyu Level telah diperbarui.', icon: 'success');
             } else {
                 KyuLevel::create([
                     'name' => $this->name,
                 ]);
 
-                $this->dispatch('swal', title: 'Berhasil!', text: 'Wasit baru telah ditambahkan.', icon: 'success');
+                $this->dispatch('swal', title: 'Berhasil!', text: 'Kyu Level baru telah ditambahkan.', icon: 'success');
             }
         });
 
-        $this->showingkyuLevelModal = false;
+        $this->showingKyuLevelModal = false;
     }
 
     public function deleteReferee($kyuLevelId)
@@ -93,17 +93,17 @@ class AdminMasterKyuLevelIndex extends Component
             $kyuLevel->delete();
         });
 
-        $this->dispatch('swal', title: 'Dihapus!', text: 'Wasit dan akun login terkait telah dihapus.', icon: 'success');
+        $this->dispatch('swal', title: 'Dihapus!', text: 'Kyu Level dan akun login terkait telah dihapus.', icon: 'success');
     }
 
     public function render()
     {
-        $kyuLevels = KyuLevel::orWhere('name', 'like', '%' . $this->search . '%')
+        $kyuLevels = KyuLevel::orWhere('name', 'like', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? KyuLevel::count() : $this->perPage);
 
         return view('livewire.admin.master.kyu-level.admin-master-kyu-level-index', [
-            'kyuLevels' => $kyuLevels
+            'kyuLevels' => $kyuLevels,
         ]);
     }
 }

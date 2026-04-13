@@ -23,9 +23,6 @@ class ContingentFactory extends Factory
             'leader_phone' => fake()->phoneNumber(),
             'email' => fake()->safeEmail(),
             'address' => fake()->address(),
-            'payment_method' => fake()->randomElement(['BCA', 'Mandiri', 'QRIS']),
-            'unique_code' => fake()->numberBetween(100, 999),
-            'final_amount' => 0,
         ];
     }
 }

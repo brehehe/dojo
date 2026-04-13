@@ -1,7 +1,7 @@
 <div class="space-y-10 pb-24">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-            <a href="{{ route('admin.contingents.index') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-orange-600 mb-4 transition-colors font-bold text-xs uppercase tracking-widest">
+            <a href="{{ route('admin.master.contingents.index') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-orange-600 mb-4 transition-colors font-bold text-xs uppercase tracking-widest">
                 <i class="fas fa-arrow-left"></i> Kembali ke Daftar
             </a>
             <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Detail Kontingen</h1>

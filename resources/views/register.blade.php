@@ -14,7 +14,7 @@
         </style>
     </head>
     <body class="bg-zinc-50 text-zinc-900 font-body antialiased min-h-screen py-12 px-4 shadow-inner">
-        <div class="max-w-7xl mx-auto">
+        <div class="max-w-full mx-auto">
             <div class="mb-12 flex items-center justify-between">
                 <a href="/" class="flex items-center gap-2 text-zinc-500 hover:text-rose-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
