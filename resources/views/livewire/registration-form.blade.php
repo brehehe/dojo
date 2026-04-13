@@ -341,7 +341,10 @@
                                         <div class="relative w-28 h-28 bg-white rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
                                             @if($athlete['photo'])
                                                 <img src="{{ $athlete['photo']->temporaryUrl() }}" class="w-full h-full object-cover">
-                                            @elseif(isset($athlete['athlete_id']) && !empty($athlete['athlete_id']) && ($master = \App\Models\Athlete::find($athlete['athlete_id'])) && $master->photo_path)
+                                            @elseif(isset($athlete['athlete_id']) &&
+    is_numeric($athlete['athlete_id']) &&
+    ($master = \App\Models\Athlete::find($athlete['athlete_id'])) &&
+    $master->photo_path)
                                                 <img src="{{ asset('storage/' . $master->photo_path) }}" class="w-full h-full object-cover">
                                             @else
                                                 <div class="text-center p-2">
