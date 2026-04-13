@@ -95,6 +95,18 @@ Route::middleware('auth')->group(function () {
 
         // Verified Match Numbers report
         Route::get('/match-numbers/verified', \App\Livewire\Admin\MatchNumber\AdminMatchNumberVerifiedIndex::class)->name('match-numbers.verified');
+
+        // Registration by Number Report (Excel)
+        Route::get('/reports/registration-by-number', \App\Livewire\Admin\Reports\AdminRegistrationByNumberReport::class)->name('reports.registration-by-number');
+
+        // Registration by Name Report (Excel)
+        Route::get('/reports/registration-by-name', \App\Livewire\Admin\Reports\AdminRegistrationByNameReport::class)->name('reports.registration-by-name');
+
+        // Match Number & Class Report (Excel)
+        Route::get('/reports/match-class', \App\Livewire\Admin\Reports\AdminMatchClassReport::class)->name('reports.match-class');
+
+        // Athlete Biodata Report (Grid)
+        Route::get('/reports/athlete-biodata', \App\Livewire\Admin\Reports\AdminAthleteBiodataReport::class)->name('reports.athlete-biodata');
     });
 });
 

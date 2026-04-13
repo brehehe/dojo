@@ -51,6 +51,11 @@ class AdminMatchNumberVerifiedIndex extends Component
                     'registration_athlete.kyu',
                     'registration_athlete.weight',
                     'registration_athlete.rank',
+                    'registration_athlete.dojo_origin',
+                    'registration_athlete.city',
+                    'registration_athlete.age',
+                    'athletes.birth_date',
+                    'athletes.gender as athlete_gender',
                     'athlete_match_number.technique_ids'
                 )
                 ->get();
@@ -80,6 +85,11 @@ class AdminMatchNumberVerifiedIndex extends Component
                     'kyu' => $athlete->kyu,
                     'weight' => $athlete->weight,
                     'rank' => $athlete->rank,
+                    'dojo' => $athlete->dojo_origin,
+                    'city' => $athlete->city,
+                    'age' => $athlete->age,
+                    'gender' => $athlete->athlete_gender,
+                    'birth_date' => $athlete->birth_date ? date('d/m/Y', strtotime($athlete->birth_date)) : null,
                 ];
             }
 

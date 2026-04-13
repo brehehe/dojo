@@ -337,11 +337,37 @@
                                 </div>
 
                                 @if($athlete['show_fields'])
+                                    <div class="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 flex flex-col md:flex-row items-center gap-6">
+                                        <div class="relative w-28 h-28 bg-white rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
+                                            @if($athlete['photo'])
+                                                <img src="{{ $athlete['photo']->temporaryUrl() }}" class="w-full h-full object-cover">
+                                            @elseif(isset($athlete['athlete_id']) && !empty($athlete['athlete_id']) && ($master = \App\Models\Athlete::find($athlete['athlete_id'])) && $master->photo_path)
+                                                <img src="{{ asset('storage/' . $master->photo_path) }}" class="w-full h-full object-cover">
+                                            @else
+                                                <div class="text-center p-2">
+                                                    <i class="fas fa-camera text-slate-300 text-xl block mb-1"></i>
+                                                    <span class="text-[8px] font-bold text-slate-400 uppercase leading-tight">Foto 3x4</span>
+                                                </div>
+                                            @endif
+                                            <input type="file" wire:model="athletes.{{ $index }}.photo" class="absolute inset-0 opacity-0 cursor-pointer">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="!mb-1">Foto Profil / Pas Foto <span class="required">*</span></label>
+                                            <p class="text-[9px] text-slate-400 mb-2 font-medium">Unggah pas foto formal (Background Merah/Biru) ukuran 3x4. Maksimal 2MB.</p>
+                                            @error('athletes.'.$index.'.photo') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Nama Lengkap <span class="required">*</span></label>
                                             <input type="text" wire:model="athletes.{{ $index }}.name" class="form-input-custom @error('athletes.'.$index.'.name') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
                                             @error('athletes.'.$index.'.name') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div class="form-group">
+                                            <label>NIK <span class="required">*</span></label>
+                                            <input type="text" wire:model="athletes.{{ $index }}.nik" class="form-input-custom @error('athletes.'.$index.'.nik') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
+                                            @error('athletes.'.$index.'.nik') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Jenis Kelamin <span class="required">*</span></label>
@@ -350,10 +376,46 @@
                                                 <option value="Female">Perempuan</option>
                                             </select>
                                         </div>
+                                    </div>
+
+                                    <div class="form-row">
                                         <div class="form-group">
-                                            <label>NIK <span class="required">*</span></label>
-                                            <input type="text" wire:model="athletes.{{ $index }}.nik" class="form-input-custom @error('athletes.'.$index.'.nik') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.nik') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            <label>Tempat Lahir <span class="required">*</span></label>
+                                            <input type="text" wire:model="athletes.{{ $index }}.birth_place" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            @error('athletes.'.$index.'.birth_place') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Tanggal Lahir <span class="required">*</span></label>
+                                            <input type="date" wire:model="athletes.{{ $index }}.birth_date" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            @error('athletes.'.$index.'.birth_date') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Golongan Darah <span class="required">*</span></label>
+                                            <select wire:model="athletes.{{ $index }}.blood_type" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                                <option value="">Pilih...</option>
+                                                <option value="A">A</option>
+                                                <option value="B">B</option>
+                                                <option value="O">O</option>
+                                                <option value="AB">AB</option>
+                                                <option value="A+">A+</option>
+                                                <option value="B+">B+</option>
+                                                <option value="O+">O+</option>
+                                                <option value="AB+">AB+</option>
+                                            </select>
+                                            @error('athletes.'.$index.'.blood_type') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-span-2">
+                                            <label>Alamat Rumah (Sesuai KTP/KK) <span class="required">*</span></label>
+                                            <input type="text" wire:model="athletes.{{ $index }}.address" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            @error('athletes.'.$index.'.address') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Nomor HP Atlet/Orang Tua</label>
+                                            <input type="tel" wire:model="athletes.{{ $index }}.phone" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            @error('athletes.'.$index.'.phone') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
 

@@ -40,7 +40,9 @@ class RegistrationForm extends Component
     // C. ATLET
     public array $athletes = [
         [
-            'athlete_id' => '', 'nik' => '', 'name' => '', 'gender' => 'Male', 'birth_date' => '', 
+            'athlete_id' => '', 'nik' => '', 'name' => '', 'gender' => 'Male', 
+            'birth_place' => '', 'blood_type' => '', 'birth_date' => '', 
+            'address' => '', 'phone' => '', 'photo' => null,
             'current_weight' => '', 'weight_group_id' => '',
             'age_group' => '', 'rank' => 'Kyu 6', 'dojo_origin' => '', 'city' => '',
             'bpjs_number' => '', 'bpjs_status' => 'Aktif', 'bpjs_card' => null,
@@ -134,6 +136,10 @@ class RegistrationForm extends Component
 
             'athletes.*.name' => 'required|min:3',
             'athletes.*.gender' => 'required|in:Male,Female',
+            'athletes.*.birth_place' => 'required',
+            'athletes.*.blood_type' => 'required',
+            'athletes.*.address' => 'required',
+            'athletes.*.phone' => 'nullable',
             'athletes.*.age_group' => 'required',
             'athletes.*.rank' => 'required',
             'athletes.*.dojo_origin' => 'required',
@@ -143,6 +149,7 @@ class RegistrationForm extends Component
             'athletes.*.current_weight' => 'required|numeric',
             'athletes.*.weight_group_id' => 'required',
             'athletes.*.bpjs_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'athletes.*.photo' => 'nullable|image|max:2048',
             'athletes.*.identity_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ];
     }
@@ -201,7 +208,11 @@ class RegistrationForm extends Component
                     $this->athletes[$index]['nik'] = $athlete->nik;
                     $this->athletes[$index]['name'] = $athlete->name;
                     $this->athletes[$index]['gender'] = $athlete->gender;
+                    $this->athletes[$index]['birth_place'] = $athlete->birth_place;
+                    $this->athletes[$index]['blood_type'] = $athlete->blood_type;
                     $this->athletes[$index]['birth_date'] = $athlete->birth_date;
+                    $this->athletes[$index]['address'] = $athlete->address;
+                    $this->athletes[$index]['phone'] = $athlete->phone;
                     $this->athletes[$index]['bpjs_number'] = $athlete->bpjs_number;
                     $this->athletes[$index]['bpjs_status'] = $athlete->bpjs_status;
                     $this->athletes[$index]['is_master_found'] = true;
@@ -265,7 +276,9 @@ class RegistrationForm extends Component
     public function addAthlete()
     {
         $this->athletes[] = [
-            'athlete_id' => '', 'nik' => '', 'name' => '', 'gender' => 'Male', 'birth_date' => '', 
+            'athlete_id' => '', 'nik' => '', 'name' => '', 'gender' => 'Male', 
+            'birth_place' => '', 'blood_type' => '', 'birth_date' => '', 
+            'address' => '', 'phone' => '', 'photo' => null,
             'current_weight' => '', 'weight_group_id' => '',
             'age_group' => '', 'rank' => 'Kyu 6', 'dojo_origin' => '', 'city' => '',
             'bpjs_number' => '', 'bpjs_status' => 'Aktif', 'bpjs_card' => null,
@@ -524,6 +537,7 @@ class RegistrationForm extends Component
             foreach ($this->athletes as $athleteData) {
                 $bpjsPath = $athleteData['bpjs_card'] ? $athleteData['bpjs_card']->store('bpjs_cards', 'public') : null;
                 $identityPath = $athleteData['identity_document'] ? $athleteData['identity_document']->store('identity_docs', 'public') : null;
+                $photoPath = $athleteData['photo'] ? $athleteData['photo']->store('athlete_photos', 'public') : null;
 
                 // Create or Update Master Athlete Data
                 $athlete = Athlete::updateOrCreate(
@@ -531,9 +545,14 @@ class RegistrationForm extends Component
                     [
                         'name' => $athleteData['name'],
                         'gender' => $athleteData['gender'],
+                        'birth_place' => $athleteData['birth_place'],
+                        'blood_type' => $athleteData['blood_type'],
                         'birth_date' => $athleteData['birth_date'],
+                        'address' => $athleteData['address'],
+                        'phone' => $athleteData['phone'],
                         'bpjs_number' => $athleteData['bpjs_number'],
                         'bpjs_status' => $athleteData['bpjs_status'],
+                        'photo_path' => $photoPath ?? Athlete::where('nik', $athleteData['nik'])->value('photo_path'),
                         'bpjs_card_path' => $bpjsPath ?? Athlete::where('nik', $athleteData['nik'])->value('bpjs_card_path'),
                         'identity_document_path' => $identityPath ?? Athlete::where('nik', $athleteData['nik'])->value('identity_document_path'),
                     ]

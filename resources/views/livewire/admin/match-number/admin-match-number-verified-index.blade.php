@@ -44,8 +44,14 @@
                                     <span class="px-3 py-1 bg-orange-100 text-orange-700 text-[9px] font-black rounded-full uppercase tracking-widest border border-orange-200">
                                         {{ $item['match']->ageGroup?->name }}
                                     </span>
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                        {{ $item['match']->gender === 'male' ? 'PUTRA' : 'PUTRI' }}
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[9px] font-black rounded-full uppercase tracking-widest border border-slate-200">
+                                        {{ $item['match']->draft_type }}
+                                    </span>
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider ml-2">
+                                        {{ strtoupper($item['match']->gender) }}
+                                    </span>
+                                    <span class="text-[9px] text-slate-300 font-bold uppercase ml-2">
+                                        Quota: {{ $item['match']->max_athletes > 0 ? $item['match']->max_athletes : '∞' }}
                                     </span>
                                 </div>
                             </div>
@@ -59,52 +65,99 @@
                     </div>
 
                     <!-- Contingents Section -->
-                    <div class="grid grid-cols-1 gap-8">
+                    <div class="space-y-12">
                         @foreach($item['contingents'] as $contingent)
-                            <div class="space-y-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-                                    <h4 class="text-sm font-black text-slate-700 uppercase tracking-tight">{{ $contingent['name'] }}</h4>
-                                    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">{{ count($contingent['athletes']) }} Atlet</span>
-                                    
-                                    <!-- Techniques at Contingent Level -->
-                                    <div class="flex flex-wrap gap-1.5 ml-4">
-                                        @forelse($contingent['techniques'] as $tech)
-                                            <span class="px-2 py-1 bg-white text-orange-600 text-[8px] font-black rounded-lg uppercase border border-orange-100 shadow-sm">
-                                                {{ $tech }}
-                                            </span>
-                                        @empty
-                                            <span class="text-[8px] text-slate-400 italic">Tanpa Teknik Khusus</span>
-                                        @endforelse
+                            <div class="space-y-6">
+                                <!-- Contingent Header -->
+                                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-1.5 h-6 bg-orange-500 rounded-full"></div>
+                                        <h4 class="text-sm font-black text-slate-700 uppercase tracking-tight">{{ $contingent['name'] }}</h4>
+                                        <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">{{ count($contingent['athletes']) }} Atlet</span>
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-4">
-                                    @foreach($contingent['athletes'] as $athlete)
-                                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-orange-200 hover:bg-white transition-all group/athlete shadow-sm hover:shadow-md">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <div class="flex-1 min-w-0">
-                                                    <h5 class="text-xs font-black text-slate-800 uppercase truncate leading-none mb-1 group-hover/athlete:text-orange-600 transition-colors">
-                                                        {{ $athlete['name'] }}
-                                                    </h5>
-                                                    <p class="text-[9px] font-bold text-slate-400 font-mono tracking-wider">
-                                                        {{ $athlete['nik'] }}
-                                                    </p>
-                                                </div>
-                                                <div class="text-right ml-2 shrink-0">
-                                                    <span class="text-[9px] font-black bg-slate-900 text-white px-2 py-1 rounded-lg uppercase tracking-wider shadow-sm">
-                                                        {{ $athlete['rank'] ?? 'N/A' }}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                    <!-- Left Column: Athletes (8/12) -->
+                                    <div class="lg:col-span-8">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            @foreach($contingent['athletes'] as $athlete)
+                                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-orange-200 hover:bg-white transition-all group/athlete shadow-sm hover:shadow-md">
+                                                    <div class="flex items-center justify-between mb-4">
+                                                        <div class="flex-1 min-w-0">
+                                                            <h5 class="text-xs font-black text-slate-800 uppercase truncate leading-none mb-1 group-hover/athlete:text-orange-600 transition-colors">
+                                                                {{ $athlete['name'] }}
+                                                            </h5>
+                                                            <p class="text-[9px] font-bold text-slate-400 font-mono tracking-wider mb-2">
+                                                                {{ $athlete['nik'] }}
+                                                            </p>
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="px-1.5 py-0.5 bg-slate-900 text-white text-[8px] font-black rounded uppercase tracking-wider">
+                                                                    {{ strtoupper($athlete['gender']) }}
+                                                                </span>
+                                                                <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                                                                    {{ $athlete['age'] ?? '-' }} Thn
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right ml-2 shrink-0">
+                                                            <span class="text-[9px] font-black border-2 border-slate-900 text-slate-900 px-3 py-1 rounded-xl uppercase tracking-wider shadow-sm group-hover/athlete:bg-slate-900 group-hover/athlete:text-white transition-all">
+                                                                {{ $athlete['rank'] ?? 'N/A' }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
 
-                                            <!-- Details -->
-                                            <div class="flex items-center gap-3 text-[9px] font-bold text-slate-500 uppercase">
-                                                <span class="flex items-center gap-1"><i class="fas fa-weight-hanging text-[8px]"></i> {{ $athlete['weight'] ?? '-' }} kg</span>
-                                                <span class="flex items-center gap-1"><i class="fas fa-certificate text-[8px]"></i> {{ $athlete['kyu'] ?? '-' }}</span>
+                                                    <div class="space-y-3">
+                                                        <!-- Dojo Info -->
+                                                        <!-- <div class="flex items-start gap-2 p-2 bg-white rounded-xl border border-slate-100 shadow-inner">
+                                                            <i class="fas fa-home text-[8px] text-orange-500 mt-0.5"></i>
+                                                            <div class="flex-1 min-w-0">
+                                                                <p class="text-[8px] font-black text-slate-700 uppercase leading-none mb-1">{{ $athlete['dojo'] ?? 'Dojo -' }}</p>
+                                                                <p class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{{ $athlete['city'] ?? 'Kota -' }}</p>
+                                                            </div>
+                                                        </div> -->
+
+                                                        <!-- Physical/Level Details -->
+                                                        <div class="flex items-center justify-between pt-1">
+                                                            <div class="flex items-center gap-4 text-[9px] font-bold text-slate-500 uppercase">
+                                                                <span class="flex items-center gap-1.5"><i class="fas fa-weight-hanging text-[8px] text-slate-300"></i> {{ $athlete['weight'] ?? '-' }} kg</span>
+                                                                <span class="flex items-center gap-1.5"><i class="fas fa-certificate text-[8px] text-slate-300"></i> {{ $athlete['kyu'] ?? '-' }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <!-- Right Column: Techniques (4/12) -->
+                                    <div class="lg:col-span-4 sticky top-32">
+                                        <div class="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group/tech">
+                                            <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover/tech:bg-orange-500/10 transition-colors"></div>
+                                            
+                                            <div class="relative z-10">
+                                                <div class="flex items-center gap-2 mb-4">
+                                                    <i class="fas fa-scroll text-orange-500 text-xs"></i>
+                                                    <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daftar Teknik</h5>
+                                                </div>
+                                                
+                                                <div class="space-y-2">
+                                                    @forelse($contingent['techniques'] as $index => $tech)
+                                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover/tech:border-orange-100 transition-all">
+                                                            <span class="w-5 h-5 bg-white rounded-md flex items-center justify-center text-[9px] font-black text-orange-600 border border-orange-100 shadow-sm">
+                                                                {{ $index + 1 }}
+                                                            </span>
+                                                            <span class="text-[10px] font-black text-slate-700 uppercase tracking-tight">{{ $tech }}</span>
+                                                        </div>
+                                                    @empty
+                                                        <div class="py-4 text-center">
+                                                            <p class="text-[10px] text-slate-400 italic font-bold">Tanpa Teknik Khusus</p>
+                                                        </div>
+                                                    @endforelse
+                                                </div>
                                             </div>
                                         </div>
-                                    @endforeach
+                                    </div>
                                 </div>
                             </div>
                         @endforeach

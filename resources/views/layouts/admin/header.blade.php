@@ -142,11 +142,55 @@
                     <i class="fas fa-file-signature text-sm opacity-50 group-hover:opacity-100"></i>
                     <span class="text-sm font-bold tracking-tight">Data Registrasi</span>
                 </a>
-                <a href="{{ route('admin.match-numbers.verified') }}" 
-                   class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.match-numbers.verified') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
-                    <i class="fas fa-medal text-sm opacity-50 group-hover:opacity-100"></i>
-                    <span class="text-sm font-bold tracking-tight">Laporan Pertandingan</span>
-                </a>
+
+                <div class="relative h-full" x-data="{ reportDropdownOpen: false }" @mouseenter="reportDropdownOpen = true" @mouseleave="reportDropdownOpen = false">
+                    <button class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
+                        <i class="fas fa-file-invoice text-sm opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-sm font-bold tracking-tight">Laporan</span>
+                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300" :class="reportDropdownOpen ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
+                    </button>
+                    
+                    <div x-show="reportDropdownOpen" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 translate-y-2"
+                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
+                         x-cloak>
+                         <a href="{{ route('admin.match-numbers.verified') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
+                                 <i class="fas fa-medal text-xs"></i>
+                             </div>
+                             Laporan Pertandingan
+                         </a>
+                         <a href="{{ route('admin.reports.registration-by-number') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
+                                 <i class="fas fa-file-excel text-xs"></i>
+                             </div>
+                             Laporan Per Kontingen
+                         </a>
+                         <a href="{{ route('admin.reports.registration-by-name') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
+                                 <i class="fas fa-id-card text-xs"></i>
+                             </div>
+                             Laporan Per Nama Peserta
+                         </a>
+                         <a href="{{ route('admin.reports.match-class') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
+                                 <i class="fas fa-layer-group text-xs"></i>
+                             </div>
+                             Laporan Nomor & Kelas
+                         </a>
+                         <a href="{{ route('admin.reports.athlete-biodata') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
+                                 <i class="fas fa-id-card-alt text-xs"></i>
+                             </div>
+                             Laporan Biodata Peserta
+                         </a>
+                    </div>
+                </div>
                 @endrole
 
                 @role('Super Admin|Admin')
@@ -320,11 +364,24 @@
                 <i class="fas fa-file-signature text-lg"></i>
                 <span class="font-black uppercase tracking-wider text-xs">Data Registrasi</span>
             </a>
-            <a href="{{ route('admin.match-numbers.verified') }}" 
-               class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.match-numbers.verified') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
-                <i class="fas fa-medal text-lg"></i>
-                <span class="font-black uppercase tracking-wider text-xs">Laporan Pertandingan</span>
-            </a>
+
+            <div x-data="{ open: {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'true' : 'false' }} }" class="space-y-2">
+                <button @click="open = !open" 
+                   class="w-full flex items-center justify-between p-5 rounded-[2rem] {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'bg-orange-600/10 text-orange-400 border border-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-file-invoice text-lg"></i>
+                        <span class="font-black uppercase tracking-wider text-xs">Laporan</span>
+                    </div>
+                    <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
+                    <a href="{{ route('admin.match-numbers.verified') }}" class="block p-4 rounded-2xl {{ request()->routeIs('admin.match-numbers.verified') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan Pertandingan</a>
+                    <a href="{{ route('admin.reports.registration-by-number') }}" class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.registration-by-number') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan Per Kontingen</a>
+                    <a href="{{ route('admin.reports.registration-by-name') }}" class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.registration-by-name') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan Per Nama Peserta</a>
+                    <a href="{{ request()->routeIs('admin.reports.match-class') }}" class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.match-class') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan Nomor & Kelas</a>
+                    <a href="{{ route('admin.reports.athlete-biodata') }}" class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.athlete-biodata') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan Biodata Peserta</a>
+                </div>
+            </div>
             @endrole
 
             @role('Super Admin|Admin')
