@@ -552,9 +552,9 @@ class RegistrationForm extends Component
                         'phone' => $athleteData['phone'],
                         'bpjs_number' => $athleteData['bpjs_number'],
                         'bpjs_status' => $athleteData['bpjs_status'],
-                        'photo_path' => $photoPath ?? Athlete::where('nik', $athleteData['nik'])->value('photo_path'),
-                        'bpjs_card_path' => $bpjsPath ?? Athlete::where('nik', $athleteData['nik'])->value('bpjs_card_path'),
-                        'identity_document_path' => $identityPath ?? Athlete::where('nik', $athleteData['nik'])->value('identity_document_path'),
+                        'photo_path' => $photoPath ?? Athlete::where('nik', $athleteData['nik'])?->value('photo_path'),
+                        'bpjs_card_path' => $bpjsPath ?? Athlete::where('nik', $athleteData['nik'])?->value('bpjs_card_path'),
+                        'identity_document_path' => $identityPath ?? Athlete::where('nik', $athleteData['nik'])?->value('identity_document_path'),
                     ]
                 );
 
