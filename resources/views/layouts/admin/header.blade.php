@@ -265,34 +265,7 @@
                             </div>
                             Kelompok Berat Badan
                         </a>
-
-                        <a href="{{ route('admin.master.techniques') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-scroll text-xs"></i>
-                            </div>
-                            Teknik & Jurus
-                        </a>
-
-                        <a href="{{ route('admin.master.match-numbers') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-list-ol text-xs"></i>
-                            </div>
-                            Nomor Pertandingan
-                        </a>
-
-                        <a href="{{ route('admin.master.rundown') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-clock text-xs"></i>
-                            </div>
-                            Rundown
-                        </a>
-
-                        <a href="{{ route('admin.master.court') }}" class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
-                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-map-marker-alt text-xs"></i>
-                            </div>
-                            Court
-                        </a>
+                        
                     </div>
                 </div>
                 @endrole
