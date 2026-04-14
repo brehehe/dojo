@@ -237,37 +237,43 @@
              x-transition:leave-end="opacity-0">
             <div class="max-w-7xl mx-auto px-6 pt-20 h-full flex flex-col lg:flex-row items-center gap-6">
 
-                <!-- LEFT: Text -->
-                <div class="lg:w-1/2 flex flex-col justify-center pb-24">
-                    <div class="hero-tag mb-5 inline-flex items-center gap-2 bg-white/5 border border-orange-500/30 rounded-full px-4 py-1.5 self-start">
+                <!-- Mobile: faded background image (hidden on lg) -->
+                <div class="lg:hidden absolute inset-0 pointer-events-none" style="z-index:-1;">
+                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover object-center opacity-10">
+                    <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(80,0,16,0.3) 0%, rgba(80,0,16,0.85) 100%);"></div>
+                </div>
+
+                <!-- LEFT: Text (full width on mobile, half on desktop) -->
+                <div class="w-full lg:w-1/2 flex flex-col justify-center pb-28 lg:pb-24">
+                    <div class="hero-tag mb-4 lg:mb-5 inline-flex items-center gap-2 bg-white/5 border border-orange-500/30 rounded-full px-4 py-1.5 self-start">
                         <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
                         <span class="text-orange-300 text-xs font-bold uppercase tracking-widest">Kejuaraan Resmi · Shorinji Kempo</span>
                     </div>
                     <h1 class="hero-title bebas leading-[0.9] text-white mb-2 tracking-wide drop-shadow-2xl"
-                        style="font-size: clamp(3.5rem, 7vw, 6.5rem);">SEMANGAT<br>KEMPO.</h1>
-                    <h2 class="hero-sub bebas leading-[0.9] mb-6 tracking-wide"
-                        style="font-size: clamp(2.5rem, 5vw, 4.5rem); color: #ff6030;">KEKUATAN &amp;<br>HARMONI.</h2>
-                    <p class="hero-desc text-white/70 text-base leading-relaxed mb-8 max-w-md">
+                        style="font-size: clamp(3rem, 12vw, 6.5rem);">SEMANGAT<br>KEMPO.</h1>
+                    <h2 class="hero-sub bebas leading-[0.9] mb-4 lg:mb-6 tracking-wide"
+                        style="font-size: clamp(2rem, 9vw, 4.5rem); color: #ff6030;">KEKUATAN &amp;<br>HARMONI.</h2>
+                    <p class="hero-desc text-white/70 text-sm lg:text-base leading-relaxed mb-6 lg:mb-8 max-w-md">
                         Tingkatkan Potensi Anda Melalui Shorinji Kempo Indonesia. Kejuaraan bergengsi tingkat nasional di Kota Surabaya.
                     </p>
-                    <div class="hero-cta flex flex-wrap gap-4">
+                    <div class="hero-cta flex flex-wrap gap-3 lg:gap-4">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-8 py-4 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#ea580c,#f97316);box-shadow:0 8px 32px -6px rgba(234,88,12,0.60);">
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#ea580c,#f97316);box-shadow:0 8px 32px -6px rgba(234,88,12,0.60);">
                                 <i class="fas fa-tachometer-alt"></i> Dashboard
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-8 py-4 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#ea580c,#f97316);box-shadow:0 8px 32px -6px rgba(234,88,12,0.60);">
+                            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#ea580c,#f97316);box-shadow:0 8px 32px -6px rgba(234,88,12,0.60);">
                                 Bergabung Sekarang
                             </a>
-                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-6 py-4 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
+                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-5 py-3.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </a>
                         @endauth
                     </div>
                 </div>
 
-                <!-- RIGHT: Hero Image -->
-                <div class="lg:w-1/2 flex items-center justify-center pb-24 relative">
+                <!-- RIGHT: Hero Image — desktop only -->
+                <div class="hidden lg:flex lg:w-1/2 items-center justify-center pb-24 relative">
                     <div class="absolute inset-0 rounded-3xl pointer-events-none"
                          style="background: radial-gradient(ellipse at 50% 55%, rgba(255,60,30,0.35) 0%, rgba(30,60,255,0.25) 50%, transparent 75%); filter: blur(35px);"></div>
                     <img src="{{ asset('hero-fighters.png') }}" alt="Kempo Fighters"
@@ -288,34 +294,43 @@
              x-transition:leave-end="opacity-0"
              style="display:none;">
             <div class="max-w-7xl mx-auto px-6 pt-20 h-full flex flex-col lg:flex-row-reverse items-center gap-6">
-                <div class="lg:w-1/2 flex flex-col justify-center pb-24">
-                    <div class="hero-tag mb-5 inline-flex items-center gap-2 bg-white/5 border border-blue-500/30 rounded-full px-4 py-1.5 self-start">
+
+                <!-- Mobile: faded background image -->
+                <div class="lg:hidden absolute inset-0 pointer-events-none" style="z-index:-1;">
+                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover object-center opacity-10 scale-x-[-1]">
+                    <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(0,8,60,0.3) 0%, rgba(0,8,60,0.85) 100%);"></div>
+                </div>
+
+                <div class="w-full lg:w-1/2 flex flex-col justify-center pb-28 lg:pb-24">
+                    <div class="hero-tag mb-4 lg:mb-5 inline-flex items-center gap-2 bg-white/5 border border-blue-500/30 rounded-full px-4 py-1.5 self-start">
                         <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
                         <span class="text-blue-300 text-xs font-bold uppercase tracking-widest">Teknik Tingkat · Kyu &amp; Dan</span>
                     </div>
                     <h1 class="hero-title bebas leading-[0.9] text-white mb-2 tracking-wide drop-shadow-2xl"
-                        style="font-size: clamp(3.5rem, 7vw, 6.5rem);">EMBU &amp;<br>RANDORI.</h1>
-                    <h2 class="hero-sub bebas leading-[0.9] mb-6 text-blue-400 tracking-wide"
-                        style="font-size: clamp(2rem, 4vw, 3.5rem);">KATEGORI<br>LENGKAP.</h2>
-                    <p class="hero-desc text-white/70 text-base leading-relaxed mb-8 max-w-md">
+                        style="font-size: clamp(3rem, 12vw, 6.5rem);">EMBU &amp;<br>RANDORI.</h1>
+                    <h2 class="hero-sub bebas leading-[0.9] mb-4 lg:mb-6 text-blue-400 tracking-wide"
+                        style="font-size: clamp(2rem, 9vw, 3.5rem);">KATEGORI<br>LENGKAP.</h2>
+                    <p class="hero-desc text-white/70 text-sm lg:text-base leading-relaxed mb-6 lg:mb-8 max-w-md">
                         Tersedia nomor pertandingan Embu Berpasangan dan Randori untuk semua kelompok usia dan tingkatan.
                     </p>
-                    <div class="hero-cta flex flex-wrap gap-4">
+                    <div class="hero-cta flex flex-wrap gap-3 lg:gap-4">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-8 py-4 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#2563eb,#3b82f6);box-shadow:0 8px 32px -6px rgba(37,99,235,0.60);">
+                            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#2563eb,#3b82f6);box-shadow:0 8px 32px -6px rgba(37,99,235,0.60);">
                                 <i class="fas fa-tachometer-alt"></i> Dashboard
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-8 py-4 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#2563eb,#3b82f6);box-shadow:0 8px 32px -6px rgba(37,99,235,0.60);">
+                            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#2563eb,#3b82f6);box-shadow:0 8px 32px -6px rgba(37,99,235,0.60);">
                                 Daftar Kontingen
                             </a>
-                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-6 py-4 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
+                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-5 py-3.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </a>
                         @endauth
                     </div>
                 </div>
-                <div class="lg:w-1/2 flex items-center justify-center pb-24 relative">
+
+                <!-- Image — desktop only -->
+                <div class="hidden lg:flex lg:w-1/2 items-center justify-center pb-24 relative">
                     <div class="absolute inset-0 rounded-3xl pointer-events-none"
                          style="background: radial-gradient(ellipse at 50% 55%, rgba(30,60,255,0.40) 0%, rgba(255,60,30,0.20) 60%, transparent 80%); filter: blur(35px);"></div>
                     <img src="{{ asset('hero-fighters.png') }}" alt="Kempo Fighters"
