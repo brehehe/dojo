@@ -394,6 +394,108 @@
                 </div>
                 @endrole
 
+                @role('Super Admin|Admin|Arbitrase')
+                <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
+                    @mouseleave="open = false">
+                    <button
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.arbitrase.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-balance-scale text-sm opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-sm font-bold tracking-tight">Arbitrase</span>
+                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                            :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
+                    </button>
+
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 translate-y-2"
+                        class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
+                        x-cloak>
+                        <a href="{{ route('admin.master.referees') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div
+                                class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
+                                <i class="fas fa-users text-xs"></i>
+                            </div>
+                            Master Wasit
+                        </a>
+                        <a href="{{ route('admin.arbitrase.generate-referee') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div
+                                class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
+                                <i class="fas fa-gavel text-xs"></i>
+                            </div>
+                            Penugasan Wasit
+                        </a>
+                    </div>
+                </div>
+                @endrole
+
+                @role('Super Admin|Admin|Panitera')
+                <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
+                    @mouseleave="open = false">
+                    <button
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.panitera.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-balance-scale text-sm opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-sm font-bold tracking-tight">Panitera</span>
+                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                            :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
+                    </button>
+
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 translate-y-2"
+                        class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
+                        x-cloak>
+                        <a href="{{ route('admin.panitera.scoring.index') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div
+                                class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
+                                <i class="fas fa-clipboard-check text-xs"></i>
+                            </div>
+                            Penilaian Wasit
+                        </a>
+                    </div>
+                </div>
+                @endrole
+
+                @role('Super Admin|Admin|Wasit')
+                <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
+                    @mouseleave="open = false">
+                    <button
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.referee.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-balance-scale text-sm opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-sm font-bold tracking-tight">Perwasitan</span>
+                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                            :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
+                    </button>
+
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 translate-y-2"
+                        class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
+                        x-cloak>
+                        <hr class="my-2 border-slate-50 mx-4">
+                        <a href="{{ route('admin.referee.scoring') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div
+                                class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
+                                <i class="fas fa-tablet-alt text-xs"></i>
+                            </div>
+                            Dashboard Wasit (Live)
+                        </a>
+                    </div>
+                </div>
+                @endrole
+
                 @role('Contingent')
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
@@ -542,6 +644,27 @@
                         class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Rundown</a>
                     <a href="{{ route('admin.master.court') }}"
                         class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Court</a>
+                </div>
+            </div>
+            @endrole
+
+            @role('Super Admin|Admin|Arbitrase')
+            <div x-data="{ open: false }" class="space-y-2">
+                <button @click="open = !open"
+                    class="w-full flex items-center justify-between p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-balance-scale text-lg"></i>
+                        <span class="font-black uppercase tracking-wider text-xs">Arbitrase</span>
+                    </div>
+                    <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
+                    <a href="{{ route('admin.arbitrase.generate-referee') }}"
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.arbitrase.generate-referee') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Penugasan
+                        Wasit</a>
+                    <a href="{{ route('admin.arbitrase.scoring.index') }}"
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.arbitrase.scoring.*') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Penilaian
+                        Wasit</a>
                 </div>
             </div>
             @endrole

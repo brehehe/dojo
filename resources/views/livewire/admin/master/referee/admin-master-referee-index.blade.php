@@ -88,8 +88,8 @@
                                     </div>
                                     <div class="flex flex-col">
                                         <span
-                                            class="font-bold text-slate-800 text-[13px] group-hover:text-orange-600 transition-colors">{{ $referee->name }}</span>
-                                        <span class="text-[10px] text-slate-400 font-semibold">{{ $referee->email }}</span>
+                                            class="font-bold text-slate-800 text-[13px] group-hover:text-orange-600 transition-colors">{{ $referee->user->name }}</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold">{{ $referee->user->email }}</span>
                                     </div>
                                 </div>
                             </td>

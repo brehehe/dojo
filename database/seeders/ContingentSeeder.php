@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\Athlete;
-use App\Models\Category;
 use App\Models\Contingent;
-use App\Models\Official;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ContingentSeeder extends Seeder
 {
@@ -15,41 +15,56 @@ class ContingentSeeder extends Seeder
      */
     public function run(): void
     {
-        Contingent::factory(5)
-            ->create()
-            ->each(function ($contingent) {
-                // Add Officials (Now master data, linked via registration_official pivot later)
-                Official::create([
-                    'contingent_id' => $contingent->id,
-                    'name' => fake()->name(),
-                    'role' => 'Official',
-                    'phone' => fake()->phoneNumber(),
-                ]);
+        // For Postgres FK constraint checks
+        DB::statement('SET session_replication_role = \'replica\';');
+        Contingent::truncate();
 
-                Official::create([
-                    'contingent_id' => $contingent->id,
-                    'name' => fake()->name(),
-                    'role' => 'Official',
-                    'phone' => fake()->phoneNumber(),
-                ]);
+        // Remove existing Sura/Baya users if they exist to prevent duplication on re-run
+        User::whereIn('email', ['sura@example.com', 'baya@example.com'])->delete();
+        DB::statement('SET session_replication_role = \'origin\';');
 
-                // Create Athletes (Master Data)
-                $athletes = Athlete::factory(rand(5, 10))->create();
+        $contingents = [
+            [
+                'name' => 'Sura',
+                'email' => 'sura@example.com',
+                'password' => 'password',
+                'contingent_name' => 'Kontingen Sura',
+                'contingent_city' => 'Surabaya',
+                'leader_name' => 'Ketua Sura',
+                'leader_phone' => '081234567890',
+                'address' => 'Jl. Sura No. 1',
+            ],
+            [
+                'name' => 'Baya',
+                'email' => 'baya@example.com',
+                'password' => 'password',
+                'contingent_name' => 'Kontingen Baya',
+                'contingent_city' => 'Surabaya',
+                'leader_name' => 'Ketua Baya',
+                'leader_phone' => '081234567891',
+                'address' => 'Jl. Baya No. 2',
+            ],
+        ];
 
-                // Assign to Contingent as Primary Members
-                foreach ($athletes as $athlete) {
-                    $athlete->contingents()->attach($contingent->id, [
-                        'is_primary' => true,
-                        'joined_at' => now(),
-                    ]);
+        foreach ($contingents as $data) {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+            ]);
 
-                    // Add some history
-                    $athlete->contingentHistories()->create([
-                        'contingent_id' => $contingent->id,
-                        'moved_at' => now(),
-                        'notes' => 'Seeded as initial member',
-                    ]);
-                }
-            });
+            // Assign 'Contingent' role specifically for member registration
+            $user->assignRole('Contingent');
+
+            Contingent::create([
+                'user_id' => $user->id,
+                'name' => $data['contingent_name'],
+                'kab_kota' => $data['contingent_city'],
+                'leader_name' => $data['leader_name'],
+                'leader_phone' => $data['leader_phone'],
+                'email' => $user->email,
+                'address' => $data['address'],
+            ]);
+        }
     }
 }

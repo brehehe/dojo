@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\MatchNumber\MatchNumber;
+use Database\Factories\RefereeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,8 +25,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class Referee extends Model
 {
-    /** @use HasFactory<\Database\Factories\RefereeFactory> */
+    /** @use HasFactory<RefereeFactory> */
     use HasFactory;
+
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
 
     /**
      * Get the user that owns the referee profile
@@ -32,5 +38,11 @@ class Referee extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function matchNumbers()
+    {
+        return $this->belongsToMany(MatchNumber::class, 'match_number_referee')
+            ->withTimestamps();
     }
 }
