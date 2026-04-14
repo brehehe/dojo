@@ -465,8 +465,8 @@
                         <span class="text-orange-400 text-xs font-bold uppercase tracking-widest">Tentang Kejuaraan</span>
                     </div>
                     <h2 class="bebas text-5xl md:text-6xl text-white mb-6 tracking-wide leading-tight">SHORINJI KEMPO<br><span class="text-orange-400">PIALA WALIKOTA</span></h2>
-                    <p class="text-white/50 leading-relaxed mb-6">Kejuaraan Shorinji Kempo Piala Walikota Surabaya merupakan turnamen bergengsi yang mempertemukan kenshi terbaik dari seluruh penjuru nusantara untuk bersaing dan menunjukkan teknik terbaik mereka.</p>
-                    <p class="text-white/50 leading-relaxed">Diselenggarakan dengan standar PERKEMI Nasional, kejuaraan ini menjadi ajang pengkaderan atlet berprestasi sekaligus wadah silaturahmi antar dojo seluruh Indonesia.</p>
+                    <p class="text-white/50 leading-relaxed mb-6">Kejuaraan Shorinji Kempo Piala Walikota Surabaya merupakan turnamen bergengsi yang mempertemukan kenshi terbaik dari seluruh Jawa Timur untuk bersaing dan menunjukkan teknik terbaik mereka.</p>
+                    <p class="text-white/50 leading-relaxed">Diselenggarakan dengan standar PERKEMI Nasional, kejuaraan ini menjadi ajang pengkaderan atlet berprestasi sekaligus wadah silaturahmi antar dojo Kota / Kabupaten Jawa Timur.</p>
 
                     <div class="grid grid-cols-2 gap-4 mt-10">
                         @foreach([['fa-map-marker-alt', 'Lokasi', 'GOR Surabaya, Jawa Timur'], ['fa-calendar', 'Jadwal', 'Mei 2026'], ['fa-users', 'Peserta', 'Terbuka Umum (Kyu & Dan)'], ['fa-award', 'Hadiah', 'Piala + Medali + Sertifikat']] as $item)
