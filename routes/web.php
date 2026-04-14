@@ -35,6 +35,7 @@ Route::get('/welcome/1', [WelcomeController::class, 'template1'])->name('welcome
 Route::get('/welcome/2', [WelcomeController::class, 'template2'])->name('welcome.2');
 Route::get('/welcome/3', [WelcomeController::class, 'template3'])->name('welcome.3');
 Route::get('/welcome/4', [WelcomeController::class, 'template4'])->name('welcome.4');
+Route::get('/welcome/4/{color}', [WelcomeController::class, 'template4Color'])->name('welcome.4.color');
 Route::get('/welcome/5', [WelcomeController::class, 'template5'])->name('welcome.5');
 
 Route::view('/piala_walikotasby2026', 'register')->name('register');
