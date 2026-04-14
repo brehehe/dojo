@@ -57,7 +57,7 @@ class MatchNumberSeeder extends Seeder
             ]);
 
             foreach (['Laki-laki', 'Perempuan'] as $genderId) {
-                if (! isset($groupData[$genderId])) {
+                if (!isset($groupData[$genderId])) {
                     continue;
                 }
 
@@ -84,7 +84,7 @@ class MatchNumberSeeder extends Seeder
                         'gender' => $genderEnum,
                         'draft_type' => $draftType,
                         'max_athletes' => $maxAthletes,
-                        'order' => 0, // optional sorting for later
+                        'order' => 1, // optional sorting for later
                     ]);
                 }
             }

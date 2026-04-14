@@ -384,17 +384,17 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Nama Lengkap <span class="required">*</span></label>
-                                            <input type="text" wire:model="athletes.{{ $index }}.name" class="form-input-custom @error('athletes.'.$index.'.name') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
+                                            <input type="text" wire:model="athletes.{{ $index }}.name" class="form-input-custom @error('athletes.'.$index.'.name') border-red-500 @enderror">
                                             @error('athletes.'.$index.'.name') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>NIK <span class="required">*</span></label>
-                                            <input type="text" pattern="[0-9]{16}" maxlength="16" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" wire:model="athletes.{{ $index }}.nik" class="form-input-custom @error('athletes.'.$index.'.nik') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
+                                            <input type="text" pattern="[0-9]{16}" maxlength="16" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" wire:model="athletes.{{ $index }}.nik" class="form-input-custom @error('athletes.'.$index.'.nik') border-red-500 @enderror">
                                             @error('athletes.'.$index.'.nik') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Jenis Kelamin <span class="required">*</span></label>
-                                            <select wire:model="athletes.{{ $index }}.gender" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            <select wire:model="athletes.{{ $index }}.gender" class="form-input-custom">
                                                 <option value="Male">Laki-laki</option>
                                                 <option value="Female">Perempuan</option>
                                             </select>
@@ -404,17 +404,17 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Tempat Lahir <span class="required">*</span></label>
-                                            <input type="text" wire:model="athletes.{{ $index }}.birth_place" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            <input type="text" wire:model="athletes.{{ $index }}.birth_place" class="form-input-custom">
                                             @error('athletes.'.$index.'.birth_place') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Tanggal Lahir <span class="required">*</span></label>
-                                            <input type="date" wire:model="athletes.{{ $index }}.birth_date" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            <input type="date" wire:model="athletes.{{ $index }}.birth_date" class="form-input-custom">
                                             @error('athletes.'.$index.'.birth_date') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Golongan Darah</label>
-                                            <select wire:model="athletes.{{ $index }}.blood_type" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            <select wire:model="athletes.{{ $index }}.blood_type" class="form-input-custom">
                                                 <option value="">Pilih...</option>
                                                 <option value="A">A</option>
                                                 <option value="B">B</option>
@@ -432,7 +432,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-span-3">
                                             <label>Alamat Rumah (Sesuai KTP/KK) <span class="required">*</span></label>
-                                            <input type="text" wire:model="athletes.{{ $index }}.address" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
+                                            <input type="text" wire:model="athletes.{{ $index }}.address" class="form-input-custom">
                                             @error('athletes.'.$index.'.address') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
@@ -537,10 +537,10 @@
 
                                                         <div class="p-3 bg-white/50 rounded-xl border border-indigo-100/50 mt-1">
                                                             @if($isLeader)
-                                                                <label class="!text-[9px] !mb-1 text-indigo-600">Pilih Teknik (Berurutan)</label>
+                                                                <label class="!text-[9px] !mb-1 text-indigo-600">Pilih Komposisi (Berurutan)</label>
                                                                 <div x-data="{ selectedTech: '' }" class="flex gap-1">
                                                                     <select x-model="selectedTech" class="form-input-custom !py-1 !px-2 !text-xs !rounded-lg">
-                                                                        <option value="">+ Tambah Teknik</option>
+                                                                        <option value="">+ Tambah Komposisi</option>
                                                                         @foreach($techniques as $tech)
                                                                             <option value="{{ $tech->id }}">{{ $tech->name }}</option>
                                                                         @endforeach
@@ -555,7 +555,7 @@
                                                                 <div class="flex items-center gap-2 mb-2">
                                                                     <div class="w-1 h-1 rounded-full bg-orange-400"></div>
                                                                     <span class="text-[9px] font-bold text-orange-600 uppercase tracking-tight italic">
-                                                                        Teknik dari: {{ $leaderInfo['athlete_name'] }}
+                                                                        Komposisi dari: {{ $leaderInfo['athlete_name'] }}
                                                                     </span>
                                                                 </div>
                                                             @endif
@@ -570,7 +570,7 @@
                                                                         <button type="button" 
                                                                             wire:click="removeTechniqueFromMatch('{{ $athlete[$evField] }}', {{ $tIdx }})" 
                                                                             class="text-slate-300 hover:text-rose-500 transition-colors"
-                                                                            title="Hapus Teknik">
+                                                                            title="Hapus Komposisi">
                                                                             Hapus
                                                                         </button>
                                                                     </div>
