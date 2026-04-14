@@ -12,6 +12,7 @@ use App\Models\MatchNumber\MatchNumber;
 use App\Models\Official;
 use App\Models\Registration;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -257,7 +258,7 @@ class RegistrationForm extends Component
                     $this->athletes[$index]['gender'] = $athlete->gender;
                     $this->athletes[$index]['birth_place'] = $athlete->birth_place;
                     $this->athletes[$index]['blood_type'] = $athlete->blood_type;
-                    $this->athletes[$index]['birth_date'] = $athlete->birth_date;
+                    $this->athletes[$index]['birth_date'] = Carbon::parse($athlete->birth_date)->format('Y-m-d');
                     $this->athletes[$index]['address'] = $athlete->address;
                     $this->athletes[$index]['phone'] = $athlete->phone;
                     $this->athletes[$index]['bpjs_number'] = $athlete->bpjs_number;
