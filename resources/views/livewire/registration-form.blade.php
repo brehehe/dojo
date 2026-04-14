@@ -279,12 +279,33 @@
                             <div class="p-6 bg-white border-2 border-slate-100 rounded-2xl" wire:key="official-{{ $index }}">
                                 <div class="form-row">
                                     <div class="form-group">
+                                        <label for="official-{{ $index }}-official_id">Nama Official</label>
+                                        <select wire:model.live="officials.{{ $index }}.official_id" class="form-input-custom">
+                                            <option value="">-- Cari Nama Official --</option>
+                                            @foreach($masterOfficials as $official)
+                                                <option value="{{ $official->id }}">{{ $official->name }}</option>
+                                            @endforeach
+                                            <option value="new" class="font-bold text-orange-600">+ REGISTRASI OFFICIAL BARU</option>
+                                        </select>
+                                        
+                                    </div>
+                                    <div class="form-group">
                                         <label>Nama Official</label>
                                         <input type="text" wire:model="officials.{{ $index }}.name" class="form-input-custom">
+                                            @error('officials.'.$index.'.name') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                     </div>
                                     <div class="form-group">
                                         <label>Jabatan</label>
-                                        <input type="text" wire:model="officials.{{ $index }}.role" class="form-input-custom">
+                                        <select wire:model="officials.{{ $index }}.role" class="form-input-custom">
+                                            <option value="">-- Pilih Jabatan --</option>
+                                            <option value="Official">Official</option>
+                                            <option value="Manajer Tim">Manajer Tim</option>
+                                            <option value="Pelatih">Pelatih</option>
+                                            <option value="Medis">Medis</option>
+                                            <option value="Humas">Humas</option>
+                                        </select>
+                                            @error('officials.'.$index.'.role') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+
                                     </div>
                                     <div class="form-group">
                                         <label>Kontak HP</label>
@@ -294,6 +315,8 @@
                                                 <button type="button" wire:click="removeOfficial({{ $index }})" class="btn-remove">HAPUS</button>
                                             @endif
                                         </div>
+                                            @error('officials.'.$index.'.phone') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+
                                     </div>
                                 </div>
                             </div>
@@ -340,12 +363,9 @@
                                     <div class="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 flex flex-col md:flex-row items-center gap-6">
                                         <div class="relative w-28 h-28 bg-white rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
                                             @if($athlete['photo'])
-                                                <img src="{{ $athlete['photo']->temporaryUrl() }}" class="w-full h-full object-cover">
-                                            @elseif(isset($athlete['athlete_id']) &&
-    is_numeric($athlete['athlete_id']) &&
-    ($master = \App\Models\Athlete::find($athlete['athlete_id'])) &&
-    $master->photo_path)
-                                                <img src="{{ asset('storage/' . $master->photo_path) }}" class="w-full h-full object-cover">
+                                                <img src="{{ $athlete['photo']->temporaryUrl() }}" class="w-[50] h-[50] object-cover">
+                                            @elseif(isset($athlete['athlete_id']) && is_numeric($athlete['athlete_id']) && ($master = \App\Models\Athlete::find($athlete['athlete_id'])) && $master->photo_path)
+                                                <img src="{{ asset('storage/' . $master->photo_path) }}" class="w-[50] h-[50] object-cover">
                                             @else
                                                 <div class="text-center p-2">
                                                     <i class="fas fa-camera text-slate-300 text-xl block mb-1"></i>
@@ -357,7 +377,7 @@
                                         <div class="flex-1">
                                             <label class="!mb-1">Foto Profil / Pas Foto <span class="required">*</span></label>
                                             <p class="text-[9px] text-slate-400 mb-2 font-medium">Unggah pas foto formal (Background Merah/Biru) ukuran 3x4. Maksimal 2MB.</p>
-                                            @error('athletes.'.$index.'.photo') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.photo') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
 
@@ -365,12 +385,12 @@
                                         <div class="form-group">
                                             <label>Nama Lengkap <span class="required">*</span></label>
                                             <input type="text" wire:model="athletes.{{ $index }}.name" class="form-input-custom @error('athletes.'.$index.'.name') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.name') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.name') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>NIK <span class="required">*</span></label>
-                                            <input type="text" wire:model="athletes.{{ $index }}.nik" class="form-input-custom @error('athletes.'.$index.'.nik') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.nik') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            <input type="text" pattern="[0-9]{16}" maxlength="16" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');" wire:model="athletes.{{ $index }}.nik" class="form-input-custom @error('athletes.'.$index.'.nik') border-red-500 @enderror" @if($athlete['is_master_found']) disabled @endif>
+                                            @error('athletes.'.$index.'.nik') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Jenis Kelamin <span class="required">*</span></label>
@@ -385,15 +405,15 @@
                                         <div class="form-group">
                                             <label>Tempat Lahir <span class="required">*</span></label>
                                             <input type="text" wire:model="athletes.{{ $index }}.birth_place" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.birth_place') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.birth_place') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Tanggal Lahir <span class="required">*</span></label>
                                             <input type="date" wire:model="athletes.{{ $index }}.birth_date" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.birth_date') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.birth_date') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
-                                            <label>Golongan Darah <span class="required">*</span></label>
+                                            <label>Golongan Darah</label>
                                             <select wire:model="athletes.{{ $index }}.blood_type" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
                                                 <option value="">Pilih...</option>
                                                 <option value="A">A</option>
@@ -405,20 +425,15 @@
                                                 <option value="O+">O+</option>
                                                 <option value="AB+">AB+</option>
                                             </select>
-                                            @error('athletes.'.$index.'.blood_type') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.blood_type') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
 
                                     <div class="form-row">
-                                        <div class="form-group col-span-2">
+                                        <div class="form-group col-span-3">
                                             <label>Alamat Rumah (Sesuai KTP/KK) <span class="required">*</span></label>
                                             <input type="text" wire:model="athletes.{{ $index }}.address" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.address') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Nomor HP Atlet/Orang Tua</label>
-                                            <input type="tel" wire:model="athletes.{{ $index }}.phone" class="form-input-custom" @if($athlete['is_master_found']) disabled @endif>
-                                            @error('athletes.'.$index.'.phone') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.address') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
 
@@ -426,7 +441,7 @@
                                         <div class="form-group">
                                             <label>Asal Dojo <span class="required">*</span></label>
                                             <input type="text" wire:model="athletes.{{ $index }}.dojo_origin" class="form-input-custom @error('athletes.'.$index.'.dojo_origin') border-red-500 @enderror">
-                                            @error('athletes.'.$index.'.dojo_origin') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.dojo_origin') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                         <div class="form-group">
                                             <label>Kelompok Usia</label>
@@ -436,6 +451,8 @@
                                                     <option value="{{ $group->id }}">{{ $group->name }}</option>
                                                 @endforeach
                                             </select>
+                                            @error('athletes.'.$index.'.age_group') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+
                                             @php
                                                 $selectedAgeGroup = $ageGroups->firstWhere('id', $athlete['age_group']);
                                             @endphp
@@ -462,16 +479,17 @@
                                             <div class="form-group">
                                                 <label>Nomor BPJS</label>
                                                 <input type="text" wire:model="athletes.{{ $index }}.bpjs_number" class="form-input-custom" placeholder="1234...">
-                                                @error('athletes.'.$index.'.bpjs_number') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                                @error('athletes.'.$index.'.bpjs_number') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                             </div>
                                             <div class="form-group">
                                                 <label>Status</label>
                                                 <select wire:model="athletes.{{ $index }}.bpjs_status" class="form-input-custom">
+                                                    <option value="">PILIH STATUS</option>
                                                     <option value="Aktif">AKTIF</option>
                                                     <option value="Tidak Aktif">TIDAK AKTIF</option>
                                                     <option value="Dalam Proses">DALAM PROSES</option>
                                                 </select>
-                                                @error('athletes.'.$index.'.bpjs_status') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                                @error('athletes.'.$index.'.bpjs_status') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
                                     </div>
@@ -483,7 +501,7 @@
                                             <div class="form-group">
                                                 <label>Berat Badan (KG)</label>
                                                 <input type="number" step="0.1" wire:model="athletes.{{ $index }}.current_weight" class="form-input-custom">
-                                                @error('athletes.'.$index.'.current_weight') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                                @error('athletes.'.$index.'.current_weight') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                             </div>
                                             <div class="form-group">
                                                 <label>Kelompok Berat</label>
@@ -493,7 +511,7 @@
                                                         <option value="{{ $group->id }}">{{ $group->name }}</option>
                                                     @endforeach
                                                 </select>
-                                                @error('athletes.'.$index.'.weight_group_id') <p class="text-[9px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                                @error('athletes.'.$index.'.weight_group_id') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
                                     </div>
@@ -509,6 +527,59 @@
                                                             <option value="{{ $id }}">{{ $name }}</option>
                                                         @endforeach
                                                     </select>
+
+                                                    <!-- TECHNIQUE SELECTION LATER -->
+                                                    @if($athlete[$evField])
+                                                        @php
+                                                            $leaderInfo = $this->getMatchLeaderInfo($athlete[$evField]);
+                                                            $isLeader = ($leaderInfo && $leaderInfo['athlete_index'] == $index && $leaderInfo['field'] == $evField);
+                                                        @endphp
+
+                                                        <div class="p-3 bg-white/50 rounded-xl border border-indigo-100/50 mt-1">
+                                                            @if($isLeader)
+                                                                <label class="!text-[9px] !mb-1 text-indigo-600">Pilih Teknik (Berurutan)</label>
+                                                                <div x-data="{ selectedTech: '' }" class="flex gap-1">
+                                                                    <select x-model="selectedTech" class="form-input-custom !py-1 !px-2 !text-xs !rounded-lg">
+                                                                        <option value="">+ Tambah Teknik</option>
+                                                                        @foreach($techniques as $tech)
+                                                                            <option value="{{ $tech->id }}">{{ $tech->name }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                    <button type="button" 
+                                                                        @click="if(selectedTech) { $wire.addTechniqueToMatch('{{ $athlete[$evField] }}', selectedTech); selectedTech = ''; }" 
+                                                                        class="bg-indigo-600 text-white px-3 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors">
+                                                                        ADD
+                                                                    </button>
+                                                                </div>
+                                                            @else
+                                                                <div class="flex items-center gap-2 mb-2">
+                                                                    <div class="w-1 h-1 rounded-full bg-orange-400"></div>
+                                                                    <span class="text-[9px] font-bold text-orange-600 uppercase tracking-tight italic">
+                                                                        Teknik dari: {{ $leaderInfo['athlete_name'] }}
+                                                                    </span>
+                                                                </div>
+                                                            @endif
+
+                                                            <div class="mt-2 space-y-2">
+                                                                @forelse($matchTechniques[$athlete[$evField]] ?? [] as $tIdx => $tId)
+                                                                    @php $tName = $techniques->firstWhere('id', $tId)?->name ?? 'Unknown'; @endphp
+                                                                    <div class="flex justify-between items-center bg-white px-3 py-2 rounded-xl border border-indigo-50 shadow-sm group hover:border-indigo-200 transition-all animate-in slide-in-from-top-1">
+                                                                        <span class="text-[10px] font-bold text-slate-700 uppercase tracking-tight">
+                                                                            <span class="text-indigo-400 mr-2 font-black">{{ $tIdx + 1 }}.</span> {{ $tName }}
+                                                                        </span>
+                                                                        <button type="button" 
+                                                                            wire:click="removeTechniqueFromMatch('{{ $athlete[$evField] }}', {{ $tIdx }})" 
+                                                                            class="text-slate-300 hover:text-rose-500 transition-colors"
+                                                                            title="Hapus Teknik">
+                                                                            Hapus
+                                                                        </button>
+                                                                    </div>
+                                                                @empty
+                                                                    <p class="text-[9px] text-slate-400 italic font-medium px-1">Belum ada teknik ditambahkan.</p>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             @endforeach
                                             @error('athletes.'.$index.'.events') <p class="text-[10px] text-red-500 font-bold mt-1 col-span-full">{{ $message }}</p> @enderror
@@ -524,75 +595,109 @@
                     </div>
                 </div>
 
-                <!-- ==================== RINGKASAN PENDAFTARAN ==================== -->
+                <!-- ==================== NOMOR DAN KELOMPOK PERTANDINGAN ==================== -->
                 <div class="section">
-                    <div class="section-title">D. RINGKASAN NOMOR PERTANDINGAN</div>
-                    <div class="bg-slate-50 rounded-3xl p-6 border-2 border-slate-100">
-                        <div class="space-y-4">
-                            @forelse($this->matchSummary as $mId => $data)
-                                <div class="p-5 bg-white rounded-2xl shadow-sm border border-slate-200" wire:key="match-summary-{{ $mId }}">
-                                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                                        <div class="flex items-center gap-4">
-                                            <div class="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black shadow-lg">
-                                                <i class="fas fa-trophy text-sm"></i>
-                                            </div>
-                                            <div>
-                                                <h4 class="font-black text-slate-800 uppercase text-sm leading-tight">{{ $data['name'] }}</h4>
-                                                <span class="text-[9px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded leading-none">
-                                                    {{ $data['age_group'] }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pendaftar:</span>
-                                            <p class="text-xs font-black text-slate-700 uppercase">{{ count($data['athletes']) }} Orang</p>
-                                        </div>
+                    <div class="section-title">D. NOMOR DAN KELOMPOK PERTANDINGAN</div>
+                    
+                    <div class="space-y-12">
+                        @forelse($this->matchSummary as $gender => $ageGroups)
+                            <div class="gender-block" wire:key="gender-{{ $gender }}">
+                                <!-- GENDER HEADER -->
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="h-[2px] flex-1 bg-slate-200"></div>
+                                    <div class="flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-full shadow-lg">
+                                        <i class="fas @if($gender == 'Male') fa-mars @elseif($gender == 'Female') fa-venus @else fa-venus-mars @endif text-xs"></i>
+                                        <span class="text-xs font-black uppercase tracking-[0.2em]">{{ $gender == 'Male' ? 'LAKI-LAKI' : ($gender == 'Female' ? 'PEREMPUAN' : 'CAMPURAN / MIX') }}</span>
                                     </div>
-                                    
-                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        <!-- Technique Selection -->
-                                        <div class="bg-orange-50/50 rounded-2xl p-5 border border-orange-100">
-                                            <div class="flex items-center justify-between mb-4">
-                                                <h5 class="text-[10px] font-black text-orange-600 uppercase tracking-widest leading-none">PILIHAN TEKNIK (UNTUK SEMUA ATLET)</h5>
-                                                <span class="text-[8px] font-bold text-orange-400 bg-orange-100/50 px-2 py-0.5 rounded uppercase">Wajib Pilih</span>
-                                            </div>
-                                            <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                                                @foreach($techniques as $tech)
-                                                    <label class="flex items-center gap-2 p-2 bg-white hover:bg-orange-100 rounded-xl cursor-pointer transition-all border border-slate-100 hover:border-orange-200 group"
-                                                           wire:key="match-{{ $mId }}-tech-{{ $tech->id }}">
-                                                        <input type="checkbox" 
-                                                               wire:model.live="matchTechniques.{{ $mId }}" 
-                                                               value="{{ $tech->id }}"
-                                                               class="w-4 h-4 rounded-md border-slate-300 text-orange-600 focus:ring-orange-500">
-                                                        <span class="text-[10px] font-bold text-slate-600 group-hover:text-orange-800 transition-colors leading-tight">{{ $tech->name }}</span>
-                                                    </label>
-                                                @endforeach
-                                            </div>
-                                        </div>
+                                    <div class="h-[2px] flex-1 bg-slate-200"></div>
+                                </div>
 
-                                        <!-- Registered Athletes -->
-                                        <div>
-                                            <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 leading-none">DAFTAR ATLET DI NOMOR INI</h5>
-                                            <div class="space-y-2 border-l-2 border-slate-100 pl-4">
-                                                @foreach($data['athletes'] as $athleteName)
-                                                    <div class="flex items-center gap-3 py-1 animate-in slide-in-from-left-2 duration-300">
-                                                        <div class="w-2 h-2 rounded-full bg-orange-400 shadow-sm shadow-orange-200"></div>
-                                                        <span class="text-xs font-black text-slate-700 uppercase tracking-tight">{{ $athleteName }}</span>
+                                <div class="space-y-10 pl-4 md:pl-8 border-l-4 border-slate-50">
+                                    @foreach($ageGroups as $ageGroupName => $matches)
+                                        <div class="age-group-block" wire:key="age-{{ $gender }}-{{ $ageGroupName }}">
+                                            <!-- AGE GROUP HEADER -->
+                                            <div class="flex items-center gap-3 mb-6">
+                                                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black shadow-sm">
+                                                    {{ substr($ageGroupName, 0, 1) }}
+                                                </div>
+                                                <div>
+                                                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight leading-none">{{ $ageGroupName }}</h3>
+                                                    <p class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">KATEGORI KELOMPOK USIA</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="space-y-8">
+                                                @foreach($matches as $mId => $data)
+                                                    <div class="match-table-container" wire:key="match-table-{{ $mId }}">
+                                                        <div class="flex items-center justify-between mb-3 px-2">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                                                                <h4 class="text-[11px] font-black text-indigo-600 uppercase tracking-wide">{{ $data['name'] }}</h4>
+                                                            </div>
+                                                            <span class="text-[9px] font-bold text-slate-300 uppercase italic">Entry ID: #{{ $mId }}</span>
+                                                        </div>
+
+                                                        <div class="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+                                                            <div class="overflow-x-auto">
+                                                                <table class="w-full text-left border-collapse">
+                                                                    <thead>
+                                                                        <tr class="bg-slate-50/50 border-b border-slate-100">
+                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-16">No</th>
+                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider">Nama Peserta (Atlet)</th>
+                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider">Tingkat (Rank)</th>
+                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider">Urutan Komposisi yang Dimainkan :</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody class="divide-y divide-slate-50">
+                                                                        @foreach($data['athletes'] as $aIdx => $ath)
+                                                                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                                                                <td class="px-6 py-4 text-center">
+                                                                                    <span class="text-[10px] font-bold text-slate-400">{{ $aIdx + 1 }}</span>
+                                                                                </td>
+                                                                                <td class="px-6 py-4">
+                                                                                    <span class="text-[11px] font-black text-slate-700 uppercase tracking-tight">{{ $ath['name'] }}</span>
+                                                                                </td>
+                                                                                <td class="px-6 py-4">
+                                                                                    <span class="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-orange-100/50">
+                                                                                        {{ $ath['rank'] }}
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td class="px-6 py-4">
+                                                                                    @if($loop->first)
+                                                                                            @forelse($data['techniques'] as $tIdx => $tName)
+                                                                                                <div class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 mb-2">
+                                                                                                    <span class="text-[10px] font-black text-indigo-400">{{ $tIdx + 1 }}</span>
+                                                                                                    <span class="text-[10px] font-black text-indigo-700 uppercase tracking-tight whitespace-nowrap">{{ $tName }}</span>
+                                                                                                </div>
+                                                                                            @empty
+                                                                                                <span class="text-[10px] text-slate-300 font-bold uppercase italic tracking-widest">Belum ada teknik</span>
+                                                                                            @endforelse
+                                                                                    @else
+                                                                                        <span class="text-[9px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama seperti di atas)</span>
+                                                                                    @endif
+                                                                                </td>
+                                                                            </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 @endforeach
                                             </div>
                                         </div>
-                                    </div>
+                                    @endforeach
                                 </div>
-                            @empty
-                                <div class="text-center py-12">
-                                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-200 mx-auto mb-4 shadow-sm border border-slate-100">
-                                        <i class="fas fa-clipboard-list text-2xl"></i>
-                                    </div>
-                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Belum ada nomor pertandingan yang dipilih</p>
+                            </div>
+                        @empty
+                            <div class="bg-white border-2 border-dashed border-slate-200 rounded-[32px] py-20 text-center">
+                                <div class="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <i class="fas fa-trophy text-3xl"></i>
                                 </div>
-                            @endforelse
-                        </div>
+                                <h3 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Belum Ada Nomor Pertandingan</h3>
+                                <p class="text-[10px] text-slate-300 font-medium mt-2">Silakan pilih kategori pada data atlet di atas.</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -697,7 +802,7 @@
                                 </p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
                                     @foreach ($errors->all() as $error)
-                                        <div class="flex items-center gap-2 text-[10px] text-red-500 font-bold bg-white/50 p-2 rounded-xl border border-red-100">
+                                        <div class="flex items-center gap-2 text-[14px] text-red-500 font-bold bg-white/50 p-2 rounded-xl border border-red-100">
                                             <div class="w-1.5 h-1.5 rounded-full bg-red-400"></div>
                                             {{ $error }}
                                         </div>

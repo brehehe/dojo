@@ -48,20 +48,15 @@ class AdminMasterOfficialIndex extends Component
 
     public function render()
     {
-        $officials = Official::with(['registrations.contingent'])
-            ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('phone', 'like', '%'.$this->search.'%');
-            })
+        $officials = Official::when($this->search, function ($query) {
+            $query->where('name', 'like', '%' . $this->search . '%')
+                ->orWhere('phone', 'like', '%' . $this->search . '%');
+        })
             ->when($this->filterContingent, function ($query) {
-                $query->whereHas('registrations', function ($q) {
-                    $q->where('contingent_id', $this->filterContingent);
-                });
+                $query->where('contingent_id', $this->filterContingent);
             })
             ->when(auth()->user()->hasRole('Contingent'), function ($query) {
-                $query->whereHas('registrations', function ($q) {
-                    $q->where('contingent_id', auth()->user()->contingent?->id);
-                });
+                $query->where('contingent_id', auth()->user()->contingent?->id);
             })
             ->latest()
             ->paginate($this->perPage === 'all' ? Official::count() : $this->perPage);

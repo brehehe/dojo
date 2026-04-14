@@ -43,8 +43,8 @@ return new class extends Migration
         });
 
         Schema::table('officials', function (Blueprint $table) {
-            $table->dropForeign(['contingent_id']);
-            $table->dropColumn('contingent_id');
+            // $table->dropForeign(['contingent_id']);
+            // $table->dropColumn('contingent_id');
             $table->foreignId('registration_id')->nullable(false)->change();
         });
     }

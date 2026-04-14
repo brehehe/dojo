@@ -43,4 +43,9 @@ class Contingent extends Model
             ->withPivot('is_primary', 'joined_at')
             ->withTimestamps();
     }
+
+    public function officials()
+    {
+        return $this->belongsToMany(Official::class, 'officials');
+    }
 }

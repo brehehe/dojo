@@ -13,6 +13,7 @@ use App\Livewire\Admin\Master\Official\AdminMasterOfficialIndex;
 use App\Livewire\Admin\Master\Official\AdminMasterOfficialFormIndex;
 use App\Livewire\Admin\Master\KyuLevel\AdminMasterKyuLevelIndex;
 use App\Livewire\Admin\Master\MatchNumber\AdminMasterMatchNumberIndex;
+use App\Livewire\Admin\Master\Pool\AdminMasterPoolIndex;
 use App\Livewire\Admin\Master\Referee\AdminMasterRefereeIndex;
 use App\Livewire\Admin\Master\Role\AdminMasterRoleFormIndex;
 use App\Livewire\Admin\Master\Role\AdminMasterRoleIndex;
@@ -24,10 +25,18 @@ use App\Livewire\Admin\Registration\AdminRegistrationIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationShow;
 use App\Livewire\Auth\Login;
 use App\Livewire\GeneralDashboard;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome');
+// Welcome page templates (preview routes)
+Route::get('/', [WelcomeController::class, 'template1'])->name('welcome');
+Route::get('/welcome/1', [WelcomeController::class, 'template1'])->name('welcome.1');
+Route::get('/welcome/2', [WelcomeController::class, 'template2'])->name('welcome.2');
+Route::get('/welcome/3', [WelcomeController::class, 'template3'])->name('welcome.3');
+Route::get('/welcome/4', [WelcomeController::class, 'template4'])->name('welcome.4');
+Route::get('/welcome/5', [WelcomeController::class, 'template5'])->name('welcome.5');
+
 Route::view('/piala_walikotasby2026', 'register')->name('register');
 
 Route::middleware('guest')->group(function () {
@@ -65,6 +74,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/match-numbers', AdminMasterMatchNumberIndex::class)->name('match-numbers');
             Route::get('/rundown', AdminMasterRundownIndex::class)->name('rundown');
             Route::get('/court', AdminMasterCourtIndex::class)->name('court');
+            Route::get('/pool', AdminMasterPoolIndex::class)->name('pool');
 
             // Role Management
             Route::get('/roles', AdminMasterRoleIndex::class)->name('roles.index');
@@ -107,6 +117,11 @@ Route::middleware('auth')->group(function () {
 
         // Athlete Biodata Report (Grid)
         Route::get('/reports/athlete-biodata', \App\Livewire\Admin\Reports\AdminAthleteBiodataReport::class)->name('reports.athlete-biodata');
+
+        Route::prefix('technical-meeting')->name('technical-meeting.')->group(function () {
+            Route::get('/embu', \App\Livewire\Admin\TechnicalMeeting\Embu\AdminTechnicalMeetingEmbuIndex::class)->name('embu');
+            Route::get('/randori', \App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriIndex::class)->name('randori');
+        });
     });
 });
 

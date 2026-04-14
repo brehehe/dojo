@@ -20,12 +20,16 @@ class ContingentSeeder extends Seeder
             ->each(function ($contingent) {
                 // Add Officials (Now master data, linked via registration_official pivot later)
                 Official::create([
+                    'contingent_id' => $contingent->id,
                     'name' => fake()->name(),
+                    'role' => 'Official',
                     'phone' => fake()->phoneNumber(),
                 ]);
 
                 Official::create([
+                    'contingent_id' => $contingent->id,
                     'name' => fake()->name(),
+                    'role' => 'Official',
                     'phone' => fake()->phoneNumber(),
                 ]);
 

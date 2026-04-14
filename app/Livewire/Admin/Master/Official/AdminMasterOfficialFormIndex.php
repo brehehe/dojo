@@ -31,12 +31,13 @@ class AdminMasterOfficialFormIndex extends Component
 
             $this->name = $officialModel->name;
             $this->phone = $officialModel->phone;
-
+            $this->role = $officialModel->role;
+            
             // Get latest contingent and role attribution
             $latestReg = $officialModel->latestRegistration();
             if ($latestReg) {
                 $this->contingent_id = $latestReg->contingent_id;
-                $this->role = $latestReg->pivot->role;
+                // $this->role = $latestReg->pivot->role;
             }
         }
     }
@@ -53,6 +54,8 @@ class AdminMasterOfficialFormIndex extends Component
         $data = [
             'name' => $this->name,
             'phone' => $this->phone,
+            'role' => $this->role,
+            'contingent_id' => $this->contingent_id,
         ];
 
         if ($this->isEdit) {

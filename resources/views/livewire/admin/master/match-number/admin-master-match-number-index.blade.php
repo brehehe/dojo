@@ -217,9 +217,8 @@
                     </div>
 
                     <div class="space-y-1.5 md:col-span-2">
-                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Jenis
-                            Kelamin</label>
-                        <x-select wire:model="gender" placeholder="Pilih Jenis Kelamin..." :options="['Male' => 'Putra', 'Female' => 'Putri', 'Mix' => 'Mix']" />
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Kelompok Pertandingan</label>
+                        <x-select wire:model="gender" placeholder="Pilih Kelompok Pertandingan..." :options="['Male' => 'Putra', 'Female' => 'Putri', 'Mix' => 'Mix']" />
                         @error('gender') <p class="text-[10px] text-red-500 mt-1 ml-1 font-bold italic">{{ $message }}
                         </p> @enderror
                     </div>

@@ -12,6 +12,8 @@ class Official extends Model
     protected $fillable = [
         'name',
         'phone',
+        'contingent_id',
+        'role',
         // Identity data here in the future
     ];
 
@@ -27,7 +29,7 @@ class Official extends Model
         return $this->registrations()->latest('registrations.created_at')->first();
     }
 
-    public function getRoleAttribute()
+    public function getRoleLatestAttribute()
     {
         return $this->latestRegistration()?->pivot?->role;
     }
@@ -35,5 +37,10 @@ class Official extends Model
     public function getContingentAttribute()
     {
         return $this->latestRegistration()?->contingent;
+    }
+
+    public function Contingent()
+    {
+        return $this->belongsTo(Contingent::class, 'contingent_id');
     }
 }

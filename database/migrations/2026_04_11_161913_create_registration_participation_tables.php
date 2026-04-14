@@ -5,8 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -82,13 +81,21 @@ return new class extends Migration
         Schema::table('athletes', function (Blueprint $table) {
             $table->dropForeign(['registration_id']);
             $table->dropColumn([
-                'registration_id', 'weight', 'kyu', 'age_group', 'rank', 'match_type', 'dojo_origin', 'city', 'age',
+                'registration_id',
+                'weight',
+                'kyu',
+                'age_group',
+                'rank',
+                'match_type',
+                'dojo_origin',
+                'city',
+                'age',
             ]);
         });
 
         Schema::table('officials', function (Blueprint $table) {
             $table->dropForeign(['registration_id']);
-            $table->dropColumn(['registration_id', 'role']);
+            $table->dropColumn(['registration_id']);
         });
 
         Schema::table('athlete_category', function (Blueprint $table) {
