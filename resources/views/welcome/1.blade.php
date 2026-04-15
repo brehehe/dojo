@@ -297,7 +297,7 @@
 
                 <!-- Mobile: faded background image -->
                 <div class="lg:hidden absolute inset-0 pointer-events-none" style="z-index:-1;">
-                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover object-center opacity-10 scale-x-[-1]">
+                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover object-center opacity-10">
                     <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(0,8,60,0.3) 0%, rgba(0,8,60,0.85) 100%);"></div>
                 </div>
 
@@ -334,7 +334,7 @@
                     <div class="absolute inset-0 rounded-3xl pointer-events-none"
                          style="background: radial-gradient(ellipse at 50% 55%, rgba(30,60,255,0.40) 0%, rgba(255,60,30,0.20) 60%, transparent 80%); filter: blur(35px);"></div>
                     <img src="{{ asset('hero-fighters.png') }}" alt="Kempo Fighters"
-                         class="hero-img hero-img-float relative w-full max-w-xl object-contain scale-x-[-1]"
+                         class="hero-img hero-img-float relative w-full max-w-xl object-contain"
                          style="filter: drop-shadow(0 0 50px rgba(40,80,255,0.55)) drop-shadow(0 0 30px rgba(255,40,40,0.30));">
                 </div>
             </div>
