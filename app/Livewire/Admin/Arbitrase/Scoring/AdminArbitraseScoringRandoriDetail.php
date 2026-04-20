@@ -4,7 +4,10 @@ namespace App\Livewire\Admin\Arbitrase\Scoring;
 
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
+use App\Models\RandoriJudgeScore;
+use App\Services\RandoriScoringService;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 #[Layout('layouts.admin')]
@@ -21,6 +24,19 @@ class AdminArbitraseScoringRandoriDetail extends Component
     public $scoreBlue = 0;
 
     public $showModal = false;
+
+    #[Computed]
+    public function scoringStatus()
+    {
+        if (!$this->activeMatch) return collect();
+
+        $nodeKey = $this->activeMatch['bracket'].'_'.$this->activeMatch['round'].'_'.$this->activeMatch['match'];
+        
+        return RandoriJudgeScore::where('match_number_id', $this->matchNumber->id)
+            ->where('bracket_node', $nodeKey)
+            ->get()
+            ->keyBy('judge_index');
+    }
 
     public function mount(MatchNumber $matchNumber)
     {
@@ -354,6 +370,28 @@ class AdminArbitraseScoringRandoriDetail extends Component
     }
 
     // ─── SIMPAN PEMENANG + PROPAGASI ─────────────────────────
+
+    /** 
+     * Auto Calculate and Determine Winner based on Judge Scores.
+     */
+    public function autoDetermineWinner(string $bracket, int $roundIdx, int $matchIdx, RandoriScoringService $scoringService)
+    {
+        $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
+        $result = $scoringService->calculateResult($this->matchNumber->id, $nodeKey);
+        
+        $this->scoreRed = $result['total_aka'];
+        $this->scoreBlue = $result['total_shiro'];
+        
+        if ($result['winnerColor']) {
+            $this->selectWinner($bracket, $roundIdx, $matchIdx, $result['winnerColor']);
+        } else {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Skor Seri (Hikiwake)',
+                'text' => 'Tentukan pemenang secara manual atau lakukan perpanjangan waktu.',
+            ]);
+        }
+    }
 
     public function selectWinner(string $bracket, int $roundIdx, int $matchIdx, string $winnerSlot)
     {

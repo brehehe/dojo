@@ -119,9 +119,22 @@ class RefereeScoringDashboard extends Component
 
     public function loadExistingDetails()
     {
-        $id = $this->activeMatch->draft_type === 'embu' 
-            ? $this->activeMatch->active_registration_id 
-            : $this->activeMatch->active_bracket_node;
+        if ($this->activeMatch->draft_type === 'embu') {
+            $id = $this->activeMatch->active_registration_id;
+        } else {
+            $bracketNode = $this->activeMatch->active_bracket_node;
+            if (!$bracketNode) return;
+            
+            $parts = explode('_', $bracketNode);
+            $bracketSection = $parts[0] ?? 'ub';
+            $bracketNodeIndex = (isset($parts[1]) && isset($parts[2])) ? $parts[1].'_'.$parts[2] : '0_0';
+            
+            $randoriMatch = \App\Models\RandoriMatchResult::firstOrCreate(
+                ['match_number_id' => $this->activeMatch->id, 'bracket_node' => $bracketNode],
+                ['bracket_node_index' => $bracketNodeIndex, 'bracket_section' => $bracketSection]
+            );
+            $id = $randoriMatch->id;
+        }
 
         if (!$id) return;
 
@@ -204,9 +217,28 @@ class RefereeScoringDashboard extends Component
     {
         if (!$this->activeMatch || !$this->judgeIndex) return;
 
-        $id = $this->activeMatch->draft_type === 'embu' 
-            ? $this->activeMatch->active_registration_id 
-            : $this->activeMatch->active_bracket_node;
+        if ($this->activeMatch->draft_type === 'embu') {
+            $id = $this->activeMatch->active_registration_id;
+            $scorableType = \App\Models\Registration::class;
+            $bracketNode = null;
+        } else {
+            $bracketNode = $this->activeMatch->active_bracket_node;
+            if (!$bracketNode) {
+                $this->dispatch('swal', ['icon' => 'error', 'title' => 'Error', 'text' => 'Belum ada peserta yang dipanggil.']);
+                return;
+            }
+            
+            $parts = explode('_', $bracketNode);
+            $bracketSection = $parts[0] ?? 'ub';
+            $bracketNodeIndex = (isset($parts[1]) && isset($parts[2])) ? $parts[1].'_'.$parts[2] : '0_0';
+            
+            $randoriMatch = \App\Models\RandoriMatchResult::firstOrCreate(
+                ['match_number_id' => $this->activeMatch->id, 'bracket_node' => $bracketNode],
+                ['bracket_node_index' => $bracketNodeIndex, 'bracket_section' => $bracketSection]
+            );
+            $id = $randoriMatch->id;
+            $scorableType = \App\Models\RandoriMatchResult::class;
+        }
 
         if (!$id) {
             $this->dispatch('swal', ['icon' => 'error', 'title' => 'Error', 'text' => 'Belum ada peserta yang dipanggil.']);
@@ -215,13 +247,13 @@ class RefereeScoringDashboard extends Component
 
         $details = $this->activeMatch->draft_type === 'embu' ? $this->embuItems : $this->randoriItems;
 
-        \DB::transaction(function() use ($id, $details) {
+        \DB::transaction(function() use ($id, $scorableType, $bracketNode, $details) {
             // 1. Save Granular Details
             \App\Models\RefereeScoreDetail::updateOrCreate(
                 [
                     'match_number_id' => $this->activeMatch->id,
                     'referee_id' => $this->referee->id,
-                    'scorable_type' => $this->activeMatch->draft_type === 'embu' ? \App\Models\Registration::class : \App\Models\RandoriMatchResult::class,
+                    'scorable_type' => $scorableType,
                     'scorable_id' => $id,
                 ],
                 [
@@ -239,6 +271,19 @@ class RefereeScoringDashboard extends Component
                     ['match_number_id' => $this->activeMatch->id, 'registration_id' => $id],
                     [$column => $this->totalScore]
                 );
+            } else {
+                // Sync to RandoriJudgeScore via Service
+                $service = app(\App\Services\RandoriScoringService::class);
+                
+                // AKA (Red)
+                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'ippon', 'aka', $this->randoriItems['aka']['ippon'] + $this->randoriItems['aka']['mujoken']);
+                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'waza_ari', 'aka', $this->randoriItems['aka']['wazaari'] + $this->randoriItems['aka']['yusei']);
+                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'hansoku', 'aka', $this->randoriItems['aka']['batsu5'] + $this->randoriItems['aka']['batsu10']);
+                
+                // SHIRO (White)
+                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'ippon', 'shiro', $this->randoriItems['shiro']['ippon'] + $this->randoriItems['shiro']['mujoken']);
+                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'waza_ari', 'shiro', $this->randoriItems['shiro']['wazaari'] + $this->randoriItems['shiro']['yusei']);
+                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'hansoku', 'shiro', $this->randoriItems['shiro']['batsu5'] + $this->randoriItems['shiro']['batsu10']);
             }
         });
 

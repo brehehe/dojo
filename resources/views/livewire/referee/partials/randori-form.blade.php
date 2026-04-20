@@ -30,15 +30,25 @@
         $shiro = null;
         if ($activeMatch && $activeMatch->active_bracket_node) {
             $parts = explode('_', $activeMatch->active_bracket_node);
-            $rIdx = $parts[0] ?? 0;
-            $mIdx = $parts[1] ?? 0;
-            $matchObj = $activeMatch->drawing_data['rounds'][$rIdx][$mIdx] ?? [];
+            $bracket = $parts[0] ?? 'ub';
+            $rIdx = $parts[1] ?? 0;
+            $mIdx = $parts[2] ?? 0;
+            
+            $data = $activeMatch->drawing_data ?? [];
+            $matchObj = null;
+            if ($bracket === 'ub') {
+                $matchObj = $data['upper_bracket']['rounds'][$rIdx][$mIdx] ?? null;
+            } elseif ($bracket === 'lb') {
+                $matchObj = $data['lower_bracket']['rounds'][$rIdx][$mIdx] ?? null;
+            } elseif ($bracket === 'gf') {
+                $matchObj = $data['grand_final'] ?? null;
+            }
             
             $akaData = $matchObj['athlete1'] ?? null;
             $shiroData = $matchObj['athlete2'] ?? null;
             
-            $aka = $akaData ? \App\Models\Athlete::find($akaData['id']) : null;
-            $shiro = $shiroData ? \App\Models\Athlete::find($shiroData['id']) : null;
+            $aka = $akaData ? \App\Models\Athlete::find($akaData['id'] ?? null) : null;
+            $shiro = $shiroData ? \App\Models\Athlete::find($shiroData['id'] ?? null) : null;
         }
     @endphp
 
@@ -165,17 +175,17 @@
                 <span class="text-xs font-black uppercase text-slate-500 w-32">Wasit Utama :</span>
                 <span class="font-bold text-slate-800">
                     <!-- Get Chief Judge for this Court (Index 1) -->
-                    {{ \App\Models\ScheduleReferee::where('court_id', $assignedCourt->id)->where('session_time_id', $assignedSession->id)->where('judge_index', 1)->first()->referee->name ?? '-' }}
+                    {{ $assignedCourt && $assignedSession ? (\App\Models\ScheduleReferee::where('court_id', $assignedCourt->id)->where('session_time_id', $assignedSession->id)->where('judge_index', 1)->first()?->referee->name ?? '-') : '-' }}
                 </span>
             </div>
         </div>
         <div class="col-span-1 md:col-span-1 border border-slate-200 p-4 rounded-xl shadow-sm bg-white">
             <span class="block text-[10px] font-black uppercase text-slate-400 mb-2">Manager Kontingen (Merah) :</span>
-            <span class="font-bold text-slate-800">{{ $aka ? ($aka->registrations->first()->contingent->officials->first()->name ?? '-') : '-' }}</span>
+            <span class="font-bold text-slate-800">{{ $aka ? ($aka->registrations->first()?->contingent->officials->first()?->name ?? '-') : '-' }}</span>
         </div>
         <div class="col-span-2 md:col-span-2 border border-slate-200 p-4 rounded-xl shadow-sm bg-white">
             <span class="block text-[10px] font-black uppercase text-slate-400 mb-2">Manager Kontingen (Putih) :</span>
-            <span class="font-bold text-slate-800">{{ $shiro ? ($shiro->registrations->first()->contingent->officials->first()->name ?? '-') : '-' }}</span>
+            <span class="font-bold text-slate-800">{{ $shiro ? ($shiro->registrations->first()?->contingent->officials->first()?->name ?? '-') : '-' }}</span>
         </div>
     </div>
 </div>
