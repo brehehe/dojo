@@ -2,7 +2,12 @@
 
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
-use App\Models\MatchNumber\MatchNumber;
+use App\Models\Contingent;
+use App\Models\Court\Court;
+use App\Models\DrawingMatchNumber;
+use App\Models\Pool\Pool;
+use App\Models\Rundown\Rundown;
+use App\Models\SessionTime;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -12,43 +17,210 @@ class AdminArbitraseScoringIndex extends Component
 {
     use WithPagination;
 
-    public $search = '';
+    public string $search = '';
 
-    public $type = 'all'; // all, embu, randori
+    public string $filterCourt = '';
 
-    public function activateMatch($id)
+    public string $filterSession = '';
+
+    public string $filterRundown = '';
+
+    public string $filterPool = '';
+
+    public string $filterRound = '';
+
+    public string $filterType = ''; // embu | randori
+
+    public string $filterContingent = '';
+
+    /** Reset pagination when any filter changes. */
+    public function updated(string $property): void
     {
-        // Deactivate all matches
-        MatchNumber::where('is_active', true)->update(['is_active' => false]);
+        if (str_starts_with($property, 'filter') || $property === 'search') {
+            $this->resetPage();
+        }
+    }
 
-        // Activate the selected one
-        $match = MatchNumber::findOrFail($id);
-        $match->update(['is_active' => true]);
+    /**
+     * Panggil sebuah slot drawing ke lapangannya.
+     *
+     * Semua informasi konteks (court_id, match_number_id, registration_id,
+     * session_time_id, pool_id, rundown_id, draft_type, contingent_id) di-derive
+     * langsung dari DrawingMatchNumber — tidak ada parameter redundan.
+     */
+    public function activateMatch(int $drawingId): void
+    {
+        $drawing = DrawingMatchNumber::with([
+            'matchNumber',
+            'court',
+            'registration.contingent',
+            'pool',
+            'sessionTime',
+            'rundown',
+        ])->findOrFail($drawingId);
+
+        $court = $drawing->court;
+
+        if (! $court) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Lapangan Belum Diatur',
+                'text' => 'Drawing ini belum memiliki lapangan yang ditentukan.',
+            ]);
+
+            return;
+        }
+
+        $matchNumber = $drawing->matchNumber;
+        $draftType = $drawing->draft_type ?? $matchNumber?->draft_type ?? 'embu';
+
+        // Update state di MatchNumber sesuai jenis pertandingan
+        if ($draftType === 'embu') {
+            $matchNumber?->update(['active_registration_id' => $drawing->registration_id]);
+        } else {
+            $matchNumber?->update(['active_bracket_node' => '0_0']);
+        }
+
+        // Simpan drawing aktif ke court agar monitor wasit dapat menampilkan
+        // konteks lengkap: pool, sesi, rundown, kontingen, draft_type, dll.
+        $court->update([
+            'active_match_id' => $drawing->match_number_id,
+            'active_drawing_id' => $drawing->id,
+            'active_registration_id' => $drawing->registration_id,
+            'active_bracket_node' => $draftType !== 'embu' ? '0_0' : null,
+        ]);
+
+        $contingentName = $drawing->registration?->contingent?->name ?? '—';
+        $poolLabel = $drawing->pool ? 'Pool '.$drawing->pool->name : null;
+        $sessionLabel = $drawing->sessionTime?->name;
 
         $this->dispatch('swal', [
             'icon' => 'success',
-            'title' => 'Pertandingan Aktif',
-            'text' => $match->name . ' telah dipanggil ke lapangan.',
+            'title' => 'Pertandingan Aktif!',
+            'text' => implode(' · ', array_filter([
+                $matchNumber?->name ?? '—',
+                $contingentName,
+                $poolLabel,
+                $sessionLabel,
+                '→ '.$court->name,
+            ])),
+        ]);
+    }
+
+    public function clearCourt(int $courtId): void
+    {
+        $court = Court::findOrFail($courtId);
+        $court->update([
+            'active_match_id' => null,
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+            'active_drawing_id' => null,
+        ]);
+
+        $this->dispatch('swal', [
+            'icon' => 'info',
+            'title' => 'Lapangan Dibersihkan',
+            'text' => $court->name.' sekarang idle / kosong.',
+        ]);
+    }
+
+    public function clearAllCourts(): void
+    {
+        Court::query()->update([
+            'active_match_id' => null,
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+            'active_drawing_id' => null,
+        ]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Semua Lapangan Di-reset',
+            'text' => 'Seluruh lapangan sekarang kosong secara serentak.',
         ]);
     }
 
     public function render()
     {
-        $query = MatchNumber::whereNotNull('drawing_data')
-            ->has('athletes')
-            ->orderBy('name', 'asc')
-            ->with(['ageGroup']);
+        $courts = Court::with([
+            'activeMatch',
+            'activeDrawing.pool',
+            'activeDrawing.sessionTime',
+            'activeDrawing.rundown',
+            'activeDrawing.registration.contingent',
+        ])->orderBy('order')->get();
 
-        if ($this->type !== 'all') {
-            $query->where('draft_type', $this->type);
+        $sessions = SessionTime::orderBy('start_time')->get();
+        $rundowns = Rundown::orderBy('date')->get();
+        $pools = Pool::orderBy('order')->get();
+        $contingents = Contingent::orderBy('name')->get();
+
+        // Distinct rounds from existing drawing data
+        $rounds = DrawingMatchNumber::whereNotNull('round')
+            ->distinct()
+            ->orderBy('round')
+            ->pluck('round');
+
+        // ── Core query: per DrawingMatchNumber (per athlete/team slot) ─────────
+        $query = DrawingMatchNumber::with([
+            'matchNumber.ageGroup',
+            'registration.contingent',
+            'registration.athletes',
+            'pool',
+            'court',
+            'sessionTime',
+            'rundown',
+        ])->whereNotNull('match_number_id');
+
+        // ── Filters ────────────────────────────────────────────────────────────
+        if (! empty($this->filterCourt)) {
+            $query->where('court_id', $this->filterCourt);
+        }
+        if (! empty($this->filterSession)) {
+            $query->where('session_time_id', $this->filterSession);
+        }
+        if (! empty($this->filterRundown)) {
+            $query->where('rundown_id', $this->filterRundown);
+        }
+        if (! empty($this->filterPool)) {
+            $query->where('pool_id', $this->filterPool);
+        }
+        if (! empty($this->filterRound)) {
+            $query->where('round', $this->filterRound);
+        }
+        if (! empty($this->filterType)) {
+            $query->where('draft_type', $this->filterType);
         }
 
+        // Filter by contingent via registration relationship
+        if (! empty($this->filterContingent)) {
+            $query->whereHas('registration.contingent', function ($q) {
+                $q->where('contingents.id', $this->filterContingent);
+            });
+        }
+
+        // Search by match number name or contingent name
         if (! empty($this->search)) {
-            $query->where('name', 'ilike', '%' . $this->search . '%');
+            $search = $this->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('matchNumber', fn ($mq) => $mq->where('name', 'ilike', '%'.$search.'%'))
+                    ->orWhereHas('registration.contingent', fn ($cq) => $cq->where('name', 'ilike', '%'.$search.'%'));
+            });
         }
+
+        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderBy('sequence_number');
+
+        $routePrefix = request()->is('*panitera*') ? 'admin.panitera.scoring' : 'admin.arbitrase.scoring';
 
         return view('livewire.admin.arbitrase.scoring.admin-arbitrase-scoring-index', [
-            'matches' => $query->latest()->paginate(12),
+            'drawings' => $query->paginate(20),
+            'courts' => $courts,
+            'sessions' => $sessions,
+            'rundowns' => $rundowns,
+            'pools' => $pools,
+            'contingents' => $contingents,
+            'rounds' => $rounds,
+            'routePrefix' => $routePrefix,
         ]);
     }
 }

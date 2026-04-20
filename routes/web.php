@@ -5,6 +5,9 @@ use App\Livewire\Admin\Arbitrase\GenerateReferee\AdminArbitraseGenerateRefereeIn
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringEmbuDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
+use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuResultIndex;
+use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
+use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Master\AgeGroup\AdminMasterAgeGroupIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteDetailIndex;
@@ -23,6 +26,7 @@ use App\Livewire\Admin\Master\Referee\AdminMasterRefereeIndex;
 use App\Livewire\Admin\Master\Role\AdminMasterRoleFormIndex;
 use App\Livewire\Admin\Master\Role\AdminMasterRoleIndex;
 use App\Livewire\Admin\Master\Rundown\AdminMasterRundownIndex;
+use App\Livewire\Admin\Master\SessionTime\AdminMasterSessionTimeIndex;
 use App\Livewire\Admin\Master\Technique\AdminMasterTechniqueIndex;
 use App\Livewire\Admin\Master\User\AdminMasterUserIndex;
 use App\Livewire\Admin\Master\WeightGroup\AdminMasterWeightGroupIndex;
@@ -40,6 +44,7 @@ use App\Livewire\Auth\Register;
 use App\Livewire\Contingent\Dashboard;
 use App\Livewire\Contingent\Setup;
 use App\Livewire\GeneralDashboard;
+use App\Livewire\Referee\RefereeScoringDashboard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -90,6 +95,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/rundown', AdminMasterRundownIndex::class)->name('rundown');
             Route::get('/court', AdminMasterCourtIndex::class)->name('court');
             Route::get('/pool', AdminMasterPoolIndex::class)->name('pool');
+            Route::get('/session-time', AdminMasterSessionTimeIndex::class)->name('session-time');
 
             // Role Management
             Route::get('/roles', AdminMasterRoleIndex::class)->name('roles.index');
@@ -139,10 +145,12 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('arbitrase')->name('arbitrase.')->group(function () {
+            Route::get('/referees', AdminMasterRefereeIndex::class)->name('referees');
             Route::get('/generate-referee', AdminArbitraseGenerateRefereeIndex::class)->name('generate-referee');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
+                Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
             });
@@ -155,11 +163,13 @@ Route::middleware('auth')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
+                Route::get('/embu-testbench', AdminEmbuScoringTestbench::class)->name('embu.testbench');
+                Route::get('/embu-result', AdminEmbuResultIndex::class)->name('embu.result');
             });
         });
 
         Route::prefix('referee')->name('referee.')->group(function () {
-            Route::get('/scoring', \App\Livewire\Referee\RefereeScoringDashboard::class)->name('scoring');
+            Route::get('/scoring', RefereeScoringDashboard::class)->name('scoring');
         });
     });
 });

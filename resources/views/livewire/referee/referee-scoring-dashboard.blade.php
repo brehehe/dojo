@@ -1,14 +1,16 @@
-<div class="min-h-screen bg-slate-50 p-4 md:p-8">
-    <div class="max-w-full mx-auto">
+<div class="min-h-screen bg-slate-50 p-4 md:p-8" wire:poll.2s="loadActiveMatch">
+    <div class="max-w-7xl mx-auto">
         <!-- Status Bar -->
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                     <i class="fas fa-gavel"></i>
                 </div>
                 <div>
                     <h2 class="text-sm font-black text-slate-800 uppercase tracking-tight">Wasit Juri</h2>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $referee->user->name }}</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {{ $referee?->user?->name ?? auth()->user()?->name ?? 'Tidak Dikenal' }}
+                    </p>
                 </div>
             </div>
             @if($judgeIndex)
@@ -18,7 +20,22 @@
             @endif
         </div>
 
-        @if($activeMatch)
+        {{-- Warning: user is not a registered referee --}}
+        @if(!$referee)
+            <div class="flex items-center gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-3 mb-6 shadow-sm">
+                <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                    <i class="fas fa-exclamation-triangle text-amber-600 text-sm"></i>
+                </div>
+                <div>
+                    <p class="text-[11px] font-black text-amber-800 uppercase tracking-widest">Akun Bukan Wasit Terdaftar</p>
+                    <p class="text-[10px] text-amber-600 font-medium mt-0.5">
+                        Akun Anda tidak terdaftar sebagai wasit. Scoring tidak dapat dikirim. Pastikan login menggunakan akun wasit yang benar.
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        @if($activeMatch && $this->checkParticipantCalled())
             <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <!-- Match Header -->
                 <div class="p-8 bg-slate-900 text-white relative overflow-hidden">
@@ -80,6 +97,16 @@
                     </div>
                 </div>
             </div>
+        @elseif($activeMatch)
+            <div class="bg-white rounded-[2.5rem] p-12 text-center border-2 border-dashed border-slate-200 animate-pulse">
+                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-500">
+                    <i class="fas fa-user-clock text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-black text-slate-800 uppercase tracking-tight">Persiapan: {{ $activeMatch->name }}</h3>
+                <p class="text-xs text-slate-500 font-medium mt-2 max-w-[250px] mx-auto leading-relaxed">
+                    Mohon tunggu, Panitera akan segera memanggil atlet ke lapangan untuk Anda nilai.
+                </p>
+            </div>
         @else
             <!-- Placeholder same as before -->
             <div class="bg-white rounded-[2.5rem] p-12 text-center border-2 border-dashed border-slate-200 animate-pulse">
@@ -93,11 +120,11 @@
             </div>
         @endif
 
-        <div class="mt-12 flex justify-center">
-            <button wire:click="loadActiveMatch" class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-orange-600 transition-colors">
-                <i class="fas fa-sync-alt"></i>
-                <span>Refresh Status</span>
-            </button>
+        <div class="mt-8 flex justify-center opacity-50">
+            <span class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <i class="fas fa-satellite-dish animate-pulse"></i>
+                <span>Sinkronisasi Otomatis Aktif</span>
+            </span>
         </div>
     </div>
 </div>

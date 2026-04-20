@@ -1,24 +1,22 @@
 <?php
 
-namespace App\Models\Rundown;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Rundown extends Model
+class SessionTime extends Model
 {
-    //
     use HasFactory;
 
     protected $fillable = [
         'name',
-        'type',
-        'description',
-        'date',
-        'order',
+        'start_time',
+        'end_time',
     ];
 
     protected $casts = [
-        'date' => 'datetime',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
 }

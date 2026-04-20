@@ -1,104 +1,127 @@
-<div>
-    <!-- Current Performer Info -->
-    <div class="mb-10 text-center bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">PESERTA TAMPIL</p>
-        <div class="inline-flex flex-col items-center">
-            @if($activeMatch->active_registration_id)
-                @php
-                    $reg = \App\Models\Registration::with('athletes', 'contingent')->find($activeMatch->active_registration_id);
-                @endphp
-                <div class="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-4 border border-slate-200 text-orange-500">
-                    <i class="fas fa-user-ninja text-3xl"></i>
-                </div>
-                <h3 class="text-xl font-black text-slate-800 uppercase leading-none mb-2">
-                    @foreach($reg->athletes as $athlete)
-                        {{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}
-                    @endforeach
-                </h3>
-                <p class="px-4 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-                    {{ $reg->contingent->name }}
-                </p>
-            @else
-                <div class="text-slate-400 italic text-sm">Menunggu Panitera memanggil peserta...</div>
-            @endif
+<div class="space-y-8">
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+        <h2 class="text-xl font-black text-blue-900 uppercase tracking-widest mb-1">Daftar Penilaian Wasit</h2>
+        <p class="text-sm font-bold text-blue-800 bg-blue-200/50 inline-block px-3 py-1 rounded-full uppercase tracking-wider mb-6">
+            Kategori Embu
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm font-bold text-slate-700">
+            <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                <span class="text-[10px] uppercase text-slate-400 block mb-1">Kontingen</span>
+                <span class="text-slate-900 uppercase">{{ $activeMatch->active_registration_id ? (\App\Models\Registration::find($activeMatch->active_registration_id)->contingent->name ?? '-') : '-' }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                <span class="text-[10px] uppercase text-slate-400 block mb-1">Babak</span>
+                <span class="text-slate-900 uppercase">{{ $activeMatch->round ?? 'Final' }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                <span class="text-[10px] uppercase text-slate-400 block mb-1">Jadwal (Waktu / Court)</span>
+                <span class="text-slate-900 uppercase">{{ $assignedSession->name ?? '-' }} &bull; {{ $assignedCourt->name ?? '-' }}</span>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
+                <span class="text-[10px] uppercase text-slate-400 block mb-1">Kelas / Pool</span>
+                <span class="text-slate-900 uppercase">{{ $activeMatch->ageGroup->name ?? '-' }} &bull; -</span>
+            </div>
         </div>
     </div>
 
-    <!-- Section: Penguasaan Teknik (60) -->
-    <div class="space-y-6">
-        <div class="flex items-center gap-4 mb-4">
-            <div class="h-px flex-1 bg-slate-100"></div>
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap flex items-center gap-2">
-                <i class="fas fa-fist-raised text-orange-500"></i>
-                PENGUASAAN TEKNIK (60)
-            </h4>
-            <div class="h-px flex-1 bg-slate-100"></div>
+    <!-- Urutan Komposisi -->
+    <div class="bg-white border text-sm border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+            <i class="fas fa-list-ol text-slate-400"></i>
+            <h3 class="font-black text-slate-700 uppercase tracking-widest">Urutan Komposisi</h3>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             @php
-                $techniqueItems = [
-                    'goho_1' => ['label' => 'Serangan, bertahan, balasan', 'cat' => 'GOHO'],
-                    'goho_2' => ['label' => 'Lima unsur serangan', 'cat' => 'GOHO'],
-                    'goho_3' => ['label' => 'Kombinasi & timing', 'cat' => 'GOHO'],
-                    'juho_4' => ['label' => 'Shuha, nukiwaza, gyaku waza', 'cat' => 'JUHO'],
-                    'juho_5' => ['label' => 'Nage waza, katame waza, dll', 'cat' => 'JUHO'],
-                    'juho_6' => ['label' => 'Kelancaran & kontrol', 'cat' => 'JUHO'],
+                $komposisiDummy = [
+                    '1' => 'Kihon Dasar',
+                    '2' => 'Nage Waza',
+                    '3' => 'Katame Waza',
+                    '4' => 'Gyaku Waza',
+                    '5' => 'Shuha & Nukiwaza',
+                    '6' => 'Randori & Zanshin'
                 ];
             @endphp
-
-            @foreach($techniqueItems as $key => $item)
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md">{{ $item['cat'] }}</span>
-                        <span class="text-lg font-black text-slate-800">{{ number_format($embuItems[$key], 1) }}</span>
+            @foreach($komposisiDummy as $k => $v)
+                <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="w-8 h-8 bg-slate-800 text-white font-black rounded-full flex items-center justify-center shrink-0">
+                        {{ $k }}
                     </div>
-                    <p class="text-xs font-bold text-slate-600 mb-4 line-clamp-1">{{ $item['label'] }}</p>
-                    <input 
-                        type="range" 
-                        wire:model.live="embuItems.{{ $key }}" 
-                        min="0" max="10" step="0.5"
-                        class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                    >
+                    <div class="font-bold text-slate-700">{{ $v }}</div>
                 </div>
             @endforeach
         </div>
+    </div>
 
-        <!-- Section: Ekspresi (40) -->
-        <div class="flex items-center gap-4 mt-12 mb-4">
-            <div class="h-px flex-1 bg-slate-100"></div>
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap flex items-center gap-2">
-                <i class="fas fa-heart text-rose-500"></i>
-                EKSPRESI (40)
-            </h4>
-            <div class="h-px flex-1 bg-slate-100"></div>
-        </div>
+    <!-- Panel Penilaian -->
+    <div class="bg-white border text-sm border-slate-200 rounded-2xl overflow-hidden shadow-sm mb-8">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-800 text-white">
+                <tr>
+                    <th class="px-6 py-4 font-black uppercase tracking-widest w-1/4">Aspek</th>
+                    <th class="px-6 py-4 font-black uppercase tracking-widest w-1/2">Deskripsi</th>
+                    <th class="px-4 py-4 font-black uppercase text-center w-16">Bobot</th>
+                    <th class="px-4 py-4 font-black uppercase text-center w-16">No</th>
+                    <th class="px-6 py-4 font-black uppercase text-center">Nilai</th>
+                    <th class="px-4 py-4 font-black uppercase text-center">Std</th>
+                </tr>
+            </thead>
+            
+            <tbody class="divide-y divide-slate-100 font-medium">
+                <!-- Group Penguasaan Teknik -->
+                <tr class="bg-blue-50">
+                    <td colspan="6" class="px-6 py-3 font-black text-blue-900 uppercase">
+                        <i class="fas fa-diamond text-blue-600 mr-2"></i> Penguasaan Teknik (60) — Goho & Juho
+                    </td>
+                </tr>
+                @php
+                    $gohoItems = [
+                        ['id' => 'goho_1', 'cat' => 'GOHO', 'desc' => 'Serangan, bertahan, balasan'],
+                        ['id' => 'goho_2', 'cat' => 'GOHO', 'desc' => 'Lima unsur serangan'],
+                        ['id' => 'goho_3', 'cat' => 'GOHO', 'desc' => 'Kombinasi & timing'],
+                        ['id' => 'juho_1', 'cat' => 'JUHO', 'desc' => 'Shuha, nukiwaza, gyaku waza'],
+                        ['id' => 'juho_2', 'cat' => 'JUHO', 'desc' => 'Nage waza, katame waza, dll'],
+                        ['id' => 'juho_3', 'cat' => 'JUHO', 'desc' => 'Kelancaran & kontrol'],
+                    ];
+                    $ekspresiItems = [
+                        ['id' => 'ekspresi_1', 'cat' => 'Ekspresi', 'desc' => '1. Rangkaian, Irama, Harmoni'],
+                        ['id' => 'ekspresi_2', 'cat' => 'Ekspresi', 'desc' => '2. Tai gamae, Kuda-kuda, Keindahan'],
+                        ['id' => 'ekspresi_3', 'cat' => 'Ekspresi', 'desc' => '3. Semangat, Disiplin'],
+                        ['id' => 'ekspresi_4', 'cat' => 'Ekspresi', 'desc' => '4. Nafas, Pandangan mata, Zanshin'],
+                    ];
+                @endphp
+                @foreach($gohoItems as $idx => $item)
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-700">{{ $item['cat'] }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ $item['desc'] }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400">10</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400">{{ $idx + 1 }}</td>
+                        <td class="px-6 py-3 text-center">
+                            <input type="number" step="0.5" min="0" max="10" wire:model.live.debounce.300ms="embuItems.{{ $item['id'] }}" class="w-24 text-center font-black text-xl py-2 px-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500">
+                        </td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400">8</td>
+                    </tr>
+                @endforeach
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @php
-                $expressionItems = [
-                    'ekspresi_1' => ['label' => 'Rangkaian, Irama, Harmoni'],
-                    'ekspresi_2' => ['label' => 'Tai gamae, Kuda-kuda, Keindahan'],
-                    'ekspresi_3' => ['label' => 'Semangat, Disiplin'],
-                    'ekspresi_4' => ['label' => 'Nafas, Pandangan mata, Zanshin'],
-                ];
-            @endphp
-
-            @foreach($expressionItems as $key => $item)
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md">EKSPRESI</span>
-                        <span class="text-lg font-black text-slate-800">{{ number_format($embuItems[$key], 1) }}</span>
-                    </div>
-                    <p class="text-xs font-bold text-slate-600 mb-4 line-clamp-1">{{ $item['label'] }}</p>
-                    <input 
-                        type="range" 
-                        wire:model.live="embuItems.{{ $key }}" 
-                        min="0" max="10" step="0.5"
-                        class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                    >
-                </div>
-            @endforeach
-        </div>
+                <!-- Group Ekspresi -->
+                <tr class="bg-rose-50">
+                    <td colspan="6" class="px-6 py-3 font-black text-rose-900 uppercase">
+                        <i class="fas fa-magic text-rose-600 mr-2"></i> Ekspresi (40) — Rangkaian, Irama, Tai Gamae
+                    </td>
+                </tr>
+                @foreach($ekspresiItems as $idx => $item)
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-bold text-slate-700">{{ $item['cat'] }}</td>
+                        <td class="px-6 py-4 text-slate-600">{{ $item['desc'] }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400">10</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400">{{ $idx + 1 }}</td>
+                        <td class="px-6 py-3 text-center">
+                            <input type="number" step="0.5" min="0" max="10" wire:model.live.debounce.300ms="embuItems.{{ $item['id'] }}" class="w-24 text-center font-black text-xl py-2 px-3 border-2 border-slate-200 rounded-xl focus:border-rose-500 focus:ring-rose-500">
+                        </td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400">8</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </div>

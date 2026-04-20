@@ -1,100 +1,330 @@
-<div class="p-6">
-    <div class="max-w-full mx-auto">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div>
-                <h1 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Penilaian Pertandingan</h1>
-                <p class="text-sm text-slate-500 font-medium">Input hasil pertandingan dan nilai juri dari lapangan.</p>
-            </div>
-            
-            <div class="flex flex-col sm:flex-row gap-3">
-                <div class="relative group">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors"></i>
-                    <input 
-                        type="text" 
-                        wire:model.live.debounce.300ms="search"
-                        placeholder="Cari nomor tanding..." 
-                        class="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none w-full sm:w-64 transition-all shadow-sm"
-                    >
-                </div>
-                
-                <select 
-                    wire:model.live="type"
-                    class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all shadow-sm"
-                >
-                    <option value="all">Semua Kategori</option>
-                    <option value="embu">Embu (Seni)</option>
-                    <option value="randori">Randori (Tanding)</option>
-                </select>
-            </div>
-        </div>
+<div class="space-y-6 animate-in fade-in duration-500 h-full">
 
-        <!-- Matches Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            @forelse($matches as $match)
-                <div class="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group">
-                    <div class="p-5">
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="px-2.5 py-1 {{ $match->draft_type === 'embu' ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600' }} text-[10px] font-black uppercase tracking-widest rounded-lg border border-current/10">
-                                {{ strtoupper($match->draft_type) }}
+    {{-- ═══ HEADER ═══ --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-slate-800 tracking-tight">Dashboard Panitera</h1>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Panggil Drawing per Lapangan — Filter by Kontingen, Pool, Court, Sesi, Rundown & Babak</p>
+        </div>
+        {{-- Reset All button --}}
+        <button wire:click="clearAllCourts"
+                wire:confirm="Reset semua lapangan ke kosong?"
+                class="flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors">
+            <i class="fas fa-eraser"></i> Reset Semua Lapangan
+        </button>
+    </div>
+
+    {{-- ═══ ACTIVE COURT CARDS ═══ --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        @foreach($courts as $courtCard)
+            @php
+                $ad          = $courtCard->activeDrawing;
+                $adMatch     = $courtCard->activeMatch;
+                $adPool      = $ad?->pool;
+                $adSession   = $ad?->sessionTime;
+                $adRundown   = $ad?->rundown;
+                $adContingent = $ad?->registration?->contingent;
+                $adType      = $ad?->draft_type ?? $adMatch?->draft_type;
+                $isActive    = (bool) $courtCard->active_match_id;
+            @endphp
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-20 h-20 bg-slate-50 rounded-full group-hover:scale-110 transition-transform"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <span class="text-sm font-black text-slate-800 uppercase">{{ $courtCard->name }}</span>
+                    <div class="flex items-center gap-2">
+                        @if($isActive)
+                            <button wire:click="clearCourt({{ $courtCard->id }})" title="Kosongkan Lapangan"
+                                class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-colors">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        @else
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="mt-3 relative z-10 space-y-1">
+                    @if($isActive && $adMatch)
+                        {{-- Match name & type --}}
+                        <div class="flex items-center gap-1.5">
+                            <span class="inline-flex text-[7px] px-1.5 py-0.5 rounded font-black uppercase text-white {{ $adType === 'randori' ? 'bg-rose-500' : 'bg-emerald-500' }}">
+                                {{ $adType ?? '?' }}
                             </span>
-                            @if($match->is_active)
-                                <span class="flex items-center gap-1.5 px-2 py-1 bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg animate-pulse">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                                    LIVE ON COURT
-                                </span>
-                            @else
-                                <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
-                                    #{{ $match->id }}
-                                </span>
+                            <span class="text-[11px] font-black text-emerald-700 leading-tight truncate">{{ $adMatch->name }}</span>
+                        </div>
+                        {{-- Contingent --}}
+                        @if($adContingent)
+                            <p class="text-[9px] text-slate-500 font-bold uppercase truncate">
+                                <i class="fas fa-shield-alt text-[7px] text-amber-500 mr-0.5"></i>{{ $adContingent->name }}
+                            </p>
+                        @endif
+                        {{-- Pool + Session --}}
+                        <div class="flex flex-wrap gap-1 mt-0.5">
+                            @if($adPool)
+                                <span class="text-[8px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">Pool {{ $adPool->name }}</span>
+                            @endif
+                            @if($adSession)
+                                <span class="text-[8px] font-black text-teal-700 bg-teal-50 border border-teal-100 px-1.5 py-0.5 rounded">{{ $adSession->name }}</span>
+                            @endif
+                            @if($adRundown)
+                                <span class="text-[8px] font-black text-slate-500 bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded">{{ $adRundown->name ?? $adRundown->date }}</span>
                             @endif
                         </div>
-                        
-                        <h3 class="text-lg font-black text-slate-800 mb-1 uppercase tracking-tight line-clamp-1">
-                            {{ $match->name }}
-                        </h3>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
-                            {{ $match->ageGroup->name ?? 'Semua Usia' }} • {{ $match->gender ?? 'Mix' }}
-                        </p>
-                        
-                        <div class="flex items-center gap-2 mb-6 text-slate-500">
-                            <i class="fas fa-users text-xs"></i>
-                            <span class="text-xs font-bold">{{ $match->athletes_count ?? $match->athletes()->count() }} Peserta Terdaftar</span>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <button 
-                                wire:click="activateMatch({{ $match->id }})"
-                                class="w-full flex items-center justify-center gap-2 py-2.5 {{ $match->is_active ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }} rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-                            >
-                                <i class="fas fa-bullhorn text-[9px]"></i>
-                                <span>{{ $match->is_active ? 'Sedang Bertanding' : 'Panggil ke Lapangan' }}</span>
-                            </button>
-
-                            <a 
-                                href="{{ route('admin.arbitrase.scoring.' . $match->draft_type . '.detail', $match->id) }}"
-                                class="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 hover:bg-amber-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md group-hover:shadow-amber-500/25 active:scale-95"
-                            >
-                                <span>Input Nilai (Admin)</span>
-                                <i class="fas fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-                            </a>
-                        </div>
-                    </div>
+                    @else
+                        <div class="text-[11px] font-black text-slate-300 italic">KOSONG (Idle)</div>
+                    @endif
                 </div>
-            @empty
-                <div class="col-span-full py-20 flex flex-col items-center justify-center bg-white border-2 border-dashed border-slate-200 rounded-3xl">
-                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-clipboard-list text-2xl text-slate-300"></i>
-                    </div>
-                    <p class="text-slate-400 font-bold uppercase tracking-widest text-sm">Belum ada pertandingan tersedia</p>
-                    <p class="text-xs text-slate-400 mt-1">Pastikan Drawing sudah di-generate.</p>
-                </div>
-            @endforelse
 
-            <!-- Pagination -->
-            <div class="col-span-full mt-8">
-                {{ $matches->links() }}
+                {{-- TV Monitor link --}}
+                @php $monitorRoute = request()->is('*panitera*') ? 'admin.arbitrase.scoring.monitor' : 'admin.arbitrase.scoring.monitor'; @endphp
+                <a href="{{ route('admin.arbitrase.scoring.monitor', $courtCard->id) }}" target="_blank"
+                   class="mt-4 w-full block text-center py-2 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm">
+                    <i class="fas fa-tv mr-1 text-slate-300"></i> TV Monitor
+                </a>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- ═══ FILTER BAR ═══ --}}
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Filter Panggilan</p>
+        <div class="flex flex-wrap gap-3">
+
+            {{-- Kontingen --}}
+            <select wire:model.live="filterContingent"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[160px]">
+                <option value="">Semua Kontingen</option>
+                @foreach($contingents as $contingent)
+                    <option value="{{ $contingent->id }}">{{ $contingent->name }}</option>
+                @endforeach
+            </select>
+
+            {{-- Pool --}}
+            <select wire:model.live="filterPool"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[130px]">
+                <option value="">Semua Pool</option>
+                @foreach($pools as $pool)
+                    <option value="{{ $pool->id }}">{{ $pool->name }}</option>
+                @endforeach
+            </select>
+
+            {{-- Round / Babak --}}
+            <select wire:model.live="filterRound"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[140px]">
+                <option value="">Semua Babak</option>
+                @foreach($rounds as $rnd)
+                    <option value="{{ $rnd }}">{{ $rnd }}</option>
+                @endforeach
+            </select>
+
+            {{-- Court --}}
+            <select wire:model.live="filterCourt"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[140px]">
+                <option value="">Semua Lapangan</option>
+                @foreach($courts as $court)
+                    <option value="{{ $court->id }}">{{ $court->name }}</option>
+                @endforeach
+            </select>
+
+            {{-- Session Time --}}
+            <select wire:model.live="filterSession"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[140px]">
+                <option value="">Semua Sesi</option>
+                @foreach($sessions as $session)
+                    <option value="{{ $session->id }}">{{ $session->name }}</option>
+                @endforeach
+            </select>
+
+            {{-- Rundown --}}
+            <select wire:model.live="filterRundown"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[140px]">
+                <option value="">Semua Rundown</option>
+                @foreach($rundowns as $rundown)
+                    <option value="{{ $rundown->id }}">{{ $rundown->name ?? $rundown->date }}</option>
+                @endforeach
+            </select>
+
+            {{-- Draft Type --}}
+            <select wire:model.live="filterType"
+                    class="bg-white border border-slate-200 text-xs font-bold text-slate-700 px-3 py-2 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-400 outline-none min-w-[130px]">
+                <option value="">Semua Kategori</option>
+                <option value="embu">Embu</option>
+                <option value="randori">Randori</option>
+            </select>
+
+            {{-- Search --}}
+            <div class="relative flex-1 min-w-[180px]">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input type="text" wire:model.live.debounce.300ms="search"
+                       placeholder="Cari match / kontingen..."
+                       class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-amber-400">
             </div>
         </div>
     </div>
+
+    {{-- ═══ MAIN TABLE ═══ --}}
+    <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <h2 class="text-xs font-black text-slate-800 uppercase tracking-widest">
+                Daftar Panggilan <span class="text-amber-600">({{ $drawings->total() }} entri)</span>
+            </h2>
+            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Per Atlet / Tim — Klik Panggil untuk aktifkan drawing</p>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-100 text-slate-500">
+                    <tr>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">#</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Match / Kategori</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Kontingen</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Pool</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Babak</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Lapangan</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Sesi</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Rundown</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200 text-center w-[140px]">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($drawings as $drawing)
+                        @php
+                            $mn          = $drawing->matchNumber;
+                            $reg         = $drawing->registration;
+                            $contingent  = $reg?->contingent;
+                            $athletes    = $reg?->athletes ?? collect();
+                            $pool        = $drawing->pool;
+                            $court       = $drawing->court;
+                            $session     = $drawing->sessionTime;
+                            $rundown     = $drawing->rundown;
+                            $isRandori   = $drawing->draft_type === 'randori';
+                            $detailRoute = $routePrefix . '.' . $drawing->draft_type . '.detail';
+                        @endphp
+                        <tr wire:key="drawing-{{ $drawing->id }}" class="hover:bg-amber-50/40 transition-colors">
+
+                            {{-- Seq --}}
+                            <td class="px-4 py-3 text-[10px] text-slate-400 font-bold">
+                                {{ $drawing->sequence_number ?? '-' }}
+                            </td>
+
+                            {{-- Match / Kategori --}}
+                            <td class="px-4 py-3 align-top">
+                                <span class="inline-flex text-[8px] px-2 py-0.5 rounded font-black uppercase text-white shadow-sm mb-1 {{ $isRandori ? 'bg-rose-500' : 'bg-emerald-500' }}">
+                                    {{ $drawing->draft_type }}
+                                </span>
+                                <div class="text-[12px] font-black text-slate-800 leading-tight">{{ $mn?->name ?? '—' }}</div>
+                                @if($mn?->ageGroup)
+                                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{{ $mn->ageGroup->name }}</div>
+                                @endif
+                            </td>
+
+                            {{-- Kontingen + Athletes --}}
+                            <td class="px-4 py-3 align-top">
+                                @if($contingent)
+                                    <div class="text-[11px] font-black text-slate-700 uppercase">{{ $contingent->name }}</div>
+                                    @if($athletes->isNotEmpty())
+                                        <div class="mt-1 space-y-0.5">
+                                            @foreach($athletes->take(3) as $ath)
+                                                <p class="text-[9px] text-slate-400 truncate max-w-[160px]">{{ $ath->name }}</p>
+                                            @endforeach
+                                            @if($athletes->count() > 3)
+                                                <p class="text-[8px] text-slate-300 italic">+{{ $athletes->count() - 3 }} lainnya</p>
+                                            @endif
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="text-[10px] text-slate-300 italic">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Pool --}}
+                            <td class="px-4 py-3">
+                                @if($pool)
+                                    <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-lg">{{ $pool->name }}</span>
+                                @else
+                                    <span class="text-[10px] text-slate-300">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Round / Babak --}}
+                            <td class="px-4 py-3">
+                                @if($drawing->round)
+                                    <span class="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-lg">{{ $drawing->round }}</span>
+                                @else
+                                    <span class="text-[10px] text-slate-300">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Court --}}
+                            <td class="px-4 py-3">
+                                @if($court)
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-6 h-6 rounded bg-slate-800 text-white flex items-center justify-center text-[9px] font-black shrink-0">C{{ $court->order }}</span>
+                                        <span class="text-[10px] font-black text-slate-700">{{ $court->name }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-[10px] text-slate-300 italic">Belum diatur</span>
+                                @endif
+                            </td>
+
+                            {{-- Session --}}
+                            <td class="px-4 py-3">
+                                <span class="text-[10px] text-slate-600 font-bold">{{ $session?->name ?? '—' }}</span>
+                            </td>
+
+                            {{-- Rundown --}}
+                            <td class="px-4 py-3">
+                                @if($rundown)
+                                    <div class="text-[10px] font-bold text-slate-600">{{ $rundown->name ?? '—' }}</div>
+                                    <div class="text-[9px] text-slate-400">{{ $rundown->date ?? '' }}</div>
+                                @else
+                                    <span class="text-[10px] text-slate-300">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Aksi --}}
+                            <td class="px-4 py-3 text-center align-middle">
+                                <div class="flex flex-col gap-1.5 items-center">
+                                    @if($court)
+                                        {{-- Panggil berdasarkan drawing ID — court, match, reg, pool, session, rundown, draft_type sudah ada di drawing --}}
+                                        <button wire:click="activateMatch({{ $drawing->id }})"
+                                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm shadow-amber-500/20">
+                                            <i class="fas fa-bullhorn text-[9px]"></i> Panggil
+                                        </button>
+                                    @else
+                                        <span class="text-[9px] text-slate-300 italic">No Court</span>
+                                    @endif
+                                    @if($mn)
+                                        <a href="{{ route($detailRoute, $mn->id) }}"
+                                           class="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                            Detail <i class="fas fa-chevron-right text-[8px]"></i>
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="px-6 py-14 text-center">
+                                <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-clipboard-list text-2xl"></i>
+                                </div>
+                                <h3 class="text-xs font-black text-slate-600 uppercase tracking-widest">Tidak Ada Data</h3>
+                                <p class="text-[10px] text-slate-400 font-bold mt-1 max-w-sm mx-auto">
+                                    Sesuaikan filter kontingen, pool, babak, lapangan, atau sesi di atas.
+                                </p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-6 py-4 border-t border-slate-100">
+            {{ $drawings->links() }}
+        </div>
+    </div>
+
 </div>

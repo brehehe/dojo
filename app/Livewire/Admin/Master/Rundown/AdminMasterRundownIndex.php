@@ -25,9 +25,12 @@ class AdminMasterRundownIndex extends Component
 
     // User Fields
     public $name;
+
     public $description;
-    public $start_time;
-    public $end_time;
+
+    public $date;
+
+    public $type = 'pertandingan';
 
     public $showingRundownModal = false;
 
@@ -46,7 +49,8 @@ class AdminMasterRundownIndex extends Component
     public function showCreateModal()
     {
         $this->resetValidation();
-        $this->reset(['name', 'description', 'start_time', 'end_time', 'rundownIdBeingEdited']);
+        $this->reset(['name', 'description', 'date', 'type', 'rundownIdBeingEdited']);
+        $this->type = 'pertandingan';
         $this->showingRundownModal = true;
     }
 
@@ -56,11 +60,11 @@ class AdminMasterRundownIndex extends Component
         $this->rundownIdBeingEdited = $rundownId;
         $rundown = Rundown::findOrFail($rundownId);
 
-        // Load User Data
+        // Load Data
         $this->name = $rundown->name;
         $this->description = $rundown->description;
-        $this->start_time = Carbon::parse($rundown->start_time)->format('Y-m-d H:i:s');
-        $this->end_time = Carbon::parse($rundown->end_time)->format('Y-m-d H:i:s');
+        $this->date = $rundown->date ? Carbon::parse($rundown->date)->format('Y-m-d\TH:i') : null;
+        $this->type = $rundown->type ?? 'pertandingan';
         $this->showingRundownModal = true;
     }
 
@@ -68,13 +72,12 @@ class AdminMasterRundownIndex extends Component
     {
         $rules = [
             'name' => 'required|max:255',
+            'type' => 'required|in:pertandingan,seremonial',
             'description' => 'nullable',
-            'start_time' => 'required',
-            'end_time' => 'required',
+            'date' => 'required',
         ];
 
         $this->validate($rules);
-
 
         DB::transaction(function () {
             if ($this->rundownIdBeingEdited) {
@@ -82,18 +85,18 @@ class AdminMasterRundownIndex extends Component
 
                 $rundown->update([
                     'name' => $this->name,
+                    'type' => $this->type,
                     'description' => $this->description,
-                    'start_time' => $this->start_time,
-                    'end_time' => $this->end_time,
+                    'date' => $this->date,
                 ]);
 
                 $this->dispatch('swal', title: 'Berhasil!', text: 'Data Rundown telah diperbarui.', icon: 'success');
             } else {
                 Rundown::create([
                     'name' => $this->name,
+                    'type' => $this->type,
                     'description' => $this->description,
-                    'start_time' => $this->start_time,
-                    'end_time' => $this->end_time,
+                    'date' => $this->date,
                 ]);
 
                 $this->dispatch('swal', title: 'Berhasil!', text: 'Rundown baru telah ditambahkan.', icon: 'success');
@@ -103,7 +106,7 @@ class AdminMasterRundownIndex extends Component
         $this->showingRundownModal = false;
     }
 
-    public function deleteReferee($rundownId)
+    public function deleteRundown($rundownId)
     {
         $rundown = Rundown::findOrFail($rundownId);
         DB::transaction(function () use ($rundown) {

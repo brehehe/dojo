@@ -1,200 +1,330 @@
-<div class="p-6">
-    <div class="max-w-full mx-auto">
-        <!-- Header -->
-        <div class="mb-10">
-            <nav class="flex mb-4 text-xs font-bold uppercase tracking-widest text-slate-400 gap-2 items-center">
-                <a href="{{ route('admin.arbitrase.scoring.index') }}" class="hover:text-amber-500 transition-colors">Scoring</a>
-                <i class="fas fa-chevron-right text-[8px]"></i>
-                <span class="text-slate-800">Randori Bracket</span>
-            </nav>
-            
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded border border-rose-100">RANDORI</span>
-                        <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tighter">{{ $matchNumber->name }}</h1>
-                    </div>
-                    <p class="text-sm text-slate-500 font-medium italic">
-                        Klik pada kotak pertandingan untuk memasukkan hasil skor.
-                    </p>
+<div class="p-4 md:p-6 space-y-6">
+
+    {{-- ====== HEADER ====== --}}
+    <div>
+        <nav class="flex mb-3 text-xs font-bold uppercase tracking-widest text-slate-400 gap-2 items-center">
+            <a href="{{ route('admin.arbitrase.scoring.index') }}" class="hover:text-amber-500 transition-colors">Scoring</a>
+            <i class="fas fa-chevron-right text-[8px]"></i>
+            <span class="text-slate-800">Randori Bracket</span>
+        </nav>
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded border border-rose-100">RANDORI</span>
+                    <h1 class="text-2xl md:text-3xl font-black text-slate-800 uppercase tracking-tighter">{{ $matchNumber->name }}</h1>
+                </div>
+                <p class="text-xs text-slate-500 font-medium italic">Double Elimination — kalah 1x masih bisa juara via Loser Bracket</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                    <span class="text-[10px] font-black text-indigo-600 uppercase">Upper Bracket (UB)</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div class="w-2.5 h-2.5 rounded-full bg-orange-400"></div>
+                    <span class="text-[10px] font-black text-orange-600 uppercase">Loser Bracket (LB)</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                    <span class="text-[10px] font-black text-amber-600 uppercase">Grand Final</span>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Scrollable Bracket Container -->
-        <div class="w-full overflow-x-auto pb-20 no-scrollbar">
-            @if(isset($drawingData['rounds']) && count($drawingData['rounds']) > 0)
-                <div class="flex gap-20 items-center min-w-max px-10">
-                    @foreach($drawingData['rounds'] as $roundIndex => $matches)
-                        @php 
-                            $roundNames = ['PENYISIHAN', 'SEPEREMPAT FINAL', 'SEMI FINAL', 'FINAL'];
-                            $roundName = $roundNames[$roundIndex] ?? 'RONDE ' . ($roundIndex + 1);
-                            if ($roundIndex == count($drawingData['rounds']) - 1) $roundName = 'FINAL';
-                            elseif ($roundIndex == count($drawingData['rounds']) - 2) $roundName = 'SEMI FINAL';
+    @php
+        $ubRounds = $drawingData['upper_bracket']['rounds'] ?? [];
+        $lbRounds = $drawingData['lower_bracket']['rounds'] ?? [];
+        $grandFinal = $drawingData['grand_final'] ?? null;
+        $juaraMap = $juara ?? [];
+
+        $ubRoundLabels = ['UB Penyisihan', 'UB Perempat Final', 'UB Semi Final', 'UB Final'];
+        $lbRoundLabels = ['LB R1', 'LB R2', 'LB R3', 'LB R4', 'LB Semi', 'LB Final'];
+    @endphp
+
+    {{-- ====== REPAIR BANNER ====== --}}
+    @if(!empty($needsRepair))
+        <div class="bg-amber-50 border border-amber-300 rounded-2xl px-5 py-4 flex items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                    <i class="fas fa-tools text-amber-600 text-sm"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-black text-amber-800 uppercase tracking-widest">Routing Bracket Tidak Lengkap</p>
+                    <p class="text-[10px] text-amber-600 font-medium mt-0.5">Beberapa match belum punya jalur winner / loser. Klik tombol di bawah untuk memperbaiki otomatis dan me-replay semua hasil yang ada.</p>
+                </div>
+            </div>
+            <button wire:click="repairBracket"
+                    wire:loading.attr="disabled"
+                    class="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95">
+                <span wire:loading.remove wire:target="repairBracket"><i class="fas fa-wrench"></i> Perbaiki Bracket</span>
+                <span wire:loading wire:target="repairBracket"><i class="fas fa-spinner fa-spin"></i> Memproses...</span>
+            </button>
+        </div>
+    @endif
+
+    @if(empty($ubRounds))
+        <div class="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
+            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-sitemap text-3xl text-slate-300"></i>
+            </div>
+            <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">Bagan Belum Dibuat</h3>
+            <p class="text-xs text-slate-500 mt-2">Klik "Generate Drawing" di halaman Technical Meeting untuk membuat bagan.</p>
+        </div>
+    @else
+
+        {{-- ====== UPPER BRACKET ====== --}}
+        <div class="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 flex items-center gap-2">
+                <i class="fas fa-arrow-up text-white text-xs"></i>
+                <span class="text-xs font-black text-white uppercase tracking-widest">Upper Bracket — Winner Path</span>
+            </div>
+            <div class="overflow-x-auto p-4 pb-6">
+                <div class="flex gap-12 items-start min-w-max">
+                    @foreach($ubRounds as $roundIdx => $matches)
+                        @php
+                            $totalUB = count($ubRounds);
+                            if ($roundIdx === $totalUB - 1) { $roundLabel = 'UB FINAL'; }
+                            elseif ($roundIdx === $totalUB - 2 && $totalUB > 2) { $roundLabel = 'UB SEMI FINAL'; }
+                            else { $roundLabel = 'UB R' . ($roundIdx + 1); }
                         @endphp
-
-                    <div class="flex flex-col gap-10">
-                        <h3 class="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">{{ $roundName }}</h3>
-                        <div class="flex flex-col justify-around h-full gap-8">
-                            @foreach($matches as $matchIndex => $match)
-                                @php 
-                                    $nodeKey = $roundIndex . '_' . $matchIndex;
+                        <div class="flex flex-col gap-6">
+                            <div class="text-center mb-2">
+                                <span class="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">{{ $roundLabel }}</span>
+                            </div>
+                            @foreach($matches as $matchIdx => $match)
+                                @php
+                                    $nodeKey = 'ub_' . $roundIdx . '_' . $matchIdx;
                                     $result = $results[$nodeKey] ?? null;
+                                    $isActive = $matchNumber->active_bracket_node === $nodeKey;
+                                    $isDone = ($match['winner'] ?? null) !== null;
                                 @endphp
-                                
-                                <div 
-                                    wire:click="openMatchModal({{ $roundIndex }}, {{ $matchIndex }})"
-                                    class="relative group cursor-pointer"
-                                >
-                                    <!-- Match Box -->
-                                    <div class="w-72 bg-white rounded-2xl border-2 {{ $result ? 'border-amber-400 shadow-lg shadow-amber-500/10' : 'border-slate-100 hover:border-slate-300 shadow-sm' }} overflow-hidden transition-all active:scale-95">
-                                        <!-- Red Corner -->
-                                        <div class="p-3 border-b border-slate-50 flex items-center justify-between {{ $result && $result->winner_color === 'red' ? 'bg-rose-50/50' : '' }}">
-                                            <div class="flex items-center gap-3 overflow-hidden">
-                                                <div class="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-500/30"></div>
-                                                <span class="text-[11px] font-black uppercase tracking-tight truncate {{ $result && $result->winner_color === 'red' ? 'text-rose-600' : 'text-slate-700' }}">
-                                                    {{ $match['athlete1']['name'] ?? 'TBD' }}
-                                                </span>
-                                            </div>
-                                            @if($result && $result->winner_color === 'red')
-                                                <span class="text-[8px] font-black bg-rose-500 text-white px-1.5 py-0.5 rounded uppercase">WIN</span>
-                                            @endif
-                                            @if($result)
-                                                <span class="text-xs font-black text-slate-800 ml-2">{{ number_format($result->score_red, 0) }}</span>
-                                            @endif
-                                        </div>
-
-                                        <!-- VS Separator -->
-                                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                                            <div class="w-6 h-6 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[8px] font-black text-white shadow-sm italic">VS</div>
-                                        </div>
-
-                                        <!-- Blue Corner -->
-                                        <div class="p-3 flex items-center justify-between {{ $result && $result->winner_color === 'blue' ? 'bg-indigo-50/50' : '' }}">
-                                            <div class="flex items-center gap-3 overflow-hidden">
-                                                <div class="w-2 h-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/30"></div>
-                                                <span class="text-[11px] font-black uppercase tracking-tight truncate {{ $result && $result->winner_color === 'blue' ? 'text-indigo-600' : 'text-slate-700' }}">
-                                                    {{ $match['athlete2']['name'] ?? 'TBD' }}
-                                                </span>
-                                            </div>
-                                            @if($result && $result->winner_color === 'blue')
-                                                <span class="text-[8px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded uppercase">WIN</span>
-                                            @endif
-                                            @if($result)
-                                                <span class="text-xs font-black text-slate-800 ml-2">{{ number_format($result->score_blue, 0) }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <!-- Match Number Badge -->
-                                    <div class="absolute -top-3 -left-3 px-2 py-0.5 bg-slate-100 text-slate-400 text-[9px] font-bold rounded-md border border-slate-200">
-                                        M-{{ $matchIndex + 1 }}
-                                    <!-- Action Buttons -->
-                                    <div class="flex flex-col gap-1 ml-2">
-                                        <button 
-                                            wire:click="callMatch({{ $roundIndex }}, {{ $matchIndex }})"
-                                            class="w-8 h-8 rounded-full flex items-center justify-center {{ $matchNumber->active_bracket_node === ($roundIndex . '_' . $matchIndex) ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-slate-100 text-slate-400 hover:bg-amber-100 hover:text-amber-600' }} transition-all"
-                                            title="Panggil Wasit untuk pertandingan ini"
-                                        >
-                                            <i class="fas fa-bullhorn text-[10px]"></i>
-                                        </button>
-                                        <button 
-                                            wire:click="openMatchModal({{ $roundIndex }}, {{ $matchIndex }})"
-                                            class="w-8 h-8 rounded-full flex items-center justify-center bg-slate-900 text-white hover:bg-orange-600 transition-all shadow-md active:scale-95"
-                                            title="Input Nilai Hasil Akhir"
-                                        >
-                                            <i class="fas fa-edit text-[10px]"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                @include('livewire.admin.arbitrase.scoring.partials._match-card', [
+                                    'match' => $match,
+                                    'bracket' => 'ub',
+                                    'roundIdx' => $roundIdx,
+                                    'matchIdx' => $matchIdx,
+                                    'nodeKey' => $nodeKey,
+                                    'isActive' => $isActive,
+                                    'isDone' => $isDone,
+                                    'colorScheme' => 'indigo',
+                                    'matchLabel' => 'UB M' . ($matchIdx + 1),
+                                ])
                             @endforeach
                         </div>
-                    </div>
                     @endforeach
                 </div>
-            @else
-                <div class="flex flex-col items-center justify-center py-20 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] mx-10">
-                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-sitemap text-3xl text-slate-300"></i>
-                    </div>
-                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">Bagan Belum Siap</h3>
-                    <p class="text-xs text-slate-500 mt-2">Data bagan sedang diproses atau belum di-generate dengan benar.</p>
-                </div>
-            @endif
+            </div>
         </div>
 
-        <!-- Result Modal -->
-        @if($showModal)
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-                <div class="bg-white rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
-                    <div class="p-8">
-                        <div class="flex items-center justify-between mb-8">
-                            <div>
-                                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Hasil Pertandingan</h2>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Pilihlah Atlet yang menang</p>
+        {{-- ====== LOWER BRACKET ====== --}}
+        @if(count($lbRounds) > 0)
+        <div class="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 flex items-center gap-2">
+                <i class="fas fa-arrow-down text-white text-xs"></i>
+                <span class="text-xs font-black text-white uppercase tracking-widest">Loser Bracket — Second Chance Path</span>
+            </div>
+            <div class="overflow-x-auto p-4 pb-6">
+                <div class="flex gap-12 items-start min-w-max">
+                    @foreach($lbRounds as $lbRoundIdx => $matches)
+                        @php
+                            $totalLB = count($lbRounds);
+                            if ($lbRoundIdx === $totalLB - 1) { $lbLabel = 'LB FINAL'; }
+                            elseif ($lbRoundIdx === $totalLB - 2) { $lbLabel = 'LB SEMI'; }
+                            else { $lbLabel = 'LB R' . ($lbRoundIdx + 1); }
+                        @endphp
+                        <div class="flex flex-col gap-6">
+                            <div class="text-center mb-2">
+                                <span class="text-[9px] font-black text-orange-400 uppercase tracking-[0.3em]">{{ $lbLabel }}</span>
                             </div>
-                            <button wire:click="$set('showModal', false)" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            @foreach($matches as $matchIdx => $match)
+                                @php
+                                    $nodeKey = 'lb_' . $lbRoundIdx . '_' . $matchIdx;
+                                    $isActive = $matchNumber->active_bracket_node === $nodeKey;
+                                    $isDone = ($match['winner'] ?? null) !== null;
+                                @endphp
+                                @include('livewire.admin.arbitrase.scoring.partials._match-card', [
+                                    'match' => $match,
+                                    'bracket' => 'lb',
+                                    'roundIdx' => $lbRoundIdx,
+                                    'matchIdx' => $matchIdx,
+                                    'nodeKey' => $nodeKey,
+                                    'isActive' => $isActive,
+                                    'isDone' => $isDone,
+                                    'colorScheme' => 'orange',
+                                    'matchLabel' => 'LB M' . ($matchIdx + 1),
+                                ])
+                            @endforeach
                         </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
 
-                        <div class="flex gap-6 mb-10">
-                            <!-- Red Side -->
-                            <div class="flex-1 text-center">
-                                <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-3xl flex items-center justify-center mx-auto mb-4 border-4 border-rose-50 shadow-sm">
-                                    <i class="fas fa-user text-2xl"></i>
-                                </div>
-                                <h3 class="text-sm font-black text-slate-800 uppercase mb-4 h-10 flex items-center justify-center line-clamp-2 leading-tight px-2">
-                                    {{ $activeMatch['data']['athlete1']['name'] ?? '-' }}
-                                </h3>
-                                
-                                <div class="mb-4">
-                                    <input type="number" wire:model="scoreRed" class="w-20 px-3 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-center text-xl font-black focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all">
-                                </div>
-
-                                <button 
-                                    wire:click="selectWinner({{ $activeMatch['round'] }}, {{ $activeMatch['match'] }}, 'red')"
-                                    class="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-rose-500/20 transition-all active:scale-95"
-                                >
-                                    Pilih Menang
+        {{-- ====== GRAND FINAL ====== --}}
+        @if($grandFinal)
+        <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 flex items-center gap-2">
+                <i class="fas fa-trophy text-white text-xs"></i>
+                <span class="text-xs font-black text-white uppercase tracking-widest">Grand Final — UB Champion vs LB Champion</span>
+            </div>
+            <div class="p-6">
+                <div class="max-w-lg mx-auto">
+                    @php
+                        $gfDone = ($grandFinal['winner'] ?? null) !== null;
+                        $gfActive = str_starts_with($matchNumber->active_bracket_node ?? '', 'gf_');
+                    @endphp
+                    <div class="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 {{ $gfDone ? 'border-amber-400' : 'border-amber-200' }} rounded-2xl overflow-hidden {{ $gfActive ? 'ring-4 ring-amber-300 ring-offset-2' : '' }}">
+                        {{-- Athlete 1 (UB Champion) --}}
+                        <div class="px-4 py-3 border-b border-amber-100 flex items-center gap-3 {{ $gfDone && $grandFinal['winner'] === 'athlete1' ? 'bg-amber-100/60' : '' }}">
+                            <div class="w-1.5 h-10 rounded-full {{ $gfDone && $grandFinal['winner'] === 'athlete1' ? 'bg-amber-500' : 'bg-slate-200' }} flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <div class="text-[9px] font-black text-amber-500 uppercase tracking-widest">UB Champion</div>
+                                <div class="text-xs font-black text-slate-800 uppercase">{{ $grandFinal['athlete1']['name'] ?? '—' }}</div>
+                                @if($grandFinal['athlete1']['contingent'] ?? null)
+                                    <div class="text-[9px] text-slate-400">{{ $grandFinal['athlete1']['contingent'] }}</div>
+                                @endif
+                            </div>
+                            @if($gfDone && $grandFinal['winner'] === 'athlete1')
+                                <span class="text-[9px] font-black bg-amber-500 text-white px-2 py-1 rounded-lg">🏆 JUARA 1</span>
+                            @endif
+                        </div>
+                        <div class="flex items-center justify-center py-1.5 bg-amber-100/40 text-[9px] font-black text-amber-400 tracking-widest uppercase">VS</div>
+                        {{-- Athlete 2 (LB Champion) --}}
+                        <div class="px-4 py-3 flex items-center gap-3 {{ $gfDone && $grandFinal['winner'] === 'athlete2' ? 'bg-amber-100/60' : '' }}">
+                            <div class="w-1.5 h-10 rounded-full {{ $gfDone && $grandFinal['winner'] === 'athlete2' ? 'bg-amber-500' : 'bg-slate-200' }} flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <div class="text-[9px] font-black text-orange-500 uppercase tracking-widest">LB Champion</div>
+                                <div class="text-xs font-black text-slate-800 uppercase">{{ $grandFinal['athlete2']['name'] ?? '—' }}</div>
+                                @if($grandFinal['athlete2']['contingent'] ?? null)
+                                    <div class="text-[9px] text-slate-400">{{ $grandFinal['athlete2']['contingent'] }}</div>
+                                @endif
+                            </div>
+                            @if($gfDone && $grandFinal['winner'] === 'athlete2')
+                                <span class="text-[9px] font-black bg-amber-500 text-white px-2 py-1 rounded-lg">🏆 JUARA 1</span>
+                            @endif
+                        </div>
+                        {{-- Footer --}}
+                        @if(!$gfDone && $grandFinal['athlete1'] && $grandFinal['athlete2'])
+                            <div class="border-t border-amber-100 bg-amber-50 px-4 py-2.5 flex items-center justify-end gap-2">
+                                <button wire:click="callGrandFinal()"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide bg-amber-100 border border-amber-300 text-amber-700 hover:bg-amber-500 hover:text-white transition-all">
+                                    <i class="fas fa-bullhorn text-[9px]"></i> Panggil
+                                </button>
+                                <button wire:click="openGrandFinalModal()"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase bg-slate-900 text-white hover:bg-amber-600 transition-all shadow-sm">
+                                    <i class="fas fa-edit text-[9px]"></i> Input Skor
                                 </button>
                             </div>
-
-                            <div class="flex flex-col justify-center text-slate-300">
-                                <span class="text-xs font-black italic">VS</span>
-                            </div>
-
-                            <!-- Blue Side -->
-                            <div class="flex-1 text-center">
-                                <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-4 border-4 border-indigo-50 shadow-sm">
-                                    <i class="fas fa-user text-2xl"></i>
-                                </div>
-                                <h3 class="text-sm font-black text-slate-800 uppercase mb-4 h-10 flex items-center justify-center line-clamp-2 leading-tight px-2">
-                                    {{ $activeMatch['data']['athlete2']['name'] ?? '-' }}
-                                </h3>
-
-                                <div class="mb-4">
-                                    <input type="number" wire:model="scoreBlue" class="w-20 px-3 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-center text-xl font-black focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all">
-                                </div>
-
-                                <button 
-                                    wire:click="selectWinner({{ $activeMatch['round'] }}, {{ $activeMatch['match'] }}, 'blue')"
-                                    class="w-full py-4 bg-indigo-500 hover:bg-indigo-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
-                                >
-                                    Pilih Menang
-                                </button>
-                            </div>
-                        </div>
-
-                        <button 
-                            wire:click="$set('showModal', false)"
-                            class="w-full py-4 bg-slate-50 hover:bg-slate-100 text-slate-400 font-black uppercase tracking-widest rounded-2xl transition-all"
-                        >
-                            Batal
-                        </button>
+                        @endif
                     </div>
                 </div>
             </div>
+        </div>
         @endif
-    </div>
+
+        {{-- ====== HASIL AKHIR ====== --}}
+        @if(!empty($juaraMap))
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-gradient-to-r from-slate-800 to-slate-700 flex items-center gap-2">
+                <i class="fas fa-medal text-amber-400 text-sm"></i>
+                <span class="text-xs font-black text-white uppercase tracking-widest">Hasil Akhir</span>
+            </div>
+            <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                @foreach([1=>'🥇',2=>'🥈',3=>'🥉',4=>'🏅'] as $rank => $medal)
+                    @php $athlete = $juaraMap[$rank] ?? null; @endphp
+                    <div class="text-center p-4 rounded-xl {{ $athlete ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50 border border-slate-100' }}">
+                        <div class="text-3xl mb-2">{{ $medal }}</div>
+                        <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Juara {{ $rank }}</div>
+                        @if($athlete)
+                            <div class="text-xs font-black text-slate-800 uppercase leading-tight">{{ $athlete['name'] }}</div>
+                            <div class="text-[9px] text-slate-400 mt-0.5">{{ $athlete['contingent'] ?? '' }}</div>
+                        @else
+                            <div class="text-xs text-slate-300 font-bold italic">Menunggu...</div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+    @endif {{-- end if ubRounds --}}
+
+    {{-- ====== RESULT MODAL ====== --}}
+    @if($showModal && $activeMatch)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+            <div class="bg-white rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl">
+                <div class="p-8">
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Hasil Pertandingan</h2>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                                {{ strtoupper($activeMatch['bracket']) }} &bull;
+                                @if($activeMatch['bracket'] === 'gf') Grand Final @else R{{ $activeMatch['round'] + 1 }} M{{ $activeMatch['match'] + 1 }} @endif
+                            </p>
+                        </div>
+                        <button wire:click="$set('showModal', false)" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    {{-- Athletes --}}
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        {{-- AKA (Red / athlete1) --}}
+                        <div class="bg-rose-50 border border-rose-100 rounded-3xl p-5 text-center">
+                            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-3 border-2 border-rose-200">
+                                <i class="fas fa-user text-lg"></i>
+                            </div>
+                            <div class="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Pita Merah</div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase leading-tight mb-4 min-h-[2.5rem] flex items-center justify-center">
+                                {{ $activeMatch['data']['athlete1']['name'] ?? 'TBD' }}
+                            </h3>
+                            <div class="mb-4">
+                                <label class="text-[9px] font-black text-rose-400 uppercase">Skor</label>
+                                <input type="number" wire:model="scoreRed" class="w-24 mt-1 px-3 py-3 bg-white border-2 border-rose-200 rounded-2xl text-center text-2xl font-black text-slate-800 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all mx-auto block">
+                            </div>
+                            @if($activeMatch['data']['athlete1'])
+                                <button
+                                    wire:click="selectWinner('{{ $activeMatch['bracket'] }}', {{ $activeMatch['round'] }}, {{ $activeMatch['match'] }}, 'athlete1')"
+                                    class="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-rose-500/20 transition-all active:scale-95"
+                                >
+                                    <i class="fas fa-trophy mr-1"></i> Menang
+                                </button>
+                            @endif
+                        </div>
+
+                        {{-- SHIRO (Blue / athlete2) --}}
+                        <div class="bg-indigo-50 border border-indigo-100 rounded-3xl p-5 text-center">
+                            <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 border-2 border-indigo-200">
+                                <i class="fas fa-user text-lg"></i>
+                            </div>
+                            <div class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Pita Putih</div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase leading-tight mb-4 min-h-[2.5rem] flex items-center justify-center">
+                                {{ $activeMatch['data']['athlete2']['name'] ?? 'TBD' }}
+                            </h3>
+                            <div class="mb-4">
+                                <label class="text-[9px] font-black text-indigo-400 uppercase">Skor</label>
+                                <input type="number" wire:model="scoreBlue" class="w-24 mt-1 px-3 py-3 bg-white border-2 border-indigo-200 rounded-2xl text-center text-2xl font-black text-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all mx-auto block">
+                            </div>
+                            @if($activeMatch['data']['athlete2'])
+                                <button
+                                    wire:click="selectWinner('{{ $activeMatch['bracket'] }}', {{ $activeMatch['round'] }}, {{ $activeMatch['match'] }}, 'athlete2')"
+                                    class="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+                                >
+                                    <i class="fas fa-trophy mr-1"></i> Menang
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <button wire:click="$set('showModal', false)" class="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest rounded-2xl transition-all">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
 </div>

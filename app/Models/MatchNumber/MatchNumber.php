@@ -3,6 +3,7 @@
 namespace App\Models\MatchNumber;
 
 use App\Models\Athlete;
+use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\RandoriMatchResult;
@@ -61,5 +62,10 @@ class MatchNumber extends Model
     public function randoriResults()
     {
         return $this->hasMany(RandoriMatchResult::class);
+    }
+
+    public function drawings()
+    {
+        return $this->hasMany(DrawingMatchNumber::class);
     }
 }

@@ -353,6 +353,14 @@
                             Pool
                         </a>
 
+                        <a href="{{ route('admin.master.session-time') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                <i class="fas fa-clock text-xs"></i>
+                            </div>
+                            Session Time
+                        </a>
+
                     </div>
                 </div>
                 @endrole
@@ -413,7 +421,7 @@
                         x-transition:leave-end="opacity-0 translate-y-2"
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
-                        <a href="{{ route('admin.master.referees') }}"
+                        <a href="{{ route('admin.arbitrase.referees') }}"
                             class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
@@ -459,6 +467,23 @@
                                 <i class="fas fa-clipboard-check text-xs"></i>
                             </div>
                             Penilaian Wasit
+                        </a>
+                        <a href="{{ route('admin.panitera.scoring.embu.testbench') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-all rounded-xl mx-2 {{ request()->routeIs('admin.panitera.scoring.embu.testbench') ? 'bg-emerald-50 text-emerald-700' : '' }}">
+                            <div
+                                class="rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 min-w-[28px]">
+                                <i class="fas fa-flask text-xs"></i>
+                            </div>
+                            <span class="flex-1">Testbench Embu</span>
+                            <span class="text-[8px] font-black bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-md uppercase tracking-wide">TEST</span>
+                        </a>
+                        <a href="{{ route('admin.panitera.scoring.embu.result') }}"
+                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-amber-600 transition-all rounded-xl mx-2 {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'bg-amber-50 text-amber-700' : '' }}">
+                            <div
+                                class="rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 min-w-[28px]">
+                                <i class="fas fa-trophy text-xs"></i>
+                            </div>
+                            <span class="flex-1">Hasil & Juara Embu</span>
                         </a>
                     </div>
                 </div>
@@ -644,6 +669,29 @@
                         class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Rundown</a>
                     <a href="{{ route('admin.master.court') }}"
                         class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Court</a>
+                </div>
+            </div>
+            @endrole
+
+            @role('Super Admin|Admin|Panitera')
+            <div x-data="{ open: {{ request()->routeIs('admin.panitera.*') ? 'true' : 'false' }} }" class="space-y-2">
+                <button @click="open = !open"
+                    class="w-full flex items-center justify-between p-5 rounded-[2rem] {{ request()->routeIs('admin.panitera.*') ? 'bg-orange-600/10 text-orange-400 border border-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-balance-scale text-lg"></i>
+                        <span class="font-black uppercase tracking-wider text-xs">Panitera</span>
+                    </div>
+                    <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
+                    <a href="{{ route('admin.panitera.scoring.index') }}"
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.panitera.scoring.index') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Penilaian Wasit</a>
+                    <a href="{{ route('admin.panitera.scoring.embu.testbench') }}"
+                        class="flex items-center gap-2 p-4 rounded-2xl {{ request()->routeIs('admin.panitera.scoring.embu.testbench') ? 'text-emerald-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">
+                        <i class="fas fa-flask text-xs"></i>
+                        Testbench Embu
+                        <span class="ml-auto text-[8px] font-black bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded-md uppercase">TEST</span>
+                    </a>
                 </div>
             </div>
             @endrole

@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             KyuLevelSeeder::class,
-            MatchNumberSeeder::class,
             CategorySeeder::class,
             PostSeeder::class,
             GallerySeeder::class,
@@ -22,6 +21,9 @@ class DatabaseSeeder extends Seeder
             ContingentSeeder::class,
             CourtAndPoolSeeder::class,
             RefereeSeeder::class,
+            MatchNumberSeeder::class,
+            SessionRundownSeeder::class,
+            TournamentDummySeeder::class,
         ]);
     }
 }

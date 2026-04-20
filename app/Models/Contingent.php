@@ -46,6 +46,6 @@ class Contingent extends Model
 
     public function officials()
     {
-        return $this->belongsToMany(Official::class, 'officials');
+        return $this->hasMany(Official::class);
     }
 }
