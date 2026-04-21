@@ -298,10 +298,24 @@ class AdminArbitraseScoringRandoriDetail extends Component
         $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
         $this->matchNumber->update(['active_bracket_node' => $nodeKey]);
 
+        // Sinkronisasi dengan Lapangan agar TV Monitor terupdate
+        $drawing = \App\Models\DrawingMatchNumber::with('court')
+            ->where('match_number_id', $this->matchNumber->id)
+            ->first();
+
+        if ($drawing && $drawing->court_id) {
+            $drawing->court->update([
+                'active_match_id' => $this->matchNumber->id,
+                'active_drawing_id' => $drawing->id,
+                'active_registration_id' => null,
+                'active_bracket_node' => $nodeKey,
+            ]);
+        }
+
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Pertandingan Dipanggil',
-            'text' => 'Wasit kini dapat mengisi skor untuk pertandingan ini.',
+            'text' => 'Wasit dan TV Monitor kini menampilkan pertandingan ini.',
         ]);
     }
 
@@ -309,10 +323,24 @@ class AdminArbitraseScoringRandoriDetail extends Component
     {
         $this->matchNumber->update(['active_bracket_node' => 'gf_0_0']);
 
+        // Sinkronisasi dengan Lapangan agar TV Monitor terupdate
+        $drawing = \App\Models\DrawingMatchNumber::with('court')
+            ->where('match_number_id', $this->matchNumber->id)
+            ->first();
+
+        if ($drawing && $drawing->court_id) {
+            $drawing->court->update([
+                'active_match_id' => $this->matchNumber->id,
+                'active_drawing_id' => $drawing->id,
+                'active_registration_id' => null,
+                'active_bracket_node' => 'gf_0_0',
+            ]);
+        }
+
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Grand Final Dipanggil',
-            'text' => 'Wasit kini dapat mengisi skor Grand Final.',
+            'text' => 'Wasit dan TV Monitor kini menampilkan Grand Final.',
         ]);
     }
 

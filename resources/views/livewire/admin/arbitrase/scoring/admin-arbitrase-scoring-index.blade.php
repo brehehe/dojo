@@ -76,12 +76,17 @@
                     @endif
                 </div>
 
-                {{-- TV Monitor link --}}
-                @php $monitorRoute = request()->is('*panitera*') ? 'admin.arbitrase.scoring.monitor' : 'admin.arbitrase.scoring.monitor'; @endphp
-                <a href="{{ route('admin.arbitrase.scoring.monitor', $courtCard->id) }}" target="_blank"
-                   class="mt-4 w-full block text-center py-2 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm">
-                    <i class="fas fa-tv mr-1 text-slate-300"></i> TV Monitor
-                </a>
+                {{-- TV Monitor links --}}
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <a href="{{ route('admin.arbitrase.scoring.monitor', $courtCard->id) }}" target="_blank"
+                       class="w-full flex items-center justify-center py-2 bg-slate-800 hover:bg-slate-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm">
+                        <i class="fas fa-tv mr-1 text-slate-300"></i> TV Panggilan
+                    </a>
+                    <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.court', $courtCard->id) }}" target="_blank"
+                       class="w-full flex items-center justify-center py-2 bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm">
+                        <i class="fas fa-trophy mr-1 text-amber-100"></i> TV Hasil
+                    </a>
+                </div>
             </div>
         @endforeach
     </div>
@@ -179,7 +184,7 @@
                     <tr>
                         <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">#</th>
                         <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Match / Kategori</th>
-                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Kontingen</th>
+                        <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Total Peserta</th>
                         <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Pool</th>
                         <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Babak</th>
                         <th class="px-4 py-3 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">Lapangan</th>
@@ -192,9 +197,6 @@
                     @forelse($drawings as $drawing)
                         @php
                             $mn          = $drawing->matchNumber;
-                            $reg         = $drawing->registration;
-                            $contingent  = $reg?->contingent;
-                            $athletes    = $reg?->athletes ?? collect();
                             $pool        = $drawing->pool;
                             $court       = $drawing->court;
                             $session     = $drawing->sessionTime;
@@ -220,23 +222,11 @@
                                 @endif
                             </td>
 
-                            {{-- Kontingen + Athletes --}}
+                            {{-- Total Peserta --}}
                             <td class="px-4 py-3 align-top">
-                                @if($contingent)
-                                    <div class="text-[11px] font-black text-slate-700 uppercase">{{ $contingent->name }}</div>
-                                    @if($athletes->isNotEmpty())
-                                        <div class="mt-1 space-y-0.5">
-                                            @foreach($athletes->take(3) as $ath)
-                                                <p class="text-[9px] text-slate-400 truncate max-w-[160px]">{{ $ath->name }}</p>
-                                            @endforeach
-                                            @if($athletes->count() > 3)
-                                                <p class="text-[8px] text-slate-300 italic">+{{ $athletes->count() - 3 }} lainnya</p>
-                                            @endif
-                                        </div>
-                                    @endif
-                                @else
-                                    <span class="text-[10px] text-slate-300 italic">—</span>
-                                @endif
+                                <span class="inline-flex items-center justify-center bg-slate-100 text-slate-700 font-black text-[10px] px-2.5 py-1 rounded-lg border border-slate-200">
+                                    <i class="fas fa-users mr-1.5 text-slate-400"></i> {{ $drawing->total_athletes }} Slot Peserta
+                                </span>
                             </td>
 
                             {{-- Pool --}}
@@ -290,17 +280,24 @@
                                     @if($court)
                                         {{-- Panggil berdasarkan drawing ID — court, match, reg, pool, session, rundown, draft_type sudah ada di drawing --}}
                                         <button wire:click="activateMatch({{ $drawing->id }})"
-                                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm shadow-amber-500/20">
+                                                class="inline-flex items-center justify-center gap-1 w-full px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm shadow-amber-500/20">
                                             <i class="fas fa-bullhorn text-[9px]"></i> Panggil
                                         </button>
                                     @else
                                         <span class="text-[9px] text-slate-300 italic">No Court</span>
                                     @endif
                                     @if($mn)
-                                        <a href="{{ route($detailRoute, $mn->id) }}"
-                                           class="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all active:scale-95">
-                                            Detail <i class="fas fa-chevron-right text-[8px]"></i>
-                                        </a>
+                                        <div class="grid grid-cols-2 gap-1 w-full mt-1">
+                                            <a href="{{ route($detailRoute, $mn->id) }}"
+                                               class="inline-flex items-center justify-center gap-1 px-2 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[8px] font-black uppercase tracking-widest transition-all active:scale-95">
+                                                Detail
+                                            </a>
+                                            <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.match', $mn->id) }}" target="_blank"
+                                               class="inline-flex items-center justify-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+                                               title="Monitor Hasil Sementara">
+                                                <i class="fas fa-tv text-[8px]"></i> Hasil
+                                            </a>
+                                        </div>
                                     @endif
                                 </div>
                             </td>

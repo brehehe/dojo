@@ -161,16 +161,33 @@ class AdminArbitraseScoringIndex extends Component
             ->orderBy('round')
             ->pluck('round');
 
-        // ── Core query: per DrawingMatchNumber (per athlete/team slot) ─────────
+        // ── Core query: grouped per scheduled match session ─────────
         $query = DrawingMatchNumber::with([
             'matchNumber.ageGroup',
-            'registration.contingent',
-            'registration.athletes',
             'pool',
             'court',
             'sessionTime',
             'rundown',
-        ])->whereNotNull('match_number_id');
+        ])->whereNotNull('match_number_id')
+        ->select(
+            'match_number_id',
+            'court_id',
+            'pool_id',
+            'session_time_id',
+            'rundown_id',
+            'round',
+            'draft_type'
+        )
+        ->selectRaw('MIN(id) as id, COUNT(registration_id) as total_athletes, MIN(sequence_number) as sequence_number')
+        ->groupBy(
+            'match_number_id',
+            'court_id',
+            'pool_id',
+            'session_time_id',
+            'rundown_id',
+            'round',
+            'draft_type'
+        );
 
         // ── Filters ────────────────────────────────────────────────────────────
         if (! empty($this->filterCourt)) {
@@ -208,7 +225,7 @@ class AdminArbitraseScoringIndex extends Component
             });
         }
 
-        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderBy('sequence_number');
+        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderByRaw('MIN(sequence_number)');
 
         $routePrefix = request()->is('*panitera*') ? 'admin.panitera.scoring' : 'admin.arbitrase.scoring';
 

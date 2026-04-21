@@ -252,39 +252,39 @@
         </div>
 
         {{-- ====== ACTION BUTTONS ====== --}}
-        {{-- <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight">Panggil Peserta ke Lapangan</h3>
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Klik untuk menampilkan di layar Wasit</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">Klik Panggil untuk menampilkan di Layar Wasit & Monitor</span>
             </div>
             <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 @foreach($registrations as $no => $item)
                     @php $isActive = $matchNumber->active_registration_id == $item['id']; @endphp
-                    <div class="flex items-center gap-3 p-3 rounded-xl border {{ $isActive ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white' }} shadow-sm">
+                    <div class="flex items-center gap-3 p-3 rounded-xl border {{ $isActive ? 'border-indigo-300 bg-indigo-50 shadow-md shadow-indigo-500/10' : 'border-slate-200 bg-white' }} shadow-sm">
                         <div class="w-8 h-8 rounded-full {{ $isActive ? 'bg-indigo-600' : 'bg-slate-100' }} flex items-center justify-center flex-shrink-0">
                             <span class="text-xs font-black {{ $isActive ? 'text-white' : 'text-slate-500' }}">{{ $no + 1 }}</span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="text-xs font-black text-slate-800 truncate">
+                            <div class="text-[11px] font-black text-slate-800 truncate uppercase mt-0.5" title="@foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach">
                                 @foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach
                             </div>
-                            <div class="text-[10px] text-slate-400 font-bold uppercase">{{ $item['contingent']?->name }}</div>
+                            <div class="text-[9px] text-slate-400 font-bold uppercase truncate">{{ $item['contingent']?->name }}</div>
                         </div>
-                        <div class="flex gap-1 flex-shrink-0">
+                        <div class="flex gap-1.5 flex-shrink-0">
                             <button wire:click="callParticipant({{ $item['id'] }})"
-                                class="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all
-                                    {{ $isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-500' }}">
-                                <i class="fas fa-bullhorn"></i>
+                                class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all
+                                    {{ $isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-500' }}" title="Panggil ke Wasit & Monitor">
+                                <i class="fas fa-bullhorn text-[8px]"></i> Panggil
                             </button>
                             <button wire:click="openScoringModal({{ $item['id'] }})"
-                                class="px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide bg-slate-900 hover:bg-slate-700 text-white transition-all">
-                                <i class="fas fa-edit"></i>
+                                class="flex items-center justify-center px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wide bg-slate-900 hover:bg-slate-700 text-white shadow-sm transition-all" title="Input Skor Admin">
+                                <i class="fas fa-edit text-[8px]"></i>
                             </button>
                         </div>
                     </div>
                 @endforeach
             </div>
-        </div> --}}
+        </div>
 
         {{-- ====== REKAP PERINGKAT ====== --}}
         @php

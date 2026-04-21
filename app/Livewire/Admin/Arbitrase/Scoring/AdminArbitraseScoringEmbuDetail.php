@@ -51,10 +51,26 @@ class AdminArbitraseScoringEmbuDetail extends Component
     {
         $this->matchNumber->update(['active_registration_id' => $registrationId]);
 
+        // Sinkronisasi dengan Lapangan agar TV Monitor terupdate
+        $drawing = DrawingMatchNumber::with('court')
+            ->where('match_number_id', $this->matchNumber->id)
+            ->where('registration_id', $registrationId)
+            ->where('round', $this->currentRound)
+            ->first();
+
+        if ($drawing && $drawing->court_id) {
+            $drawing->court->update([
+                'active_match_id' => $this->matchNumber->id,
+                'active_drawing_id' => $drawing->id,
+                'active_registration_id' => $registrationId,
+                'active_bracket_node' => null,
+            ]);
+        }
+
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Peserta Dipanggil',
-            'text' => 'Layar semua wasit kini menampilkan form untuk peserta ini.',
+            'text' => 'Layar wasit dan TV Monitor kini terpusat ke peserta ini.',
         ]);
     }
 

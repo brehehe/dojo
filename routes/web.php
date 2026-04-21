@@ -151,6 +151,8 @@ Route::middleware('auth')->group(function () {
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
                 Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
+                Route::get('/monitor-hasil/court/{courtId}', \App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex::class)->name('monitor-hasil.court');
+                Route::get('/monitor-hasil/match/{matchId}', \App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex::class)->name('monitor-hasil.match');
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
             });
