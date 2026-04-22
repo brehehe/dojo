@@ -27,7 +27,7 @@
                 </div>
                 <div>
                     <div class="text-xs font-black uppercase tracking-widest text-stone-800">Smart-Perkemi</div>
-                    <div class="text-[10px] text-stone-400 font-medium">Shorinji Kempo Indonesia</div>
+                    <div class="text-[15px] text-stone-400 font-medium">Shorinji Kempo Indonesia</div>
                 </div>
             </div>
             <div class="hidden md:flex items-center gap-8 text-stone-500 text-sm font-semibold">
@@ -105,7 +105,7 @@
                         @foreach([['🥇', 'Emas'], ['🥈', 'Perak'], ['🥉', 'Perunggu']] as [$emoji, $label])
                             <div class="bg-white/5 rounded-2xl py-4">
                                 <div class="text-2xl">{{ $emoji }}</div>
-                                <div class="text-white/40 text-[10px] font-bold mt-1">{{ $label }}</div>
+                                <div class="text-white/40 text-[15px] font-bold mt-1">{{ $label }}</div>
                             </div>
                         @endforeach
                     </div>
@@ -119,7 +119,7 @@
                             @if($num)
                                 <div class="text-white font-black text-xl">{{ $num }}</div>
                             @endif
-                            <div class="text-stone-400 text-[11px] font-semibold leading-snug">{{ $label }}</div>
+                            <div class="text-stone-400 text-[15px] font-semibold leading-snug">{{ $label }}</div>
                         </div>
                     @endforeach
                 </div>
@@ -186,7 +186,7 @@
                         <div class="flex-1">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
                                 <h3 class="text-stone-800 font-black text-base">{{ $title }}</h3>
-                                <span class="bg-white border border-stone-200 text-stone-500 text-[10px] font-bold px-3 py-1 rounded-full shrink-0">{{ $time }}</span>
+                                <span class="bg-white border border-stone-200 text-stone-500 text-[15px] font-bold px-3 py-1 rounded-full shrink-0">{{ $time }}</span>
                             </div>
                             <p class="text-stone-400 text-sm leading-relaxed">{{ $desc }}</p>
                         </div>

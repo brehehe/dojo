@@ -20,7 +20,7 @@ class AdminMasterOfficialIndex extends Component
 
     public $search = '';
 
-    public $perPage = 10;
+    public $perPage = 5;
 
     public $filterContingent = '';
 

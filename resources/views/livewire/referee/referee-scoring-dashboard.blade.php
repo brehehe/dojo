@@ -7,14 +7,14 @@
                     <i class="fas fa-gavel"></i>
                 </div>
                 <div>
-                    <h2 class="text-sm font-black text-slate-800 uppercase tracking-tight">Wasit Juri</h2>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <h2 class="text-[15px] font-black text-slate-800 uppercase tracking-tight">Wasit Juri</h2>
+                    <p class="text-[15px] font-bold text-slate-800 uppercase tracking-widest">
                         {{ $referee?->user?->name ?? auth()->user()?->name ?? 'Tidak Dikenal' }}
                     </p>
                 </div>
             </div>
             @if($judgeIndex)
-                <div class="px-4 py-2 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
+                <div class="px-4 py-2 bg-slate-900 text-white rounded-2xl text-[15px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
                     JURI {{ $judgeIndex }}
                 </div>
             @endif
@@ -24,11 +24,11 @@
         @if(!$referee)
             <div class="flex items-center gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-3 mb-6 shadow-sm">
                 <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                    <i class="fas fa-exclamation-triangle text-amber-600 text-sm"></i>
+                    <i class="fas fa-exclamation-triangle text-amber-600 text-[15px]"></i>
                 </div>
                 <div>
-                    <p class="text-[11px] font-black text-amber-800 uppercase tracking-widest">Akun Bukan Wasit Terdaftar</p>
-                    <p class="text-[10px] text-amber-600 font-medium mt-0.5">
+                    <p class="text-[15px] font-black text-amber-800 uppercase tracking-widest">Akun Bukan Wasit Terdaftar</p>
+                    <p class="text-[15px] text-amber-600 font-medium mt-0.5">
                         Akun Anda tidak terdaftar sebagai wasit. Scoring tidak dapat dikirim. Pastikan login menggunakan akun wasit yang benar.
                     </p>
                 </div>
@@ -41,11 +41,11 @@
                 <div class="p-8 bg-slate-900 text-white relative overflow-hidden">
                     <div class="relative z-10">
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="px-2 py-0.5 bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest rounded-md uppercase">LIVE ON COURT</span>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ strtoupper($activeMatch->draft_type) }}</span>
+                            <span class="px-2 py-0.5 bg-orange-500 text-white text-[15px] font-black uppercase tracking-widest rounded-md uppercase">LIVE ON COURT</span>
+                            <span class="text-[15px] font-bold text-slate-800 uppercase tracking-widest">{{ strtoupper($activeMatch->draft_type) }}</span>
                         </div>
                         <h1 class="text-2xl font-black uppercase tracking-tighter mb-1">{{ $activeMatch->name }}</h1>
-                        <p class="text-xs text-slate-400 font-medium italic opacity-80">Mohon berikan penilaian terbaik Anda secara objektif.</p>
+                        <p class="text-[15px] text-slate-800 font-medium italic opacity-80">Mohon berikan penilaian terbaik Anda secara objektif.</p>
                     </div>
                     <i class="fas fa-trophy absolute -right-4 -bottom-4 text-8xl text-white/5 -rotate-12"></i>
                 </div>
@@ -61,8 +61,8 @@
                     <div class="mt-8 space-y-4">
                         <div class="bg-amber-500 rounded-[2rem] p-8 text-white flex items-center justify-between shadow-xl shadow-amber-500/20">
                             <div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Total Skor Terhitung</p>
-                                <p class="text-xs text-white/50 italic leading-tight">Terhitung secara otomatis</p>
+                                <p class="text-[15px] font-black uppercase tracking-[0.2em] text-white/70">Total Skor Terhitung</p>
+                                <p class="text-[15px] text-white/50 italic leading-tight">Terhitung secara otomatis</p>
                             </div>
                             <div class="text-5xl font-black tracking-tighter">
                                 {{ number_format($totalScore, 1) }}
@@ -70,10 +70,10 @@
                         </div>
 
                         <div class="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Catatan Wasit (Opsional)</label>
+                            <label class="block text-[15px] font-black text-slate-800 uppercase tracking-widest mb-3">Catatan Wasit (Opsional)</label>
                             <textarea 
                                 wire:model="notes" 
-                                class="w-full bg-white border border-slate-200 rounded-2xl p-4 text-sm font-medium focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none"
+                                class="w-full bg-white border border-slate-200 rounded-2xl p-4 text-[15px] font-medium focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none"
                                 rows="3"
                                 placeholder="Ketik catatan di sini..."
                             ></textarea>
@@ -82,7 +82,7 @@
                         <div class="flex flex-col md:flex-row gap-4">
                             <button 
                                 wire:click="resetForm" 
-                                class="w-full md:w-1/3 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black uppercase tracking-widest rounded-[2rem] transition-all active:scale-95"
+                                class="w-full md:w-1/3 py-5 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black uppercase tracking-widest rounded-[2rem] transition-all active:scale-95"
                             >
                                 <i class="fas fa-undo mr-2"></i> Reset
                             </button>
@@ -90,7 +90,7 @@
                                 wire:click="submitScore" 
                                 class="w-full md:w-2/3 py-5 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-widest rounded-[2rem] shadow-xl shadow-orange-600/20 transition-all active:scale-95 flex items-center justify-center gap-3"
                             >
-                                <i class="fas fa-paper-plane text-xs"></i>
+                                <i class="fas fa-paper-plane text-[15px]"></i>
                                 <span>Kirim Nilai Final</span>
                             </button>
                         </div>
@@ -103,7 +103,7 @@
                     <i class="fas fa-user-clock text-3xl"></i>
                 </div>
                 <h3 class="text-lg font-black text-slate-800 uppercase tracking-tight">Persiapan: {{ $activeMatch->name }}</h3>
-                <p class="text-xs text-slate-500 font-medium mt-2 max-w-[250px] mx-auto leading-relaxed">
+                <p class="text-[15px] text-slate-900 font-medium mt-2 max-w-[250px] mx-auto leading-relaxed">
                     Mohon tunggu, Panitera akan segera memanggil atlet ke lapangan untuk Anda nilai.
                 </p>
             </div>
@@ -114,14 +114,14 @@
                     <i class="fas fa-broadcast-tower text-3xl"></i>
                 </div>
                 <h3 class="text-lg font-black text-slate-800 uppercase tracking-tight">Menunggu Pertandingan</h3>
-                <p class="text-xs text-slate-500 font-medium mt-2 max-w-[200px] mx-auto leading-relaxed">
+                <p class="text-[15px] text-slate-900 font-medium mt-2 max-w-[200px] mx-auto leading-relaxed">
                     Belum ada pertandingan yang dipanggil ke lapangan oleh Panitera.
                 </p>
             </div>
         @endif
 
         <div class="mt-8 flex justify-center opacity-50">
-            <span class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <span class="flex items-center gap-2 text-[15px] font-black uppercase tracking-widest text-slate-800">
                 <i class="fas fa-satellite-dish animate-pulse"></i>
                 <span>Sinkronisasi Otomatis Aktif</span>
             </span>

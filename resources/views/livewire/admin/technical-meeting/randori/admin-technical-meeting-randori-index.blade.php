@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Drawing Randori</h1>
-            <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-widest mt-1">Technical Meeting &mdash; Sistem Drawing Otomatis</p>
+            <p class="text-[15px] text-slate-800 font-semibold uppercase tracking-widest mt-1">Technical Meeting &mdash; Sistem Drawing Otomatis</p>
         </div>
 
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -13,12 +13,12 @@
                         wire:confirm="Generate drawing otomatis untuk semua nomor Randori? Sistem Auto-Scheduler akan mentribusikan Court dan Jadwal secara otomatis untuk mencegah bentrok."
                         wire:loading.attr="disabled"
                         wire:target="generateAllDrawings"
-                        class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm shadow-red-600/20 disabled:opacity-50">
+                        class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-[15px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm shadow-red-600/20 disabled:opacity-50">
                     <span wire:loading.remove wire:target="generateAllDrawings"><i class="fas fa-magic"></i></span>
                     <span wire:loading wire:target="generateAllDrawings"><i class="fas fa-spinner fa-spin"></i></span>
                     Generate Semua
                 </button>
-                <button onclick="window.print()" class="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-700 text-white text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all active:scale-95">
+                <button onclick="window.print()" class="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-700 text-white text-[15px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all active:scale-95">
                     <i class="fas fa-print"></i>
                     Cetak
                 </button>
@@ -30,24 +30,24 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         {{-- Card 1 --}}
         <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex gap-3 items-start">
-            <div class="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                <i class="fas fa-sitemap text-sm"></i>
+            <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <i class="fas fa-sitemap text-[15px]"></i>
             </div>
             <div class="min-w-0">
-                <p class="text-[10px] font-black text-red-600 uppercase tracking-widest">Sistem Gugur Tunggal</p>
+                <p class="text-[15px] font-black text-red-600 uppercase tracking-widest">Sistem Gugur Tunggal</p>
                 <p class="text-[12px] font-black text-slate-800 mt-0.5 leading-tight">Pohon Turnamen / Bagan</p>
-                <p class="text-[10px] text-slate-400 mt-0.5">Menggunakan format 8, 16, 32, dst (THB).</p>
+                <p class="text-[15px] text-slate-800 mt-0.5">Menggunakan format 8, 16, 32, dst (THB).</p>
             </div>
         </div>
         {{-- Card 2 --}}
         <div class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex gap-3 items-start">
-             <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                <i class="fas fa-user-shield text-sm"></i>
+             <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                <i class="fas fa-user-shield text-[15px]"></i>
             </div>
             <div class="min-w-0">
-                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Aturan Kontingen</p>
+                <p class="text-[15px] font-black text-indigo-600 uppercase tracking-widest">Aturan Kontingen</p>
                 <p class="text-[12px] font-black text-slate-800 mt-0.5 leading-tight">Pemisahan Otomatis</p>
-                <p class="text-[10px] text-slate-400 mt-0.5">Kontingen yang sama disebar saling berjauhan.</p>
+                <p class="text-[15px] text-slate-800 mt-0.5">Kontingen yang sama disebar saling berjauhan.</p>
             </div>
         </div>
     </div>
@@ -57,27 +57,27 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-0 border-b border-slate-100">
             <div class="flex overflow-x-auto scrollbar-hide">
                 <button @click="globalTab = 'sebelum'"
-                    class="flex items-center gap-2 px-5 py-4 text-[11px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'sebelum' ? 'border-red-500 text-red-600' : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-200'">
-                    <i class="fas fa-users text-xs"></i>
+                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                    :class="globalTab === 'sebelum' ? 'border-red-500 text-red-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
+                    <i class="fas fa-users text-[15px]"></i>
                     <span>Daftar Pendaftar Atlet</span>
                 </button>
                 <button @click="globalTab = 'hasil'"
-                    class="flex items-center gap-2 px-5 py-4 text-[11px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'hasil' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-200'">
-                    <i class="fas fa-sitemap text-xs"></i>
+                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                    :class="globalTab === 'hasil' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
+                    <i class="fas fa-sitemap text-[15px]"></i>
                     <span>Bagan Pertandingan</span>
                 </button>
                 <button @click="globalTab = 'nomor'"
-                    class="flex items-center gap-2 px-5 py-4 text-[11px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'nomor' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-200'">
-                    <i class="fas fa-list-ol text-xs"></i>
+                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                    :class="globalTab === 'nomor' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
+                    <i class="fas fa-list-ol text-[15px]"></i>
                     <span>Nomor Match</span>
                 </button>
                 <button @click="globalTab = 'bracket'"
-                    class="flex items-center gap-2 px-5 py-4 text-[11px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'bracket' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-200'">
-                    <i class="fas fa-medal text-xs"></i>
+                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                    :class="globalTab === 'bracket' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
+                    <i class="fas fa-medal text-[15px]"></i>
                     <span>Hasil Bracket</span>
                 </button>
             </div>
@@ -86,14 +86,14 @@
             <div class="px-4 py-3 sm:border-l border-t sm:border-t-0 border-slate-100 shrink-0">
                 <div class="relative">
                     <select wire:model.live="selectedCourtId"
-                            class="appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-bold rounded-xl pl-4 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all w-full sm:w-44">
+                            class="appearance-none bg-slate-50 border border-slate-200 text-black text-[15px] font-bold rounded-xl pl-4 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all w-full sm:w-44">
                         <option value="">Semua Court</option>
                         @foreach($courts as $court)
                             <option value="{{ $court->id }}">{{ $court->name }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[9px]"></i>
+                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-800">
+                        <i class="fas fa-chevron-down text-[15px]"></i>
                     </div>
                 </div>
             </div>
@@ -112,8 +112,8 @@
                 {{-- Gender Divider --}}
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2.5 bg-slate-900 text-white px-5 py-2.5 rounded-xl shadow">
-                        <i class="fas @if($gender == 'Male') fa-mars @elseif($gender == 'Female') fa-venus @else fa-venus-mars @endif text-xs text-red-400"></i>
-                        <span class="text-[11px] font-black uppercase tracking-widest">
+                        <i class="fas @if($gender == 'Male') fa-mars @elseif($gender == 'Female') fa-venus @else fa-venus-mars @endif text-[15px] text-red-400"></i>
+                        <span class="text-[15px] font-black uppercase tracking-widest">
                             {{ $gender == 'Male' ? 'Laki-laki' : ($gender == 'Female' ? 'Perempuan' : 'Campuran / Mix') }}
                         </span>
                     </div>
@@ -125,10 +125,10 @@
                     <div class="space-y-5" wire:key="age-{{ $gender }}-{{ $ageGroupName }}">
                         {{-- Age Group Label --}}
                         <div class="flex items-center gap-2.5 pl-1">
-                            <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black shrink-0">
+                            <div class="w-7 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center text-[15px] font-black shrink-0">
                                 {{ substr($ageGroupName, 0, 1) }}
                             </div>
-                            <h3 class="text-[12px] font-black text-slate-600 uppercase tracking-wider">{{ $ageGroupName }}</h3>
+                            <h3 class="text-[12px] font-black text-slate-900 uppercase tracking-wider">{{ $ageGroupName }}</h3>
                         </div>
 
                         {{-- Match Cards --}}
@@ -143,35 +143,35 @@
                                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
                                     <div class="flex items-center gap-3 min-w-0">
                                         <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
-                                        <h4 class="text-[13px] font-black text-slate-800 uppercase tracking-wide truncate">{{ $data['name'] }}</h4>
+                                        <h4 class="text-[15px] font-black text-slate-800 uppercase tracking-wide truncate">{{ $data['name'] }}</h4>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2 shrink-0">
-                                        <span class="text-[10px] font-bold text-slate-400 border border-slate-100 rounded-lg px-3 py-1 uppercase whitespace-nowrap">
+                                        <span class="text-[15px] font-bold text-slate-800 border border-slate-100 rounded-lg px-3 py-1 uppercase whitespace-nowrap">
                                             {{ $totalAthletes }} Atlet
                                         </span>
                                         @if($drawing)
                                             <button wire:click="resetDrawing({{ $mId }})"
                                                     wire:confirm="Reset drawing bagan untuk nomor ini?"
-                                                    class="inline-flex items-center gap-1.5 text-[10px] font-black text-rose-500 border border-rose-200 hover:bg-rose-50 px-3 py-1 rounded-lg uppercase transition active:scale-95 whitespace-nowrap">
-                                                <i class="fas fa-redo text-[9px]"></i> Reset
+                                                    class="inline-flex items-center gap-1.5 text-[15px] font-black text-rose-500 border border-rose-200 hover:bg-rose-50 px-3 py-1 rounded-lg uppercase transition active:scale-95 whitespace-nowrap">
+                                                <i class="fas fa-redo text-[15px]"></i> Reset
                                             </button>
                                             <button wire:click="generateDrawing({{ $mId }})"
                                                     wire:loading.attr="disabled"
                                                     wire:target="generateDrawing({{ $mId }})"
-                                                    class="inline-flex items-center gap-1.5 text-[10px] font-black text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50 whitespace-nowrap">
-                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sync text-[9px]"></i> Regenerate</span>
-                                                <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[9px]"></i> Loading...</span>
+                                                    class="inline-flex items-center gap-1.5 text-[15px] font-black text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50 whitespace-nowrap">
+                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sync text-[15px]"></i> Regenerate</span>
+                                                <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Loading...</span>
                                             </button>
                                         @else
                                             <button wire:click="generateDrawing({{ $mId }})"
                                                     wire:loading.attr="disabled"
                                                     wire:target="generateDrawing({{ $mId }})"
-                                                    class="inline-flex items-center gap-1.5 text-[10px] font-black text-white bg-slate-900 hover:bg-slate-700 px-4 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50 whitespace-nowrap">
-                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sitemap text-[9px]"></i> Generate Bagan</span>
-                                                <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[9px]"></i> Generating...</span>
+                                                    class="inline-flex items-center gap-1.5 text-[15px] font-black text-white bg-slate-900 hover:bg-slate-700 px-4 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50 whitespace-nowrap">
+                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sitemap text-[15px]"></i> Generate Bagan</span>
+                                                <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Generating...</span>
                                             </button>
                                         @endif
-                                        <span class="text-[10px] text-slate-300 font-bold uppercase italic whitespace-nowrap">#{{ $mId }}</span>
+                                        <span class="text-[15px] text-slate-300 font-bold uppercase italic whitespace-nowrap">#{{ $mId }}</span>
                                     </div>
                                 </div>
 
@@ -181,11 +181,11 @@
                                         {{-- Format Banner --}}
                                         <div class="flex flex-col sm:flex-row sm:items-center gap-4 bg-slate-900 rounded-xl px-5 py-4 mb-5">
                                             <div class="flex items-center gap-3 flex-1 min-w-0">
-                                                <div class="w-8 h-8 rounded-lg bg-red-500 text-white flex items-center justify-center shrink-0">
-                                                    <i class="fas fa-sitemap text-xs"></i>
+                                                <div class="w-10 h-10 rounded-lg bg-red-500 text-white flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-sitemap text-[15px]"></i>
                                                 </div>
                                                 <div class="min-w-0">
-                                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Format Randori</p>
+                                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Format Randori</p>
                                                     <p class="text-[12px] font-black text-white mt-0.5 truncate">Bagan Peserta {{ $drawing['bracket_size'] }}</p>
                                                 </div>
                                             </div>
@@ -196,18 +196,18 @@
                                             @endphp
                                             @if($firstEntry && ($firstEntry->schedule_date || $firstEntry->rundown || $firstEntry->sessionTime))
                                                 <div class="flex items-center gap-3 flex-1 min-w-0 border-t sm:border-t-0 sm:border-l border-slate-700 pt-3 sm:pt-0 sm:pl-4">
-                                                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                                                        <i class="fas fa-calendar-alt text-xs"></i>
+                                                    <div class="w-10 h-10 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                                                        <i class="fas fa-calendar-alt text-[15px]"></i>
                                                     </div>
                                                     <div class="min-w-0">
-                                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Jadwal Pertandingan</p>
+                                                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Jadwal Pertandingan</p>
                                                         @if($firstEntry->schedule_date || $firstEntry->rundown)
-                                                        <p class="text-[11px] font-black text-indigo-300 mt-0.5 whitespace-nowrap">
+                                                        <p class="text-[15px] font-black text-indigo-300 mt-0.5 whitespace-nowrap">
                                                             {{ $firstEntry->schedule_date ? \Carbon\Carbon::parse($firstEntry->schedule_date)->locale('id')->isoFormat('D MMM') : 'Tgl(-)' }} • {{ $firstEntry->rundown->name ?? '-' }}
                                                         </p>
                                                         @endif
                                                         @if($firstEntry->sessionTime)
-                                                        <p class="text-[10px] font-bold text-slate-500 uppercase mt-0.5">
+                                                        <p class="text-[15px] font-bold text-slate-900 uppercase mt-0.5">
                                                             {{ $firstEntry->sessionTime->name }} ({{ $firstEntry->sessionTime->start_time->format('H:i') }} - {{ $firstEntry->sessionTime->end_time ? $firstEntry->sessionTime->end_time->format('H:i') : 'Selesai' }})
                                                         </p>
                                                         @endif
@@ -219,19 +219,19 @@
                                                 <div class="text-center">
                                                     @php $totalEntries = $drawing['total_entries'] ?? $drawing['total_athletes'] ?? 0; @endphp
                                                     <p class="text-[14px] font-black text-emerald-400">{{ $totalEntries }}</p>
-                                                    <p class="text-[9px] text-slate-500 font-bold uppercase">Peserta</p>
+                                                    <p class="text-[15px] text-slate-900 font-bold uppercase">Peserta</p>
                                                 </div>
                                                 <div class="w-px h-8 bg-slate-700"></div>
                                                 <div class="text-center">
                                                     @php $byes = ($drawing['bracket_size'] ?? 0) - $totalEntries; @endphp
                                                     <p class="text-[14px] font-black text-blue-400">{{ $byes }}</p>
-                                                    <p class="text-[9px] text-slate-500 font-bold uppercase">Byes</p>
+                                                    <p class="text-[15px] text-slate-900 font-bold uppercase">Byes</p>
                                                 </div>
                                             </div>
                                         </div>
 
                                         @if($drawingAt)
-                                            <p class="text-[10px] text-slate-400 font-semibold mb-4">
+                                            <p class="text-[15px] text-slate-800 font-semibold mb-4">
                                                 <i class="fas fa-clock mr-1.5"></i>
                                                 Drawing dibuat: {{ \Carbon\Carbon::parse($drawingAt)->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }} WIB
                                             </p>
@@ -247,7 +247,7 @@
                                         {{-- ═══ UPPER BRACKET ═══ --}}
                                         <div class="mb-6">
                                             <div class="flex items-center gap-2 mb-3">
-                                                <span class="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">Upper Bracket</span>
+                                                <span class="text-[15px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">Upper Bracket</span>
                                                 <div class="flex-1 h-px bg-indigo-100"></div>
                                             </div>
                                             <div class="bg-slate-900/5 border border-slate-200 rounded-2xl p-4 overflow-x-auto scrollbar-hide">
@@ -271,11 +271,11 @@
                                                                 $labelColor   = 'text-indigo-400';
                                                             } else {
                                                                 $roundLabel   = 'UB Babak ' . $rIdx;
-                                                                $labelColor   = 'text-slate-400';
+                                                                $labelColor   = 'text-slate-800';
                                                             }
                                                         @endphp
                                                         <div class="flex flex-col gap-3 {{ $isR0 ? 'w-[200px]' : 'w-[220px]' }}">
-                                                            <p class="text-[9px] font-black text-center uppercase tracking-widest {{ $labelColor }}">
+                                                            <p class="text-[15px] font-black text-center uppercase tracking-widest {{ $labelColor }}">
                                                                 {{ $roundLabel }}
                                                             </p>
 
@@ -293,8 +293,8 @@
                                                                     <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
                                                                         <div class="w-1 h-4 rounded-full bg-emerald-400 shrink-0"></div>
                                                                         <div class="flex-1 min-w-0">
-                                                                            <p class="text-[10px] font-black text-emerald-800 uppercase truncate">{{ $a1['name'] ?? '-' }}</p>
-                                                                            <p class="text-[8px] text-emerald-500 uppercase truncate">{{ $a1['contingent'] ?? '' }}</p>
+                                                                            <p class="text-[15px] font-black text-emerald-800 uppercase truncate">{{ $a1['name'] ?? '-' }}</p>
+                                                                            <p class="text-[15px] text-emerald-500 uppercase truncate">{{ $a1['contingent'] ?? '' }}</p>
                                                                         </div>
                                                                         <span class="text-[7px] font-black text-emerald-500 bg-white border border-emerald-200 px-1.5 py-0.5 rounded-full uppercase whitespace-nowrap">Lolos →</span>
                                                                     </div>
@@ -311,26 +311,26 @@
                                                                             <div class="w-1.5 h-5 rounded-full bg-red-500 shrink-0"></div>
                                                                             <div class="flex-1 min-w-0">
                                                                                 @if($a1)
-                                                                                    <p class="text-[10px] font-black text-slate-800 uppercase truncate {{ $winner === 'athlete1' ? 'text-indigo-700' : '' }}">{{ $a1['name'] }}</p>
-                                                                                    <p class="text-[8px] text-slate-400 uppercase truncate">{{ $a1['contingent'] ?? '' }}</p>
+                                                                                    <p class="text-[15px] font-black text-slate-800 uppercase truncate {{ $winner === 'athlete1' ? 'text-indigo-700' : '' }}">{{ $a1['name'] }}</p>
+                                                                                    <p class="text-[15px] text-slate-800 uppercase truncate">{{ $a1['contingent'] ?? '' }}</p>
                                                                                 @else
-                                                                                    <p class="text-[10px] text-slate-300 italic">Menunggu...</p>
+                                                                                    <p class="text-[15px] text-slate-300 italic">Menunggu...</p>
                                                                                 @endif
                                                                             </div>
-                                                                            @if($winner === 'athlete1')<span class="text-[8px] font-black text-indigo-600 shrink-0">W</span>@endif
+                                                                            @if($winner === 'athlete1')<span class="text-[15px] font-black text-indigo-600 shrink-0">W</span>@endif
                                                                         </div>
                                                                         {{-- Athlete 2 --}}
                                                                         <div class="flex items-center gap-2 p-2.5 {{ $winner === 'athlete2' ? 'bg-indigo-50' : '' }}">
                                                                             <div class="w-1.5 h-5 rounded-full bg-blue-600 shrink-0"></div>
                                                                             <div class="flex-1 min-w-0">
                                                                                 @if($a2)
-                                                                                    <p class="text-[10px] font-black text-slate-800 uppercase truncate {{ $winner === 'athlete2' ? 'text-indigo-700' : '' }}">{{ $a2['name'] }}</p>
-                                                                                    <p class="text-[8px] text-slate-400 uppercase truncate">{{ $a2['contingent'] ?? '' }}</p>
+                                                                                    <p class="text-[15px] font-black text-slate-800 uppercase truncate {{ $winner === 'athlete2' ? 'text-indigo-700' : '' }}">{{ $a2['name'] }}</p>
+                                                                                    <p class="text-[15px] text-slate-800 uppercase truncate">{{ $a2['contingent'] ?? '' }}</p>
                                                                                 @else
-                                                                                    <p class="text-[10px] text-slate-300 italic">Menunggu...</p>
+                                                                                    <p class="text-[15px] text-slate-300 italic">Menunggu...</p>
                                                                                 @endif
                                                                             </div>
-                                                                            @if($winner === 'athlete2')<span class="text-[8px] font-black text-indigo-600 shrink-0">W</span>@endif
+                                                                            @if($winner === 'athlete2')<span class="text-[15px] font-black text-indigo-600 shrink-0">W</span>@endif
                                                                         </div>
                                                                     </div>
                                                                 @endif
@@ -342,15 +342,15 @@
 
                                                     {{-- UB Champion placeholder --}}
                                                     <div class="flex flex-col gap-4 w-[140px]">
-                                                        <p class="text-[9px] font-black text-center uppercase tracking-widest text-amber-500">🏆 UB Winner</p>
+                                                        <p class="text-[15px] font-black text-center uppercase tracking-widest text-amber-500">🏆 UB Winner</p>
                                                         <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 text-center shadow-sm">
                                                             @php $ubWinner = $drawing['juara'][1] ?? null; @endphp
                                                             @if($ubWinner)
-                                                                <p class="text-[10px] font-black text-amber-700 uppercase">{{ $ubWinner['name'] }}</p>
-                                                                <p class="text-[8px] text-amber-500 mt-0.5">{{ $ubWinner['contingent'] ?? '' }}</p>
+                                                                <p class="text-[15px] font-black text-amber-700 uppercase">{{ $ubWinner['name'] }}</p>
+                                                                <p class="text-[15px] text-amber-500 mt-0.5">{{ $ubWinner['contingent'] ?? '' }}</p>
                                                             @else
                                                                 <i class="fas fa-trophy text-amber-300 text-xl mb-1 block"></i>
-                                                                <p class="text-[8px] text-amber-400 font-bold uppercase">Menunggu</p>
+                                                                <p class="text-[15px] text-amber-400 font-bold uppercase">Menunggu</p>
                                                             @endif
                                                         </div>
                                                     </div>
@@ -362,15 +362,15 @@
                                         @if(count($lbRounds) > 0)
                                             <div class="mb-6">
                                                 <div class="flex items-center gap-2 mb-3">
-                                                    <span class="text-[9px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">Lower Bracket</span>
+                                                    <span class="text-[15px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">Lower Bracket</span>
                                                     <div class="flex-1 h-px bg-orange-100"></div>
-                                                    <span class="text-[8px] text-slate-400 italic">Kalah sekali masih bisa bertanding</span>
+                                                    <span class="text-[15px] text-slate-800 italic">Kalah sekali masih bisa bertanding</span>
                                                 </div>
                                                 <div class="bg-orange-50/30 border border-orange-100 rounded-2xl p-4 overflow-x-auto scrollbar-hide">
                                                     <div class="flex gap-8 min-w-max pb-2 items-start">
                                                         @foreach($lbRounds as $lrIdx => $lbRound)
                                                             <div class="flex flex-col gap-4 w-[220px]">
-                                                                <p class="text-[9px] font-black text-center uppercase tracking-widest text-orange-400">
+                                                                <p class="text-[15px] font-black text-center uppercase tracking-widest text-orange-400">
                                                                     @if($lrIdx === count($lbRounds) - 1) LB Final
                                                                     @else LB Ronde {{ $lrIdx + 1 }} @endif
                                                                 </p>
@@ -385,25 +385,25 @@
                                                                             <div class="w-1.5 h-5 rounded-full bg-red-400 shrink-0"></div>
                                                                             <div class="flex-1 min-w-0">
                                                                                 @if($la1)
-                                                                                    <p class="text-[10px] font-black text-slate-700 uppercase truncate {{ $lw === 'athlete1' ? 'text-orange-700' : '' }}">{{ $la1['name'] }}</p>
-                                                                                    <p class="text-[8px] text-slate-400 uppercase truncate">{{ $la1['contingent'] ?? '' }}</p>
+                                                                                    <p class="text-[15px] font-black text-black uppercase truncate {{ $lw === 'athlete1' ? 'text-orange-700' : '' }}">{{ $la1['name'] }}</p>
+                                                                                    <p class="text-[15px] text-slate-800 uppercase truncate">{{ $la1['contingent'] ?? '' }}</p>
                                                                                 @else
-                                                                                    <p class="text-[10px] text-slate-300 italic">TBD</p>
+                                                                                    <p class="text-[15px] text-slate-300 italic">TBD</p>
                                                                                 @endif
                                                                             </div>
-                                                                            @if($lw === 'athlete1')<span class="text-[8px] font-black text-orange-600 shrink-0">W</span>@endif
+                                                                            @if($lw === 'athlete1')<span class="text-[15px] font-black text-orange-600 shrink-0">W</span>@endif
                                                                         </div>
                                                                         <div class="flex items-center gap-2 p-2.5 {{ $lw === 'athlete2' ? 'bg-orange-50' : '' }}">
                                                                             <div class="w-1.5 h-5 rounded-full bg-slate-400 shrink-0"></div>
                                                                             <div class="flex-1 min-w-0">
                                                                                 @if($la2)
-                                                                                    <p class="text-[10px] font-black text-slate-700 uppercase truncate {{ $lw === 'athlete2' ? 'text-orange-700' : '' }}">{{ $la2['name'] }}</p>
-                                                                                    <p class="text-[8px] text-slate-400 uppercase truncate">{{ $la2['contingent'] ?? '' }}</p>
+                                                                                    <p class="text-[15px] font-black text-black uppercase truncate {{ $lw === 'athlete2' ? 'text-orange-700' : '' }}">{{ $la2['name'] }}</p>
+                                                                                    <p class="text-[15px] text-slate-800 uppercase truncate">{{ $la2['contingent'] ?? '' }}</p>
                                                                                 @else
-                                                                                    <p class="text-[10px] text-slate-300 italic">TBD</p>
+                                                                                    <p class="text-[15px] text-slate-300 italic">TBD</p>
                                                                                 @endif
                                                                             </div>
-                                                                            @if($lw === 'athlete2')<span class="text-[8px] font-black text-orange-600 shrink-0">W</span>@endif
+                                                                            @if($lw === 'athlete2')<span class="text-[15px] font-black text-orange-600 shrink-0">W</span>@endif
                                                                         </div>
                                                                     </div>
                                                                 @endforeach
@@ -412,15 +412,15 @@
 
                                                         {{-- LB Champion placeholder --}}
                                                         <div class="flex flex-col gap-4 w-[140px]">
-                                                            <p class="text-[9px] font-black text-center uppercase tracking-widest text-orange-500">LB Winner</p>
+                                                            <p class="text-[15px] font-black text-center uppercase tracking-widest text-orange-500">LB Winner</p>
                                                             <div class="bg-orange-50 border-2 border-orange-300 rounded-xl p-4 text-center shadow-sm">
                                                                 @php $lbWinner = $drawing['juara'][2] ?? null; @endphp
                                                                 @if($lbWinner)
-                                                                    <p class="text-[10px] font-black text-orange-700 uppercase">{{ $lbWinner['name'] }}</p>
-                                                                    <p class="text-[8px] text-orange-500 mt-0.5">{{ $lbWinner['contingent'] ?? '' }}</p>
+                                                                    <p class="text-[15px] font-black text-orange-700 uppercase">{{ $lbWinner['name'] }}</p>
+                                                                    <p class="text-[15px] text-orange-500 mt-0.5">{{ $lbWinner['contingent'] ?? '' }}</p>
                                                                 @else
                                                                     <i class="fas fa-medal text-orange-300 text-xl mb-1 block"></i>
-                                                                    <p class="text-[8px] text-orange-400 font-bold uppercase">Menunggu</p>
+                                                                    <p class="text-[15px] text-orange-400 font-bold uppercase">Menunggu</p>
                                                                 @endif
                                                             </div>
                                                         </div>
@@ -433,39 +433,39 @@
                                         @if($gf)
                                             <div>
                                                 <div class="flex items-center gap-2 mb-3">
-                                                    <span class="text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">🏆 Grand Final</span>
+                                                    <span class="text-[15px] font-black text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">🏆 Grand Final</span>
                                                     <div class="flex-1 h-px bg-amber-200"></div>
                                                 </div>
                                                 <div class="bg-amber-50/50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4 flex-wrap shadow-sm">
                                                     {{-- GF Athlete 1 (UB Winner) --}}
                                                     <div class="flex-1 min-w-[160px] bg-white border {{ ($gf['winner'] ?? null) === 'athlete1' ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-200' }} rounded-xl p-3 text-center shadow-sm">
-                                                        <span class="text-[8px] font-black text-indigo-500 uppercase block mb-1">UB Winner</span>
+                                                        <span class="text-[15px] font-black text-indigo-500 uppercase block mb-1">UB Winner</span>
                                                         @if($gf['athlete1'] ?? null)
-                                                            <p class="text-[11px] font-black text-slate-800 uppercase">{{ $gf['athlete1']['name'] }}</p>
-                                                            <p class="text-[9px] text-slate-400">{{ $gf['athlete1']['contingent'] ?? '' }}</p>
+                                                            <p class="text-[15px] font-black text-slate-800 uppercase">{{ $gf['athlete1']['name'] }}</p>
+                                                            <p class="text-[15px] text-slate-800">{{ $gf['athlete1']['contingent'] ?? '' }}</p>
                                                         @else
-                                                            <p class="text-[10px] text-slate-300 italic">Menunggu...</p>
+                                                            <p class="text-[15px] text-slate-300 italic">Menunggu...</p>
                                                         @endif
                                                     </div>
 
                                                     <div class="text-center shrink-0">
-                                                        <span class="text-xs font-black text-amber-600 uppercase bg-amber-100 border border-amber-200 px-3 py-1 rounded-full">VS</span>
+                                                        <span class="text-[15px] font-black text-amber-600 uppercase bg-amber-100 border border-amber-200 px-3 py-1 rounded-full">VS</span>
                                                     </div>
 
                                                     {{-- GF Athlete 2 (LB Winner) --}}
                                                     <div class="flex-1 min-w-[160px] bg-white border {{ ($gf['winner'] ?? null) === 'athlete2' ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-200' }} rounded-xl p-3 text-center shadow-sm">
-                                                        <span class="text-[8px] font-black text-orange-500 uppercase block mb-1">LB Winner</span>
+                                                        <span class="text-[15px] font-black text-orange-500 uppercase block mb-1">LB Winner</span>
                                                         @if($gf['athlete2'] ?? null)
-                                                            <p class="text-[11px] font-black text-slate-800 uppercase">{{ $gf['athlete2']['name'] }}</p>
-                                                            <p class="text-[9px] text-slate-400">{{ $gf['athlete2']['contingent'] ?? '' }}</p>
+                                                            <p class="text-[15px] font-black text-slate-800 uppercase">{{ $gf['athlete2']['name'] }}</p>
+                                                            <p class="text-[15px] text-slate-800">{{ $gf['athlete2']['contingent'] ?? '' }}</p>
                                                         @else
-                                                            <p class="text-[10px] text-slate-300 italic">Menunggu...</p>
+                                                            <p class="text-[15px] text-slate-300 italic">Menunggu...</p>
                                                         @endif
                                                     </div>
 
                                                     @if($gf['winner'] ?? null)
                                                         <div class="text-center shrink-0 px-3">
-                                                            <span class="text-[9px] font-black text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg block">
+                                                            <span class="text-[15px] font-black text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg block">
                                                                 🏆 {{ $gf['winner_data']['name'] ?? '-' }}
                                                             </span>
                                                         </div>
@@ -481,48 +481,48 @@
                                         {{-- No Drawing Yet --}}
                                         <div class="border-2 border-dashed border-slate-200 rounded-xl py-12 px-6 text-center">
                                             <i class="fas fa-sitemap text-slate-300 text-3xl mb-4"></i>
-                                            <p class="text-[12px] font-black text-slate-400 uppercase tracking-widest">Bagan belum dibuat</p>
-                                            <p class="text-[11px] text-slate-400 mt-1">Klik <strong>Generate Bagan</strong> untuk mengundi peserta ke dalam Tree.</p>
+                                            <p class="text-[12px] font-black text-slate-800 uppercase tracking-widest">Bagan belum dibuat</p>
+                                            <p class="text-[15px] text-slate-800 mt-1">Klik <strong>Generate Bagan</strong> untuk mengundi peserta ke dalam Tree.</p>
                                         </div>
                                     @endif
                                 </div>
 
                                 {{-- Tab Content: Pendaftar --}}
                                 <div x-show="globalTab === 'sebelum'" x-cloak class="p-5">
-                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-4">
                                         <i class="fas fa-users mr-1.5"></i>Data Pendaftar Atlet
                                     </p>
                                     <div class="rounded-xl border border-slate-200 overflow-hidden">
-                                        <div class="overflow-x-auto">
-                                            <table class="w-full text-left">
-                                                <thead>
+                                        <div class="overflow-x-auto custom-scrollbar">
+                                            <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
+                                                <thead class="bg-slate-800 text-white">
                                                     <tr class="border-b border-slate-100 bg-slate-50/50">
-                                                        <th class="px-4 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-12">No</th>
-                                                        <th class="px-4 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-wider">Nama Peserta (Atlet)</th>
-                                                        <th class="px-4 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-wider">Kontingen</th>
-                                                        <th class="px-4 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-32">Rank</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">No</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Nama Peserta (Atlet)</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Kontingen</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Rank</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody class="divide-y divide-slate-100">
+                                                <tbody class="divide-y divide-slate-200">
                                                     @forelse($data['athletes'] as $idx => $ath)
-                                                        <tr class="hover:bg-slate-50/30 transition-colors">
-                                                            <td class="px-4 py-3 text-center text-[10px] font-bold text-slate-400">{{ $idx + 1 }}</td>
-                                                            <td class="px-4 py-3 text-[11px] font-black text-slate-800 uppercase whitespace-nowrap">{{ $ath->name }}</td>
-                                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                        <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
+                                                            <td class="px-4 py-3 text-center text-[15px] font-bold text-slate-800 border-r border-slate-200">{{ $idx + 1 }}</td>
+                                                            <td class="px-4 py-3 text-[15px] font-black text-slate-800 uppercase whitespace-nowrap border-r border-slate-200">{{ $ath->name }}</td>
+                                                            <td class="px-4 py-3 whitespace-nowrap border-r border-slate-200">
                                                                 <div class="flex items-center gap-2">
-                                                                    <i class="fas fa-shield-alt text-slate-400 text-[10px]"></i>
-                                                                    <span class="text-[11px] font-black text-slate-600 uppercase tracking-wide">{{ $ath->contingent }}</span>
+                                                                    <i class="fas fa-shield-alt text-slate-800 text-[15px]"></i>
+                                                                    <span class="text-[15px] font-black text-slate-900 uppercase tracking-wide">{{ $ath->contingent }}</span>
                                                                 </div>
                                                             </td>
-                                                            <td class="px-4 py-3 text-center whitespace-nowrap">
-                                                                <span class="inline-block whitespace-nowrap px-3 py-1 bg-white text-slate-600 rounded-lg text-[10px] font-black uppercase border border-slate-200">
+                                                            <td class="px-4 py-3 text-center whitespace-nowrap border-r border-slate-200">
+                                                                <span class="inline-block whitespace-nowrap px-3 py-1 bg-white text-slate-900 rounded-lg text-[15px] font-black uppercase border border-slate-200">
                                                                     {{ $ath->rank ?? '-' }}
                                                                 </span>
                                                             </td>
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="4" class="px-4 py-8 text-center text-slate-400 text-[11px] italic font-semibold">Belum ada peserta</td>
+                                                            <td colspan="4" class="px-4 py-8 text-center text-slate-800 text-[15px] italic font-semibold border-r border-slate-200">Belum ada peserta</td>
                                                         </tr>
                                                     @endforelse
                                                 </tbody>
@@ -545,18 +545,18 @@
                                     {{-- Juara Cards (if available) --}}
                                     @if(!empty($juaraMap))
                                         <div class="mb-6">
-                                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><i class="fas fa-trophy mr-1.5 text-amber-500"></i>Hasil Akhir</p>
+                                            <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-3"><i class="fas fa-trophy mr-1.5 text-amber-500"></i>Hasil Akhir</p>
                                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                 @foreach([1=>'🥇',2=>'🥈',3=>'🥉',4=>'🏅'] as $rank => $medal)
                                                     @php $ath = $juaraMap[$rank] ?? null; @endphp
                                                     <div class="text-center p-4 rounded-2xl {{ $ath ? 'bg-amber-50 border border-amber-200 shadow-sm' : 'bg-slate-50 border border-slate-100' }}">
                                                         <div class="text-3xl mb-2">{{ $medal }}</div>
-                                                        <div class="text-[10px] font-black text-slate-400 uppercase mb-1">Juara {{ $rank }}</div>
+                                                        <div class="text-[15px] font-black text-slate-800 uppercase mb-1">Juara {{ $rank }}</div>
                                                         @if($ath)
-                                                            <div class="text-xs font-black text-slate-800 uppercase leading-tight">{{ $ath['name'] }}</div>
-                                                            <div class="text-[9px] text-slate-400 mt-0.5">{{ $ath['contingent'] ?? '' }}</div>
+                                                            <div class="text-[15px] font-black text-slate-800 uppercase leading-tight">{{ $ath['name'] }}</div>
+                                                            <div class="text-[15px] text-slate-800 mt-0.5">{{ $ath['contingent'] ?? '' }}</div>
                                                         @else
-                                                            <div class="text-xs text-slate-300 font-bold italic">Menunggu...</div>
+                                                            <div class="text-[15px] text-slate-300 font-bold italic">Menunggu...</div>
                                                         @endif
                                                     </div>
                                                 @endforeach
@@ -568,19 +568,19 @@
                                     {{-- Grand Final --}}
                                     @if($grandFinal && (($grandFinal['athlete1'] ?? null) || ($grandFinal['athlete2'] ?? null)))
                                         <div class="mb-5">
-                                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><i class="fas fa-trophy text-amber-500 mr-1.5"></i>Grand Final</p>
+                                            <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-2"><i class="fas fa-trophy text-amber-500 mr-1.5"></i>Grand Final</p>
                                             <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="text-xs font-black text-slate-700 uppercase">{{ $grandFinal['athlete1']['name'] ?? 'TBD' }}</div>
-                                                    <span class="text-[9px] font-black text-slate-400 uppercase bg-white border border-slate-200 px-2 py-0.5 rounded">vs</span>
-                                                    <div class="text-xs font-black text-slate-700 uppercase">{{ $grandFinal['athlete2']['name'] ?? 'TBD' }}</div>
+                                                    <div class="text-[15px] font-black text-black uppercase">{{ $grandFinal['athlete1']['name'] ?? 'TBD' }}</div>
+                                                    <span class="text-[15px] font-black text-slate-800 uppercase bg-white border border-slate-200 px-2 py-0.5 rounded">vs</span>
+                                                    <div class="text-[15px] font-black text-black uppercase">{{ $grandFinal['athlete2']['name'] ?? 'TBD' }}</div>
                                                 </div>
                                                 @if($grandFinal['winner'] ?? null)
-                                                    <span class="text-[9px] font-black text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
+                                                    <span class="text-[15px] font-black text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
                                                         🏆 {{ $grandFinal['winner_data']['name'] ?? '-' }}
                                                     </span>
                                                 @else
-                                                    <span class="text-[9px] font-black text-slate-400 uppercase italic">Belum selesai</span>
+                                                    <span class="text-[15px] font-black text-slate-800 uppercase italic">Belum selesai</span>
                                                 @endif
                                             </div>
                                         </div>
@@ -588,20 +588,20 @@
 
                                     {{-- Progress Table: setiap match yang sudah ada hasilnya --}}
                                     @if($randoriResults->isNotEmpty())
-                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3"><i class="fas fa-list mr-1.5"></i>Riwayat Pertandingan</p>
+                                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-3"><i class="fas fa-list mr-1.5"></i>Riwayat Pertandingan</p>
                                         <div class="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                                            <table class="w-full">
-                                                <thead>
+                                            <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
+                                                <thead class="bg-slate-800 text-white">
                                                     <tr class="border-b border-slate-100 bg-slate-50">
-                                                        <th class="px-3 py-2.5 text-left text-[9px] font-black text-slate-400 uppercase tracking-wider">Jalur</th>
-                                                        <th class="px-3 py-2.5 text-left text-[9px] font-black text-slate-400 uppercase tracking-wider">Ronde</th>
-                                                        <th class="px-3 py-2.5 text-left text-[9px] font-black text-slate-400 uppercase tracking-wider">Merah (A1)</th>
-                                                        <th class="px-3 py-2.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-wider w-16">Skor</th>
-                                                        <th class="px-3 py-2.5 text-left text-[9px] font-black text-slate-400 uppercase tracking-wider">Putih (A2)</th>
-                                                        <th class="px-3 py-2.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-wider">Pemenang</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Jalur</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Ronde</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Merah (A1)</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Skor</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Putih (A2)</th>
+                                                        <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Pemenang</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody class="divide-y divide-slate-100">
+                                                <tbody class="divide-y divide-slate-200">
                                                     @foreach($randoriResults as $nodeKey => $result)
                                                         @php
                                                             $parts = explode('_', $nodeKey);
@@ -627,23 +627,23 @@
                                                                 'UB' => 'text-indigo-600 bg-indigo-50 border-indigo-200',
                                                                 'LB' => 'text-orange-600 bg-orange-50 border-orange-200',
                                                                 'GF' => 'text-amber-700 bg-amber-50 border-amber-300',
-                                                                default => 'text-slate-500 bg-slate-50 border-slate-200',
+                                                                default => 'text-slate-900 bg-slate-50 border-slate-200',
                                                             };
                                                         @endphp
-                                                        <tr class="hover:bg-slate-50/50 transition-colors">
-                                                            <td class="px-3 py-3">
-                                                                <span class="text-[9px] font-black px-2 py-0.5 rounded border {{ $sectionColor }} uppercase">{{ $section }}</span>
+                                                        <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
+                                                            <td class="px-3 py-3 border-r border-slate-200">
+                                                                <span class="text-[15px] font-black px-2 py-0.5 rounded border {{ $sectionColor }} uppercase">{{ $section }}</span>
                                                             </td>
-                                                            <td class="px-3 py-3 text-[10px] font-bold text-slate-500">
+                                                            <td class="px-3 py-3 text-[15px] font-bold text-slate-900 border-r border-slate-200">
                                                                 @if($section === 'GF') Grand Final @else R{{ (int)$rIdx + 1 }} M{{ (int)$mIdx + 1 }} @endif
                                                             </td>
-                                                            <td class="px-3 py-3 text-[10px] font-black text-slate-700 uppercase {{ $winnerSlot === 'athlete1' ? 'text-rose-600' : '' }}">{{ $a1Name }}</td>
-                                                            <td class="px-3 py-3 text-center">
-                                                                <span class="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded">{{ $result->score_red }} — {{ $result->score_blue }}</span>
+                                                            <td class="px-3 py-3 text-[15px] font-black text-black uppercase {{ $winnerSlot === 'athlete1' ? 'text-rose-600' : '' }} border-r border-slate-200">{{ $a1Name }}</td>
+                                                            <td class="px-3 py-3 text-center border-r border-slate-200">
+                                                                <span class="text-[15px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{{ $result->score_red }} — {{ $result->score_blue }}</span>
                                                             </td>
-                                                            <td class="px-3 py-3 text-[10px] font-black text-slate-700 uppercase {{ $winnerSlot === 'athlete2' ? 'text-indigo-600' : '' }}">{{ $a2Name }}</td>
-                                                            <td class="px-3 py-3 text-center">
-                                                                <span class="text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">🏆 {{ $winnerName }}</span>
+                                                            <td class="px-3 py-3 text-[15px] font-black text-black uppercase {{ $winnerSlot === 'athlete2' ? 'text-indigo-600' : '' }} border-r border-slate-200">{{ $a2Name }}</td>
+                                                            <td class="px-3 py-3 text-center border-r border-slate-200">
+                                                                <span class="text-[15px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">🏆 {{ $winnerName }}</span>
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -653,8 +653,8 @@
                                     @else
                                         <div class="border-2 border-dashed border-slate-200 rounded-xl py-12 text-center">
                                             <i class="fas fa-sitemap text-slate-300 text-3xl mb-4"></i>
-                                            <p class="text-[12px] font-black text-slate-400 uppercase tracking-widest">Belum Ada Hasil Pertandingan</p>
-                                            <p class="text-[11px] text-slate-400 mt-1">Hasil akan muncul setelah Panitera menginput skor di halaman Scoring.</p>
+                                            <p class="text-[12px] font-black text-slate-800 uppercase tracking-widest">Belum Ada Hasil Pertandingan</p>
+                                            <p class="text-[15px] text-slate-800 mt-1">Hasil akan muncul setelah Panitera menginput skor di halaman Scoring.</p>
                                         </div>
                                     @endif
                                 </div>
@@ -667,8 +667,8 @@
         @empty
             <div class="bg-white rounded-2xl border border-slate-100 py-24 text-center shadow-sm">
                 <i class="fas fa-sitemap text-slate-200 text-5xl mb-4"></i>
-                <h3 class="text-[14px] font-black text-slate-400 uppercase tracking-widest">Belum Ada Data Drawing Randori</h3>
-                <p class="text-[12px] text-slate-400 mt-2">Pastikan nomor pertandingan bertipe Randori telah memiliki pendaftar.</p>
+                <h3 class="text-[14px] font-black text-slate-800 uppercase tracking-widest">Belum Ada Data Drawing Randori</h3>
+                <p class="text-[12px] text-slate-800 mt-2">Pastikan nomor pertandingan bertipe Randori telah memiliki pendaftar.</p>
             </div>
         @endforelse
     </div>
@@ -680,20 +680,20 @@
          x-transition:enter-end="opacity-100 translate-y-0"
          x-cloak>
         <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
+                    <thead class="bg-slate-800 text-white">
                         <tr class="bg-indigo-900 text-white">
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider text-center w-28 whitespace-nowrap">No. Match</th>
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider text-center whitespace-nowrap">Tipe</th>
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider">Kategori & Babak</th>
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider">Kontingen / Pool</th>
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider text-center">Jadwal & Sesi</th>
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider text-center border-l border-indigo-700">Tempat</th>
-                            <th class="px-5 py-4 text-[10px] font-black uppercase tracking-wider text-center">Posisi</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">No. Match</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Tipe</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Kategori & Babak</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Kontingen / Pool</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Jadwal & Sesi</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Tempat</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Posisi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-slate-200">
                         @php $hasAtLeastOneDrawing = false; @endphp
                         @foreach($matchSummary as $gender => $ageGroups)
                             @foreach($ageGroups as $ageName => $matches)
@@ -701,44 +701,44 @@
                                     @if(isset($data['db_drawing_entries']) && $data['db_drawing_entries']->isNotEmpty())
                                         @php $hasAtLeastOneDrawing = true; @endphp
                                         @foreach($data['db_drawing_entries'] as $entry)
-                                            <tr class="hover:bg-slate-50 transition-colors">
-                                                <td class="px-5 py-3.5 text-center whitespace-nowrap">
-                                                    <span class="inline-block border border-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-[11px] font-black">#{{ $mId }}</span>
+                                            <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
+                                                <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
+                                                    <span class="inline-block border border-slate-200 text-black px-2.5 py-1 rounded-lg text-[15px] font-black">#{{ $mId }}</span>
                                                 </td>
-                                                <td class="px-5 py-3.5 text-center whitespace-nowrap">
-                                                    <span class="inline-block bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[8px] font-black uppercase shadow-sm">RANDORI</span>
+                                                <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
+                                                    <span class="inline-block bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[15px] font-black uppercase shadow-sm">RANDORI</span>
                                                 </td>
-                                                <td class="px-5 py-3.5">
-                                                    <p class="text-[11px] font-black text-slate-800 uppercase leading-tight">{{ $data['name'] }}</p>
+                                                <td class="px-5 py-3.5 border-r border-slate-200">
+                                                    <p class="text-[15px] font-black text-slate-800 uppercase leading-tight">{{ $data['name'] }}</p>
                                                     <div class="flex items-center gap-1.5 mt-1">
-                                                        <span class="text-[9px] text-slate-400 uppercase font-black tracking-tighter">{{ $gender }} · {{ $ageName }}</span>
+                                                        <span class="text-[15px] text-slate-800 uppercase font-black tracking-tighter">{{ $gender }} · {{ $ageName }}</span>
                                                         <span class="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                        <span class="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">{{ $entry->round ?? 'Penyisihan' }}</span>
+                                                        <span class="text-[15px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">{{ $entry->round ?? 'Penyisihan' }}</span>
                                                     </div>
                                                 </td>
-                                                <td class="px-5 py-3.5">
-                                                    <p class="text-[11px] font-black text-slate-700 uppercase whitespace-nowrap">{{ $entry->registration->contingent->name ?? 'Unknown' }}</p>
-                                                    <p class="text-[9px] text-slate-400 mt-0.5 uppercase font-bold">{{ $entry->pool->name ?? 'BAGAN' }}</p>
+                                                <td class="px-5 py-3.5 border-r border-slate-200">
+                                                    <p class="text-[15px] font-black text-black uppercase whitespace-nowrap">{{ $entry->registration->contingent->name ?? 'Unknown' }}</p>
+                                                    <p class="text-[15px] text-slate-800 mt-0.5 uppercase font-bold">{{ $entry->pool->name ?? 'BAGAN' }}</p>
                                                 </td>
-                                                <td class="px-5 py-3.5 text-center whitespace-nowrap">
+                                                <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
                                                     @if($entry->schedule_date || $entry->rundown || $entry->sessionTime)
                                                         @if($entry->schedule_date || $entry->rundown)
-                                                        <span class="block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase">
+                                                        <span class="block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-lg text-[15px] font-black uppercase">
                                                             {{ $entry->schedule_date ? \Carbon\Carbon::parse($entry->schedule_date)->locale('id')->isoFormat('D MMM') : 'Tgl(-)' }} · {{ $entry->rundown->name ?? '-' }}
                                                         </span>
                                                         @endif
                                                         @if($entry->sessionTime)
-                                                            <span class="block text-[9px] text-slate-500 mt-1 uppercase font-bold">{{ $entry->sessionTime->name }} ({{ $entry->sessionTime->start_time->format('H:i') }} - {{ $entry->sessionTime->end_time ? $entry->sessionTime->end_time->format('H:i') : 'Selesai' }})</span>
+                                                            <span class="block text-[15px] text-slate-900 mt-1 uppercase font-bold">{{ $entry->sessionTime->name }} ({{ $entry->sessionTime->start_time->format('H:i') }} - {{ $entry->sessionTime->end_time ? $entry->sessionTime->end_time->format('H:i') : 'Selesai' }})</span>
                                                         @endif
                                                     @else
-                                                        <span class="inline-block text-slate-300 text-[10px] italic">Belum diatur</span>
+                                                        <span class="inline-block text-slate-300 text-[15px] italic">Belum diatur</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-5 py-3.5 border-l border-slate-100 text-center whitespace-nowrap">
-                                                    <span class="inline-block border border-indigo-100 text-indigo-600 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-indigo-50/50">{{ $entry->court->name ?? '—' }}</span>
+                                                <td class="px-5 py-3.5 border-l border-slate-100 text-center whitespace-nowrap border-r border-slate-200">
+                                                    <span class="inline-block border border-indigo-100 text-indigo-600 px-2.5 py-1 rounded-lg text-[15px] font-black uppercase bg-indigo-50/50">{{ $entry->court->name ?? '—' }}</span>
                                                 </td>
-                                                <td class="px-5 py-3.5 text-center whitespace-nowrap">
-                                                    <span class="inline-block border border-amber-200 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg text-[11px] font-black">Posisi {{ $entry->sequence_number + 1 }}</span>
+                                                <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
+                                                    <span class="inline-block border border-amber-200 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg text-[15px] font-black">Posisi {{ $entry->sequence_number + 1 }}</span>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -748,9 +748,9 @@
                         @endforeach
                         @if(!$hasAtLeastOneDrawing)
                             <tr>
-                                <td colspan="6" class="py-20 text-center">
+                                <td colspan="6" class="py-20 text-center border-r border-slate-200">
                                     <i class="fas fa-list-ol text-slate-200 text-4xl mb-3 block"></i>
-                                    <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest">Belum ada jadwal pertandingan Randori</p>
+                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Belum ada jadwal pertandingan Randori</p>
                                 </td>
                             </tr>
                         @endif
@@ -763,7 +763,7 @@
     {{-- Pagination --}}
     @if($paginatedMatches->hasPages())
         <div class="mt-4">
-            {{ $paginatedMatches->links() }}
+            {{ $paginatedMatches->links('livewire.admin.pagination') }}
         </div>
     @endif
 </div>

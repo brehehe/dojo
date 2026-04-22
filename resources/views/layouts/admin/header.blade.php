@@ -12,7 +12,7 @@
         <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="flex items-center justify-between h-16 md:h-20">
                 <!-- Branding Section -->
-                <div class=z"flex items-center gap-4">
+                <div class="flex items-center gap-4">
                     <div
                         class="w-9 h-9 md:w-11 md:h-11 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-inner border border-white/20 transform transition-transform hover:scale-105 active:scale-95 cursor-pointer">
                         <img src="{{ asset('logo.jpeg') }}" alt="Logo"
@@ -20,7 +20,7 @@
                     </div>
                     <div class="flex flex-col">
                         <span
-                            class="text-sm md:text-xl font-black tracking-tighter uppercase leading-none text-white drop-shadow-sm">Smart
+                            class="text-[15px] md:text-xl font-black tracking-tighter uppercase leading-none text-white drop-shadow-sm">Smart
                             Perkemi</span>
                     </div>
                 </div>
@@ -30,10 +30,10 @@
                     <div class="relative w-full group">
                         <span
                             class="absolute inset-y-0 left-0 pl-4 flex items-center text-white/40 group-focus-within:text-white transition-colors">
-                            <i class="fas fa-search text-sm"></i>
+                            <i class="fas fa-search text-[15px]"></i>
                         </span>
                         <input type="text" placeholder="Search anything..."
-                            class="w-full pl-11 pr-4 py-2.5 bg-white/10 border border-white/10 rounded-2xl text-sm font-medium placeholder:text-white/40 focus:bg-white/20 focus:border-white/20 focus:ring-4 focus:ring-white/5 transition-all outline-none backdrop-blur-sm">
+                            class="w-full pl-11 pr-4 py-2.5 bg-white/10 border border-white/10 rounded-2xl text-[15px] font-medium placeholder:text-white/40 focus:bg-white/20 focus:border-white/20 focus:ring-4 focus:ring-white/5 transition-all outline-none backdrop-blur-sm">
                     </div>
                 </div>
 
@@ -49,7 +49,7 @@
                             class="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all relative group">
                             <i class="far fa-bell text-lg"></i>
                             <span
-                                class="absolute top-2.5 right-2.5 w-4 h-4 bg-orange-500 border-2 border-orange-700 rounded-full text-[8px] font-black flex items-center justify-center shadow-sm">3</span>
+                                class="absolute top-2.5 right-2.5 w-4 h-4 bg-orange-500 border-2 border-orange-700 rounded-full text-[15px] font-black flex items-center justify-center shadow-sm">3</span>
                         </button>
                     </div>
 
@@ -61,9 +61,9 @@
                             class="flex items-center gap-3 group focus:outline-none p-1 rounded-2xl hover:bg-white/5 transition-all">
                             <div class="hidden md:flex flex-col items-end mr-1">
                                 <span
-                                    class="text-sm font-extrabold text-white group-hover:text-yellow-200 transition-colors leading-none mb-1">{{ auth()->user()->name }}</span>
+                                    class="text-[15px] font-extrabold text-white group-hover:text-yellow-200 transition-colors leading-none mb-1">{{ auth()->user()->name }}</span>
                                 <span
-                                    class="text-[9px] text-white/50 uppercase tracking-widest font-black leading-none">{{ auth()->user()->getRoleNames()->first() }}</span>
+                                    class="text-[15px] text-white/50 uppercase tracking-widest font-black leading-none">{{ auth()->user()->getRoleNames()->first() }}</span>
                             </div>
                             <div class="relative">
                                 <div
@@ -74,7 +74,7 @@
                                     class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-orange-600 rounded-full shadow-sm">
                                 </div>
                             </div>
-                            <i class="fas fa-chevron-down text-[10px] text-white/30 group-hover:text-white transition-all hidden md:block"
+                            <i class="fas fa-chevron-down text-[15px] text-white/30 group-hover:text-white transition-all hidden md:block"
                                 :class="userDropdownOpen ? 'rotate-180' : ''"></i>
                         </button>
 
@@ -93,17 +93,17 @@
                                     {{ auth()->user()->initials() }}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-black text-slate-800 truncate leading-none mb-1">
+                                    <p class="text-[15px] font-black text-slate-800 truncate leading-none mb-1">
                                         {{ auth()->user()->name }}
                                     </p>
-                                    <p class="text-[10px] text-slate-400 font-bold truncate leading-none">
+                                    <p class="text-[15px] text-slate-800 font-bold truncate leading-none">
                                         {{ auth()->user()->email }}
                                     </p>
                                 </div>
                             </div>
                             <div class="px-3 pb-2 pt-2">
                                 <a href="#"
-                                    class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 rounded-xl transition-all">
+                                    class="flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 rounded-xl transition-all">
                                     <div
                                         class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                         <i class="fas fa-user-circle"></i>
@@ -111,7 +111,7 @@
                                     Profile Settings
                                 </a>
                                 <a href="#"
-                                    class="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 rounded-xl transition-all">
+                                    class="flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 rounded-xl transition-all">
                                     <div
                                         class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                         <i class="fas fa-cog"></i>
@@ -123,7 +123,7 @@
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit"
-                                        class="w-full flex items-center justify-center gap-3 bg-red-50 hover:bg-red-100 text-red-600 py-3.5 rounded-2xl transition-all font-black text-xs uppercase tracking-widest group">
+                                        class="w-full flex items-center justify-center gap-3 bg-red-50 hover:bg-red-100 text-red-600 py-3.5 rounded-2xl transition-all font-black text-[15px] uppercase tracking-widest group">
                                         <i
                                             class="fas fa-sign-out-alt opacity-50 group-hover:translate-x-1 transition-transform"></i>
                                         Logout Account
@@ -149,32 +149,32 @@
             <nav class="flex items-center gap-2 h-14">
                 @if(auth()->user()->hasRole('Super Admin|Admin'))
                     <a href="{{ route('admin.dashboard') }}"
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
-                        <i class="fas fa-th-large text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Dashboard</span>
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600' }}">
+                        <i class="fas fa-th-large text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Dashboard</span>
                     </a>
                 @else
                     <a href="{{ route('contingent.dashboard') }}"
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('contingent.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
-                        <i class="fas fa-th-large text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Dashboard</span>
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('contingent.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600' }}">
+                        <i class="fas fa-th-large text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Dashboard</span>
                     </a>
                 @endif
 
                 @role('Super Admin|Admin|Pendaftaran')
                 <a href="{{ route('admin.registrations.index') }}"
-                    class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.registrations.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
-                    <i class="fas fa-file-signature text-sm opacity-50 group-hover:opacity-100"></i>
-                    <span class="text-sm font-bold tracking-tight">Data Registrasi</span>
+                    class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.registrations.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600' }}">
+                    <i class="fas fa-file-signature text-[15px] opacity-50 group-hover:opacity-100"></i>
+                    <span class="text-[15px] font-bold tracking-tight">Data Registrasi</span>
                 </a>
 
                 <div class="relative h-full" x-data="{ reportDropdownOpen: false }"
                     @mouseenter="reportDropdownOpen = true" @mouseleave="reportDropdownOpen = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600' }}">
-                        <i class="fas fa-file-invoice text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Laporan</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600' }}">
+                        <i class="fas fa-file-invoice text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Laporan</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="reportDropdownOpen ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -187,42 +187,42 @@
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
                         <a href="{{ route('admin.match-numbers.verified') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
-                                <i class="fas fa-medal text-xs"></i>
+                                <i class="fas fa-medal text-[15px]"></i>
                             </div>
                             Laporan Pertandingan
                         </a>
                         <a href="{{ route('admin.reports.registration-by-number') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
-                                <i class="fas fa-file-excel text-xs"></i>
+                                <i class="fas fa-file-excel text-[15px]"></i>
                             </div>
                             Laporan Per Kontingen
                         </a>
                         <a href="{{ route('admin.reports.registration-by-name') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
-                                <i class="fas fa-id-card text-xs"></i>
+                                <i class="fas fa-id-card text-[15px]"></i>
                             </div>
                             Laporan Per Nama Peserta
                         </a>
                         <a href="{{ route('admin.reports.match-class') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
-                                <i class="fas fa-layer-group text-xs"></i>
+                                <i class="fas fa-layer-group text-[15px]"></i>
                             </div>
                             Laporan Nomor & Kelas
                         </a>
                         <a href="{{ route('admin.reports.athlete-biodata') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 p-1.5 min-w-[28px]">
-                                <i class="fas fa-id-card-alt text-xs"></i>
+                                <i class="fas fa-id-card-alt text-[15px]"></i>
                             </div>
                             Laporan Biodata Peserta
                         </a>
@@ -234,10 +234,10 @@
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.master.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
-                        <i class="fas fa-database text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Master Data</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.master.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-database text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Master Data</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -250,113 +250,113 @@
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
                         <a href="{{ route('admin.master.athletes.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-running text-xs"></i>
+                                <i class="fas fa-running text-[15px]"></i>
                             </div>
                             Master Atlet
                         </a>
                         <a href="{{ route('admin.master.officials.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-user-tie text-xs"></i>
+                                <i class="fas fa-user-tie text-[15px]"></i>
                             </div>
                             Master Official
                         </a>
                         <a href="{{ route('admin.master.users') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-users text-xs"></i>
+                                <i class="fas fa-users text-[15px]"></i>
                             </div>
                             User Accounts
                         </a>
                         <a href="{{ route('admin.master.roles.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-user-shield text-xs"></i>
+                                <i class="fas fa-user-shield text-[15px]"></i>
                             </div>
                             Roles & Permissions
                         </a>
                         <a href="{{ route('admin.master.contingents.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-users text-xs"></i>
+                                <i class="fas fa-users text-[15px]"></i>
                             </div>
                             Master Kontingen
                         </a>
                         <a href="{{ route('admin.master.referees') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-user-tie text-xs"></i>
+                                <i class="fas fa-user-tie text-[15px]"></i>
                             </div>
                             Wasit
                         </a>
                         <a href="{{ route('admin.master.kyu-levels') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-tags text-xs"></i>
+                                <i class="fas fa-tags text-[15px]"></i>
                             </div>
                             Kyu / Dan Levels
                         </a>
 
                         <a href="{{ route('admin.master.age-groups') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-user-clock text-xs"></i>
+                                <i class="fas fa-user-clock text-[15px]"></i>
                             </div>
                             Kelompok Umur
                         </a>
                         <a href="{{ route('admin.master.techniques') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-weight-hanging text-xs"></i>
+                                <i class="fas fa-weight-hanging text-[15px]"></i>
                             </div>
                             Teknik & Jurus
                         </a>
                         <a href="{{ route('admin.master.weight-groups') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-weight-hanging text-xs"></i>
+                                <i class="fas fa-weight-hanging text-[15px]"></i>
                             </div>
                             Kelompok Berat Badan
                         </a>
 
                         <a href="{{ route('admin.master.match-numbers') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-list text-xs"></i>
+                                <i class="fas fa-list text-[15px]"></i>
                             </div>
                             Nomor Pertandingan
                         </a>
 
                         <a href="{{ route('admin.master.rundown') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-list text-xs"></i>
+                                <i class="fas fa-list text-[15px]"></i>
                             </div>
                             Run down
                         </a>
 
                         <a href="{{ route('admin.master.court') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-list text-xs"></i>
+                                <i class="fas fa-list text-[15px]"></i>
                             </div>
                             Court
                         </a>
 
                         <a href="{{ route('admin.master.pool') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-list text-xs"></i>
+                                <i class="fas fa-list text-[15px]"></i>
                             </div>
                             Pool
                         </a>
 
                         <a href="{{ route('admin.master.session-time') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-clock text-xs"></i>
+                                <i class="fas fa-clock text-[15px]"></i>
                             </div>
                             Session Time
                         </a>
@@ -369,10 +369,10 @@
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.technical-meeting.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
-                        <i class="fas fa-running text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Technical Meeting</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.technical-meeting.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-running text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Technical Meeting</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -385,16 +385,16 @@
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
                         <a href="{{ route('admin.technical-meeting.embu') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-running text-xs"></i>
+                                <i class="fas fa-running text-[15px]"></i>
                             </div>
                             Drawing Embu
                         </a>
                         <a href="{{ route('admin.technical-meeting.randori') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-user-tie text-xs"></i>
+                                <i class="fas fa-user-tie text-[15px]"></i>
                             </div>
                             Drawing Randori
                         </a>
@@ -406,10 +406,10 @@
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.arbitrase.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
-                        <i class="fas fa-balance-scale text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Arbitrase</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.arbitrase.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-balance-scale text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Arbitrase</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -422,18 +422,18 @@
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
                         <a href="{{ route('admin.arbitrase.referees') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
-                                <i class="fas fa-users text-xs"></i>
+                                <i class="fas fa-users text-[15px]"></i>
                             </div>
                             Master Wasit
                         </a>
                         <a href="{{ route('admin.arbitrase.generate-referee') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
-                                <i class="fas fa-gavel text-xs"></i>
+                                <i class="fas fa-gavel text-[15px]"></i>
                             </div>
                             Penugasan Wasit
                         </a>
@@ -445,10 +445,10 @@
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.panitera.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
-                        <i class="fas fa-balance-scale text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Panitera</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.panitera.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-balance-scale text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Panitera</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -461,27 +461,27 @@
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
                         <a href="{{ route('admin.panitera.scoring.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
-                                <i class="fas fa-clipboard-check text-xs"></i>
+                                <i class="fas fa-clipboard-check text-[15px]"></i>
                             </div>
                             Penilaian Wasit
                         </a>
                         <a href="{{ route('admin.panitera.scoring.embu.testbench') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-all rounded-xl mx-2 {{ request()->routeIs('admin.panitera.scoring.embu.testbench') ? 'bg-emerald-50 text-emerald-700' : '' }}">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-emerald-600 transition-all rounded-xl mx-2 {{ request()->routeIs('admin.panitera.scoring.embu.testbench') ? 'bg-emerald-50 text-emerald-700' : '' }}">
                             <div
                                 class="rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 min-w-[28px]">
-                                <i class="fas fa-flask text-xs"></i>
+                                <i class="fas fa-flask text-[15px]"></i>
                             </div>
                             <span class="flex-1">Testbench Embu</span>
-                            <span class="text-[8px] font-black bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-md uppercase tracking-wide">TEST</span>
+                            <span class="text-[15px] font-black bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-md uppercase tracking-wide">TEST</span>
                         </a>
                         <a href="{{ route('admin.panitera.scoring.embu.result') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-amber-600 transition-all rounded-xl mx-2 {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'bg-amber-50 text-amber-700' : '' }}">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-amber-600 transition-all rounded-xl mx-2 {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'bg-amber-50 text-amber-700' : '' }}">
                             <div
                                 class="rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 min-w-[28px]">
-                                <i class="fas fa-trophy text-xs"></i>
+                                <i class="fas fa-trophy text-[15px]"></i>
                             </div>
                             <span class="flex-1">Hasil & Juara Embu</span>
                         </a>
@@ -493,10 +493,10 @@
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.referee.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
-                        <i class="fas fa-balance-scale text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Perwasitan</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.referee.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-balance-scale text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Perwasitan</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -510,10 +510,10 @@
                         x-cloak>
                         <hr class="my-2 border-slate-50 mx-4">
                         <a href="{{ route('admin.referee.scoring') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div
                                 class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500 min-w-[28px]">
-                                <i class="fas fa-tablet-alt text-xs"></i>
+                                <i class="fas fa-tablet-alt text-[15px]"></i>
                             </div>
                             Dashboard Wasit (Live)
                         </a>
@@ -525,10 +525,10 @@
                 <div class="relative h-full" x-data="{ open: false }" @mouseenter="open = true"
                     @mouseleave="open = false">
                     <button
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.master.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:text-orange-600 font-medium' }}">
-                        <i class="fas fa-database text-sm opacity-50 group-hover:opacity-100"></i>
-                        <span class="text-sm font-bold tracking-tight">Master Data</span>
-                        <i class="fas fa-chevron-down text-[8px] transition-transform duration-300"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.master.*') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600 font-medium' }}">
+                        <i class="fas fa-database text-[15px] opacity-50 group-hover:opacity-100"></i>
+                        <span class="text-[15px] font-bold tracking-tight">Master Data</span>
+                        <i class="fas fa-chevron-down text-[15px] transition-transform duration-300"
                             :class="open ? 'rotate-180 opacity-100' : 'opacity-20'"></i>
                     </button>
 
@@ -541,16 +541,16 @@
                         class="absolute left-0 w-64 bg-white border border-slate-100 rounded-2xl shadow-2xl py-3 z-[110]"
                         x-cloak>
                         <a href="{{ route('admin.master.athletes.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-running text-xs"></i>
+                                <i class="fas fa-running text-[15px]"></i>
                             </div>
                             Master Atlet
                         </a>
                         <a href="{{ route('admin.master.officials.index') }}"
-                            class="flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
+                            class="flex items-center gap-3 px-3 py-2 text-[15px] font-bold text-slate-900 hover:bg-slate-50 hover:text-orange-600 transition-all rounded-xl mx-2">
                             <div class="rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
-                                <i class="fas fa-user-tie text-xs"></i>
+                                <i class="fas fa-user-tie text-[15px]"></i>
                             </div>
                             Master Official
                         </a>
@@ -560,10 +560,10 @@
                 @endrole
 
                 <a href="#"
-                    class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 border-transparent text-slate-500 hover:text-orange-600">
-                    <i class="fas fa-cog text-sm opacity-50 group-hover:opacity-100"></i>
-                    <span class="text-sm font-bold tracking-tight">Settings</span>
-                    <i class="fas fa-chevron-down text-[8px] opacity-20"></i>
+                    class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 border-transparent text-slate-900 hover:text-orange-600">
+                    <i class="fas fa-cog text-[15px] opacity-50 group-hover:opacity-100"></i>
+                    <span class="text-[15px] font-bold tracking-tight">Settings</span>
+                    <i class="fas fa-chevron-down text-[15px] opacity-20"></i>
                 </a>
             </nav>
         </div>
@@ -581,14 +581,14 @@
             <a href="{{ route('admin.dashboard') }}"
                 class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.dashboard') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
                 <i class="fas fa-th-large text-lg"></i>
-                <span class="font-black uppercase tracking-wider text-xs">Dashboard</span>
+                <span class="font-black uppercase tracking-wider text-[15px]">Dashboard</span>
             </a>
 
             @role('Super Admin|Admin|Pendaftaran')
             <a href="{{ route('admin.registrations.index') }}"
                 class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.registrations.*') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
                 <i class="fas fa-file-signature text-lg"></i>
-                <span class="font-black uppercase tracking-wider text-xs">Data Registrasi</span>
+                <span class="font-black uppercase tracking-wider text-[15px]">Data Registrasi</span>
             </a>
 
             <div x-data="{ open: {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'true' : 'false' }} }"
@@ -597,25 +597,25 @@
                     class="w-full flex items-center justify-between p-5 rounded-[2rem] {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'bg-orange-600/10 text-orange-400 border border-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-file-invoice text-lg"></i>
-                        <span class="font-black uppercase tracking-wider text-xs">Laporan</span>
+                        <span class="font-black uppercase tracking-wider text-[15px]">Laporan</span>
                     </div>
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
                     <a href="{{ route('admin.match-numbers.verified') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.match-numbers.verified') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.match-numbers.verified') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Laporan
                         Pertandingan</a>
                     <a href="{{ route('admin.reports.registration-by-number') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.registration-by-number') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.registration-by-number') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Laporan
                         Per Kontingen</a>
                     <a href="{{ route('admin.reports.registration-by-name') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.registration-by-name') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.registration-by-name') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Laporan
                         Per Nama Peserta</a>
                     <a href="{{ request()->routeIs('admin.reports.match-class') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.match-class') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.match-class') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Laporan
                         Nomor & Kelas</a>
                     <a href="{{ route('admin.reports.athlete-biodata') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.athlete-biodata') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Laporan
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.reports.athlete-biodata') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Laporan
                         Biodata Peserta</a>
                 </div>
             </div>
@@ -627,48 +627,48 @@
                     class="w-full flex items-center justify-between p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-database text-lg"></i>
-                        <span class="font-black uppercase tracking-wider text-xs">Master Data</span>
+                        <span class="font-black uppercase tracking-wider text-[15px]">Master Data</span>
                     </div>
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
                     <a href="{{ route('admin.master.athletes.index') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Master
                         Atlet</a>
                     <a href="{{ route('admin.master.officials.index') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Master
                         Official</a>
                     <a href="{{ route('admin.master.users') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">User
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">User
                         Management</a>
                     <a href="{{ route('admin.master.roles.index') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Roles
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Roles
                         & Permissions</a>
                     <a href="{{ route('admin.master.contingents.index') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Master
                         Kontingen</a>
                     <a href="{{ route('admin.master.referees') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Master
                         Wasit</a>
                     <a href="{{ route('admin.master.kyu-levels') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kyu
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Kyu
                         / Dan Levels</a>
                     <a href="{{ route('admin.master.age-groups') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kelompok
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Kelompok
                         Umur</a>
                     <a href="{{ route('admin.master.weight-groups') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Kelompok
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Kelompok
                         Berat Badan</a>
                     <a href="{{ route('admin.master.techniques') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Teknik
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Teknik
                         & Jurus</a>
                     <a href="{{ route('admin.master.match-numbers') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Nomor
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Nomor
                         Pertandingan</a>
                     <a href="{{ route('admin.master.rundown') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Rundown</a>
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Rundown</a>
                     <a href="{{ route('admin.master.court') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Court</a>
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Court</a>
                 </div>
             </div>
             @endrole
@@ -679,18 +679,18 @@
                     class="w-full flex items-center justify-between p-5 rounded-[2rem] {{ request()->routeIs('admin.panitera.*') ? 'bg-orange-600/10 text-orange-400 border border-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-balance-scale text-lg"></i>
-                        <span class="font-black uppercase tracking-wider text-xs">Panitera</span>
+                        <span class="font-black uppercase tracking-wider text-[15px]">Panitera</span>
                     </div>
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
                     <a href="{{ route('admin.panitera.scoring.index') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.panitera.scoring.index') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Penilaian Wasit</a>
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.panitera.scoring.index') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Penilaian Wasit</a>
                     <a href="{{ route('admin.panitera.scoring.embu.testbench') }}"
-                        class="flex items-center gap-2 p-4 rounded-2xl {{ request()->routeIs('admin.panitera.scoring.embu.testbench') ? 'text-emerald-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">
-                        <i class="fas fa-flask text-xs"></i>
+                        class="flex items-center gap-2 p-4 rounded-2xl {{ request()->routeIs('admin.panitera.scoring.embu.testbench') ? 'text-emerald-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">
+                        <i class="fas fa-flask text-[15px]"></i>
                         Testbench Embu
-                        <span class="ml-auto text-[8px] font-black bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded-md uppercase">TEST</span>
+                        <span class="ml-auto text-[15px] font-black bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded-md uppercase">TEST</span>
                     </a>
                 </div>
             </div>
@@ -702,16 +702,16 @@
                     class="w-full flex items-center justify-between p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-balance-scale text-lg"></i>
-                        <span class="font-black uppercase tracking-wider text-xs">Arbitrase</span>
+                        <span class="font-black uppercase tracking-wider text-[15px]">Arbitrase</span>
                     </div>
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
                     <a href="{{ route('admin.arbitrase.generate-referee') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.arbitrase.generate-referee') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Penugasan
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.arbitrase.generate-referee') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Penugasan
                         Wasit</a>
                     <a href="{{ route('admin.arbitrase.scoring.index') }}"
-                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.arbitrase.scoring.*') ? 'text-orange-400 bg-white/5' : 'text-slate-400 hover:text-white' }} text-sm font-bold transition-colors">Penilaian
+                        class="block p-4 rounded-2xl {{ request()->routeIs('admin.arbitrase.scoring.*') ? 'text-orange-400 bg-white/5' : 'text-slate-200 hover:text-white' }} text-[15px] font-bold transition-colors">Penilaian
                         Wasit</a>
                 </div>
             </div>
@@ -723,16 +723,16 @@
                     class="w-full flex items-center justify-between p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
                     <div class="flex items-center gap-4">
                         <i class="fas fa-database text-lg"></i>
-                        <span class="font-black uppercase tracking-wider text-xs">Master Data</span>
+                        <span class="font-black uppercase tracking-wider text-[15px]">Master Data</span>
                     </div>
                     <i class="fas fa-chevron-down transition-transform" :class="open ? 'rotate-180' : ''"></i>
                 </button>
                 <div x-show="open" class="pl-8 space-y-2 py-2 animate-in slide-in-from-top-2 duration-300">
                     <a href="{{ route('admin.master.athletes.index') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Master
                         Atlet</a>
                     <a href="{{ route('admin.master.officials.index') }}"
-                        class="block p-4 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5 text-sm font-bold transition-colors">Master
+                        class="block p-4 rounded-2xl text-slate-200 hover:text-white hover:bg-white/5 text-[15px] font-bold transition-colors">Master
                         Official</a>
                 </div>
             </div>
@@ -741,7 +741,7 @@
             <a href="#"
                 class="flex items-center gap-4 p-5 rounded-[2rem] text-slate-300 hover:bg-white/5 transition-all shadow-sm">
                 <i class="fas fa-cog text-lg"></i>
-                <span class="font-black uppercase tracking-wider text-xs">Settings</span>
+                <span class="font-black uppercase tracking-wider text-[15px]">Settings</span>
             </a>
         </div>
 
@@ -755,13 +755,13 @@
                     <span
                         class="text-base font-black text-white truncate drop-shadow-sm">{{ auth()->user()->name }}</span>
                     <span
-                        class="text-[10px] text-orange-200/50 uppercase tracking-[0.2em] font-black truncate">{{ auth()->user()->getRoleNames()->first() }}</span>
+                        class="text-[15px] text-orange-200/50 uppercase tracking-[0.2em] font-black truncate">{{ auth()->user()->getRoleNames()->first() }}</span>
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                    class="w-full flex items-center justify-center gap-3 bg-red-600/10 text-red-400 py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs border border-red-600/10 active:scale-95 transition-all">
+                    class="w-full flex items-center justify-center gap-3 bg-red-600/10 text-red-400 py-5 rounded-[2rem] font-black uppercase tracking-widest text-[15px] border border-red-600/10 active:scale-95 transition-all">
                     <i class="fas fa-sign-out-alt"></i> Logout System
                 </button>
             </form>

@@ -81,8 +81,17 @@ class Athlete extends Model
             ?? $this->latestRegistration()?->contingent;
     }
 
-    public function contingentHistories()
+    public function contingentHistories()   
     {
         return $this->hasMany(AthleteContingentHistory::class)->orderBy('moved_at', 'desc');
+    }
+
+    public function getGenderIndoAttribute(): string
+    {
+        return match ($this->gender) {
+            'Male' => 'Laki-laki',
+            'Female' => 'Perempuan',
+            default => '-',
+        };
     }
 }

@@ -1,35 +1,35 @@
 <div class="space-y-8">
     <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6">
         <h2 class="text-xl font-black text-blue-900 uppercase tracking-widest mb-1">Daftar Penilaian Wasit</h2>
-        <p class="text-sm font-bold text-blue-800 bg-blue-200/50 inline-block px-3 py-1 rounded-full uppercase tracking-wider mb-6">
+        <p class="text-[15px] font-bold text-blue-800 bg-blue-200/50 inline-block px-3 py-1 rounded-full uppercase tracking-wider mb-6">
             Kategori Embu
         </p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm font-bold text-slate-700">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-[15px] font-bold text-black">
             <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                <span class="text-[10px] uppercase text-slate-400 block mb-1">Kontingen</span>
+                <span class="text-[15px] uppercase text-slate-800 block mb-1">Kontingen</span>
                 <span class="text-slate-900 uppercase">{{ $activeMatch->active_registration_id ? (\App\Models\Registration::find($activeMatch->active_registration_id)->contingent->name ?? '-') : '-' }}</span>
             </div>
             <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                <span class="text-[10px] uppercase text-slate-400 block mb-1">Babak</span>
+                <span class="text-[15px] uppercase text-slate-800 block mb-1">Babak</span>
                 <span class="text-slate-900 uppercase">{{ $activeMatch->round ?? 'Final' }}</span>
             </div>
             <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                <span class="text-[10px] uppercase text-slate-400 block mb-1">Jadwal (Waktu / Court)</span>
+                <span class="text-[15px] uppercase text-slate-800 block mb-1">Jadwal (Waktu / Court)</span>
                 <span class="text-slate-900 uppercase">{{ $assignedSession->name ?? '-' }} &bull; {{ $assignedCourt->name ?? '-' }}</span>
             </div>
             <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm">
-                <span class="text-[10px] uppercase text-slate-400 block mb-1">Kelas / Pool</span>
+                <span class="text-[15px] uppercase text-slate-800 block mb-1">Kelas / Pool</span>
                 <span class="text-slate-900 uppercase">{{ $activeMatch->ageGroup->name ?? '-' }} &bull; -</span>
             </div>
         </div>
     </div>
 
     <!-- Urutan Komposisi -->
-    <div class="bg-white border text-sm border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+    <div class="bg-white border text-[15px] border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-            <i class="fas fa-list-ol text-slate-400"></i>
-            <h3 class="font-black text-slate-700 uppercase tracking-widest">Urutan Komposisi</h3>
+            <i class="fas fa-list-ol text-slate-800"></i>
+            <h3 class="font-black text-black uppercase tracking-widest">Urutan Komposisi</h3>
         </div>
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             @php
@@ -47,14 +47,14 @@
                     <div class="w-8 h-8 bg-slate-800 text-white font-black rounded-full flex items-center justify-center shrink-0">
                         {{ $k }}
                     </div>
-                    <div class="font-bold text-slate-700">{{ $v }}</div>
+                    <div class="font-bold text-black">{{ $v }}</div>
                 </div>
             @endforeach
         </div>
     </div>
 
     <!-- Panel Penilaian -->
-    <div class="bg-white border text-sm border-slate-200 rounded-2xl overflow-hidden shadow-sm mb-8">
+    <div class="bg-white border text-[15px] border-slate-200 rounded-2xl overflow-hidden shadow-sm mb-8">
         <table class="w-full text-left border-collapse">
             <thead class="bg-slate-800 text-white">
                 <tr>
@@ -92,14 +92,14 @@
                 @endphp
                 @foreach($gohoItems as $idx => $item)
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 font-bold text-slate-700">{{ $item['cat'] }}</td>
-                        <td class="px-6 py-4 text-slate-600">{{ $item['desc'] }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-400">10</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-400">{{ $idx + 1 }}</td>
+                        <td class="px-6 py-4 font-bold text-black">{{ $item['cat'] }}</td>
+                        <td class="px-6 py-4 text-slate-900">{{ $item['desc'] }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800">10</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800">{{ $idx + 1 }}</td>
                         <td class="px-6 py-3 text-center">
                             <input type="number" step="0.5" min="0" max="10" wire:model.live.debounce.300ms="embuItems.{{ $item['id'] }}" class="w-24 text-center font-black text-xl py-2 px-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-blue-500">
                         </td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-400">8</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800">8</td>
                     </tr>
                 @endforeach
 
@@ -111,14 +111,14 @@
                 </tr>
                 @foreach($ekspresiItems as $idx => $item)
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 font-bold text-slate-700">{{ $item['cat'] }}</td>
-                        <td class="px-6 py-4 text-slate-600">{{ $item['desc'] }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-400">10</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-400">{{ $idx + 1 }}</td>
+                        <td class="px-6 py-4 font-bold text-black">{{ $item['cat'] }}</td>
+                        <td class="px-6 py-4 text-slate-900">{{ $item['desc'] }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800">10</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800">{{ $idx + 1 }}</td>
                         <td class="px-6 py-3 text-center">
                             <input type="number" step="0.5" min="0" max="10" wire:model.live.debounce.300ms="embuItems.{{ $item['id'] }}" class="w-24 text-center font-black text-xl py-2 px-3 border-2 border-slate-200 rounded-xl focus:border-rose-500 focus:ring-rose-500">
                         </td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-400">8</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-800">8</td>
                     </tr>
                 @endforeach
             </tbody>

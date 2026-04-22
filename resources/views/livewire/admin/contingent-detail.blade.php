@@ -1,15 +1,15 @@
 <div class="space-y-10 pb-24">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-            <a href="{{ route('admin.master.contingents.index') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-orange-600 mb-4 transition-colors font-bold text-xs uppercase tracking-widest">
+            <a href="{{ route('admin.master.contingents.index') }}" class="inline-flex items-center gap-2 text-slate-800 hover:text-orange-600 mb-4 transition-colors font-bold text-[15px] uppercase tracking-widest">
                 <i class="fas fa-arrow-left"></i> Kembali ke Daftar
             </a>
             <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Detail Kontingen</h1>
-            <p class="text-slate-500 font-medium">Informasi lengkap pendaftaran #{{ $contingent->id }} ({{ $contingent->referral_code }})</p>
+            <p class="text-slate-900 font-medium">Informasi lengkap pendaftaran #{{ $contingent->id }} ({{ $contingent->referral_code }})</p>
         </div>
         
         <div @class([
-            'px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-sm border',
+            'px-6 py-3 rounded-2xl text-[15px] font-black uppercase tracking-[0.2em] shadow-sm border',
             'bg-amber-50 text-amber-600 border-amber-100' => $contingent->status === 'pending',
             'bg-emerald-50 text-emerald-600 border-emerald-100' => $contingent->status === 'confirmed',
             'bg-red-50 text-red-600 border-red-100' => $contingent->status === 'rejected',
@@ -36,31 +36,31 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nama Kontingen</p>
+                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">Nama Kontingen</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->name }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Kabupaten / Kota</p>
+                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">Kabupaten / Kota</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->kab_kota }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px) font-black text-slate-400 uppercase tracking-widest mb-1">Penanggung Jawab</p>
+                        <p class="text-[10px) font-black text-slate-800 uppercase tracking-widest mb-1">Penanggung Jawab</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->leader_name }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Telepon / HP</p>
+                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">Telepon / HP</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->leader_phone }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Alamat Email</p>
+                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">Alamat Email</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->email ?? '-' }}</p>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">SIM Perkemi Valid?</p>
+                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">SIM Perkemi Valid?</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->sim_perkemi_confirm ?? 'Ya' }}</p>
                     </div>
                     <div class="md:col-span-2">
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Alamat Lengkap</p>
+                        <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">Alamat Lengkap</p>
                         <p class="text-slate-800 font-bold border-b border-slate-50 pb-2">{{ $contingent->address ?? '-' }}</p>
                     </div>
                 </div>
@@ -72,29 +72,29 @@
                     <i class="fas fa-user-tie text-emerald-500"></i> Daftar Official ({{ $contingent->officials->count() }})
                 </h3>
                 
-                <div class="overflow-x-auto -mx-10 px-10">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
-                                <th class="py-4">Nama Official</th>
-                                <th class="py-4">Jabatan</th>
-                                <th class="py-4">No. HP</th>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
+                        <thead class="bg-slate-800 text-white">
+                            <tr class="text-slate-800 text-[15px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Nama Official</th>
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Jabatan</th>
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">No. HP</th>
                             </tr>
                         </thead>
-                        <tbody class="text-slate-700 font-medium">
+                        <tbody class="divide-y divide-slate-200">
                             @forelse($contingent->officials as $official)
-                            <tr class="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
-                                <td class="py-5 font-bold text-slate-800">{{ $official->name }}</td>
-                                <td class="py-5">
-                                    <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight">
+                            <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
+                                <td class="py-5 font-bold text-slate-800 border-r border-slate-200">{{ $official->name }}</td>
+                                <td class="py-5 border-r border-slate-200">
+                                    <span class="bg-slate-100 text-slate-900 px-3 py-1 rounded-full text-[15px] font-black uppercase tracking-tight">
                                         {{ $official->role }}
                                     </span>
                                 </td>
-                                <td class="py-5 text-slate-500">{{ $official->phone ?? '-' }}</td>
+                                <td class="py-5 text-slate-900 border-r border-slate-200">{{ $official->phone ?? '-' }}</td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="3" class="py-10 text-center text-slate-400 italic font-medium">Tidak ada data official</td>
+                                <td colspan="3" class="py-10 text-center text-slate-800 italic font-medium border-r border-slate-200">Tidak ada data official</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -117,7 +117,7 @@
                         <div class="flex justify-between items-start mb-6">
                             <div>
                                 <h4 class="text-lg font-black text-slate-800 leading-tight group-hover:text-orange-600 transition-colors">{{ $athlete->name }}</h4>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                <p class="text-[15px] font-bold text-slate-800 uppercase tracking-widest mt-1">
                                     {{ $athlete->gender }} · {{ $athlete->age_group }}
                                 </p>
                             </div>
@@ -140,35 +140,35 @@
                             <!-- Left: Technical -->
                             <div class="space-y-4">
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">Tingkatan</p>
-                                    <p class="text-xs font-bold text-slate-700 leading-tight">{{ $athlete->rank }}</p>
+                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-[0.1em] mb-1">Tingkatan</p>
+                                    <p class="text-[15px] font-bold text-black leading-tight">{{ $athlete->rank }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">Dojo</p>
-                                    <p class="text-xs font-black text-orange-600 leading-tight uppercase">{{ $athlete->dojo_origin }}</p>
+                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-[0.1em] mb-1">Dojo</p>
+                                    <p class="text-[15px] font-black text-orange-600 leading-tight uppercase">{{ $athlete->dojo_origin }}</p>
                                 </div>
                             </div>
                             <!-- Right: Identity -->
                             <div class="space-y-4 text-right">
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1 text-right">NIK / Identitas</p>
-                                    <p class="text-xs font-bold text-slate-700">{{ $athlete->nik ?? '-' }}</p>
+                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-[0.1em] mb-1 text-right">NIK / Identitas</p>
+                                    <p class="text-[15px] font-bold text-black">{{ $athlete->nik ?? '-' }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1 text-right">Tgl Lahir</p>
-                                    <p class="text-xs font-bold text-slate-700">{{ $athlete->birth_date ? ($athlete->birth_date instanceof \Carbon\Carbon ? $athlete->birth_date->format('d/m/Y') : $athlete->birth_date) : '-' }}</p>
+                                    <p class="text-[15px] font-black text-slate-800 uppercase tracking-[0.1em] mb-1 text-right">Tgl Lahir</p>
+                                    <p class="text-[15px] font-bold text-black">{{ $athlete->birth_date ? ($athlete->birth_date instanceof \Carbon\Carbon ? $athlete->birth_date->format('d/m/Y') : $athlete->birth_date) : '-' }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Categories -->
                         <div class="mb-6">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] mb-3">Kategori Pertandingan</p>
+                            <p class="text-[15px] font-black text-slate-800 uppercase tracking-[0.1em] mb-3">Kategori Pertandingan</p>
                             <div class="flex flex-wrap gap-1.5">
                                 @forelse($athlete->categories as $category)
-                                <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight">{{ $category->name }}</span>
+                                <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-lg text-[15px] font-black uppercase tracking-tight">{{ $category->name }}</span>
                                 @empty
-                                <span class="text-xs text-slate-400 italic">Belum pilih kategori</span>
+                                <span class="text-[15px] text-slate-800 italic">Belum pilih kategori</span>
                                 @endforelse
                             </div>
                         </div>
@@ -176,11 +176,11 @@
                         <!-- BPJS Status -->
                         <div class="pt-6 border-t border-slate-200/50 flex justify-between items-center">
                             <div>
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">No. BPJS</p>
-                                <p class="text-xs font-bold text-slate-700 tracking-tight">{{ $athlete->bpjs_number ?? '-' }}</p>
+                                <p class="text-[15px] font-black text-slate-800 uppercase tracking-[0.1em] mb-1">No. BPJS</p>
+                                <p class="text-[15px] font-bold text-black tracking-tight">{{ $athlete->bpjs_number ?? '-' }}</p>
                             </div>
                             <div @class([
-                                'inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm',
+                                'inline-flex items-center gap-2 px-3 py-1 rounded-xl text-[15px] font-black uppercase tracking-tight shadow-sm',
                                 'bg-emerald-100 text-emerald-700 border border-emerald-200' => $athlete->bpjs_status === 'Aktif',
                                 'bg-red-100 text-red-700 border border-red-200' => $athlete->bpjs_status !== 'Aktif',
                             ])>
@@ -200,27 +200,27 @@
             <div class="bg-[#0f2b3d] text-white rounded-[2.5rem] p-10 shadow-xl relative overflow-hidden">
                 <div class="absolute -right-12 -top-12 w-48 h-48 bg-orange-600/20 rounded-full blur-2xl pointer-events-none"></div>
                 <div class="relative z-10 flex flex-col items-center text-center">
-                    <p class="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-4">Total Biaya Pendaftaran</p>
+                    <p class="text-[15px] font-black text-white/40 uppercase tracking-[0.3em] mb-4">Total Biaya Pendaftaran</p>
                     <div class="text-4xl font-black text-orange-400 mb-8 tracking-tighter">
                         Rp {{ number_format($contingent->final_amount, 0, ',', '.') }}
                     </div>
                     
                     <div class="w-full space-y-4 mb-10 pt-8 border-t border-white/10 text-left">
-                        <div class="flex justify-between items-center text-xs">
+                        <div class="flex justify-between items-center text-[15px]">
                             <span class="text-white/40 font-bold uppercase tracking-widest leading-none">Metode</span>
                             <span class="font-bold text-white uppercase">{{ $contingent->payment_method ?? 'Bank Transfer' }}</span>
                         </div>
-                        <div class="flex justify-between items-center text-xs">
+                        <div class="flex justify-between items-center text-[15px]">
                             <span class="text-white/40 font-bold uppercase tracking-widest leading-none">Status Bayar</span>
                             <span @class([
-                                'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tight',
+                                'px-2 py-0.5 rounded text-[15px] font-black uppercase tracking-tight',
                                 'bg-amber-500/20 text-amber-400' => $contingent->status === 'pending',
                                 'bg-emerald-500/20 text-emerald-400' => $contingent->status === 'confirmed',
                             ])>{{ $contingent->status === 'confirmed' ? 'Diterima' : 'Menunggu' }}</span>
                         </div>
                     </div>
                     
-                    <p class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Bukti Pembayaran</p>
+                    <p class="text-[15px] font-black text-white/40 uppercase tracking-widest mb-4">Bukti Pembayaran</p>
                     <div class="w-full aspect-[4/3] bg-white/5 rounded-2xl border-2 border-dashed border-white/10 overflow-hidden group relative">
                         @if($contingent->transfer_proof_path)
                             <img src="{{ Storage::url($contingent->transfer_proof_path) }}" class="w-full h-full object-cover transition-all group-hover:scale-110">
@@ -230,7 +230,7 @@
                                 </a>
                             </div>
                         @else
-                            <div class="w-full h-full flex flex-col items-center justify-center text-white/20 italic text-sm">
+                            <div class="w-full h-full flex flex-col items-center justify-center text-white/20 italic text-[15px]">
                                 <i class="fas fa-image text-3xl mb-2"></i>
                                 Tidak ada file
                             </div>
@@ -241,19 +241,19 @@
 
             <!-- Additional Stats -->
             <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Informasi Tambahan</h4>
+                <h4 class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-6">Informasi Tambahan</h4>
                 <div class="space-y-4">
                     <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
                         <div class="flex items-center gap-3">
                             <i class="fas fa-users text-blue-500"></i>
-                            <span class="text-xs font-bold text-slate-600">Total Atlet</span>
+                            <span class="text-[15px] font-bold text-slate-900">Total Atlet</span>
                         </div>
                         <span class="font-bold text-slate-800">{{ $contingent->athletes->count() }} Orang</span>
                     </div>
                     <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
                         <div class="flex items-center gap-3">
                             <i class="fas fa-user-tie text-emerald-500"></i>
-                            <span class="text-xs font-bold text-slate-600">Total Official</span>
+                            <span class="text-[15px] font-bold text-slate-900">Total Official</span>
                         </div>
                         <span class="font-bold text-slate-800">{{ $contingent->officials->count() }} Orang</span>
                     </div>
@@ -267,19 +267,19 @@
     <div class="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-4xl px-6 z-50">
         <div class="bg-white/80 backdrop-blur-lg rounded-[2rem] p-4 shadow-2xl border border-white/50 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div class="px-4 hidden sm:block">
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1">Aksi Verifikasi</span>
-                <span class="text-sm font-bold text-slate-800 truncate">{{ $contingent->name }}</span>
+                <span class="text-[15px] font-black text-slate-800 uppercase tracking-widest block leading-none mb-1">Aksi Verifikasi</span>
+                <span class="text-[15px] font-bold text-slate-800 truncate">{{ $contingent->name }}</span>
             </div>
             
             <div class="flex gap-3 w-full sm:w-auto">
                 <button wire:click="reject" 
                         wire:confirm="Apakah Anda yakin ingin menolak pendaftaran ini?"
-                        class="flex-1 sm:flex-none px-8 py-4 bg-white border-2 border-red-100 hover:bg-red-50 text-red-600 rounded-2xl font-bold text-sm tracking-widest transition-all">
+                        class="flex-1 sm:flex-none px-8 py-4 bg-white border-2 border-red-100 hover:bg-red-50 text-red-600 rounded-2xl font-bold text-[15px] tracking-widest transition-all">
                     TOLAK
                 </button>
                 <button wire:click="confirm" 
                         wire:confirm="Apakah Anda yakin ingin mengonfirmasi pembayaran ini?"
-                        class="flex-1 sm:flex-none px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20 rounded-2xl font-bold text-sm tracking-widest transition-all active:scale-95">
+                        class="flex-1 sm:flex-none px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/20 rounded-2xl font-bold text-[15px] tracking-widest transition-all active:scale-95">
                     KONFIRMASI BAYAR
                 </button>
             </div>

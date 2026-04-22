@@ -81,7 +81,7 @@
                  style="background-image: repeating-linear-gradient(45deg, white 0px, white 1px, transparent 1px, transparent 60px); background-size: 60px 60px;"></div>
 
             <div class="relative z-10">
-                <div class="inline-block bg-white/20 border border-white/30 text-white text-[10px] font-black uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-8">
+                <div class="inline-block bg-white/20 border border-white/30 text-white text-[15px] font-black uppercase tracking-[0.3em] px-4 py-2 rounded-full mb-8">
                     Pendaftaran Resmi Dibuka ✓
                 </div>
 
@@ -109,7 +109,7 @@
                         <template x-for="[val, lbl] in [[days,'Hari'],[hours,'Jam'],[mins,'Menit'],[secs,'Detik']]">
                             <div class="bg-white/20 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-center">
                                 <div class="text-3xl font-black text-white" x-text="String(val).padStart(2,'0')">00</div>
-                                <div class="text-white/60 text-[10px] font-bold uppercase tracking-wider mt-1" x-text="lbl"></div>
+                                <div class="text-white/60 text-[15px] font-bold uppercase tracking-wider mt-1" x-text="lbl"></div>
                             </div>
                         </template>
                     </div>
@@ -128,7 +128,7 @@
                                 <i class="fas {{ $icon }} text-white text-xs"></i>
                             </div>
                             <div>
-                                <div class="text-white/50 text-[10px] font-bold uppercase tracking-widest">{{ $label }}</div>
+                                <div class="text-white/50 text-[15px] font-bold uppercase tracking-widest">{{ $label }}</div>
                                 <div class="text-white font-semibold text-sm">{{ $val }}</div>
                             </div>
                         </div>
@@ -160,7 +160,7 @@
                         <p class="text-slate-400 text-sm leading-relaxed mb-6">{{ $desc }}</p>
                         <div class="flex flex-wrap gap-2">
                             @foreach($classes as $class)
-                                <span class="bg-white/5 text-white/40 text-[10px] px-3 py-1 rounded-full font-semibold">{{ $class }}</span>
+                                <span class="bg-white/5 text-white/40 text-[15px] px-3 py-1 rounded-full font-semibold">{{ $class }}</span>
                             @endforeach
                         </div>
                     </div>
@@ -185,7 +185,7 @@
                     ['fa-trophy', 'D-Day', 'Hari Pertandingan', 'Upacara pembukaan, pertandingan, hingga penutupan.', 'green'],
                 ] as [$icon, $day, $title, $desc, $c])
                     <div class="relative bg-slate-800/50 border border-white/5 rounded-3xl p-6 hover:border-orange-500/20 transition">
-                        <div class="absolute -top-4 left-6 inline-flex items-center gap-2 bg-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
+                        <div class="absolute -top-4 left-6 inline-flex items-center gap-2 bg-orange-500 text-white text-[15px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
                             {{ $day }}
                         </div>
                         <div class="pt-4">

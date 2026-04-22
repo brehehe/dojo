@@ -81,7 +81,7 @@ $maxWidth = [
                         {{ $title }}
                     </h3>
                 </div>
-                <button x-on:click="show = false" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-50 rounded-lg">
+                <button x-on:click="show = false" class="text-slate-800 hover:text-slate-900 transition-colors p-2 hover:bg-slate-50 rounded-lg">
                     <i class="fas fa-times text-lg"></i>
                 </button>
             </div>

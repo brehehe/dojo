@@ -271,7 +271,7 @@
                     <div class="card-light rounded-2xl p-5 text-center">
                         <i class="fas {{ $icon }} accent-icon text-sm mb-3 block opacity-70"></i>
                         <div class="text-2xl font-black text-stone-800 mb-1">{{ $num }}</div>
-                        <div class="text-stone-400 text-[10px] font-semibold uppercase tracking-widest leading-tight">{{ $label }}</div>
+                        <div class="text-stone-400 text-[15px] font-semibold uppercase tracking-widest leading-tight">{{ $label }}</div>
                     </div>
                 @endforeach
             </div>
@@ -279,7 +279,7 @@
 
         <!-- Scroll hint -->
         <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-stone-300 animate-bounce">
-            <div class="text-[10px] uppercase tracking-widest font-semibold">Scroll</div>
+            <div class="text-[15px] uppercase tracking-widest font-semibold">Scroll</div>
             <i class="fas fa-chevron-down text-xs"></i>
         </div>
     </section>
@@ -309,7 +309,7 @@
                                 <i class="fas {{ $icon }} accent-icon text-sm"></i>
                             </div>
                             <div>
-                                <div class="text-stone-400 text-[10px] font-bold uppercase tracking-widest mb-1">{{ $title }}</div>
+                                <div class="text-stone-400 text-[15px] font-bold uppercase tracking-widest mb-1">{{ $title }}</div>
                                 <div class="text-stone-800 font-bold text-base mb-1">{{ $main }}</div>
                                 <p class="text-stone-400 text-xs leading-relaxed">{{ $desc }}</p>
                             </div>
@@ -343,7 +343,7 @@
                         </div>
                         <div class="flex-1">
                             <div class="flex flex-col md:flex-row md:items-center gap-2">
-                                <span class="accent-text text-[10px] font-black uppercase tracking-widest w-20 shrink-0">{{ $day }}</span>
+                                <span class="accent-text text-[15px] font-black uppercase tracking-widest w-20 shrink-0">{{ $day }}</span>
                                 <h3 class="text-stone-800 font-bold text-sm">{{ $title }}</h3>
                             </div>
                             <p class="text-stone-400 text-xs mt-1">{{ $desc }}</p>
@@ -411,7 +411,7 @@
                         <div class="w-8 h-8 rounded-full shadow-sm transition group-hover:scale-110"
                              style="background-color: {{ $c['hex'] }}; {{ $c['slug'] === $color ? 'outline: 2.5px solid '.$c['hex'].'; outline-offset: 3px;' : 'border: 2px solid rgba(0,0,0,0.08);' }}">
                         </div>
-                        <span class="text-stone-400 text-[9px] font-semibold uppercase tracking-wider group-hover:text-stone-700 transition leading-none">
+                        <span class="text-stone-400 text-[15px] font-semibold uppercase tracking-wider group-hover:text-stone-700 transition leading-none">
                             {{ $c['label'] }}
                         </span>
                     </a>

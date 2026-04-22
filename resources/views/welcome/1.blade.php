@@ -138,7 +138,7 @@
                 </div>
                 <div>
                     <div class="text-white font-black text-xs uppercase tracking-widest leading-tight">Shorinji Kempo</div>
-                    <div class="text-red-400/70 text-[10px] font-semibold uppercase tracking-[0.2em] leading-tight">Indonesia</div>
+                    <div class="text-red-400/70 text-[15px] font-semibold uppercase tracking-[0.2em] leading-tight">Indonesia</div>
                 </div>
             </div>
 
@@ -155,16 +155,16 @@
             <div class="flex items-center gap-3">
                 @auth
                     <a href="{{ route('dashboard') }}"
-                       class="bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-lg shadow-orange-900/30">
+                       class="bg-orange-600 hover:bg-orange-500 text-white text-[15px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-lg shadow-orange-900/30">
                         Dashboard
                     </a>
                 @else
                     <a href="{{ route('login') }}"
-                       class="text-white/60 hover:text-white text-[11px] font-bold uppercase tracking-wider transition hidden sm:block">
+                       class="text-white/60 hover:text-white text-[15px] font-bold uppercase tracking-wider transition hidden sm:block">
                         Login
                     </a>
                     <a href="{{ route('register') }}"
-                       class="bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-lg shadow-orange-900/30">
+                       class="bg-orange-600 hover:bg-orange-500 text-white text-[15px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-lg shadow-orange-900/30">
                         Daftar Sekarang
                     </a>
                 @endauth
@@ -420,7 +420,7 @@
                         @foreach([['500+', 'Peserta'], ['30+', 'Nomor'], ['20+', 'Kota'], ['2026', 'Edisi']] as $s)
                         <div class="pl-8 first:pl-0 text-center">
                             <div class="text-white font-black text-lg counter-num">{{ $s[0] }}</div>
-                            <div class="text-white/35 text-[9px] font-bold uppercase tracking-widest">{{ $s[1] }}</div>
+                            <div class="text-white/35 text-[15px] font-bold uppercase tracking-widest">{{ $s[1] }}</div>
                         </div>
                         @endforeach
                     </div>
@@ -474,7 +474,7 @@
                                 <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center mb-3">
                                     <i class="fas {{ $item[0] }} text-orange-400 text-xs"></i>
                                 </div>
-                                <div class="text-white/40 text-[10px] uppercase tracking-widest font-bold">{{ $item[1] }}</div>
+                                <div class="text-white/40 text-[15px] uppercase tracking-widest font-bold">{{ $item[1] }}</div>
                                 <div class="text-white text-sm font-bold mt-1">{{ $item[2] }}</div>
                             </div>
                         @endforeach
@@ -492,7 +492,7 @@
                         <div class="text-white/30 text-xs uppercase tracking-[0.3em] font-semibold">少林寺拳法 · Shorinji Kempo Indonesia</div>
                         <div class="mt-8 pt-8 border-t border-white/5 grid grid-cols-3 gap-4">
                             @foreach([['', 'Resmi PERKEMI'], ['', 'Sistem Terpadu'], ['', 'Online']] as $badge)
-                                <div class="text-white/40 text-[9px] font-bold uppercase tracking-wider">✓ {{ $badge[1] }}</div>
+                                <div class="text-white/40 text-[15px] font-bold uppercase tracking-wider">✓ {{ $badge[1] }}</div>
                             @endforeach
                         </div>
                     </div>
@@ -527,7 +527,7 @@
                             <div class="md:w-1/2 {{ $idx % 2 === 0 ? 'md:text-right md:pr-16' : 'md:text-left md:pl-16' }}">
                                 <div class="bg-white/5 border border-white/10 rounded-3xl p-6 hover:border-orange-500/30 transition">
                                     <div class="inline-flex items-center gap-2 mb-3">
-                                        <span class="bg-orange-500/20 text-orange-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{{ $day }}</span>
+                                        <span class="bg-orange-500/20 text-orange-400 text-[15px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{{ $day }}</span>
                                     </div>
                                     <h3 class="text-white font-black text-lg mb-2">{{ $title }}</h3>
                                     <p class="text-white/40 text-sm leading-relaxed">{{ $desc }}</p>

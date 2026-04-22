@@ -22,7 +22,7 @@ new class extends Component
                 <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center group-hover:bg-rose-600 transition-colors">
                     <svg class="w-5 h-5 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 </div>
-                <span class="font-black uppercase tracking-widest text-xs">Kembali ke Portal</span>
+                <span class="font-black uppercase tracking-widest text-[15px]">Kembali ke Portal</span>
             </a>
         </div>
 
@@ -36,8 +36,8 @@ new class extends Component
                 </div>
                 <div class="flex-1">
                     <div class="flex flex-wrap items-center gap-3 mb-4 justify-center md:justify-start">
-                        <span class="bg-rose-600/10 text-rose-500 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Athlete Profile</span>
-                        <span class="bg-emerald-600/10 text-emerald-500 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Active Member</span>
+                        <span class="bg-rose-600/10 text-rose-500 text-[15px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Athlete Profile</span>
+                        <span class="bg-emerald-600/10 text-emerald-500 text-[15px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Active Member</span>
                     </div>
                     <h1 class="text-4xl md:text-6xl font-black font-title uppercase tracking-tighter mb-2">{{ $athlete->name }}</h1>
                     <p class="text-zinc-500 text-lg uppercase tracking-widest font-bold">{{ $athlete->contingent->name }}</p>
@@ -65,7 +65,7 @@ new class extends Component
                             <div class="flex items-center justify-between p-6 bg-zinc-900/50 rounded-2xl border border-zinc-800">
                                 <div>
                                     <h4 class="font-bold uppercase tracking-tight">{{ $category->name }}</h4>
-                                    <p class="text-xs text-zinc-500 uppercase tracking-widest mt-1">{{ $category->type }} - {{ $category->age_group }}</p>
+                                    <p class="text-[15px] text-zinc-500 uppercase tracking-widest mt-1">{{ $category->type }} - {{ $category->age_group }}</p>
                                 </div>
                                 <div class="w-12 h-12 rounded-xl bg-rose-600/10 flex items-center justify-center">
                                     <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -74,7 +74,7 @@ new class extends Component
                         @endforeach
                         
                         @if($athlete->categories->isEmpty())
-                            <p class="text-zinc-500 italic text-sm">Belum terdaftar di kategori pertandingan manapun.</p>
+                            <p class="text-zinc-500 italic text-[15px]">Belum terdaftar di kategori pertandingan manapun.</p>
                         @endif
                     </div>
                 </div>
@@ -86,29 +86,29 @@ new class extends Component
                     <h3 class="text-xl font-black font-title mb-8 uppercase tracking-tight text-rose-500">BIODATA RESMI</h3>
                     <div class="space-y-6">
                         <div>
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-2">NIK TERVERIFIKASI</label>
+                            <label class="text-[15px] font-black uppercase text-zinc-500 tracking-widest block mb-2">NIK TERVERIFIKASI</label>
                             <p class="font-mono text-lg font-bold tracking-widest">{{ $athlete->nik }}</p>
                         </div>
                         <div class="h-px bg-zinc-800"></div>
                         <div>
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-2">JENIS KELAMIN</label>
+                            <label class="text-[15px] font-black uppercase text-zinc-500 tracking-widest block mb-2">JENIS KELAMIN</label>
                             <p class="font-bold uppercase tracking-widest">{{ $athlete->gender == 'Male' ? 'LAKI-LAKI' : 'PEREMPUAN' }}</p>
                         </div>
                         <div class="h-px bg-zinc-800"></div>
                         <div>
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-1">TANGGAL LAHIR</label>
+                            <label class="text-[15px] font-black uppercase text-zinc-500 tracking-widest block mb-1">TANGGAL LAHIR</label>
                             <p class="font-bold">{{ \Carbon\Carbon::parse($athlete->birth_date)->translatedFormat('d F Y') }}</p>
                         </div>
                         <div class="h-px bg-zinc-800"></div>
                         <div>
-                            <label class="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-1">BERAT BADAN</label>
+                            <label class="text-[15px] font-black uppercase text-zinc-500 tracking-widest block mb-1">BERAT BADAN</label>
                             <p class="font-bold">{{ $athlete->weight }} KG</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-8 rounded-[2rem] bg-rose-600/5 border border-rose-600/20 text-center">
-                    <p class="text-xs font-bold text-rose-500 uppercase tracking-widest leading-relaxed">Seluruh data yang ditampilkan telah melalui proses verifikasi panitia Perkemi Cup 2026.</p>
+                    <p class="text-[15px] font-bold text-rose-500 uppercase tracking-widest leading-relaxed">Seluruh data yang ditampilkan telah melalui proses verifikasi panitia Perkemi Cup 2026.</p>
                 </div>
             </div>
         </div>

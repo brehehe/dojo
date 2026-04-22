@@ -41,7 +41,7 @@
                     <img src="{{ asset('logo.jpeg') }}" alt="Logo" class="w-full h-full object-cover">
                 </div>
                 <div>
-                    <div class="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.25em]">Smart-Perkemi</div>
+                    <div class="text-[15px] font-semibold text-stone-400 uppercase tracking-[0.25em]">Smart-Perkemi</div>
                 </div>
             </div>
             <div class="hidden md:flex items-center gap-6 text-stone-500 text-xs font-semibold uppercase tracking-widest">
@@ -66,7 +66,7 @@
             <!-- Ornamental top -->
             <div class="flex items-center justify-center gap-4 mb-10">
                 <div class="h-px flex-1 max-w-16 bg-gradient-to-r from-transparent to-amber-700/40"></div>
-                <div class="text-amber-700/60 text-[10px] font-semibold uppercase tracking-[0.4em]">Undangan Resmi</div>
+                <div class="text-amber-700/60 text-[15px] font-semibold uppercase tracking-[0.4em]">Undangan Resmi</div>
                 <div class="h-px flex-1 max-w-16 bg-gradient-to-l from-transparent to-amber-700/40"></div>
             </div>
 

@@ -68,4 +68,13 @@ class MatchNumber extends Model
     {
         return $this->hasMany(DrawingMatchNumber::class);
     }
+
+    public function getGenderIndoAttribute(): string
+    {
+        return match ($this->gender) {
+            'Male' => 'Laki-laki',
+            'Female' => 'Perempuan',
+            default => '-',
+        };
+    }
 }

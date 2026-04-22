@@ -105,12 +105,12 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
                 <h1 class="text-2xl font-black text-slate-800 tracking-tight uppercase">Laporan Biodata Peserta</h1>
-                <p class="text-sm text-slate-500 font-medium mt-1">Cetak kartu profil atlet untuk verifikasi lapangan.</p>
+                <p class="text-[15px] text-slate-900 font-medium mt-1">Cetak kartu profil atlet untuk verifikasi lapangan.</p>
             </div>
             <div class="flex items-center gap-4">
                 <div class="w-64">
-                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Pilih Kontingen</label>
-                    <select wire:model.live="contingent_id" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2 font-bold text-slate-700 focus:outline-none focus:border-rose-500 transition-all">
+                    <label class="block text-[15px] font-black uppercase text-slate-800 mb-1 tracking-widest">Pilih Kontingen</label>
+                    <select wire:model.live="contingent_id" class="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2 font-bold text-black focus:outline-none focus:border-rose-500 transition-all">
                         <option value="">-- Pilih Kontingen --</option>
                         @foreach($contingents as $c)
                             <option value="{{ $c->id }}">{{ $c->name }}</option>
@@ -130,7 +130,7 @@
                 <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
                     <i class="fas fa-id-card text-3xl"></i>
                 </div>
-                <h3 class="text-slate-400 font-bold uppercase tracking-widest">Silakan Pilih Kontingen Dahulu</h3>
+                <h3 class="text-slate-800 font-bold uppercase tracking-widest">Silakan Pilih Kontingen Dahulu</h3>
             </div>
         @else
             <div class="grid-layout">
@@ -143,50 +143,50 @@
                                 @if($atlet['photo_path'])
                                     <img src="{{ asset('storage/' . $atlet['photo_path']) }}" alt="Foto">
                                 @else
-                                    <div class="text-[9px] text-slate-300 font-bold uppercase text-center p-2">FOTO 3X4</div>
+                                    <div class="text-[15px] text-slate-300 font-bold uppercase text-center p-2">FOTO 3X4</div>
                                 @endif
                             </div>
                             <div class="flex-1">
-                                <table class="bio-table">
+                                <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
                                     <tr>
                                         <th>NOMOR</th>
-                                        <td>: {{ $loop->iteration }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $loop->iteration }}</td>
                                     </tr>
                                     <tr>
                                         <th>NAMA</th>
-                                        <td class="font-bold">: {{ strtoupper($atlet['name']) }}</td>
+                                        <td class="font-bold border-r border-slate-200">: {{ strtoupper($atlet['name']) }}</td>
                                     </tr>
                                     <tr>
                                         <th>JENIS KELAMIN</th>
-                                        <td>: {{ $atlet['gender'] }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $atlet['gender'] }}</td>
                                     </tr>
                                     <tr>
                                         <th>GOLONGAN DARAH</th>
-                                        <td>: {{ $atlet['blood_type'] ?? '-' }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $atlet['blood_type'] ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th>NIK</th>
-                                        <td>: {{ $atlet['nik'] }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $atlet['nik'] }}</td>
                                     </tr>
                                     <tr>
                                         <th>TINGKAT</th>
-                                        <td>: {{ strtoupper($atlet['kyu']) ?? '-' }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ strtoupper($atlet['kyu']) ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th>STATUS</th>
-                                        <td>: {{ $atlet['status'] }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $atlet['status'] }}</td>
                                     </tr>
                                     <tr>
                                         <th>TEMPAT TANGGAL LAHIR</th>
-                                        <td>: {{ strtoupper($atlet['birth_place'] ?? '-') }}, {{ $atlet['birth_date'] ?? '-' }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ strtoupper($atlet['birth_place'] ?? '-') }}, {{ $atlet['birth_date'] ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th>ALAMAT RUMAH</th>
-                                        <td>: {{ $atlet['address'] ?? '-' }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $atlet['address'] ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th>TELEPON</th>
-                                        <td>: {{ $atlet['phone'] ?? '-' }}</td>
+                                        <td class="border-r border-slate-200 align-top">: {{ $atlet['phone'] ?? '-' }}</td>
                                     </tr>
                                 </table>
                             </div>
@@ -197,7 +197,7 @@
                             @forelse($atlet['achievements'] as $ach)
                                 <li>{{ $ach }}</li>
                             @empty
-                                <li class="italic text-slate-400">Tidak ada catatan prestasi</li>
+                                <li class="italic text-slate-800">Tidak ada catatan prestasi</li>
                             @endforelse
                         </ol>
 
@@ -211,7 +211,7 @@
                                     @endforeach
                                 </ul>
                             @empty
-                                <li class="italic text-slate-400">Belum terdaftar di kategori pertandingan</li>
+                                <li class="italic text-slate-800">Belum terdaftar di kategori pertandingan</li>
                             @endforelse
                         </ol>
                     </div>

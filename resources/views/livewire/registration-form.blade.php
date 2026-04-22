@@ -211,9 +211,9 @@
     @if($is_success)
         <div class="form-container text-center py-20">
             <h1 class="text-4xl font-black mb-4">PENDAFTARAN BERHASIL!</h1>
-            <p class="text-slate-500 mb-8 px-12">Data kontingen <strong>{{ $contingent_name }}</strong> telah resmi terdaftar untuk Piala Walikota Surabaya 2026.</p>
+            <p class="text-slate-900 mb-8 px-12">Data kontingen <strong>{{ $contingent_name }}</strong> telah resmi terdaftar untuk Piala Walikota Surabaya 2026.</p>
             <div class="bg-slate-50 p-8 rounded-3xl mb-12 inline-block border-2 border-orange-100">
-                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Kode Referensi</span>
+                <span class="text-[15px] font-black uppercase tracking-widest text-slate-800 block mb-2">Kode Referensi</span>
                 <span class="text-3xl font-black text-rose-600 tracking-widest">{{ $referral_code }}</span>
             </div>
             <div>
@@ -235,29 +235,29 @@
                         <div class="form-group">
                             <label>Kabupaten / Kota <span class="required">*</span></label>
                             <input type="text" wire:model="contingent_city" class="form-input-custom" @if($is_authenticated) disabled @endif>
-                            @error('contingent_city') <p class="text-[10px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                            @error('contingent_city') <p class="text-[15px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div class="form-group">
                             <label>Nama Kontingen <span class="required">*</span></label>
                             <input type="text" wire:model="contingent_name" class="form-input-custom" @if($is_authenticated) disabled @endif>
-                            @error('contingent_name') <p class="text-[10px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                            @error('contingent_name') <p class="text-[15px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div class="form-group">
                             <label>Manager Tim <span class="required">*</span></label>
                             <input type="text" wire:model="leader_name" class="form-input-custom" @if($is_authenticated) disabled @endif>
-                            @error('leader_name') <p class="text-[10px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                            @error('leader_name') <p class="text-[15px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Nomor HP/WA Manager <span class="required">*</span></label>
                             <input type="tel" wire:model="leader_phone" class="form-input-custom" @if($is_authenticated) disabled @endif>
-                            @error('leader_phone') <p class="text-[10px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                            @error('leader_phone') <p class="text-[15px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div class="form-group">
                             <label>Email Official</label>
                             <input type="email" wire:model="leader_email" class="form-input-custom" @if($is_authenticated) disabled @endif>
-                            @error('leader_email') <p class="text-[10px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                            @error('leader_email') <p class="text-[15px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div class="form-group">
                             <label>Alamat Sekretariat</label>
@@ -345,7 +345,7 @@
                                     </label>
                                     
                                     @if(!$is_authenticated && $masterAthletes->isEmpty())
-                                        <div class="mt-2 p-3 bg-blue-100/50 rounded-xl text-[10px] text-blue-700 font-bold uppercase tracking-wider">
+                                        <div class="mt-2 p-3 bg-blue-100/50 rounded-xl text-[15px] text-blue-700 font-bold uppercase tracking-wider">
                                             💡 Silakan gunakan fitur cari NIK atau klik "Tambah Atlet" di bawah jika belum terdaftar.
                                         </div>
                                     @else
@@ -369,14 +369,14 @@
                                             @else
                                                 <div class="text-center p-2">
                                                     <i class="fas fa-camera text-slate-300 text-xl block mb-1"></i>
-                                                    <span class="text-[8px] font-bold text-slate-400 uppercase leading-tight">Foto 3x4</span>
+                                                    <span class="text-[15px] font-bold text-slate-800 uppercase leading-tight">Foto 3x4</span>
                                                 </div>
                                             @endif
                                             <input type="file" wire:model="athletes.{{ $index }}.photo" class="absolute inset-0 opacity-0 cursor-pointer">
                                         </div>
                                         <div class="flex-1">
                                             <label class="!mb-1">Foto Profil / Pas Foto <span class="required">*</span></label>
-                                            <p class="text-[9px] text-slate-400 mb-2 font-medium">Unggah pas foto formal (Background Merah/Biru) ukuran 3x4. Maksimal 2MB.</p>
+                                            <p class="text-[15px] text-slate-800 mb-2 font-medium">Unggah pas foto formal (Background Merah/Biru) ukuran 3x4. Maksimal 2MB.</p>
                                             @error('athletes.'.$index.'.photo') <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
@@ -457,7 +457,7 @@
                                                 $selectedAgeGroup = $ageGroups->firstWhere('id', $athlete['age_group']);
                                             @endphp
                                             @if($selectedAgeGroup)
-                                                <p class="text-[10px] text-orange-600 font-bold mt-1 tracking-wider uppercase">
+                                                <p class="text-[15px] text-orange-600 font-bold mt-1 tracking-wider uppercase">
                                                     💰 Biaya Registrasi: Rp {{ number_format($selectedAgeGroup->price, 0, ',', '.') }}
                                                 </p>
                                             @endif
@@ -537,9 +537,9 @@
 
                                                         <div class="p-3 bg-white/50 rounded-xl border border-indigo-100/50 mt-1">
                                                             @if($isLeader)
-                                                                <label class="!text-[9px] !mb-1 text-indigo-600">Pilih Komposisi (Berurutan)</label>
+                                                                <label class="!text-[15px] !mb-1 text-indigo-600">Pilih Komposisi (Berurutan)</label>
                                                                 <div x-data="{ selectedTech: '' }" class="flex gap-1">
-                                                                    <select x-model="selectedTech" class="form-input-custom !py-1 !px-2 !text-xs !rounded-lg">
+                                                                    <select x-model="selectedTech" class="form-input-custom !py-1 !px-2 !text-[15px] !rounded-lg">
                                                                         <option value="">+ Tambah Komposisi</option>
                                                                         @foreach($techniques as $tech)
                                                                             <option value="{{ $tech->id }}">{{ $tech->name }}</option>
@@ -547,14 +547,14 @@
                                                                     </select>
                                                                     <button type="button" 
                                                                         @click="if(selectedTech) { $wire.addTechniqueToMatch('{{ $athlete[$evField] }}', selectedTech); selectedTech = ''; }" 
-                                                                        class="bg-indigo-600 text-white px-3 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors">
+                                                                        class="bg-indigo-600 text-white px-3 rounded-lg text-[15px] font-bold hover:bg-indigo-700 transition-colors">
                                                                         ADD
                                                                     </button>
                                                                 </div>
                                                             @else
                                                                 <div class="flex items-center gap-2 mb-2">
                                                                     <div class="w-1 h-1 rounded-full bg-orange-400"></div>
-                                                                    <span class="text-[9px] font-bold text-orange-600 uppercase tracking-tight italic">
+                                                                    <span class="text-[15px] font-bold text-orange-600 uppercase tracking-tight italic">
                                                                         Komposisi dari: {{ $leaderInfo['athlete_name'] }}
                                                                     </span>
                                                                 </div>
@@ -564,7 +564,7 @@
                                                                 @forelse($matchTechniques[$athlete[$evField]] ?? [] as $tIdx => $tId)
                                                                     @php $tName = $techniques->firstWhere('id', $tId)?->name ?? 'Unknown'; @endphp
                                                                     <div class="flex justify-between items-center bg-white px-3 py-2 rounded-xl border border-indigo-50 shadow-sm group hover:border-indigo-200 transition-all animate-in slide-in-from-top-1">
-                                                                        <span class="text-[10px] font-bold text-slate-700 uppercase tracking-tight">
+                                                                        <span class="text-[15px] font-bold text-black uppercase tracking-tight">
                                                                             <span class="text-indigo-400 mr-2 font-black">{{ $tIdx + 1 }}.</span> {{ $tName }}
                                                                         </span>
                                                                         <button type="button" 
@@ -575,14 +575,14 @@
                                                                         </button>
                                                                     </div>
                                                                 @empty
-                                                                    <p class="text-[9px] text-slate-400 italic font-medium px-1">Belum ada teknik ditambahkan.</p>
+                                                                    <p class="text-[15px] text-slate-800 italic font-medium px-1">Belum ada teknik ditambahkan.</p>
                                                                 @endforelse
                                                             </div>
                                                         </div>
                                                     @endif
                                                 </div>
                                             @endforeach
-                                            @error('athletes.'.$index.'.events') <p class="text-[10px] text-red-500 font-bold mt-1 col-span-full">{{ $message }}</p> @enderror
+                                            @error('athletes.'.$index.'.events') <p class="text-[15px] text-red-500 font-bold mt-1 col-span-full">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
                                 @endif
@@ -606,8 +606,8 @@
                                 <div class="flex items-center gap-4 mb-6">
                                     <div class="h-[2px] flex-1 bg-slate-200"></div>
                                     <div class="flex items-center gap-2 bg-slate-900 text-white px-6 py-2 rounded-full shadow-lg">
-                                        <i class="fas @if($gender == 'Male') fa-mars @elseif($gender == 'Female') fa-venus @else fa-venus-mars @endif text-xs"></i>
-                                        <span class="text-xs font-black uppercase tracking-[0.2em]">{{ $gender == 'Male' ? 'LAKI-LAKI' : ($gender == 'Female' ? 'PEREMPUAN' : 'CAMPURAN / MIX') }}</span>
+                                        <i class="fas @if($gender == 'Male') fa-mars @elseif($gender == 'Female') fa-venus @else fa-venus-mars @endif text-[15px]"></i>
+                                        <span class="text-[15px] font-black uppercase tracking-[0.2em]">{{ $gender == 'Male' ? 'LAKI-LAKI' : ($gender == 'Female' ? 'PEREMPUAN' : 'CAMPURAN / MIX') }}</span>
                                     </div>
                                     <div class="h-[2px] flex-1 bg-slate-200"></div>
                                 </div>
@@ -621,8 +621,8 @@
                                                     {{ substr($ageGroupName, 0, 1) }}
                                                 </div>
                                                 <div>
-                                                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight leading-none">{{ $ageGroupName }}</h3>
-                                                    <p class="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">KATEGORI KELOMPOK USIA</p>
+                                                    <h3 class="text-[15px] font-black text-slate-800 uppercase tracking-tight leading-none">{{ $ageGroupName }}</h3>
+                                                    <p class="text-[15px] font-bold text-slate-800 mt-1 uppercase tracking-widest">KATEGORI KELOMPOK USIA</p>
                                                 </div>
                                             </div>
 
@@ -632,9 +632,9 @@
                                                         <div class="flex items-center justify-between mb-3 px-2">
                                                             <div class="flex items-center gap-2">
                                                                 <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                                                <h4 class="text-[11px] font-black text-indigo-600 uppercase tracking-wide">{{ $data['name'] }}</h4>
+                                                                <h4 class="text-[15px] font-black text-indigo-600 uppercase tracking-wide">{{ $data['name'] }}</h4>
                                                             </div>
-                                                            <span class="text-[9px] font-bold text-slate-300 uppercase italic">Entry ID: #{{ $mId }}</span>
+                                                            <span class="text-[15px] font-bold text-slate-300 uppercase italic">Entry ID: #{{ $mId }}</span>
                                                         </div>
 
                                                         <div class="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
@@ -642,23 +642,23 @@
                                                                 <table class="w-full text-left border-collapse">
                                                                     <thead>
                                                                         <tr class="bg-slate-50/50 border-b border-slate-100">
-                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-16">No</th>
-                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider">Nama Peserta (Atlet)</th>
-                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider">Tingkat (Rank)</th>
-                                                                            <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-wider">Urutan Komposisi yang Dimainkan :</th>
+                                                                            <th class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider text-center w-16">No</th>
+                                                                            <th class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">Nama Peserta (Atlet)</th>
+                                                                            <th class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">Tingkat (Rank)</th>
+                                                                            <th class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">Urutan Komposisi yang Dimainkan :</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody class="divide-y divide-slate-50">
                                                                         @foreach($data['athletes'] as $aIdx => $ath)
                                                                             <tr class="hover:bg-slate-50/50 transition-colors">
                                                                                 <td class="px-6 py-4 text-center">
-                                                                                    <span class="text-[10px] font-bold text-slate-400">{{ $aIdx + 1 }}</span>
+                                                                                    <span class="text-[15px] font-bold text-slate-800">{{ $aIdx + 1 }}</span>
                                                                                 </td>
                                                                                 <td class="px-6 py-4">
-                                                                                    <span class="text-[11px] font-black text-slate-700 uppercase tracking-tight">{{ $ath['name'] }}</span>
+                                                                                    <span class="text-[15px] font-black text-black uppercase tracking-tight">{{ $ath['name'] }}</span>
                                                                                 </td>
                                                                                 <td class="px-6 py-4">
-                                                                                    <span class="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md text-[9px] font-black uppercase tracking-tight border border-orange-100/50">
+                                                                                    <span class="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md text-[15px] font-black uppercase tracking-tight border border-orange-100/50">
                                                                                         {{ $ath['rank'] }}
                                                                                     </span>
                                                                                 </td>
@@ -666,14 +666,14 @@
                                                                                     @if($loop->first)
                                                                                             @forelse($data['techniques'] as $tIdx => $tName)
                                                                                                 <div class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 mb-2">
-                                                                                                    <span class="text-[10px] font-black text-indigo-400">{{ $tIdx + 1 }}</span>
-                                                                                                    <span class="text-[10px] font-black text-indigo-700 uppercase tracking-tight whitespace-nowrap">{{ $tName }}</span>
+                                                                                                    <span class="text-[15px] font-black text-indigo-400">{{ $tIdx + 1 }}</span>
+                                                                                                    <span class="text-[15px] font-black text-indigo-700 uppercase tracking-tight whitespace-nowrap">{{ $tName }}</span>
                                                                                                 </div>
                                                                                             @empty
-                                                                                                <span class="text-[10px] text-slate-300 font-bold uppercase italic tracking-widest">Belum ada teknik</span>
+                                                                                                <span class="text-[15px] text-slate-300 font-bold uppercase italic tracking-widest">Belum ada teknik</span>
                                                                                             @endforelse
                                                                                     @else
-                                                                                        <span class="text-[9px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama seperti di atas)</span>
+                                                                                        <span class="text-[15px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama seperti di atas)</span>
                                                                                     @endif
                                                                                 </td>
                                                                             </tr>
@@ -694,8 +694,8 @@
                                 <div class="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <i class="fas fa-trophy text-3xl"></i>
                                 </div>
-                                <h3 class="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Belum Ada Nomor Pertandingan</h3>
-                                <p class="text-[10px] text-slate-300 font-medium mt-2">Silakan pilih kategori pada data atlet di atas.</p>
+                                <h3 class="text-[15px] font-black text-slate-800 uppercase tracking-[0.2em]">Belum Ada Nomor Pertandingan</h3>
+                                <p class="text-[15px] text-slate-300 font-medium mt-2">Silakan pilih kategori pada data atlet di atas.</p>
                             </div>
                         @endforelse
                     </div>
@@ -710,17 +710,17 @@
                         <div class="bg-slate-900 text-white p-8 rounded-[32px] shadow-2xl relative overflow-hidden">
                             <div class="relative z-10">
                                 <h3 class="text-xl font-bold mb-6 text-orange-400">Ringkasan Biaya</h3>
-                                <div class="space-y-4 text-sm">
+                                <div class="space-y-4 text-[15px]">
                                     <div class="flex justify-between border-b border-white/10 pb-2">
-                                        <span class="text-slate-400">Pendaftaran Kontingen</span>
+                                        <span class="text-slate-800">Pendaftaran Kontingen</span>
                                         <span class="font-mono">Rp {{ number_format($contingent_fee, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between border-b border-white/10 pb-2">
-                                        <span class="text-slate-400">Total Biaya Atlet ({{ count($athletes) }} Orang)</span>
+                                        <span class="text-slate-800">Total Biaya Atlet ({{ count($athletes) }} Orang)</span>
                                         <span class="font-mono">Rp {{ number_format($this->getTotalAthleteFee(), 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between border-b border-white/10 pb-2">
-                                        <span class="text-slate-400">Kode Unik Verifikasi</span>
+                                        <span class="text-slate-800">Kode Unik Verifikasi</span>
                                         <span class="font-mono text-orange-400">+ Rp {{ number_format($unique_code, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between pt-4">
@@ -728,7 +728,7 @@
                                         <span class="text-2xl font-black text-orange-400 font-mono italic">Rp {{ number_format($this->finalTotal, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
-                                <p class="mt-6 text-[10px] text-slate-400 leading-relaxed italic">
+                                <p class="mt-6 text-[15px] text-slate-800 leading-relaxed italic">
                                     * Mohon transfer tepat hingga 3 digit terakhir untuk mempercepat proses verifikasi otomatis oleh sistem.
                                 </p>
                             </div>
@@ -738,20 +738,20 @@
                         <!-- Payment Method -->
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 mb-3">Pilih Metode Pembayaran</label>
+                                <label class="block text-[15px] font-bold text-black mb-3">Pilih Metode Pembayaran</label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="relative cursor-pointer">
                                         <input type="radio" wire:model="payment_method" value="BSI" class="peer sr-only">
                                         <div class="p-4 border-2 border-slate-100 rounded-2xl peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-900 transition-all text-center">
-                                            <div class="font-black text-xs">BANK BSI</div>
-                                            <div class="text-[9px] text-slate-500">Fast Verification</div>
+                                            <div class="font-black text-[15px]">BANK BSI</div>
+                                            <div class="text-[15px] text-slate-900">Fast Verification</div>
                                         </div>
                                     </label>
                                     <label class="relative cursor-pointer">
                                         <input type="radio" wire:model="payment_method" value="BCA" class="peer sr-only">
                                         <div class="p-4 border-2 border-slate-100 rounded-2xl peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-900 transition-all text-center">
-                                            <div class="font-black text-xs">BANK BCA</div>
-                                            <div class="text-[9px] text-slate-500">Manual Check</div>
+                                            <div class="font-black text-[15px]">BANK BCA</div>
+                                            <div class="text-[15px] text-slate-900">Manual Check</div>
                                         </div>
                                     </label>
                                 </div>
@@ -759,14 +759,14 @@
 
                             <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100">
                                 @if($payment_method === 'BSI')
-                                    <div class="text-[11px] text-orange-900">
+                                    <div class="text-[15px] text-orange-900">
                                         <strong class="block mb-2 font-black">💳 REKENING TUJUAN (BSI)</strong>
                                         Bank Syariah Indonesia (BSI)<br>
                                         Nomor Rekening: <span class="font-mono font-bold">730.947.3196</span><br>
                                         Atas Nama: <span class="font-bold">PERKEMI PENGKOT SURABAYA</span>
                                     </div>
                                 @else
-                                    <div class="text-[11px] text-blue-900">
+                                    <div class="text-[15px] text-blue-900">
                                         <strong class="block mb-2 font-black">💳 REKENING TUJUAN (BCA)</strong>
                                         Bank Central Asia (BCA)<br>
                                         Nomor Rekening: <span class="font-mono font-bold">018.xxxx.xxx</span><br>
@@ -776,14 +776,14 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="block text-sm font-bold text-slate-700 mb-2">Upload Bukti Transfer <span class="required">*</span></label>
+                                <label class="block text-[15px] font-bold text-black mb-2">Upload Bukti Transfer <span class="required">*</span></label>
                                 <div class="relative">
                                     <input type="file" wire:model="transfer_proof" class="form-input-custom border-dashed border-2">
-                                    <div wire:loading wire:target="transfer_proof" class="mt-2 text-[10px] text-orange-600 animate-pulse">
+                                    <div wire:loading wire:target="transfer_proof" class="mt-2 text-[15px] text-orange-600 animate-pulse">
                                         Uploading file...
                                     </div>
                                 </div>
-                                @error('transfer_proof') <p class="text-[10px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
+                                @error('transfer_proof') <p class="text-[15px] text-red-500 font-bold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
@@ -796,8 +796,8 @@
                                 <i class="fas fa-exclamation-triangle text-lg"></i>
                             </div>
                             <div class="flex-1">
-                                <h3 class="text-sm font-black text-red-800 uppercase tracking-widest mb-1">Pendaftaran Belum Lengkap</h3>
-                                <p class="text-[11px] text-red-600 font-medium leading-relaxed mb-4">
+                                <h3 class="text-[15px] font-black text-red-800 uppercase tracking-widest mb-1">Pendaftaran Belum Lengkap</h3>
+                                <p class="text-[15px] text-red-600 font-medium leading-relaxed mb-4">
                                     Ditemukan {{ $errors->count() }} kolom yang bermasalah. Silakan tinjau ringkasan di bawah atau periksa kolom yang berwarna merah di atas:
                                 </p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">

@@ -14,7 +14,7 @@ class AdminRegistrationIndex extends Component
 
     public $search = '';
     public $status = '';
-    public $perPage = 10;
+    public $perPage = 5;
 
     protected $queryString = ['search', 'status', 'perPage'];
 

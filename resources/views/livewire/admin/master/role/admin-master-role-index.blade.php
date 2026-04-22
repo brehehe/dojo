@@ -5,12 +5,12 @@
             <h1 class="text-2xl font-black text-slate-800 tracking-tight">Master Roles</h1>
             <div class="flex items-center gap-2">
                 <span class="h-1 w-6 bg-orange-600 rounded-full"></span>
-                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider italic">Pengelolaan Jabatan dan Otoritas Akses Sistem</p>
+                <p class="text-[15px] text-slate-900 font-bold uppercase tracking-wider italic">Pengelolaan Jabatan dan Otoritas Akses Sistem</p>
             </div>
         </div>
         <div class="flex items-center gap-3 w-full md:w-auto">
             <a href="{{ route('admin.master.roles.create') }}" wire:navigate
-                class="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-black shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 text-[10px] uppercase tracking-widest">
+                class="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-black shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 text-[15px] uppercase tracking-widest">
                 <i class="fas fa-plus-circle"></i>
                 <span>Tambah Role</span>
             </a>
@@ -20,11 +20,11 @@
     <!-- Toolbar -->
     <div class="bg-white rounded-2xl p-2 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-2">
         <div class="relative w-full">
-            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
-                <i class="fas fa-search text-xs"></i>
+            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-800">
+                <i class="fas fa-search text-[15px]"></i>
             </span>
             <x-input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari nama role..."
-                class="pl-10 !border-none shadow-none text-sm font-bold" />
+                class="pl-10 !border-none shadow-none text-[15px] font-bold" />
         </div>
     </div>
 
@@ -37,19 +37,19 @@
                 
                 <div class="relative z-10 space-y-4">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 bg-slate-50 group-hover:bg-orange-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-orange-600 transition-colors duration-500 shadow-sm">
+                        <div class="w-12 h-12 bg-slate-50 group-hover:bg-orange-100 rounded-2xl flex items-center justify-center text-slate-800 group-hover:text-orange-600 transition-colors duration-500 shadow-sm">
                             <i class="fas fa-user-shield text-xl"></i>
                         </div>
                         <div class="flex items-center gap-1">
                             <a href="{{ route('admin.master.roles.edit', $role->id) }}" wire:navigate
-                                class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all">
-                                <i class="fas fa-edit text-xs"></i>
+                                class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all">
+                                <i class="fas fa-edit text-[15px]"></i>
                             </a>
                             @if($role->name !== 'Super Admin')
                                 <button type="button" 
                                     onclick="confirmDelete({{ $role->id }}, '{{ $role->name }}')"
-                                    class="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                                    <i class="fas fa-trash-alt text-xs"></i>
+                                    class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                                    <i class="fas fa-trash-alt text-[15px]"></i>
                                 </button>
                             @endif
                         </div>
@@ -57,18 +57,18 @@
 
                     <div class="space-y-1">
                         <h3 class="text-base font-black text-slate-800 tracking-tight group-hover:text-orange-600 transition-colors">{{ $role->name }}</h3>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Default System Role</p>
+                        <p class="text-[15px] text-slate-800 font-bold uppercase tracking-widest italic">Default System Role</p>
                     </div>
 
                     <div class="flex items-center gap-4 pt-2">
                         <div class="flex flex-col">
                             <span class="text-xl font-black text-slate-800 leading-none tracking-tighter">{{ $role->users_count }}</span>
-                            <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Users</span>
+                            <span class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Total Users</span>
                         </div>
                         <div class="h-8 w-px bg-slate-100"></div>
                         <div class="flex flex-col">
-                            <span class="text-[9px] font-black text-slate-800 uppercase tracking-widest">{{ $role->permissions->count() }}</span>
-                            <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Capabilities</span>
+                            <span class="text-[15px] font-black text-slate-800 uppercase tracking-widest">{{ $role->permissions->count() }}</span>
+                            <span class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Capabilities</span>
                         </div>
                     </div>
                 </div>
@@ -78,14 +78,14 @@
                 <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200">
                     <i class="fas fa-user-lock text-3xl"></i>
                 </div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Tidak ada role ditemukan.</p>
+                <p class="text-[15px] font-black uppercase tracking-widest text-slate-800 italic">Tidak ada role ditemukan.</p>
             </div>
         @endforelse
     </div>
 
     @if($roles->hasPages())
         <div class="pt-4">
-            {{ $roles->links() }}
+            {{ $roles->links('livewire.admin.pagination') }}
         </div>
     @endif
 </div>
@@ -104,8 +104,8 @@
             cancelButtonText: 'Batal',
             customClass: {
                 popup: 'rounded-[1.5rem]',
-                confirmButton: 'rounded-xl font-bold uppercase tracking-widest text-xs px-6 py-3',
-                cancelButton: 'rounded-xl font-bold uppercase tracking-widest text-xs px-6 py-3'
+                confirmButton: 'rounded-xl font-bold uppercase tracking-widest text-[15px] px-6 py-3',
+                cancelButton: 'rounded-xl font-bold uppercase tracking-widest text-[15px] px-6 py-3'
             }
         }).then((result) => {
             if (result.isConfirmed) {

@@ -65,7 +65,7 @@ new class extends Component
                         class="w-full bg-white/10 border border-white/20 rounded-2xl px-6 py-4 outline-none focus:bg-white/20 focus:border-white transition-all font-bold tracking-widest text-white placeholder:text-rose-200"
                     >
                     @if (session()->has('error'))
-                        <p class="mt-2 text-sm font-bold text-yellow-300 italic">{{ session('error') }}</p>
+                        <p class="mt-2 text-[15px] font-bold text-yellow-300 italic">{{ session('error') }}</p>
                     @endif
                 </div>
                 <button type="submit" class="bg-white text-rose-600 px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-50 transition-all shadow-xl active:scale-95">
@@ -79,7 +79,7 @@ new class extends Component
     <div class="glass p-10 rounded-[2.5rem]">
         <div class="mb-8">
             <h3 class="text-2xl font-black font-title mb-2 tracking-tight">ARCHIVE RECORD (NAMA)</h3>
-            <p class="text-zinc-500 text-sm italic">Cari nama atlet untuk melihat kilasan rekam jejak prestasi mereka.</p>
+            <p class="text-zinc-500 text-[15px] italic">Cari nama atlet untuk melihat kilasan rekam jejak prestasi mereka.</p>
         </div>
 
         <div class="relative mb-8">
@@ -100,11 +100,11 @@ new class extends Component
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h4 class="text-lg font-bold uppercase tracking-tight group-hover:text-rose-500 transition-colors">{{ $athlete->name }}</h4>
-                            <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">{{ $athlete->contingent->name }}</span>
+                            <span class="text-[15px] font-bold text-zinc-500 uppercase tracking-widest">{{ $athlete->contingent->name }}</span>
                         </div>
-                        <a href="{{ route('athlete.detail', ['athlete' => $athlete->nik]) }}" class="bg-rose-600/10 text-rose-500 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Lihat Detail</a>
+                        <a href="{{ route('athlete.detail', ['athlete' => $athlete->nik]) }}" class="bg-rose-600/10 text-rose-500 text-[15px] font-black px-4 py-2 rounded-full uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Lihat Detail</a>
                     </div>
-                    <p class="text-sm text-zinc-500 italic leading-relaxed line-clamp-2">
+                    <p class="text-[15px] text-zinc-500 italic leading-relaxed line-clamp-2">
                         "{{ $athlete->achievement_history }}"
                     </p>
                 </div>

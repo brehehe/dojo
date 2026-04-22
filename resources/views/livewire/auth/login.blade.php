@@ -5,27 +5,27 @@
             <img src="{{ asset('logo.jpeg') }}" alt="Logo">
         </div>
         <h2 class="text-3xl font-black text-white tracking-tighter uppercase leading-none">Smart-Perkemi</h2>
-        <p class="text-orange-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Portal Otentikasi Admin</p>
+        <p class="text-orange-400 text-[15px] font-black uppercase tracking-[0.3em] mt-2">Portal Otentikasi Admin</p>
     </div>
 
     <form wire:submit.prevent="login" class="space-y-6">
         <div>
             <label for="email"
-                class="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Alamat
+                class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Alamat
                 Email</label>
             <input type="email" id="email" wire:model.defer="email" placeholder="contoh@kempo.id"
                 class="w-full pl-4 pr-8 py-4 bg-white/5 border-2 border-white/10 rounded-full focus:border-orange-500 outline-none transition-all text-white font-semibold placeholder:text-white/20">
-            @error('email') <span class="text-red-400 text-[10px] font-bold mt-2 block px-6">{{ $message }}</span>
+            @error('email') <span class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span>
             @enderror
         </div>
 
         <div>
             <label for="password"
-                class="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Kata
+                class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Kata
                 Sandi</label>
             <input type="password" id="password" wire:model.defer="password" placeholder="••••••••"
                 class="w-full pl-4 pr-8 py-4 bg-white/5 border-2 border-white/10 rounded-full focus:border-orange-500 outline-none transition-all text-white font-semibold placeholder:text-white/20">
-            @error('password') <span class="text-red-400 text-[10px] font-bold mt-2 block px-6">{{ $message }}</span>
+            @error('password') <span class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span>
             @enderror
         </div>
 
@@ -35,17 +35,17 @@
                     class="relative w-4 h-4 rounded border-2 border-white/20 group-hover:border-orange-500 transition-colors">
                     <input type="checkbox" wire:model="remember" class="absolute inset-0 opacity-0 cursor-pointer peer">
                     <i
-                        class="fas fa-check absolute inset-0 text-[10px] text-white flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                        class="fas fa-check absolute inset-0 text-[15px] text-white flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity"></i>
                 </div>
-                <span class="text-xs text-white/40 font-bold group-hover:text-white transition-colors">Ingat Saya</span>
+                <span class="text-[15px] text-white/40 font-bold group-hover:text-white transition-colors">Ingat Saya</span>
             </label>
-            <a href="#" class="text-xs text-orange-400/50 hover:text-orange-400 font-bold transition-colors">Lupa
+            <a href="#" class="text-[15px] text-orange-400/50 hover:text-orange-400 font-bold transition-colors">Lupa
                 Password?</a>
         </div>
 
         <div class="pt-4">
             <button type="submit"
-                class="w-full bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-orange-600/30 transition-all active:scale-95 flex items-center justify-center gap-3">
+                class="w-full bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white py-5 rounded-full font-black text-[15px] uppercase tracking-widest shadow-2xl shadow-orange-600/30 transition-all active:scale-95 flex items-center justify-center gap-3">
                 <span wire:loading.remove>Masuk ke Panel</span>
                 <span wire:loading><i class="fas fa-spinner fa-spin"></i> Memuat...</span>
             </button>
@@ -54,7 +54,7 @@
 
     <div class="mt-10 pt-10 border-t border-white/5 text-center">
         <a href="/"
-            class="text-[10px] font-black text-white/30 uppercase tracking-widest hover:text-white transition-colors leading-none block">
+            class="text-[15px] font-black text-white/30 uppercase tracking-widest hover:text-white transition-colors leading-none block">
             <i class="fas fa-arrow-left mr-1"></i> Kembali ke Beranda
         </a>
     </div>

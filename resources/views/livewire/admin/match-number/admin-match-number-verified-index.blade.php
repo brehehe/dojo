@@ -3,21 +3,21 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-xl font-black text-slate-800 uppercase tracking-tight mb-1">Daftar Peserta Per Nomor Pertandingan</h1>
-            <p class="text-xs text-slate-500 font-medium italic">Menampilkan seluruh atlet dari pendaftaran yang telah <span class="text-emerald-600 font-bold uppercase">Terverifikasi</span></p>
+            <p class="text-[15px] text-slate-900 font-medium italic">Menampilkan seluruh atlet dari pendaftaran yang telah <span class="text-emerald-600 font-bold uppercase">Terverifikasi</span></p>
         </div>
 
         <div class="flex items-center gap-4">
             <!-- Search -->
             <div class="relative group">
-                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                    <i class="fas fa-search text-xs"></i>
+                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-800 group-focus-within:text-orange-500 transition-colors">
+                    <i class="fas fa-search text-[15px]"></i>
                 </span>
                 <input wire:model.live="search" type="text" placeholder="Cari nomor pertandingan..." 
-                    class="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold placeholder:text-slate-300 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/5 transition-all outline-none w-64 shadow-sm">
+                    class="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-[15px] font-bold placeholder:text-slate-300 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/5 transition-all outline-none w-64 shadow-sm">
             </div>
             
-            <button onclick="window.print()" class="w-10 h-10 bg-white rounded-xl border border-slate-100 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:border-orange-100 transition-all shadow-sm">
-                <i class="fas fa-print text-xs"></i>
+            <button onclick="window.print()" class="w-10 h-10 bg-white rounded-xl border border-slate-100 flex items-center justify-center text-slate-800 hover:text-orange-600 hover:border-orange-100 transition-all shadow-sm">
+                <i class="fas fa-print text-[15px]"></i>
             </button>
         </div>
     </div>
@@ -41,23 +41,23 @@
                                     {{ $item['match']->name }}
                                 </h3>
                                 <div class="flex items-center gap-2">
-                                    <span class="px-3 py-1 bg-orange-100 text-orange-700 text-[9px] font-black rounded-full uppercase tracking-widest border border-orange-200">
+                                    <span class="px-3 py-1 bg-orange-100 text-orange-700 text-[15px] font-black rounded-full uppercase tracking-widest border border-orange-200">
                                         {{ $item['match']->ageGroup?->name }}
                                     </span>
-                                    <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[9px] font-black rounded-full uppercase tracking-widest border border-slate-200">
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-900 text-[15px] font-black rounded-full uppercase tracking-widest border border-slate-200">
                                         {{ $item['match']->draft_type }}
                                     </span>
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider ml-2">
+                                    <span class="text-[15px] text-slate-800 font-bold uppercase tracking-wider ml-2">
                                         {{ strtoupper($item['match']->gender) }}
                                     </span>
-                                    <span class="text-[9px] text-slate-300 font-bold uppercase ml-2">
+                                    <span class="text-[15px] text-slate-300 font-bold uppercase ml-2">
                                         Quota: {{ $item['match']->max_athletes > 0 ? $item['match']->max_athletes : '∞' }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Atlet</p>
+                            <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-1">Total Atlet</p>
                             <p class="text-2xl font-black text-slate-800 italic leading-none">
                                 {{ collect($item['contingents'])->sum(fn($c) => count($c['athletes'])) }}
                             </p>
@@ -72,8 +72,8 @@
                                 <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                                     <div class="flex items-center gap-3">
                                         <div class="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-                                        <h4 class="text-sm font-black text-slate-700 uppercase tracking-tight">{{ $contingent['name'] }}</h4>
-                                        <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">{{ count($contingent['athletes']) }} Atlet</span>
+                                        <h4 class="text-[15px] font-black text-black uppercase tracking-tight">{{ $contingent['name'] }}</h4>
+                                        <span class="text-[15px] bg-slate-100 text-slate-900 px-2 py-0.5 rounded-md font-bold">{{ count($contingent['athletes']) }} Atlet</span>
                                     </div>
                                 </div>
 
@@ -85,23 +85,23 @@
                                                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-orange-200 hover:bg-white transition-all group/athlete shadow-sm hover:shadow-md">
                                                     <div class="flex items-center justify-between mb-4">
                                                         <div class="flex-1 min-w-0">
-                                                            <h5 class="text-xs font-black text-slate-800 uppercase truncate leading-none mb-1 group-hover/athlete:text-orange-600 transition-colors">
+                                                            <h5 class="text-[15px] font-black text-slate-800 uppercase truncate leading-none mb-1 group-hover/athlete:text-orange-600 transition-colors">
                                                                 {{ $athlete['name'] }}
                                                             </h5>
-                                                            <p class="text-[9px] font-bold text-slate-400 font-mono tracking-wider mb-2">
+                                                            <p class="text-[15px] font-bold text-slate-800 font-mono tracking-wider mb-2">
                                                                 {{ $athlete['nik'] }}
                                                             </p>
                                                             <div class="flex items-center gap-2">
-                                                                <span class="px-1.5 py-0.5 bg-slate-900 text-white text-[8px] font-black rounded uppercase tracking-wider">
+                                                                <span class="px-1.5 py-0.5 bg-slate-900 text-white text-[15px] font-black rounded uppercase tracking-wider">
                                                                     {{ strtoupper($athlete['gender']) }}
                                                                 </span>
-                                                                <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                                                                <span class="text-[15px] font-bold text-slate-800 uppercase tracking-widest">
                                                                     {{ $athlete['age'] ?? '-' }} Thn
                                                                 </span>
                                                             </div>
                                                         </div>
                                                         <div class="text-right ml-2 shrink-0">
-                                                            <span class="text-[9px] font-black border-2 border-slate-900 text-slate-900 px-3 py-1 rounded-xl uppercase tracking-wider shadow-sm group-hover/athlete:bg-slate-900 group-hover/athlete:text-white transition-all">
+                                                            <span class="text-[15px] font-black border-2 border-slate-900 text-slate-900 px-3 py-1 rounded-xl uppercase tracking-wider shadow-sm group-hover/athlete:bg-slate-900 group-hover/athlete:text-white transition-all">
                                                                 {{ $athlete['rank'] ?? 'N/A' }}
                                                             </span>
                                                         </div>
@@ -110,18 +110,18 @@
                                                     <div class="space-y-3">
                                                         <!-- Dojo Info -->
                                                         <!-- <div class="flex items-start gap-2 p-2 bg-white rounded-xl border border-slate-100 shadow-inner">
-                                                            <i class="fas fa-home text-[8px] text-orange-500 mt-0.5"></i>
+                                                            <i class="fas fa-home text-[15px] text-orange-500 mt-0.5"></i>
                                                             <div class="flex-1 min-w-0">
-                                                                <p class="text-[8px] font-black text-slate-700 uppercase leading-none mb-1">{{ $athlete['dojo'] ?? 'Dojo -' }}</p>
-                                                                <p class="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{{ $athlete['city'] ?? 'Kota -' }}</p>
+                                                                <p class="text-[15px] font-black text-black uppercase leading-none mb-1">{{ $athlete['dojo'] ?? 'Dojo -' }}</p>
+                                                                <p class="text-[15px] font-bold text-slate-800 uppercase tracking-wider">{{ $athlete['city'] ?? 'Kota -' }}</p>
                                                             </div>
                                                         </div> -->
 
                                                         <!-- Physical/Level Details -->
                                                         <div class="flex items-center justify-between pt-1">
-                                                            <div class="flex items-center gap-4 text-[9px] font-bold text-slate-500 uppercase">
-                                                                <span class="flex items-center gap-1.5"><i class="fas fa-weight-hanging text-[8px] text-slate-300"></i> {{ $athlete['weight'] ?? '-' }} kg</span>
-                                                                <span class="flex items-center gap-1.5"><i class="fas fa-certificate text-[8px] text-slate-300"></i> {{ $athlete['kyu'] ?? '-' }}</span>
+                                                            <div class="flex items-center gap-4 text-[15px] font-bold text-slate-900 uppercase">
+                                                                <span class="flex items-center gap-1.5"><i class="fas fa-weight-hanging text-[15px] text-slate-300"></i> {{ $athlete['weight'] ?? '-' }} kg</span>
+                                                                <span class="flex items-center gap-1.5"><i class="fas fa-certificate text-[15px] text-slate-300"></i> {{ $athlete['kyu'] ?? '-' }}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -137,21 +137,21 @@
                                             
                                             <div class="relative z-10">
                                                 <div class="flex items-center gap-2 mb-4">
-                                                    <i class="fas fa-scroll text-orange-500 text-xs"></i>
-                                                    <h5 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daftar Teknik</h5>
+                                                    <i class="fas fa-scroll text-orange-500 text-[15px]"></i>
+                                                    <h5 class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Daftar Teknik</h5>
                                                 </div>
                                                 
                                                 <div class="space-y-2">
                                                     @forelse($contingent['techniques'] as $index => $tech)
                                                         <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover/tech:border-orange-100 transition-all">
-                                                            <span class="w-5 h-5 bg-white rounded-md flex items-center justify-center text-[9px] font-black text-orange-600 border border-orange-100 shadow-sm">
+                                                            <span class="w-5 h-5 bg-white rounded-md flex items-center justify-center text-[15px] font-black text-orange-600 border border-orange-100 shadow-sm">
                                                                 {{ $index + 1 }}
                                                             </span>
-                                                            <span class="text-[10px] font-black text-slate-700 uppercase tracking-tight">{{ $tech }}</span>
+                                                            <span class="text-[15px] font-black text-black uppercase tracking-tight">{{ $tech }}</span>
                                                         </div>
                                                     @empty
                                                         <div class="py-4 text-center">
-                                                            <p class="text-[10px] text-slate-400 italic font-bold">Tanpa Teknik Khusus</p>
+                                                            <p class="text-[15px] text-slate-800 italic font-bold">Tanpa Teknik Khusus</p>
                                                         </div>
                                                     @endforelse
                                                 </div>
@@ -169,8 +169,8 @@
                 <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-200 mx-auto mb-6">
                     <i class="fas fa-layer-group text-3xl"></i>
                 </div>
-                <h3 class="text-sm font-black text-slate-800 uppercase mb-2">Tidak ada data ditemukan</h3>
-                <p class="text-xs text-slate-400 font-medium italic">Belum ada atlet dari pendaftaran terverifikasi untuk nomor pertandingan ini.</p>
+                <h3 class="text-[15px] font-black text-slate-800 uppercase mb-2">Tidak ada data ditemukan</h3>
+                <p class="text-[15px] text-slate-800 font-medium italic">Belum ada atlet dari pendaftaran terverifikasi untuk nomor pertandingan ini.</p>
             </div>
         @endforelse
     </div>

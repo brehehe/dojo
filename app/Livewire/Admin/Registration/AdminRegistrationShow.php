@@ -79,12 +79,17 @@ class AdminRegistrationShow extends Component
     public function getGroupedMatchesProperty()
     {
         $matches = [];
+
         foreach ($this->registration->athletes as $athlete) {
-            // Filter match numbers that belong to THIS registration
-            $athleteMatches = $athlete->matchNumbers->where('pivot.registration_id', $this->registration->id);
+
+            $athleteMatches = $athlete->matchNumbers()
+                ->wherePivot('registration_id', $this->registration->id)
+                ->orderBy('name')
+                ->get();
 
             foreach ($athleteMatches as $match) {
                 $mId = $match->id;
+
                 if (!isset($matches[$mId])) {
                     $matches[$mId] = [
                         'details' => $match,
@@ -92,9 +97,17 @@ class AdminRegistrationShow extends Component
                         'athletes' => []
                     ];
                 }
+
                 $matches[$mId]['athletes'][] = $athlete;
             }
         }
+
+        // 🔥 ini yang bikin urutan matchNumbers rapi
+        $matches = array_values($matches); // reset index
+        usort($matches, function ($a, $b) {
+            return strcmp($a['details']->name, $b['details']->name);
+        });
+
         return $matches;
     }
 

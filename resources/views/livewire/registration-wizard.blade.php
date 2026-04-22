@@ -156,29 +156,29 @@ new class extends Component
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-zinc-700">Nama Kontingen / Perkemi</label>
+                    <label class="text-[15px] font-semibold text-zinc-700">Nama Kontingen / Perkemi</label>
                     <input type="text" wire:model="contingent_name" class="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50 focus:ring-2 focus:ring-indigo-500 transition-all outline-none" placeholder="Masukkan nama dojo">
-                    @error('contingent_name') <span class="text-rose-500 text-xs">{{ $message }}</span> @enderror
+                    @error('contingent_name') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                 </div>
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-zinc-700">Nama Penanggung Jawab</label>
+                    <label class="text-[15px] font-semibold text-zinc-700">Nama Penanggung Jawab</label>
                     <input type="text" wire:model="leader_name" class="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50 focus:ring-2 focus:ring-indigo-500 transition-all outline-none" placeholder="Nama lengkap">
-                    @error('leader_name') <span class="text-rose-500 text-xs">{{ $message }}</span> @enderror
+                    @error('leader_name') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                 </div>
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-zinc-700">Nomor WhatsApp</label>
+                    <label class="text-[15px] font-semibold text-zinc-700">Nomor WhatsApp</label>
                     <input type="text" wire:model="leader_phone" class="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50 focus:ring-2 focus:ring-indigo-500 transition-all outline-none" placeholder="08xxxxxx">
-                    @error('leader_phone') <span class="text-rose-500 text-xs">{{ $message }}</span> @enderror
+                    @error('leader_phone') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                 </div>
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-zinc-700">Email Utama</label>
+                    <label class="text-[15px] font-semibold text-zinc-700">Email Utama</label>
                     <input type="email" wire:model="email" class="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50 focus:ring-2 focus:ring-indigo-500 transition-all outline-none" placeholder="email@contoh.com">
-                    @error('email') <span class="text-rose-500 text-xs">{{ $message }}</span> @enderror
+                    @error('email') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                 </div>
                 <div class="md:col-span-2 space-y-2">
-                    <label class="text-sm font-semibold text-zinc-700">Alamat Lengkap</label>
+                    <label class="text-[15px] font-semibold text-zinc-700">Alamat Lengkap</label>
                     <textarea wire:model="address" class="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50 focus:ring-2 focus:ring-indigo-500 transition-all outline-none h-24" placeholder="Alamat dojo..."></textarea>
-                    @error('address') <span class="text-rose-500 text-xs">{{ $message }}</span> @enderror
+                    @error('address') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                 </div>
             </div>
         </div>
@@ -205,30 +205,30 @@ new class extends Component
                         @endif
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div class="md:col-span-2">
-                                <label class="text-xs font-bold uppercase text-zinc-500 mb-1 block">Nama Lengkap</label>
+                                <label class="text-[15px] font-bold uppercase text-zinc-500 mb-1 block">Nama Lengkap</label>
                                 <input type="text" wire:model="athletes.{{ $index }}.name" class="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white outline-none" placeholder="Nama Lengkap">
-                                @error('athletes.'.$index.'.name') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                @error('athletes.'.$index.'.name') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                             </div>
                             <div class="md:col-span-2">
-                                <label class="text-xs font-bold uppercase text-zinc-500 mb-1 block">NIK (16 Digit)</label>
+                                <label class="text-[15px] font-bold uppercase text-zinc-500 mb-1 block">NIK (16 Digit)</label>
                                 <input type="text" wire:model="athletes.{{ $index }}.nik" class="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white outline-none" placeholder="3201...">
-                                @error('athletes.'.$index.'.nik') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                @error('athletes.'.$index.'.nik') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                             </div>
                             <div>
-                                <label class="text-xs font-bold uppercase text-zinc-500 mb-1 block">Jenis Kelamin</label>
+                                <label class="text-[15px] font-bold uppercase text-zinc-500 mb-1 block">Jenis Kelamin</label>
                                 <select wire:model="athletes.{{ $index }}.gender" class="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white outline-none">
                                     <option value="Male">Putra</option>
                                     <option value="Female">Putri</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="text-xs font-bold uppercase text-zinc-500 mb-1 block">Tgl Lahir</label>
+                                <label class="text-[15px] font-bold uppercase text-zinc-500 mb-1 block">Tgl Lahir</label>
                                 <input type="date" wire:model="athletes.{{ $index }}.birth_date" class="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white outline-none">
-                                @error('athletes.'.$index.'.birth_date') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                @error('athletes.'.$index.'.birth_date') <span class="text-rose-500 text-[15px]">{{ $message }}</span> @enderror
                             </div>
                             <div class="md:col-span-4 mt-2">
-                                <label class="text-xs font-bold uppercase text-zinc-500 mb-1 block">Riwayat Juara / Prestasi (Optional)</label>
-                                <textarea wire:model="athletes.{{ $index }}.achievement_history" rows="2" class="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white outline-none text-sm" placeholder="Contoh: Juara 1 Kumite Jakarta Open 2024, Best Of The Best Bandung Cup 2025..."></textarea>
+                                <label class="text-[15px] font-bold uppercase text-zinc-500 mb-1 block">Riwayat Juara / Prestasi (Optional)</label>
+                                <textarea wire:model="athletes.{{ $index }}.achievement_history" rows="2" class="w-full px-3 py-2.5 rounded-lg border border-zinc-200 bg-white outline-none text-[15px]" placeholder="Contoh: Juara 1 Kumite Jakarta Open 2024, Best Of The Best Bandung Cup 2025..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -258,12 +258,12 @@ new class extends Component
                                 <input type="checkbox" wire:model="athletes.{{ $index }}.category_ids" value="{{ $category->id }}" class="mt-1 w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500">
                                 <div class="ml-3">
                                     <span class="block font-semibold group-hover:text-indigo-600 transition-colors">{{ $category->name }}</span>
-                                    <span class="text-xs text-zinc-500 uppercase">{{ $category->type }} - {{ $category->age_group }}</span>
+                                    <span class="text-[15px] text-zinc-500 uppercase">{{ $category->type }} - {{ $category->age_group }}</span>
                                 </div>
                             </label>
                         @endforeach
                     </div>
-                    @error('athletes.'.$index.'.category_ids') <span class="text-rose-500 text-xs mt-2 block">{{ $message }}</span> @enderror
+                    @error('athletes.'.$index.'.category_ids') <span class="text-rose-500 text-[15px] mt-2 block">{{ $message }}</span> @enderror
                 </div>
             @endforeach
         </div>
@@ -305,7 +305,7 @@ new class extends Component
             
             <div class="bg-amber-50 p-6 rounded-2xl border border-amber-200 flex gap-4">
                 <svg class="w-8 h-8 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div class="text-amber-800 text-sm">
+                <div class="text-amber-800 text-[15px]">
                     <p class="font-bold mb-1">Penting!</p>
                     <p>Setelah melakukan klik **"Kirim Pendaftaran"**, data tidak dapat diubah secara mandiri. Silakan pastikan semua nama atlet dan kategori sudah benar.</p>
                 </div>
@@ -321,18 +321,18 @@ new class extends Component
             
             <div class="max-w-md mx-auto bg-zinc-50 p-8 rounded-3xl border border-dashed border-zinc-300 space-y-6">
                 <div>
-                    <span class="text-xs uppercase text-zinc-500 font-bold tracking-widest block mb-2">Total Transfer</span>
+                    <span class="text-[15px] uppercase text-zinc-500 font-bold tracking-widest block mb-2">Total Transfer</span>
                     <h2 class="text-4xl font-mono font-black text-indigo-600">Rp {{ number_format($this->getTotalProperty(), 0, ',', '.') }}</h2>
                 </div>
                 <div class="space-y-4 pt-4 border-t border-zinc-200">
-                    <p class="text-sm font-bold">Silakan transfer ke rekening berikut:</p>
+                    <p class="text-[15px] font-bold">Silakan transfer ke rekening berikut:</p>
                     <div class="bg-white p-4 rounded-xl shadow-inner text-left font-mono">
                         <p class="text-zinc-500">Bank Central Asia (BCA)</p>
                         <p class="text-xl font-black">123 - 4567 - 890</p>
-                        <p class="text-xs opacity-60">A/N PANITIA DOJO CUP</p>
+                        <p class="text-[15px] opacity-60">A/N PANITIA DOJO CUP</p>
                     </div>
                 </div>
-                <p class="text-xs text-zinc-400 italic">Simpan bukti transfer dan konfirmasi via link WhatsApp panitia di bawah.</p>
+                <p class="text-[15px] text-zinc-400 italic">Simpan bukti transfer dan konfirmasi via link WhatsApp panitia di bawah.</p>
             </div>
             
             <div class="mt-12">

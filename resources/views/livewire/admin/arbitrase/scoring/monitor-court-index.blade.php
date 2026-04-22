@@ -4,10 +4,10 @@
         <!-- IDLE STATE -->
         <div class="flex-1 flex flex-col items-center justify-center h-full">
             <div class="w-48 h-48 rounded-[3rem] bg-slate-800 flex items-center justify-center shadow-2xl mb-12 animate-bounce">
-                <i class="fas fa-tv text-7xl text-slate-700"></i>
+                <i class="fas fa-tv text-7xl text-black"></i>
             </div>
             <h1 class="text-7xl font-black text-white tracking-widest uppercase mb-4 opacity-50">{{ $court->name }}</h1>
-            <p class="text-2xl font-bold text-slate-500 uppercase tracking-widest animate-pulse">Menunggu Panggilan Pertandingan...</p>
+            <p class="text-2xl font-bold text-slate-900 uppercase tracking-widest animate-pulse">Menunggu Panggilan Pertandingan...</p>
         </div>
     @else
         <!-- ACTIVE MATCH STATE -->
@@ -50,22 +50,22 @@
                 <div class="flex flex-wrap items-center justify-center gap-3 mt-2">
                     @if($dPool)
                         <span class="inline-flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full text-white text-lg font-black uppercase tracking-wider border border-white/20">
-                            <i class="fas fa-th text-white/60 text-sm"></i>Pool {{ $dPool->name }}
+                            <i class="fas fa-th text-white/60 text-[15px]"></i>Pool {{ $dPool->name }}
                         </span>
                     @endif
                     @if($dRound)
                         <span class="inline-flex items-center gap-2 bg-amber-400/30 px-5 py-2 rounded-full text-amber-100 text-lg font-black uppercase tracking-wider border border-amber-300/30">
-                            <i class="fas fa-flag text-amber-300 text-sm"></i>{{ $dRound }}
+                            <i class="fas fa-flag text-amber-300 text-[15px]"></i>{{ $dRound }}
                         </span>
                     @endif
                     @if($dSession)
                         <span class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-white/80 text-base font-bold uppercase tracking-wider border border-white/10">
-                            <i class="fas fa-clock text-white/50 text-sm"></i>{{ $dSession->name }}
+                            <i class="fas fa-clock text-white/50 text-[15px]"></i>{{ $dSession->name }}
                         </span>
                     @endif
                     @if($dRundown)
                         <span class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-white/80 text-base font-bold uppercase tracking-wider border border-white/10">
-                            <i class="fas fa-calendar text-white/50 text-sm"></i>{{ $dRundown->name ?? $dRundown->date }}
+                            <i class="fas fa-calendar text-white/50 text-[15px]"></i>{{ $dRundown->name ?? $dRundown->date }}
                         </span>
                     @endif
                 </div>
@@ -87,7 +87,7 @@
                             </div>
                             <h2 class="text-5xl font-black text-white uppercase leading-tight mb-6">{{ $athletes[0]->name }}</h2>
                             <div class="w-full bg-rose-800 rounded-3xl py-6 border border-rose-500/50">
-                                <p class="text-sm font-bold text-rose-300 uppercase tracking-widest mb-1">Kontingen</p>
+                                <p class="text-[15px] font-bold text-rose-300 uppercase tracking-widest mb-1">Kontingen</p>
                                 <p class="text-4xl font-black text-rose-100 uppercase">
                                     {{ $athletes[0]->registrations->first()?->contingent?->name ?? 'Unknown' }}</p>
                             </div>
@@ -95,7 +95,7 @@
 
                         <!-- VS -->
                         <div class="flex flex-col items-center justify-center py-12 md:py-0 relative">
-                            <span class="text-7xl font-black text-slate-700 italic block relative z-10">VS</span>
+                            <span class="text-7xl font-black text-black italic block relative z-10">VS</span>
                             <div class="hidden md:block absolute top-1/2 left-0 right-0 h-1 bg-slate-800 z-0"></div>
                         </div>
 
@@ -106,7 +106,7 @@
                             </div>
                             <h2 class="text-5xl font-black text-white uppercase leading-tight mb-6">{{ $athletes[1]->name }}</h2>
                             <div class="w-full bg-blue-800 rounded-3xl py-6 border border-blue-500/50">
-                                <p class="text-sm font-bold text-blue-300 uppercase tracking-widest mb-1">Kontingen</p>
+                                <p class="text-[15px] font-bold text-blue-300 uppercase tracking-widest mb-1">Kontingen</p>
                                 <p class="text-4xl font-black text-blue-100 uppercase">
                                     {{ $athletes[1]->registrations->first()?->contingent?->name ?? 'Unknown' }}</p>
                             </div>
@@ -114,7 +114,7 @@
 
                     </div>
                 @else
-                    <div class="text-4xl font-black text-slate-500 uppercase">Menunggu Daftar Atlet Randori...</div>
+                    <div class="text-4xl font-black text-slate-900 uppercase">Menunggu Daftar Atlet Randori...</div>
                 @endif
 
             @else
@@ -138,7 +138,7 @@
                         </div>
                     @endif
 
-                    <h3 class="text-center text-4xl md:text-5xl font-black text-slate-400 uppercase tracking-widest mb-16">
+                    <h3 class="text-center text-4xl md:text-5xl font-black text-slate-800 uppercase tracking-widest mb-16">
                         Daftar Penampil</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                         @foreach($athletes as $index => $ath)
@@ -170,14 +170,14 @@
         <div class="flex items-center gap-4">
             <span class="text-xl font-black text-white tracking-widest uppercase">PERKAMI TIMING SYSTEM</span>
         </div>
-        <div class="flex items-center gap-6 text-slate-500">
+        <div class="flex items-center gap-6 text-slate-900">
             @if(isset($dSession))
-                <span class="text-sm font-bold uppercase tracking-widest">{{ $dSession->name }}</span>
+                <span class="text-[15px] font-bold uppercase tracking-widest">{{ $dSession->name }}</span>
             @endif
             @if(isset($dRundown))
-                <span class="text-sm font-bold uppercase tracking-widest">{{ $dRundown->name ?? $dRundown->date }}</span>
+                <span class="text-[15px] font-bold uppercase tracking-widest">{{ $dRundown->name ?? $dRundown->date }}</span>
             @endif
-            <span class="text-sm font-bold uppercase tracking-widest">LIVE ARBITRASE</span>
+            <span class="text-[15px] font-bold uppercase tracking-widest">LIVE ARBITRASE</span>
         </div>
     </div>
 </div>
