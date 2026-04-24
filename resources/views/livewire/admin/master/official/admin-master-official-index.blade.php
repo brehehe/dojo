@@ -19,55 +19,66 @@
     </div>
 
     <!-- Stats & Toolbar -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div
-            class="md:col-span-3 bg-white rounded-xl p-2 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-2">
-            <div class="relative w-full">
-                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-800">
-                    <i class="fas fa-search text-[15px]"></i>
-                </span>
-                <input wire:model.live.debounce.300ms="search" type="text"
-                    placeholder="Cari nama atau no. hp official..."
-                    class="w-full pl-10 pr-4 py-2 bg-transparent border-none focus:ring-0 text-[15px] font-bold text-black placeholder:text-slate-300" />
-            </div>
+    <div class="space-y-2">
 
-            <div class="flex items-center gap-2 w-full md:w-auto">
-                <div class="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg min-w-fit w-full">
-                    <span
-                        class="text-[15px] font-black uppercase tracking-widest text-slate-800 whitespace-nowrap">Show:</span>
-                    <select wire:model.live="perPage"
-                        class="bg-transparent border-0 text-black text-[15px] font-black focus:ring-0 cursor-pointer p-0">
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                    </select>
-                </div>
-
-                <div class="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg min-w-fit w-full">
-                    <span
-                        class="text-[15px] font-black uppercase tracking-widest text-slate-800 whitespace-nowrap">Kontingen:</span>
-                    <select wire:model.live="filterContingent"
-                        class="bg-transparent border-0 text-black text-[15px] font-black focus:ring-0 cursor-pointer p-0 max-w-[150px] truncate">
-                        <option value="">Semua</option>
-                        @foreach($contingents as $contingent)
-                            <option value="{{ $contingent->id }}">{{ $contingent->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+        {{-- Stat chip (mobile) + full card (md+) --}}
+        <div class="flex items-center justify-between gap-3 md:hidden">
+            <p class="text-[13px] text-slate-400 font-bold uppercase tracking-widest">Daftar Official</p>
+            <div class="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full px-4 py-1.5 shadow-md shadow-orange-200">
+                <i class="fas fa-user-tie text-[11px]"></i>
+                <span class="text-[13px] font-black tracking-wider">{{ $officials->total() }} Personel</span>
             </div>
         </div>
 
-        <div
-            class="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-4 shadow-lg flex flex-col justify-center border border-white/10 relative overflow-hidden group text-white">
-            <div
-                class="absolute -right-4 -bottom-4 w-16 h-16 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+            {{-- Search + Filters --}}
+            <div class="md:col-span-3 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+
+                {{-- Search bar --}}
+                <div class="relative border-b border-slate-100">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 pointer-events-none">
+                        <i class="fas fa-search text-sm"></i>
+                    </span>
+                    <input wire:model.live.debounce.300ms="search" type="text"
+                        placeholder="Cari nama atau no. hp official..."
+                        class="w-full pl-10 pr-4 py-2.5 bg-transparent border-none focus:ring-0 text-[14px] font-bold text-black placeholder:text-slate-300" />
+                </div>
+
+                {{-- Filters row --}}
+                <div class="flex items-center divide-x divide-slate-100">
+                    <div class="flex items-center gap-2 px-4 py-2.5 flex-1 min-w-0">
+                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 whitespace-nowrap">Show</span>
+                        <select wire:model.live="perPage"
+                            class="bg-transparent border-0 text-slate-800 text-[13px] font-black focus:ring-0 cursor-pointer p-0 w-full">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 px-4 py-2.5 flex-[3] min-w-0">
+                        <i class="fas fa-filter text-[11px] text-slate-400 shrink-0"></i>
+                        <select wire:model.live="filterContingent"
+                            class="bg-transparent border-0 text-slate-800 text-[13px] font-black focus:ring-0 cursor-pointer p-0 w-full truncate">
+                            <option value="">Semua Kontingen</option>
+                            @foreach($contingents as $contingent)
+                                <option value="{{ $contingent->id }}">{{ $contingent->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
             </div>
-            <span class="text-[15px] font-black uppercase tracking-[0.2em] text-white/70 mb-0.5 relative z-10">Total
-                Official</span>
-            <div class="flex items-baseline gap-2 relative z-10">
-                <span class="text-xl font-black leading-none tracking-tighter">{{ $officials->total() }}</span>
-                <span class="text-[15px] font-black text-white/70 uppercase tracking-widest">Personel</span>
+
+            {{-- Stat card (md+) --}}
+            <div class="hidden md:flex bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-4 shadow-lg flex-col justify-center border border-white/10 relative overflow-hidden group text-white">
+                <div class="absolute -right-4 -bottom-4 w-16 h-16 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                <span class="text-[13px] font-black uppercase tracking-[0.2em] text-white/70 mb-0.5 relative z-10">Total Official</span>
+                <div class="flex items-baseline gap-2 relative z-10">
+                    <span class="text-2xl font-black leading-none tracking-tighter">{{ $officials->total() }}</span>
+                    <span class="text-[12px] font-black text-white/60 uppercase tracking-widest">Personel</span>
+                </div>
             </div>
         </div>
     </div>
