@@ -65,103 +65,114 @@
                     </div>
 
                     <!-- Contingents Section -->
-                    <div class="space-y-12">
+                    <div class="space-y-6">
                         @foreach($item['contingents'] as $contingent)
-                            <div class="space-y-6">
+                            <div class="p-6 bg-white rounded-[2rem] border border-slate-100 relative group transition-all hover:shadow-xl hover:shadow-slate-100 duration-500 overflow-hidden">
+
                                 <!-- Contingent Header -->
-                                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-1.5 h-6 bg-orange-500 rounded-full"></div>
-                                        <h4 class="text-[15px] font-black text-black uppercase tracking-tight">{{ $contingent['name'] }}</h4>
-                                        <span class="text-[15px] bg-slate-100 text-slate-900 px-2 py-0.5 rounded-md font-bold">{{ count($contingent['athletes']) }} Atlet</span>
+                                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-100">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-all duration-500">
+                                            <i class="fas fa-users text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-base font-black text-slate-800 uppercase tracking-tight leading-none mb-1">
+                                                {{ $contingent['name'] }}
+                                            </h4>
+                                            <span class="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
+                                                {{ count($contingent['athletes']) }} Atlet Terdaftar
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                                    <!-- Left Column: Athletes (8/12) -->
-                                    <div class="lg:col-span-8">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            @foreach($contingent['athletes'] as $athlete)
-                                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-orange-200 hover:bg-white transition-all group/athlete shadow-sm hover:shadow-md">
-                                                    <div class="flex items-center justify-between mb-4">
-                                                        <div class="flex-1 min-w-0">
-                                                            <h5 class="text-[15px] font-black text-slate-800 uppercase truncate leading-none mb-1 group-hover/athlete:text-orange-600 transition-colors">
-                                                                {{ $athlete['name'] }}
-                                                            </h5>
-                                                            <p class="text-[15px] font-bold text-slate-800 font-mono tracking-wider mb-2">
-                                                                {{ $athlete['nik'] }}
-                                                            </p>
-                                                            <div class="flex items-center gap-2">
-                                                                <span class="px-1.5 py-0.5 bg-slate-900 text-white text-[15px] font-black rounded uppercase tracking-wider">
-                                                                    {{ strtoupper($athlete['gender']) }}
-                                                                </span>
-                                                                <span class="text-[15px] font-bold text-slate-800 uppercase tracking-widest">
-                                                                    {{ $athlete['age'] ?? '-' }} Thn
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-right ml-2 shrink-0">
-                                                            <span class="text-[15px] font-black border-2 border-slate-900 text-slate-900 px-3 py-1 rounded-xl uppercase tracking-wider shadow-sm group-hover/athlete:bg-slate-900 group-hover/athlete:text-white transition-all">
-                                                                {{ $athlete['rank'] ?? 'N/A' }}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="space-y-3">
-                                                        <!-- Dojo Info -->
-                                                        <!-- <div class="flex items-start gap-2 p-2 bg-white rounded-xl border border-slate-100 shadow-inner">
-                                                            <i class="fas fa-home text-[15px] text-orange-500 mt-0.5"></i>
-                                                            <div class="flex-1 min-w-0">
-                                                                <p class="text-[15px] font-black text-black uppercase leading-none mb-1">{{ $athlete['dojo'] ?? 'Dojo -' }}</p>
-                                                                <p class="text-[15px] font-bold text-slate-800 uppercase tracking-wider">{{ $athlete['city'] ?? 'Kota -' }}</p>
-                                                            </div>
-                                                        </div> -->
-
-                                                        <!-- Physical/Level Details -->
-                                                        <div class="flex items-center justify-between pt-1">
-                                                            <div class="flex items-center gap-4 text-[15px] font-bold text-slate-900 uppercase">
-                                                                <span class="flex items-center gap-1.5"><i class="fas fa-weight-hanging text-[15px] text-slate-300"></i> {{ $athlete['weight'] ?? '-' }} kg</span>
-                                                                <span class="flex items-center gap-1.5"><i class="fas fa-certificate text-[15px] text-slate-300"></i> {{ $athlete['kyu'] ?? '-' }}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-
-                                    <!-- Right Column: Techniques (4/12) -->
-                                    <div class="lg:col-span-4 sticky top-32">
-                                        <div class="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group/tech">
-                                            <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover/tech:bg-orange-500/10 transition-colors"></div>
-                                            
-                                            <div class="relative z-10">
-                                                <div class="flex items-center gap-2 mb-4">
-                                                    <i class="fas fa-scroll text-orange-500 text-[15px]"></i>
-                                                    <h5 class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Daftar Teknik</h5>
-                                                </div>
-                                                
-                                                <div class="space-y-2">
-                                                    @forelse($contingent['techniques'] as $index => $tech)
-                                                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group-hover/tech:border-orange-100 transition-all">
-                                                            <span class="w-5 h-5 bg-white rounded-md flex items-center justify-center text-[15px] font-black text-orange-600 border border-orange-100 shadow-sm">
-                                                                {{ $index + 1 }}
-                                                            </span>
-                                                            <span class="text-[15px] font-black text-black uppercase tracking-tight">{{ $tech }}</span>
-                                                        </div>
-                                                    @empty
-                                                        <div class="py-4 text-center">
-                                                            <p class="text-[15px] text-slate-800 italic font-bold">Tanpa Teknik Khusus</p>
-                                                        </div>
-                                                    @endforelse
-                                                </div>
-                                            </div>
-                                        </div>
+                                <!-- Table -->
+                                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                    <div class="overflow-x-auto custom-scrollbar">
+                                        <table class="w-full text-left border-collapse border border-slate-200 overflow-hidden">
+                                            <thead class="bg-slate-800 text-white">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[1%]">No.</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Nama Atlet</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">NIK</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">L/P</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Usia</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Tingkat</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">BB (kg)</th>
+                                                    <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700">Urutan Teknik / Komposisi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $athletes   = $contingent['athletes'];
+                                                    $techniques = $contingent['techniques'] ?? [];
+                                                    $rowCount   = max(count($athletes), count($techniques));
+                                                @endphp
+                                                @for($i = 0; $i < $rowCount; $i++)
+                                                    <tr class="{{ $loop->even ? 'bg-slate-50' : 'bg-white' }} hover:bg-orange-50/30 transition-colors">
+                                                        <!-- No -->
+                                                        <td class="py-3 px-4 border border-slate-200 text-center">
+                                                            @if($i < count($athletes))
+                                                                <span class="w-7 h-7 inline-flex items-center justify-center bg-slate-800 text-white rounded-lg text-[13px] font-black">{{ $i + 1 }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- Nama -->
+                                                        <td class="py-3 px-4 border border-slate-200">
+                                                            @if($i < count($athletes))
+                                                                <span class="text-[14px] font-black text-slate-800 uppercase">{{ $athletes[$i]['name'] }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- NIK -->
+                                                        <td class="py-3 px-4 border border-slate-200">
+                                                            @if($i < count($athletes))
+                                                                <span class="text-[13px] font-mono font-bold text-slate-500 tracking-wider">{{ $athletes[$i]['nik'] }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- Gender -->
+                                                        <td class="py-3 px-4 border border-slate-200 text-center">
+                                                            @if($i < count($athletes))
+                                                                <span class="px-2 py-0.5 bg-slate-900 text-white text-[11px] font-black rounded uppercase">{{ strtoupper($athletes[$i]['gender']) }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- Usia -->
+                                                        <td class="py-3 px-4 border border-slate-200 text-center">
+                                                            @if($i < count($athletes))
+                                                                <span class="text-[14px] font-bold text-slate-700">{{ $athletes[$i]['age'] ?? '-' }} Thn</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- Tingkat/Rank -->
+                                                        <td class="py-3 px-4 border border-slate-200 text-center">
+                                                            @if($i < count($athletes))
+                                                                <span class="text-[13px] font-black border border-slate-800 text-slate-800 px-2.5 py-0.5 rounded-lg uppercase tracking-wide">{{ $athletes[$i]['rank'] ?? 'N/A' }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- Berat Badan -->
+                                                        <td class="py-3 px-4 border border-slate-200 text-center">
+                                                            @if($i < count($athletes))
+                                                                <span class="text-[14px] font-bold text-slate-700">{{ $athletes[$i]['weight'] ?? '-' }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <!-- Teknik -->
+                                                        <td class="py-3 px-4 border border-slate-200">
+                                                            @if($i < count($techniques))
+                                                                <div class="flex items-center gap-2">
+                                                                    <span class="w-5 h-5 inline-flex items-center justify-center bg-orange-100 text-orange-600 rounded-md text-[11px] font-black border border-orange-200 shrink-0">{{ $i + 1 }}</span>
+                                                                    <span class="text-[14px] font-black text-slate-800 uppercase tracking-tight">{{ $techniques[$i] }}</span>
+                                                                </div>
+                                                            @else
+                                                                <span class="text-[13px] text-slate-300 italic">—</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endfor
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
+
                 </div>
             </div>
         @empty

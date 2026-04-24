@@ -49,16 +49,20 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
     public function callParticipant($registrationId)
     {
+        // Update active_registration_id di match number (untuk referensi wasit)
         $this->matchNumber->update(['active_registration_id' => $registrationId]);
 
-        // Sinkronisasi dengan Lapangan agar TV Monitor terupdate
+        // Cari drawing yang SPESIFIK untuk registrasi ini di round yang aktif
+        // Setiap registrasi memiliki 1 drawing dengan court_id yang sudah ditentukan
         $drawing = DrawingMatchNumber::with('court')
             ->where('match_number_id', $this->matchNumber->id)
             ->where('registration_id', $registrationId)
             ->where('round', $this->currentRound)
+            ->whereNotNull('court_id')
             ->first();
 
-        if ($drawing && $drawing->court_id) {
+        // Hanya update court yang memang assigned ke registrasi ini
+        if ($drawing && $drawing->court) {
             $drawing->court->update([
                 'active_match_id' => $this->matchNumber->id,
                 'active_drawing_id' => $drawing->id,

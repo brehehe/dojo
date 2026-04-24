@@ -4,12 +4,14 @@ namespace App\Livewire\Admin\Reports;
 
 use App\Models\Athlete;
 use App\Models\Contingent;
-use App\Models\Registration;
+use App\Models\Technique\Technique;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class AdminAthleteBiodataReport extends Component
 {
     public $contingent_id;
+
     public $athletes = [];
 
     public function mount()
@@ -25,22 +27,23 @@ class AdminAthleteBiodataReport extends Component
 
     public function loadData()
     {
-        if (!$this->contingent_id) {
+        if (! $this->contingent_id) {
             $this->athletes = [];
+
             return;
         }
 
         $this->athletes = Athlete::whereHas('contingents', function ($q) {
-                $q->where('contingents.id', $this->contingent_id);
-            })
+            $q->where('contingents.id', $this->contingent_id);
+        })
             ->with(['matchNumbers' => function ($q) {
-                 // Only get match numbers from registrations belonging to this contingent
-                 $q->whereExists(function ($query) {
-                     $query->select(\Illuminate\Support\Facades\DB::raw(1))
-                           ->from('registrations')
-                           ->whereColumn('registrations.id', 'athlete_match_number.registration_id')
-                           ->where('registrations.contingent_id', $this->contingent_id);
-                 });
+                // Only get match numbers from registrations belonging to this contingent
+                $q->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('registrations')
+                        ->whereColumn('registrations.id', 'athlete_match_number.registration_id')
+                        ->where('registrations.contingent_id', $this->contingent_id);
+                });
             }])
             ->get()
             ->map(function ($athlete) {
@@ -51,7 +54,7 @@ class AdminAthleteBiodataReport extends Component
 
                 $matchData = [];
                 if ($latestReg) {
-                    $matchData = \Illuminate\Support\Facades\DB::table('athlete_match_number')
+                    $matchData = DB::table('athlete_match_number')
                         ->join('match_numbers', 'athlete_match_number.match_number_id', '=', 'match_numbers.id')
                         ->where('athlete_match_number.athlete_id', $athlete->id)
                         ->where('athlete_match_number.registration_id', $latestReg->id)
@@ -59,14 +62,15 @@ class AdminAthleteBiodataReport extends Component
                         ->get()
                         ->map(function ($m) {
                             $techIds = json_decode($m->technique_ids, true) ?? [];
-                            $techNames = \App\Models\Technique\Technique::whereIn('id', $techIds)
-                                ->orderByRaw("FIELD(id, " . implode(',', array_merge([0], $techIds)) . ")")
+                            $techNames = Technique::whereIn('id', $techIds)
+                                ->get()
+                                ->sortBy(fn ($t) => array_search($t->id, $techIds))
                                 ->pluck('name')
                                 ->toArray();
-                            
+
                             return [
                                 'name' => $m->name,
-                                'techniques' => $techNames
+                                'techniques' => $techNames,
                             ];
                         });
                 }
@@ -85,7 +89,7 @@ class AdminAthleteBiodataReport extends Component
                     'kyu' => $latestReg?->pivot?->rank ?? $athlete->kyu,
                     'status' => 'Peserta', // Defaulting to Peserta
                     'achievements' => is_array($athlete->achievement_history) ? $athlete->achievement_history : [],
-                    'matches' => $matchData
+                    'matches' => $matchData,
                 ];
             });
     }
@@ -93,7 +97,7 @@ class AdminAthleteBiodataReport extends Component
     public function render()
     {
         return view('livewire.admin.reports.admin-athlete-biodata-report', [
-            'contingents' => Contingent::orderBy('name', 'asc')->get()
+            'contingents' => Contingent::orderBy('name', 'asc')->get(),
         ]);
     }
 }

@@ -26,7 +26,7 @@
 </head>
 
 <body class="font-['Ubuntu'] antialiased bg-slate-50 overflow-x-hidden">
-    @hasanyrole('Perwasitan|Contingent')
+    @hasanyrole('Wasit|Contingent')
         <!-- Header / Mobile Layout for Perwasitan & Contingent -->
         <div class="min-h-screen flex flex-col pb-20" x-data="{ userDropdownOpen: false }">
             @include('layouts.admin.mobile-header')

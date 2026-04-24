@@ -8,6 +8,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuResultIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
+use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Master\AgeGroup\AdminMasterAgeGroupIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteDetailIndex;
@@ -42,7 +43,10 @@ use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriInde
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Contingent\Dashboard;
+use App\Livewire\Contingent\Results;
+use App\Livewire\Contingent\Schedule;
 use App\Livewire\Contingent\Setup;
+use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
 use App\Livewire\Referee\RefereeScoringDashboard;
 use Illuminate\Support\Facades\Auth;
@@ -72,6 +76,9 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard', GeneralDashboard::class)->name('dashboard');
     Route::get('setup', Setup::class)->name('contingent.setup');
     Route::get('contingent/dashboard', Dashboard::class)->name('contingent.dashboard');
+    Route::get('contingent/jadwal', Schedule::class)->name('contingent.schedule');
+    Route::get('contingent/hasil', Results::class)->name('contingent.results');
+    Route::get('contingent/klasemen', Standings::class)->name('contingent.standings');
 
     Route::post('logout', function () {
         Auth::logout();
@@ -151,8 +158,8 @@ Route::middleware('auth')->group(function () {
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
                 Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
-                Route::get('/monitor-hasil/court/{courtId}', \App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex::class)->name('monitor-hasil.court');
-                Route::get('/monitor-hasil/match/{matchId}', \App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex::class)->name('monitor-hasil.match');
+                Route::get('/monitor-hasil/court/{courtId}', MonitorHasilIndex::class)->name('monitor-hasil.court');
+                Route::get('/monitor-hasil/match/{matchId}', MonitorHasilIndex::class)->name('monitor-hasil.match');
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
             });

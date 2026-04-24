@@ -49,127 +49,138 @@
 
         /* Navbar glass — tinted red, semi-transparent */
         .navbar-glass {
-            background: rgba(40,3,8,0.75);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border-bottom: 1px solid rgba(220,20,20,0.30);
+            background: rgba(15, 2, 5, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(220, 38, 38, 0.2);
         }
 
         /* Glowing spotlight orb */
         @keyframes pulseCrimson {
-            0%,100% { opacity: 0.85; transform: scale(1); }
-            50%      { opacity: 1; transform: scale(1.05); }
+            0%, 100% { opacity: 0.7; transform: scale(1) translate(0, 0); }
+            50%      { opacity: 0.9; transform: scale(1.1) translate(2%, -2%); }
         }
-        .orb-crimson { animation: pulseCrimson 5s ease-in-out infinite; }
+        .orb-crimson { animation: pulseCrimson 8s ease-in-out infinite; }
 
         /* ========== HERO SLIDE ANIMATIONS ========== */
-
-        /* Tag badge floats up */
         @keyframes floatUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        /* Title sweeps in from left */
         @keyframes sweepLeft {
-            from { opacity: 0; transform: translateX(-60px) skewX(-4deg); }
-            to   { opacity: 1; transform: translateX(0) skewX(0); }
-        }
-        /* Subtitle rises with scale */
-        @keyframes riseScale {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        /* Desc fades in */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        /* CTA pops up */
-        @keyframes popUp {
-            from { opacity: 0; transform: translateY(24px) scale(0.95); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        /* Hero image slides in from right */
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(80px); }
+            from { opacity: 0; transform: translateX(-40px); }
             to   { opacity: 1; transform: translateX(0); }
         }
-        /* Floating image gentle bob */
-        @keyframes floatBob {
-            0%,100% { transform: translateY(0px) rotate(0deg); }
-            50%      { transform: translateY(-12px) rotate(1deg); }
+        @keyframes riseScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to   { opacity: 1; transform: scale(1); }
         }
 
-        /* Classes applied on active slide */
-        .hero-tag   { animation: floatUp   0.6s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .hero-title { animation: sweepLeft 0.7s cubic-bezier(0.22,1,0.36,1) 0.10s both; }
-        .hero-sub   { animation: riseScale 0.6s cubic-bezier(0.22,1,0.36,1) 0.22s both; }
-        .hero-desc  { animation: fadeIn   0.6s ease                          0.35s both; }
-        .hero-cta   { animation: popUp    0.5s cubic-bezier(0.34,1.56,0.64,1) 0.48s both; }
-        .hero-img   { animation: slideInRight 0.75s cubic-bezier(0.22,1,0.36,1) 0.10s both; }
-        .hero-img-float { animation: floatBob 6s ease-in-out infinite; }
+        .hero-tag   { animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .hero-title { animation: sweepLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+        .hero-sub   { animation: riseScale 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+        .hero-desc  { animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both; }
+        .hero-cta   { animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both; }
 
         /* Scrolling ticker marquee */
         @keyframes marquee {
             from { transform: translateX(0); }
             to   { transform: translateX(-50%); }
         }
-        .marquee-inner { animation: marquee 18s linear infinite; }
-        .marquee-inner:hover { animation-play-state: paused; }
+        .marquee-inner { animation: marquee 30s linear infinite; }
+        @media (max-width: 640px) {
+            .marquee-inner { animation-duration: 20s; }
+        }
 
         /* Progress bar */
         .slide-progress {
-            height: 3px;
-            border-radius: 2px;
+            height: 100%;
             transition: width 0.1s linear;
+        }
+
+        /* Responsive adjustments */
+        @media (max-height: 700px) {
+            .hero-content { padding-top: 5rem !important; padding-bottom: 8rem !important; }
+            .hero-title { font-size: clamp(2.5rem, 8vh, 5rem) !important; }
+            .hero-sub { font-size: clamp(1.8rem, 6vh, 4rem) !important; }
         }
     </style>
 </head>
 <body class="font-['Inter'] antialiased overflow-x-hidden bg-pattern">
 
     <!-- ===== NAVBAR ===== -->
-    <nav class="fixed top-0 left-0 right-0 z-50 navbar-glass">
-        <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+    <nav class="fixed top-0 left-0 right-0 z-50 navbar-glass" x-data="{ mobileMenu: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
 
             <!-- Logo + Brand -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-red-800/50 shadow-lg shadow-red-900/30">
+            <a href="/" class="flex items-center gap-2 sm:gap-3 group">
+                <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden ring-2 ring-red-600/30 shadow-lg shadow-red-950/50 group-hover:ring-red-500/50 transition-all duration-300">
                     <img src="{{ asset('logo.jpeg') }}" alt="Logo" class="w-full h-full object-cover">
                 </div>
-                <div>
-                    <div class="text-white font-black text-xs uppercase tracking-widest leading-tight">Shorinji Kempo</div>
-                    <div class="text-red-400/70 text-[15px] font-semibold uppercase tracking-[0.2em] leading-tight">Indonesia</div>
+                <div class="flex flex-col">
+                    <span class="text-white font-black text-[11px] sm:text-[13px] uppercase tracking-[0.2em] leading-none mb-0.5">Shorinji Kempo</span>
+                    <span class="text-red-500 text-[13px] sm:text-[16px] font-bold uppercase tracking-[0.3em] leading-none">Indonesia</span>
                 </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <div class="hidden lg:flex items-center gap-10">
+                <a href="#" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Home</a>
+                <a href="#about" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Tentang Kami</a>
+                <a href="#rundown" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Rundown</a>
+                <a href="{{ route('register') }}" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Daftar</a>
+                <a href="#info" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Kontak</a>
             </div>
 
-            <!-- Nav Links -->
-            <div class="hidden md:flex items-center gap-8 text-white/65 text-xs font-semibold uppercase tracking-widest">
-                <a href="#" class="nav-link active text-white hover:text-white transition">Home</a>
-                <a href="#about" class="nav-link hover:text-white transition">Tentang Kami</a>
-                <a href="#rundown" class="nav-link hover:text-white transition">Rundown</a>
-                <a href="{{ route('register') }}" class="nav-link hover:text-white transition">Daftar</a>
-                <a href="#info" class="nav-link hover:text-white transition">Kontak</a>
-            </div>
+            <!-- Auth + Mobile Toggle -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="hidden sm:flex items-center gap-4">
+                    @auth
+                        <a href="{{ route('dashboard') }}"
+                           class="bg-white/10 hover:bg-white text-white hover:text-black text-[11px] font-bold px-5 py-2.5 rounded-full uppercase tracking-widest transition-all duration-300 border border-white/20">
+                            Dashboard
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}"
+                           class="text-white/70 hover:text-white text-[11px] font-bold uppercase tracking-widest transition-colors duration-300">
+                            Login
+                        </a>
+                        <a href="{{ route('register') }}"
+                           class="bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-black px-6 py-2.5 rounded-full uppercase tracking-widest transition-all duration-300 shadow-lg shadow-orange-950/50">
+                            Daftar Sekarang
+                        </a>
+                    @endauth
+                </div>
 
-            <!-- Auth -->
-            <div class="flex items-center gap-3">
-                @auth
-                    <a href="{{ route('dashboard') }}"
-                       class="bg-orange-600 hover:bg-orange-500 text-white text-[15px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-lg shadow-orange-900/30">
-                        Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('login') }}"
-                       class="text-white/60 hover:text-white text-[15px] font-bold uppercase tracking-wider transition hidden sm:block">
-                        Login
-                    </a>
-                    <a href="{{ route('register') }}"
-                       class="bg-orange-600 hover:bg-orange-500 text-white text-[15px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-lg shadow-orange-900/30">
-                        Daftar Sekarang
-                    </a>
-                @endauth
+                <!-- Mobile Menu Button -->
+                <button @click="mobileMenu = !mobileMenu" class="lg:hidden w-10 h-10 flex items-center justify-center text-white/80 hover:text-white transition-colors">
+                    <i class="fas" :class="mobileMenu ? 'fa-times' : 'fa-bars-staggered'"></i>
+                </button>
             </div>
+        </div>
 
+        <!-- Mobile Menu Overlay -->
+        <div x-show="mobileMenu" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 -translate-y-4"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-4"
+             class="lg:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 py-8 px-6 flex flex-col gap-6 items-center text-center"
+             @click.away="mobileMenu = false">
+            <a href="#" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Home</a>
+            <a href="#about" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Tentang Kami</a>
+            <a href="#rundown" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Rundown</a>
+            <a href="{{ route('register') }}" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Daftar</a>
+            <a href="#info" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Kontak</a>
+            <div class="w-full h-px bg-white/5 my-2"></div>
+            @auth
+                <a href="{{ route('dashboard') }}" class="w-full bg-orange-600 text-white py-4 rounded-xl font-black uppercase tracking-widest">Dashboard</a>
+            @else
+                <a href="{{ route('login') }}" class="text-white/60 font-bold uppercase tracking-widest">Login</a>
+                <a href="{{ route('register') }}" class="w-full bg-orange-600 text-white py-4 rounded-xl font-black uppercase tracking-widest">Daftar Sekarang</a>
+            @endauth
         </div>
     </nav>
 
@@ -229,56 +240,57 @@
         <!-- ===== SLIDE 0 ===== -->
         <div class="absolute inset-0 z-20"
              x-show="slide === 0"
-             x-transition:enter="transition-opacity ease-out duration-700"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition-opacity ease-in duration-500"
+             x-transition:enter="transition-opacity ease-out duration-1000"
+             x-transition:enter-start="opacity-0 scale-105"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition-opacity ease-in duration-800"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0">
-            <div class="max-w-7xl mx-auto px-6 pt-20 h-full flex flex-col lg:flex-row items-center gap-6">
-
-                <!-- Mobile: faded background image (hidden on lg) -->
-                <div class="lg:hidden absolute inset-0 pointer-events-none" style="z-index:-1;">
-                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover object-center opacity-10">
-                    <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(80,0,16,0.3) 0%, rgba(80,0,16,0.85) 100%);"></div>
+            
+            <div class="relative h-full w-full flex items-center justify-center">
+                <!-- Background Image Layer -->
+                <div class="absolute inset-0 z-0 overflow-hidden">
+                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover opacity-10 scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1a0008] via-transparent to-transparent"></div>
                 </div>
 
-                <!-- LEFT: Text (full width on mobile, half on desktop) -->
-                <div class="w-full lg:w-1/2 flex flex-col justify-center pb-28 lg:pb-24">
-                    <div class="hero-tag mb-4 lg:mb-5 inline-flex items-center gap-2 bg-white/5 border border-orange-500/30 rounded-full px-4 py-1.5 self-start">
-                        <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                        <span class="text-orange-300 text-xs font-bold uppercase tracking-widest">Kejuaraan Resmi · Shorinji Kempo</span>
+                <!-- Content Container -->
+                <div class="relative z-10 max-w-7xl mx-auto px-6 w-full flex flex-col items-center text-center hero-content">
+                    <div class="hero-tag mb-6 inline-flex items-center gap-3 bg-white/5 border border-white/10 backdrop-blur-md rounded-full px-5 py-2">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                        </span>
+                        <span class="text-white/80 text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em]">Kejuaraan Resmi · SMART-PERKEMI</span>
                     </div>
-                    <h1 class="hero-title bebas leading-[0.9] text-white mb-2 tracking-wide drop-shadow-2xl"
-                        style="font-size: clamp(3rem, 12vw, 6.5rem);">SEMANGAT<br>KEMPO.</h1>
-                    <h2 class="hero-sub bebas leading-[0.9] mb-4 lg:mb-6 tracking-wide"
-                        style="font-size: clamp(2rem, 9vw, 4.5rem); color: #ff6030;">KEKUATAN &amp;<br>HARMONI.</h2>
-                    <p class="hero-desc text-white/70 text-sm lg:text-base leading-relaxed mb-6 lg:mb-8 max-w-md">
-                        Tingkatkan Potensi Anda Melalui Shorinji Kempo Indonesia. Kejuaraan bergengsi tingkat nasional di Kota Surabaya.
+                    
+                    <h1 class="hero-title bebas leading-[0.85] text-white tracking-tight"
+                        style="font-size: clamp(3.5rem, 15vw, 10rem);">
+                        SEMANGAT<br><span class="text-orange-600">KEMPO.</span>
+                    </h1>
+                    
+                    <p class="hero-desc text-white/60 text-sm sm:text-base md:text-lg leading-relaxed mt-8 max-w-2xl mx-auto font-medium">
+                        Tingkatkan Potensi Anda Melalui Shorinji Kempo Indonesia. Kejuaraan bergengsi tingkat nasional di Kota Surabaya 2026.
                     </p>
-                    <div class="hero-cta flex flex-wrap gap-3 lg:gap-4">
+                    
+                    <div class="hero-cta mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#ea580c,#f97316);box-shadow:0 8px 32px -6px rgba(234,88,12,0.60);">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 group-hover:scale-105 transition-transform duration-500"></div>
+                                <span class="relative flex items-center gap-2">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </span>
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#ea580c,#f97316);box-shadow:0 8px 32px -6px rgba(234,88,12,0.60);">
-                                Bergabung Sekarang
+                            <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden shadow-2xl shadow-orange-950/50">
+                                <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 group-hover:scale-105 transition-transform duration-500"></div>
+                                <span class="relative">Daftar Kontingen</span>
                             </a>
-                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-5 py-3.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
+                            <a href="{{ route('login') }}" class="group inline-flex items-center justify-center gap-3 font-bold text-xs sm:text-sm text-white/70 hover:text-white uppercase tracking-widest px-10 py-5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </a>
                         @endauth
                     </div>
-                </div>
-
-                <!-- RIGHT: Hero Image — desktop only -->
-                <div class="hidden lg:flex lg:w-1/2 items-center justify-center pb-24 relative">
-                    <div class="absolute inset-0 rounded-3xl pointer-events-none"
-                         style="background: radial-gradient(ellipse at 50% 55%, rgba(255,60,30,0.35) 0%, rgba(30,60,255,0.25) 50%, transparent 75%); filter: blur(35px);"></div>
-                    <img src="{{ asset('hero-fighters.png') }}" alt="Kempo Fighters"
-                         class="hero-img hero-img-float relative w-full max-w-xl object-contain"
-                         style="filter: drop-shadow(0 0 50px rgba(255,40,40,0.50)) drop-shadow(0 0 40px rgba(40,80,255,0.40));">
                 </div>
             </div>
         </div>
@@ -286,56 +298,55 @@
         <!-- ===== SLIDE 1 ===== -->
         <div class="absolute inset-0 z-20"
              x-show="slide === 1"
-             x-transition:enter="transition-opacity ease-out duration-700"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition-opacity ease-in duration-500"
+             x-transition:enter="transition-opacity ease-out duration-1000"
+             x-transition:enter-start="opacity-0 scale-105"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition-opacity ease-in duration-800"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              style="display:none;">
-            <div class="max-w-7xl mx-auto px-6 pt-20 h-full flex flex-col lg:flex-row-reverse items-center gap-6">
-
-                <!-- Mobile: faded background image -->
-                <div class="lg:hidden absolute inset-0 pointer-events-none" style="z-index:-1;">
-                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover object-center opacity-10">
-                    <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(0,8,60,0.3) 0%, rgba(0,8,60,0.85) 100%);"></div>
+            
+            <div class="relative h-full w-full flex items-center justify-center">
+                <!-- Background Image Layer -->
+                <div class="absolute inset-0 z-0 overflow-hidden">
+                    <img src="{{ asset('hero-fighters.png') }}" alt="" class="w-full h-full object-cover opacity-10 scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#00083d] via-transparent to-transparent"></div>
                 </div>
 
-                <div class="w-full lg:w-1/2 flex flex-col justify-center pb-28 lg:pb-24">
-                    <div class="hero-tag mb-4 lg:mb-5 inline-flex items-center gap-2 bg-white/5 border border-blue-500/30 rounded-full px-4 py-1.5 self-start">
-                        <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
-                        <span class="text-blue-300 text-xs font-bold uppercase tracking-widest">Teknik Tingkat · Kyu &amp; Dan</span>
+                <!-- Content Container -->
+                <div class="relative z-10 max-w-7xl mx-auto px-6 w-full flex flex-col items-center text-center hero-content">
+                    <div class="hero-tag mb-6 inline-flex items-center gap-3 bg-white/5 border border-white/10 backdrop-blur-md rounded-full px-5 py-2">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                        <span class="text-white/80 text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em]">Teknik & Kategori · Kyu & Dan</span>
                     </div>
-                    <h1 class="hero-title bebas leading-[0.9] text-white mb-2 tracking-wide drop-shadow-2xl"
-                        style="font-size: clamp(3rem, 12vw, 6.5rem);">EMBU &amp;<br>RANDORI.</h1>
-                    <h2 class="hero-sub bebas leading-[0.9] mb-4 lg:mb-6 text-blue-400 tracking-wide"
-                        style="font-size: clamp(2rem, 9vw, 3.5rem);">KATEGORI<br>LENGKAP.</h2>
-                    <p class="hero-desc text-white/70 text-sm lg:text-base leading-relaxed mb-6 lg:mb-8 max-w-md">
-                        Tersedia nomor pertandingan Embu Berpasangan dan Randori untuk semua kelompok usia dan tingkatan.
+                    
+                    <h1 class="hero-title bebas leading-[0.85] text-white tracking-tight"
+                        style="font-size: clamp(3.5rem, 15vw, 10rem);">
+                        EMBU &<br><span class="text-blue-500">RANDORI.</span>
+                    </h1>
+                    
+                    <p class="hero-desc text-white/60 text-sm sm:text-base md:text-lg leading-relaxed mt-8 max-w-2xl mx-auto font-medium">
+                        Tersedia nomor pertandingan Embu Berpasangan dan Randori untuk semua kelompok usia dan tingkatan sabuk.
                     </p>
-                    <div class="hero-cta flex flex-wrap gap-3 lg:gap-4">
+                    
+                    <div class="hero-cta mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#2563eb,#3b82f6);box-shadow:0 8px 32px -6px rgba(37,99,235,0.60);">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
+                                <span class="relative flex items-center gap-2">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </span>
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-7 py-3.5 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#2563eb,#3b82f6);box-shadow:0 8px 32px -6px rgba(37,99,235,0.60);">
-                                Daftar Kontingen
-                            </a>
-                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-5 py-3.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
-                                <i class="fas fa-sign-in-alt"></i> Login
+                            <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden shadow-2xl shadow-blue-950/50">
+                                <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
+                                <span class="relative">Pendaftaran Online</span>
                             </a>
                         @endauth
                     </div>
-                </div>
-
-                <!-- Image — desktop only -->
-                <div class="hidden lg:flex lg:w-1/2 items-center justify-center pb-24 relative">
-                    <div class="absolute inset-0 rounded-3xl pointer-events-none"
-                         style="background: radial-gradient(ellipse at 50% 55%, rgba(30,60,255,0.40) 0%, rgba(255,60,30,0.20) 60%, transparent 80%); filter: blur(35px);"></div>
-                    <img src="{{ asset('hero-fighters.png') }}" alt="Kempo Fighters"
-                         class="hero-img hero-img-float relative w-full max-w-xl object-contain"
-                         style="filter: drop-shadow(0 0 50px rgba(40,80,255,0.55)) drop-shadow(0 0 30px rgba(255,40,40,0.30));">
                 </div>
             </div>
         </div>
@@ -343,40 +354,36 @@
         <!-- ===== SLIDE 2 ===== -->
         <div class="absolute inset-0 z-20"
              x-show="slide === 2"
-             x-transition:enter="transition-opacity ease-out duration-700"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition-opacity ease-in duration-500"
+             x-transition:enter="transition-opacity ease-out duration-1000"
+             x-transition:enter-start="opacity-0 scale-105"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition-opacity ease-in duration-800"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              style="display:none;">
-            <div class="max-w-7xl mx-auto px-6 pt-20 h-full flex flex-col items-center justify-center text-center gap-4 pb-24">
-                <div class="hero-tag mb-4 inline-flex items-center gap-2 bg-white/5 border border-orange-500/30 rounded-full px-5 py-2">
-                    <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                    <span class="text-orange-300 text-xs font-bold uppercase tracking-widest">Pendaftaran Online Resmi</span>
-                </div>
-                <h1 class="hero-title bebas text-white tracking-wide leading-none drop-shadow-2xl"
-                    style="font-size: clamp(4rem, 9vw, 8rem);">DAFTAR</h1>
-                <h2 class="hero-sub bebas tracking-wide leading-none mb-4"
-                    style="font-size: clamp(3rem, 7vw, 6.5rem); background: linear-gradient(90deg, #ff4010, #3060ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-                    SEKARANG!
-                </h2>
-                <p class="hero-desc text-white/70 text-base leading-relaxed max-w-xl mb-8">
-                    Daftarkan kontingenmu dan ikuti proses pendaftaran online yang mudah, cepat, dan terverifikasi secara resmi.
-                </p>
-                <div class="hero-cta flex flex-wrap justify-center gap-4">
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-10 py-4 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#dc2626,#ea580c,#2563eb);box-shadow:0 8px 40px -6px rgba(200,50,20,0.65);">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
+            
+            <div class="relative h-full w-full flex items-center justify-center">
+                <!-- Content Container -->
+                <div class="relative z-10 max-w-7xl mx-auto px-6 w-full flex flex-col items-center text-center hero-content">
+                    <div class="hero-tag mb-6 inline-flex items-center gap-3 bg-white/5 border border-white/10 backdrop-blur-md rounded-full px-5 py-2">
+                        <span class="text-orange-400 text-[10px] sm:text-xs font-bold uppercase tracking-[0.3em]">Pendaftaran Dibuka Sekarang</span>
+                    </div>
+                    
+                    <h1 class="hero-title bebas leading-[0.85] text-white tracking-tight"
+                        style="font-size: clamp(4rem, 18vw, 12rem);">
+                        DAFTAR<br><span style="background: linear-gradient(90deg, #ff4d00, #0070ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SEKARANG!</span>
+                    </h1>
+                    
+                    <p class="hero-desc text-white/60 text-sm sm:text-base md:text-lg leading-relaxed mt-8 max-w-xl mx-auto font-medium">
+                        Segera daftarkan kontingenmu dan jadilah saksi sejarah kejuaraan Shorinji Kempo terbesar tahun ini.
+                    </p>
+                    
+                    <div class="hero-cta mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                        <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-12 py-6 rounded-full transition-all duration-500 overflow-hidden shadow-[0_0_50px_-12px_rgba(234,88,12,0.5)]">
+                            <div class="absolute inset-0 bg-gradient-to-r from-red-600 via-orange-500 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
+                            <span class="relative">MULAI PENDAFTARAN</span>
                         </a>
-                    @else
-                        <a href="{{ route('register') }}" class="inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider text-white px-10 py-4 rounded-full transition hover:-translate-y-1" style="background:linear-gradient(90deg,#dc2626,#ea580c,#2563eb);box-shadow:0 8px 40px -6px rgba(200,50,20,0.65);">
-                            <i class="fas fa-file-signature"></i> Daftar Akun Kontingen
-                        </a>
-                        <a href="{{ route('login') }}" class="inline-flex items-center gap-2 font-bold text-sm text-white/80 hover:text-white uppercase tracking-wider px-6 py-4 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition">
-                            <i class="fas fa-sign-in-alt"></i> Login
-                        </a>
-                    @endauth
+                    </div>
                 </div>
             </div>
         </div>
@@ -385,70 +392,71 @@
         <div class="absolute bottom-0 left-0 right-0 z-30">
 
             <!-- Ticker / Marquee -->
-            <div class="overflow-hidden py-2.5 border-t border-b border-white/10" style="background: rgba(0,0,0,0.45); backdrop-filter: blur(12px);">
-                <div class="marquee-inner flex whitespace-nowrap gap-0">
+            <div class="overflow-hidden py-3 border-t border-white/10 bg-black/40 backdrop-blur-md">
+                <div class="marquee-inner flex whitespace-nowrap items-center">
                     @php
                     $items = [
-                        '🥋 Piala Walikota Surabaya 2026',
-                        '⚡ Pendaftaran Online Dibuka',
-                        '🏆 30+ Nomor Pertandingan',
-                        '📍 GOR Surabaya · Jawa Timur',
-                        '🎯 Embu & Randori Kyu dan Dan',
-                        '💥 500+ Peserta Terdaftar',
-                        '🌟 Shorinji Kempo Indonesia',
-                        '📣 Technical Meeting Wajib Hadir',
+                        '🥋 PIALA WALIKOTA SURABAYA 2026',
+                        '⚡ PENDAFTARAN ONLINE DIBUKA',
+                        '🏆 30+ NOMOR PERTANDINGAN',
+                        '📍 GOR SURABAYA · JAWA TIMUR',
+                        '🎯 EMBU & RANDORI KYU DAN DAN',
+                        '💥 500+ PESERTA TERDAFTAR',
+                        '🌟 SHORINJI KEMPO INDONESIA',
+                        '📣 TECHNICAL MEETING WAJIB HADIR',
                     ];
-                    $doubled = array_merge($items, $items);
                     @endphp
-                    @foreach($doubled as $item)
-                        <span class="text-white/70 text-xs font-semibold uppercase tracking-widest px-8">{{ $item }}</span>
-                        <span class="text-orange-500/60 text-xs">◆</span>
+                    @foreach(array_merge($items, $items) as $item)
+                        <div class="flex items-center gap-4 px-6">
+                            <span class="text-white/60 text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.2em]">{{ $item }}</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-orange-600/50"></span>
+                        </div>
                     @endforeach
                 </div>
             </div>
 
-            <!-- Progress + Dots + Stats -->
-            <div class="" style="background: rgba(0,0,0,0.50); backdrop-filter: blur(16px);">
-                <!-- Progress bar -->
-                <div class="h-0.5 bg-white/10">
-                    <div class="slide-progress bg-gradient-to-r from-orange-500 to-blue-500" :style="'width:' + progress + '%'"></div>
-                </div>
-
-                <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+            <!-- Stats + Controls -->
+            <div class="bg-black/60 backdrop-blur-2xl border-t border-white/5">
+                <div class="max-w-7xl mx-auto px-4 sm:px-8 py-5 flex items-center justify-between gap-8">
                     <!-- Stats -->
-                    <div class="hidden md:flex items-center gap-8 divide-x divide-white/10">
+                    <div class="hidden lg:flex items-center gap-12">
                         @foreach([['500+', 'Peserta'], ['30+', 'Nomor'], ['20+', 'Kota'], ['2026', 'Edisi']] as $s)
-                        <div class="pl-8 first:pl-0 text-center">
-                            <div class="text-white font-black text-lg counter-num">{{ $s[0] }}</div>
-                            <div class="text-white/35 text-[15px] font-bold uppercase tracking-widest">{{ $s[1] }}</div>
+                        <div class="flex flex-col">
+                            <span class="text-white font-black text-xl leading-none mb-1">{{ $s[0] }}</span>
+                            <span class="text-white/30 text-[10px] font-bold uppercase tracking-widest">{{ $s[1] }}</span>
                         </div>
                         @endforeach
                     </div>
 
-                    <!-- Slide dots + prev/next arrows -->
-                    <div class="flex items-center gap-4 mx-auto md:mx-0">
-                        <!-- Prev -->
-                        <button @click="prev()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition text-white/70 hover:text-white">
-                            <i class="fas fa-chevron-left text-xs"></i>
-                        </button>
-
-                        <!-- Dots -->
-                        <div class="flex gap-2">
-                            <template x-for="i in total" :key="i">
-                                <button @click="goTo(i-1)"
-                                        class="rounded-full transition-all duration-500"
-                                        :class="slide === i-1 ? 'w-8 h-2 bg-gradient-to-r from-orange-400 to-blue-400' : 'w-2 h-2 bg-white/25 hover:bg-white/50'">
-                                </button>
-                            </template>
+                    <!-- Slide Navigation -->
+                    <div class="flex items-center gap-6 mx-auto lg:mx-0">
+                        <!-- Arrows -->
+                        <div class="flex items-center gap-2">
+                            <button @click="prev()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all duration-300 group">
+                                <i class="fas fa-chevron-left text-xs group-active:scale-90 transition-transform"></i>
+                            </button>
+                            <button @click="next()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all duration-300 group">
+                                <i class="fas fa-chevron-right text-xs group-active:scale-90 transition-transform"></i>
+                            </button>
                         </div>
 
-                        <!-- Next -->
-                        <button @click="next()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition text-white/70 hover:text-white">
-                            <i class="fas fa-chevron-right text-xs"></i>
-                        </button>
-
-                        <!-- Slide counter -->
-                        <span class="text-white/30 text-xs font-mono"><span x-text="slide+1"></span> / <span x-text="total"></span></span>
+                        <!-- Dots + Progress -->
+                        <div class="flex items-center gap-4">
+                            <div class="flex gap-2.5">
+                                <template x-for="i in total" :key="i">
+                                    <button @click="goTo(i-1)" 
+                                            class="h-1.5 rounded-full transition-all duration-500 relative overflow-hidden"
+                                            :class="slide === i-1 ? 'w-10 bg-white/20' : 'w-2 bg-white/10'">
+                                        <div x-show="slide === i-1" 
+                                             class="absolute inset-0 bg-gradient-to-r from-orange-500 to-blue-500 transition-all duration-100"
+                                             :style="'width:' + progress + '%'"></div>
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="text-white/20 text-[11px] font-mono tracking-tighter">
+                                <span class="text-white/60" x-text="'0' + (slide + 1)"></span> / <span x-text="'0' + total"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

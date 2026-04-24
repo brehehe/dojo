@@ -41,7 +41,7 @@
                 <a href="{{ route('admin.match-numbers.verified') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.match-numbers.verified') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Pertandingan</a>
                 <a href="{{ route('admin.reports.registration-by-number') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.reports.registration-by-number') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Per Kontingen</a>
                 <a href="{{ route('admin.reports.registration-by-name') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.reports.registration-by-name') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Per Nama</a>
-                <a href="{{ request()->routeIs('admin.reports.match-class') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.reports.match-class') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Nomor & Kelas</a>
+                <a href="{{ route('admin.reports.match-class') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.reports.match-class') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Nomor & Kelas</a>
                 <a href="{{ route('admin.reports.athlete-biodata') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.reports.athlete-biodata') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Biodata Peserta</a>
             </div>
         </div>

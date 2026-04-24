@@ -21,11 +21,21 @@
             $dSession   = $drawing?->sessionTime;
             $dRundown   = $drawing?->rundown;
             $dRound     = $drawing?->round;
+            $dCourt     = $drawing?->court;
             $dContingent = $drawing?->registration?->contingent;
 
-            // Athletes — prefer athletes from match for embu (semua tampil),
-            // untuk randori ambil dari drawing registration jika ada.
-            $athletes   = $match->athletes;
+            // Athletes — untuk embu hanya tampilkan atlet dari registrasi yang sedang dipanggil.
+            // Untuk randori: ambil semua (vs layout).
+            $activeRegId = $court->active_registration_id;
+            if ($isRandori) {
+                $athletes = $match->athletes;
+            } elseif ($activeRegId) {
+                $athletes = $match->athletes->filter(
+                    fn ($a) => $a->pivot->registration_id == $activeRegId
+                )->values();
+            } else {
+                $athletes = $match->athletes;
+            }
         @endphp
 
         <!-- Header -->
@@ -81,33 +91,65 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 w-full max-w-full gap-8 items-center">
 
                         <!-- SUDUT MERAH (AKA) -->
-                        <div class="bg-rose-600 rounded-[3rem] p-12 shadow-2xl shadow-rose-900/30 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform">
-                            <div class="px-6 py-2 bg-white/20 rounded-2xl mb-8 border border-white/30 backdrop-blur-md">
+                        <div class="bg-rose-600 rounded-[3rem] p-10 shadow-2xl shadow-rose-900/30 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform">
+                            <div class="px-6 py-2 bg-white/20 rounded-2xl mb-6 border border-white/30 backdrop-blur-md">
                                 <span class="text-xl font-black text-white uppercase tracking-widest">SUDUT MERAH (AKA)</span>
                             </div>
-                            <h2 class="text-5xl font-black text-white uppercase leading-tight mb-6">{{ $athletes[0]->name }}</h2>
-                            <div class="w-full bg-rose-800 rounded-3xl py-6 border border-rose-500/50">
+
+                            {{-- Foto AKA --}}
+                            <div class="w-[400px] h-[400px] rounded-[2rem] overflow-hidden border-4 border-rose-300/40 shadow-2xl mb-6 bg-rose-800">
+                                @if($athletes[0]->photo_path)
+                                    <img src="{{ asset('storage/' . $athletes[0]->photo_path) }}"
+                                         alt="{{ $athletes[0]->name }}"
+                                         class="w-full h-full object-cover object-center">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <span class="text-[120px] font-black text-rose-300 uppercase">
+                                            {{ substr($athletes[0]->name, 0, 1) }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <h2 class="text-4xl font-black text-white uppercase leading-tight mb-4">{{ $athletes[0]->name }}</h2>
+                            <div class="w-full bg-rose-800 rounded-3xl py-5 border border-rose-500/50">
                                 <p class="text-[15px] font-bold text-rose-300 uppercase tracking-widest mb-1">Kontingen</p>
-                                <p class="text-4xl font-black text-rose-100 uppercase">
+                                <p class="text-3xl font-black text-rose-100 uppercase">
                                     {{ $athletes[0]->registrations->first()?->contingent?->name ?? 'Unknown' }}</p>
                             </div>
                         </div>
 
                         <!-- VS -->
                         <div class="flex flex-col items-center justify-center py-12 md:py-0 relative">
-                            <span class="text-7xl font-black text-black italic block relative z-10">VS</span>
+                            <span class="text-[120px] font-black text-black italic block relative z-10">VS</span>
                             <div class="hidden md:block absolute top-1/2 left-0 right-0 h-1 bg-slate-800 z-0"></div>
                         </div>
 
                         <!-- SUDUT BIRU (AO) -->
-                        <div class="bg-blue-600 rounded-[3rem] p-12 shadow-2xl shadow-blue-900/30 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform">
-                            <div class="px-6 py-2 bg-white/20 rounded-2xl mb-8 border border-white/30 backdrop-blur-md">
+                        <div class="bg-blue-600 rounded-[3rem] p-10 shadow-2xl shadow-blue-900/30 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform">
+                            <div class="px-6 py-2 bg-white/20 rounded-2xl mb-6 border border-white/30 backdrop-blur-md">
                                 <span class="text-xl font-black text-white uppercase tracking-widest">SUDUT BIRU (AO)</span>
                             </div>
-                            <h2 class="text-5xl font-black text-white uppercase leading-tight mb-6">{{ $athletes[1]->name }}</h2>
-                            <div class="w-full bg-blue-800 rounded-3xl py-6 border border-blue-500/50">
+
+                            {{-- Foto AO --}}
+                            <div class="w-[400px] h-[400px] rounded-[2rem] overflow-hidden border-4 border-blue-300/40 shadow-2xl mb-6 bg-blue-800">
+                                @if($athletes[1]->photo_path)
+                                    <img src="{{ asset('storage/' . $athletes[1]->photo_path) }}"
+                                         alt="{{ $athletes[1]->name }}"
+                                         class="w-full h-full object-cover object-center">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <span class="text-[120px] font-black text-blue-300 uppercase">
+                                            {{ substr($athletes[1]->name, 0, 1) }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <h2 class="text-4xl font-black text-white uppercase leading-tight mb-4">{{ $athletes[1]->name }}</h2>
+                            <div class="w-full bg-blue-800 rounded-3xl py-5 border border-blue-500/50">
                                 <p class="text-[15px] font-bold text-blue-300 uppercase tracking-widest mb-1">Kontingen</p>
-                                <p class="text-4xl font-black text-blue-100 uppercase">
+                                <p class="text-3xl font-black text-blue-100 uppercase">
                                     {{ $athletes[1]->registrations->first()?->contingent?->name ?? 'Unknown' }}</p>
                             </div>
                         </div>
@@ -140,14 +182,32 @@
 
                     <h3 class="text-center text-4xl md:text-5xl font-black text-slate-800 uppercase tracking-widest mb-16">
                         Daftar Penampil</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                    <div class="grid grid-cols-1 gap-x-12 gap-y-8">
                         @foreach($athletes as $index => $ath)
                             <div class="bg-slate-800 border-2 border-slate-700 rounded-[2rem] p-8 shadow-xl flex gap-8 items-center transform hover:scale-[1.02] transition-transform">
-                                <div class="w-24 h-24 bg-slate-700 rounded-3xl flex items-center justify-center shrink-0 border border-slate-600 shadow-inner">
-                                    <span class="text-5xl font-black text-slate-300">{{ $index + 1 }}</span>
+                                {{-- Nomor urut --}}
+                                <div class="w-16 h-16 bg-slate-700 rounded-2xl flex items-center justify-center shrink-0 border border-slate-600 shadow-inner">
+                                    <span class="text-4xl font-black text-slate-300">{{ $index + 1 }}</span>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 class="text-4xl font-black text-white uppercase mb-4 leading-tight">{{ $ath->name }}</h4>
+
+                                {{-- Foto Atlet --}}
+                                <div class="w-[400px] h-[400px] rounded-[1.5rem] shrink-0 overflow-hidden border-4 border-slate-600 shadow-2xl bg-slate-700">
+                                    @if($ath->photo_path)
+                                        <img src="{{ asset('storage/' . $ath->photo_path) }}"
+                                             alt="{{ $ath->name }}"
+                                             class="w-full h-full object-cover object-center">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-700 to-emerald-900">
+                                            <span class="text-[120px] font-black text-white uppercase">
+                                                {{ substr($ath->name, 0, 1) }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                {{-- Info Atlet --}}
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-4xl font-black text-white uppercase mb-3 leading-tight truncate">{{ $ath->name }}</h4>
                                     <div class="inline-flex items-center gap-3 bg-emerald-500/10 px-5 py-3 rounded-2xl border border-emerald-500/20">
                                         <i class="fas fa-shield-alt text-2xl text-emerald-400"></i>
                                         <span class="text-2xl font-bold text-emerald-400 uppercase tracking-wider">

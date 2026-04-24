@@ -69,46 +69,80 @@
                                 </div>
                             </div>
 
-                            <div class="space-y-12">
+                            <div class="space-y-6">
                                 @forelse($matchGroups as $group)
-                                    <div class="bg-slate-50 rounded-[2rem] border border-slate-100 p-8 hover:bg-white hover:shadow-2xl hover:shadow-slate-100 transition-all duration-500">
-                                        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-slate-200/50">
-                                            <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-[15px]">
-                                                <i class="fas fa-medal"></i>
+                                    <div class="p-6 bg-white rounded-[2rem] border border-slate-100 relative group transition-all hover:shadow-xl hover:shadow-slate-100 duration-500 overflow-hidden">
+
+                                        <!-- Match Header -->
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-100">
+                                            <div class="flex items-center gap-4">
+                                                <div class="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-all duration-500">
+                                                    <i class="fas fa-medal text-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-base font-black text-slate-800 uppercase tracking-tight leading-none mb-1">
+                                                        {{ $group['match_name'] }}
+                                                    </h4>
+                                                    <span class="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
+                                                        {{ count($group['athletes']) }} Peserta
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <h4 class="text-[15px] font-black text-slate-800 uppercase tracking-tight">{{ $group['match_name'] }}</h4>
                                         </div>
 
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                            <!-- Participants -->
-                                            <div>
-                                                <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-4">Peserta</p>
-                                                <div class="space-y-3">
-                                                    @foreach($group['athletes'] as $athlete)
-                                                        <div class="flex items-center gap-3">
-                                                            <div class="w-10 h-10 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[15px] font-black text-orange-600 uppercase">{{ substr($athlete->athlete_name, 0, 1) }}</div>
-                                                            <div>
-                                                                <p class="text-[15px] font-black text-black uppercase leading-none mb-1">{{ $athlete->athlete_name }}</p>
-                                                                <p class="text-[15px] text-slate-800 font-bold uppercase">{{ $athlete->tingkat ?: 'X Kyu' }}</p>
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-
-                                            <!-- Techniques -->
-                                            <div class="bg-white/50 rounded-2xl p-6 border border-slate-100">
-                                                <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest mb-4">Urutan Komposisi</p>
-                                                <div class="space-y-2">
-                                                    @forelse($group['techniques'] as $tIndex => $tName)
-                                                        <div class="flex items-start gap-3">
-                                                            <span class="text-[15px] font-black text-orange-500 mt-0.5">{{ $tIndex + 1 }}.</span>
-                                                            <p class="text-[15px] font-bold text-slate-900 uppercase leading-none">{{ $tName }}</p>
-                                                        </div>
-                                                    @empty
-                                                        <p class="text-[15px] text-slate-300 font-bold italic uppercase">Tidak ada komposisi teknik</p>
-                                                    @endforelse
-                                                </div>
+                                        <!-- Table -->
+                                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                            <div class="overflow-x-auto custom-scrollbar">
+                                                <table class="w-full text-left border-collapse border border-slate-200 overflow-hidden">
+                                                    <thead class="bg-slate-800 text-white">
+                                                        <tr>
+                                                            <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[1%]">No.</th>
+                                                            <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Nama Atlet</th>
+                                                            <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Tingkat</th>
+                                                            <th class="px-4 py-3 text-[13px] font-black uppercase tracking-widest border border-slate-700">Urutan Komposisi Teknik</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @php
+                                                            $athletes   = $group['athletes'];
+                                                            $techniques = $group['techniques'] ?? [];
+                                                            $rowCount   = max(count($athletes), count($techniques));
+                                                        @endphp
+                                                        @for($i = 0; $i < $rowCount; $i++)
+                                                            <tr class="{{ $loop->even ? 'bg-slate-50' : 'bg-white' }} hover:bg-orange-50/30 transition-colors">
+                                                                <!-- No -->
+                                                                <td class="py-3 px-4 border border-slate-200 text-center">
+                                                                    @if($i < count($athletes))
+                                                                        <span class="w-7 h-7 inline-flex items-center justify-center bg-slate-800 text-white rounded-lg text-[13px] font-black">{{ $i + 1 }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <!-- Nama -->
+                                                                <td class="py-3 px-4 border border-slate-200">
+                                                                    @if($i < count($athletes))
+                                                                        <span class="text-[14px] font-black text-slate-800 uppercase">{{ $athletes[$i]->athlete_name }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <!-- Tingkat -->
+                                                                <td class="py-3 px-4 border border-slate-200 text-center">
+                                                                    @if($i < count($athletes))
+                                                                        <span class="text-[13px] font-black border border-slate-800 text-slate-800 px-2.5 py-0.5 rounded-lg uppercase tracking-wide">{{ $athletes[$i]->tingkat ?: 'X Kyu' }}</span>
+                                                                    @endif
+                                                                </td>
+                                                                <!-- Teknik -->
+                                                                <td class="py-3 px-4 border border-slate-200">
+                                                                    @if($i < count($techniques))
+                                                                        <div class="flex items-center gap-2">
+                                                                            <span class="w-5 h-5 inline-flex items-center justify-center bg-orange-100 text-orange-600 rounded-md text-[11px] font-black border border-orange-200 shrink-0">{{ $i + 1 }}</span>
+                                                                            <span class="text-[14px] font-black text-slate-800 uppercase tracking-tight">{{ $techniques[$i] }}</span>
+                                                                        </div>
+                                                                    @else
+                                                                        <span class="text-[13px] text-slate-300 italic">—</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endfor
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -119,6 +153,7 @@
                                     </div>
                                 @endforelse
                             </div>
+
                         @else
                             <div class="h-[600px] flex flex-col items-center justify-center p-20 bg-slate-50 rounded-[3.5rem] border-4 border-dashed border-slate-100">
                                 <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl shadow-slate-200/50 mb-8 border border-slate-100 transform transition-transform hover:scale-110">
