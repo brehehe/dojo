@@ -23,6 +23,11 @@
             Profil</h2>
         <p class="text-blue-400 text-[15px] font-black uppercase tracking-[0.4em] mt-3 opacity-80">Identitas Kontingen &
             Organisasi</p>
+        <div class="mt-4 px-6 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+            <p class="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">
+                Sesi Pendaftaran: {{ now()->translatedFormat('d F Y') }}
+            </p>
+        </div>
     </div>
 
     <form wire:submit.prevent="saveProfile" class="space-y-6">

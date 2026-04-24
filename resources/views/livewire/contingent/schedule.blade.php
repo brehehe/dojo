@@ -8,7 +8,13 @@
             </div>
             <div>
                 <h1 class="text-base font-black text-slate-900 leading-tight">Jadwal Pertandingan</h1>
-                <p class="text-[11px] text-slate-400 font-semibold">{{ $contingent->name }}</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-[11px] text-slate-400 font-semibold">{{ $contingent->name }}</p>
+                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <p class="text-[11px] text-orange-500 font-bold uppercase tracking-tighter">
+                        {{ now()->translatedFormat('d M Y') }}
+                    </p>
+                </div>
             </div>
         </div>
 

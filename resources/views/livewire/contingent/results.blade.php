@@ -62,6 +62,9 @@
                                 @if($champion->accumulated_score)
                                     <div class="text-base font-black text-slate-900">{{ number_format($champion->accumulated_score, 2) }}</div>
                                     <div class="text-[10px] text-slate-400 font-semibold">Total</div>
+                                    <div class="text-[9px] text-slate-300 font-medium mt-1">
+                                        <i class="far fa-clock mr-0.5"></i> {{ $champion->created_at->translatedFormat('d M Y') }}
+                                    </div>
                                 @endif
                             </div>
                         </div>
@@ -138,10 +141,15 @@
                         </div>
 
                         @if($result->winner)
-                            <div class="mt-3 pt-3 border-t border-slate-50 flex items-center gap-2">
-                                <i class="fas fa-crown text-amber-400 text-xs"></i>
-                                <span class="text-xs font-black text-slate-700">{{ $result->winner->name }}</span>
-                                <span class="text-[10px] text-slate-400 font-semibold capitalize">({{ $result->winner_color }})</span>
+                            <div class="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-crown text-amber-400 text-xs"></i>
+                                    <span class="text-xs font-black text-slate-700">{{ $result->winner->name }}</span>
+                                    <span class="text-[10px] text-slate-400 font-semibold capitalize">({{ $result->winner_color }})</span>
+                                </div>
+                                <div class="text-[9px] text-slate-300 font-medium italic">
+                                    {{ $result->created_at->translatedFormat('d M H:i') }}
+                                </div>
                             </div>
                         @endif
                     </div>

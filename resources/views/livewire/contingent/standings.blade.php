@@ -8,7 +8,13 @@
             </div>
             <div>
                 <h1 class="text-base font-black text-slate-900 leading-tight">Statistik & Klasemen</h1>
-                <p class="text-[11px] text-slate-400 font-semibold">{{ $contingent->name }}</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-[11px] text-slate-400 font-semibold">{{ $contingent->name }}</p>
+                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <p class="text-[10px] text-orange-400 font-bold uppercase tracking-tighter">
+                        <i class="fas fa-sync-alt mr-1"></i> Update: {{ now()->translatedFormat('d/m H:i') }}
+                    </p>
+                </div>
             </div>
         </div>
 
