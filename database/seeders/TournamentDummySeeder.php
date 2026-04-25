@@ -119,7 +119,7 @@ class TournamentDummySeeder extends Seeder
                     'unique_code'        => $uniqueCode,
                     'payment_method'     => 'BCA',
                     'referral_code'      => 'KEMPO-' . strtoupper(Str::random(5)),
-                    'status'             => 'verified',
+                    'status'             => rand(0,1) == 1 ? 'verified' : 'pending',
                     'sim_perkemi_confirm' => 'Ya',
                 ]);
 

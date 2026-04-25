@@ -128,6 +128,7 @@
                 <a href="#" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Home</a>
                 <a href="#about" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Tentang Kami</a>
                 <a href="#rundown" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Rundown</a>
+                <a href="#teknik" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Teknik</a>
                 <a href="{{ route('register') }}" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Daftar</a>
                 <a href="#info" class="nav-link text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors duration-300">Kontak</a>
             </div>
@@ -172,6 +173,7 @@
             <a href="#" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Home</a>
             <a href="#about" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Tentang Kami</a>
             <a href="#rundown" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Rundown</a>
+            <a href="#teknik" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Teknik</a>
             <a href="{{ route('register') }}" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Daftar</a>
             <a href="#info" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Kontak</a>
             <div class="w-full h-px bg-white/5 my-2"></div>
@@ -265,7 +267,7 @@
                     </div>
                     
                     <h1 class="hero-title bebas leading-[0.85] text-white tracking-tight"
-                        style="font-size: clamp(3.5rem, 15vw, 10rem);">
+                        style="font-size: clamp(3.5rem, 15vw, 8rem);">
                         SEMANGAT<br><span class="text-orange-600">KEMPO.</span>
                     </h1>
                     
@@ -273,20 +275,20 @@
                         Tingkatkan Potensi Anda Melalui Shorinji Kempo Indonesia. Kejuaraan bergengsi tingkat nasional di Kota Surabaya 2026.
                     </p>
                     
-                    <div class="hero-cta mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <div class="hero-cta mt-5 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden">
+                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden">
                                 <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative flex items-center gap-2">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
                                 </span>
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden shadow-2xl shadow-orange-950/50">
+                            <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden shadow-2xl shadow-orange-950/50">
                                 <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative">Daftar Kontingen</span>
                             </a>
-                            <a href="{{ route('login') }}" class="group inline-flex items-center justify-center gap-3 font-bold text-xs sm:text-sm text-white/70 hover:text-white uppercase tracking-widest px-10 py-5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                            <a href="{{ route('login') }}" class="group inline-flex items-center justify-center gap-3 font-bold text-xs sm:text-sm text-white/70 hover:text-white uppercase tracking-widest px-8 py-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </a>
                         @endauth
@@ -324,7 +326,7 @@
                     </div>
                     
                     <h1 class="hero-title bebas leading-[0.85] text-white tracking-tight"
-                        style="font-size: clamp(3.5rem, 15vw, 10rem);">
+                        style="font-size: clamp(3.5rem, 15vw, 6rem);">
                         EMBU &<br><span class="text-blue-500">RANDORI.</span>
                     </h1>
                     
@@ -332,16 +334,16 @@
                         Tersedia nomor pertandingan Embu Berpasangan dan Randori untuk semua kelompok usia dan tingkatan sabuk.
                     </p>
                     
-                    <div class="hero-cta mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <div class="hero-cta mt-5 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden">
+                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden">
                                 <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative flex items-center gap-2">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
                                 </span>
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-10 py-5 rounded-full transition-all duration-500 overflow-hidden shadow-2xl shadow-blue-950/50">
+                            <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden shadow-2xl shadow-blue-950/50">
                                 <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative">Pendaftaran Online</span>
                             </a>
@@ -370,7 +372,7 @@
                     </div>
                     
                     <h1 class="hero-title bebas leading-[0.85] text-white tracking-tight"
-                        style="font-size: clamp(4rem, 18vw, 12rem);">
+                        style="font-size: clamp(4rem, 18vw, 6rem);">
                         DAFTAR<br><span style="background: linear-gradient(90deg, #ff4d00, #0070ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SEKARANG!</span>
                     </h1>
                     
@@ -378,7 +380,7 @@
                         Segera daftarkan kontingenmu dan jadilah saksi sejarah kejuaraan Shorinji Kempo terbesar tahun ini.
                     </p>
                     
-                    <div class="hero-cta mt-10 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <div class="hero-cta mt-5 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         <a href="{{ route('register') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-12 py-6 rounded-full transition-all duration-500 overflow-hidden shadow-[0_0_50px_-12px_rgba(234,88,12,0.5)]">
                             <div class="absolute inset-0 bg-gradient-to-r from-red-600 via-orange-500 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
                             <span class="relative">MULAI PENDAFTARAN</span>
@@ -398,10 +400,10 @@
                     $items = [
                         '🥋 PIALA WALIKOTA SURABAYA 2026',
                         '⚡ PENDAFTARAN ONLINE DIBUKA',
-                        '🏆 30+ NOMOR PERTANDINGAN',
+                        '🏆 ' . $stats['nomor'] . ' NOMOR PERTANDINGAN',
                         '📍 GOR SURABAYA · JAWA TIMUR',
                         '🎯 EMBU & RANDORI KYU DAN DAN',
-                        '💥 500+ PESERTA TERDAFTAR',
+                        '💥 ' . $stats['peserta'] . ' PESERTA TERDAFTAR',
                         '🌟 SHORINJI KEMPO INDONESIA',
                         '📣 TECHNICAL MEETING WAJIB HADIR',
                     ];
@@ -417,10 +419,10 @@
 
             <!-- Stats + Controls -->
             <div class="bg-black/60 backdrop-blur-2xl border-t border-white/5">
-                <div class="max-w-7xl mx-auto px-4 sm:px-8 py-5 flex items-center justify-between gap-8">
-                    <!-- Stats -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between gap-8">
+                    <!-- Stats (live from DB) -->
                     <div class="hidden lg:flex items-center gap-12">
-                        @foreach([['500+', 'Peserta'], ['30+', 'Nomor'], ['20+', 'Kota'], ['2026', 'Edisi']] as $s)
+                        @foreach([[$stats['peserta'], 'Peserta'], [$stats['nomor'], 'Nomor'], [$stats['kontingen'], 'Kontingen'], ['2026', 'Edisi']] as $s)
                         <div class="flex flex-col">
                             <span class="text-white font-black text-xl leading-none mb-1">{{ $s[0] }}</span>
                             <span class="text-white/30 text-[10px] font-bold uppercase tracking-widest">{{ $s[1] }}</span>
@@ -476,8 +478,8 @@
                     <p class="text-white/50 leading-relaxed mb-6">Kejuaraan Shorinji Kempo Piala Walikota Surabaya merupakan turnamen bergengsi yang mempertemukan kenshi terbaik dari seluruh Jawa Timur untuk bersaing dan menunjukkan teknik terbaik mereka.</p>
                     <p class="text-white/50 leading-relaxed">Diselenggarakan dengan standar PERKEMI Nasional, kejuaraan ini menjadi ajang pengkaderan atlet berprestasi sekaligus wadah silaturahmi antar dojo Kota / Kabupaten Jawa Timur.</p>
 
-                    <div class="grid grid-cols-2 gap-4 mt-10">
-                        @foreach([['fa-map-marker-alt', 'Lokasi', 'GOR Surabaya, Jawa Timur'], ['fa-calendar', 'Jadwal', 'Mei 2026'], ['fa-users', 'Peserta', 'Terbuka Umum (Kyu & Dan)'], ['fa-award', 'Hadiah', 'Piala + Medali + Sertifikat']] as $item)
+                    <div class="grid grid-cols-2 gap-4 mt-5">
+                        @foreach([['fa-map-marker-alt', 'Lokasi', 'Stadion Indoor Gelora Bung Tomo'], ['fa-calendar', 'Jadwal', '14 Juni - 17 Juni 2026'], ['fa-users', 'Peserta', 'Terbuka Umum (Kyu & Dan)'], ['fa-award', 'Hadiah', 'Piala + Medali + Sertifikat']] as $item)
                             <div class="bg-white/5 border border-white/5 rounded-2xl p-4">
                                 <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center mb-3">
                                     <i class="fas {{ $item[0] }} text-orange-400 text-xs"></i>
@@ -515,9 +517,10 @@
             <div class="text-center mb-16">
                 <div class="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-2 mb-6">
                     <i class="fas fa-calendar-alt text-orange-400 text-xs"></i>
-                    <span class="text-orange-400 text-xs font-bold uppercase tracking-widest">Jadwal Kegiatan</span>
+                    <span class="text-orange-400 text-xs font-bold uppercase tracking-widest">Jadwal Kegiatan · 14–17 Juni 2026</span>
                 </div>
                 <h2 class="bebas text-5xl md:text-6xl text-white tracking-wide">RUNDOWN<br><span class="text-orange-400">KEJUARAAN</span></h2>
+                <p class="text-white/40 mt-4 text-sm max-w-lg mx-auto leading-relaxed">Piala Walikota Surabaya 2026 · Stadion Indoor Gelora Bung Tomo</p>
             </div>
 
             <div class="relative">
@@ -526,30 +529,167 @@
 
                 <div class="space-y-8">
                     @foreach([
-                        ['D-1', 'Technical Meeting', 'Pemaparan teknik, nomor pertandingan, dan pengesahan nama atlet. Wajib dihadiri pelatih/manajer kontingen.', 'fa-users', 'orange'],
-                        ['H-1', 'Registrasi Ulang & Timbang Badan', 'Verifikasi kelengkapan dokumen atlet, timbang badan, dan pengambilan nomor undian.', 'fa-weight', 'blue'],
-                        ['Hari 1', 'Pertandingan Embu & Randori – Sesi 1', 'Babak penyisihan Embu Perorangan, Embu Berpasangan, dan Randori putri/putra.', 'fa-sword', 'purple'],
-                        ['Hari 2', 'Pertandingan Semifinal & Final', 'Babak semifinal dan final semua kategori dilanjutkan dengan upacara penghargaan.', 'fa-trophy', 'orange'],
-                    ] as $idx => [$day, $title, $desc, $icon, $color])
+                        [
+                            'D-1', 'Sabtu, 14 Juni 2026', 'Technical Meeting',
+                            'Pemaparan teknik, nomor pertandingan, dan pengesahan nama atlet. Wajib dihadiri pelatih/manajer. Dilanjutkan timbang badan dan undian drawing nomor pertandingan.',
+                            'fa-users', 'orange',
+                            ['07.00 Registrasi & Distribusi Atribut', '08.30 Technical Meeting Embu & Randori', '13.00 Timbang Badan Randori', '15.00 Undian Drawing Nomor'],
+                            'Aula Stadion GBT – Lt. 2'
+                        ],
+                        [
+                            'H-1', 'Minggu, 15 Juni 2026', 'Registrasi Ulang & Persiapan',
+                            'Verifikasi kelengkapan dokumen atlet, timbang badan sesi kedua, gladi resik upacara pembukaan, serta briefing teknis wasit dan juri.',
+                            'fa-clipboard-check', 'blue',
+                            ['06.00 Registrasi Ulang & Timbang Badan', '09.00 Gladi Resik Upacara Pembukaan', '11.00 Briefing Wasit & Juri', '16.00 Free Training Atlet'],
+                            'Hall Utama Stadion GBT'
+                        ],
+                        [
+                            'Hari 1', 'Senin, 16 Juni 2026', 'Penyisihan Embu & Randori',
+                            'Upacara pembukaan resmi dilanjutkan babak penyisihan Embu Tunggal/Berpasangan Kyu & Dan, serta Randori untuk semua kelas putri dan putra.',
+                            'fa-fist-raised', 'purple',
+                            ['07.00 Upacara Pembukaan Resmi', '08.00 Penyisihan Embu Tunggal & Berpasangan', '08.00 Penyisihan Randori Putri/Putra Kelas A–C', '17.00 Rekap Hasil & Pengumuman Finalis'],
+                            'Gelanggang Indoor GBT – 4 Lapangan'
+                        ],
+                        [
+                            'Hari 2', 'Selasa, 17 Juni 2026', 'Final & Upacara Penutupan',
+                            'Babak semifinal dan final seluruh kategori Embu dan Randori. Upacara penyerahan medali, piala, dan penutupan resmi kejuaraan.',
+                            'fa-trophy', 'orange',
+                            ['08.00 Semifinal Randori & Final Embu Tunggal', '09.30 FINAL Randori & Embu Berpasangan/Beregu', '13.00 Penyerahan Medali & Piala', '15.30 Upacara Penutupan Resmi'],
+                            'Gelanggang Indoor GBT – Lapangan Utama'
+                        ],
+                    ] as $idx => [$day, $date, $title, $desc, $icon, $color, $agenda, $venue])
+
+                        @php
+                            $colorMap = [
+                                'orange' => ['ring' => 'bg-orange-500', 'badge' => 'bg-orange-500/20 text-orange-400', 'border' => 'hover:border-orange-500/30', 'dot' => 'bg-orange-500/10 text-orange-400'],
+                                'blue'   => ['ring' => 'bg-blue-500',   'badge' => 'bg-blue-500/20 text-blue-400',   'border' => 'hover:border-blue-500/30',   'dot' => 'bg-blue-500/10 text-blue-400'],
+                                'purple' => ['ring' => 'bg-purple-500', 'badge' => 'bg-purple-500/20 text-purple-400','border' => 'hover:border-purple-500/30', 'dot' => 'bg-purple-500/10 text-purple-400'],
+                            ];
+                            $c = $colorMap[$color] ?? $colorMap['orange'];
+                        @endphp
+
                         <div class="flex flex-col md:flex-row items-center gap-6 {{ $idx % 2 === 0 ? '' : 'md:flex-row-reverse' }}">
                             <div class="md:w-1/2 {{ $idx % 2 === 0 ? 'md:text-right md:pr-16' : 'md:text-left md:pl-16' }}">
-                                <div class="bg-white/5 border border-white/10 rounded-3xl p-6 hover:border-orange-500/30 transition">
-                                    <div class="inline-flex items-center gap-2 mb-3">
-                                        <span class="bg-orange-500/20 text-orange-400 text-[15px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{{ $day }}</span>
+                                <div class="bg-white/5 border border-white/10 rounded-3xl p-6 {{ $c['border'] }} transition-all duration-300">
+
+                                    {{-- Day badge + date --}}
+                                    <div class="flex items-center gap-3 mb-4 {{ $idx % 2 === 0 ? 'md:justify-end' : '' }}">
+                                        <span class="{{ $c['badge'] }} text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{{ $day }}</span>
+                                        <span class="text-white/30 text-xs font-medium">{{ $date }}</span>
                                     </div>
-                                    <h3 class="text-white font-black text-lg mb-2">{{ $title }}</h3>
-                                    <p class="text-white/40 text-sm leading-relaxed">{{ $desc }}</p>
+
+                                    <h3 class="text-white font-black text-xl mb-2">{{ $title }}</h3>
+                                    <p class="text-white/40 text-sm leading-relaxed mb-5">{{ $desc }}</p>
+
+                                    {{-- Agenda list --}}
+                                    <div class="space-y-2 {{ $idx % 2 === 0 ? 'md:text-right' : '' }}">
+                                        @foreach($agenda as $agendaItem)
+                                            <div class="flex items-center gap-2 text-xs text-white/50 {{ $idx % 2 === 0 ? 'md:flex-row-reverse' : '' }}">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $c['ring'] }} shrink-0"></span>
+                                                <span class="font-medium">{{ $agendaItem }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    {{-- Venue --}}
+                                    <div class="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 {{ $idx % 2 === 0 ? 'md:justify-end' : '' }}">
+                                        <i class="fas fa-map-marker-alt text-orange-400 text-[10px]"></i>
+                                        <span class="text-white/30 text-[11px] font-semibold">{{ $venue }}</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            {{-- Center icon --}}
                             <div class="md:w-0 flex-shrink-0 relative">
-                                <div class="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30 relative z-10">
-                                    <i class="fas {{ $icon }} text-white text-xs"></i>
+                                <div class="w-12 h-12 rounded-full {{ $c['ring'] }} flex items-center justify-center shadow-xl relative z-10">
+                                    <i class="fas {{ $icon }} text-white text-sm"></i>
                                 </div>
                             </div>
+
                             <div class="md:w-1/2"></div>
                         </div>
                     @endforeach
                 </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ===== TEKNIK KYU & DAN SECTION ===== -->
+    <section id="teknik" class="py-24" style="background: linear-gradient(160deg, #000838 0%, #0d0020 50%, #1a0008 100%);">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6">
+                    <i class="fas fa-book-open text-blue-400 text-xs"></i>
+                    <span class="text-blue-400 text-xs font-bold uppercase tracking-widest">Materi Teknik Resmi</span>
+                </div>
+                <h2 class="bebas text-5xl md:text-6xl text-white tracking-wide">TEKNIK <span class="text-orange-400">KYU & DAN</span></h2>
+                <p class="text-white/40 mt-4 max-w-xl mx-auto text-sm leading-relaxed">Daftar teknik resmi berdasarkan tingkatan sabuk PERKEMI yang digunakan dalam kompetisi ini.</p>
+            </div>
+
+            {{-- Level tabs --}}
+            <div x-data="{ activeLevel: 0 }">
+
+                {{-- Tab buttons --}}
+                <div class="flex flex-wrap justify-center gap-2 mb-10">
+                    @foreach($techniquesByLevel as $idx => $kyuLevel)
+                        <button @click="activeLevel = {{ $idx }}"
+                            :class="activeLevel === {{ $idx }}
+                                ? 'bg-orange-500 text-white shadow-lg shadow-orange-900/40 scale-105'
+                                : 'bg-white/5 text-white/50 hover:text-white hover:bg-white/10'"
+                            class="px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 border border-white/5">
+                            {{ $kyuLevel->name }}
+                        </button>
+                    @endforeach
+                </div>
+
+                {{-- Panels --}}
+                @foreach($techniquesByLevel as $idx => $kyuLevel)
+                    <div x-show="activeLevel === {{ $idx }}"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 translate-y-4"
+                         x-transition:enter-end="opacity-100 translate-y-0">
+
+                        <div class="bg-white/3 border border-white/8 rounded-3xl overflow-hidden backdrop-blur-sm">
+
+                            {{-- Level header --}}
+                            <div class="bg-gradient-to-r from-orange-600/20 to-blue-600/20 border-b border-white/5 px-8 py-3 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm"
+                                         style="background: {{ str_starts_with($kyuLevel->name, 'Dan') ? 'linear-gradient(135deg,#1e3a8a,#3b82f6)' : 'linear-gradient(135deg,#7c2d12,#ea580c)' }};">
+                                        <span class="text-white bebas text-lg">{{ $kyuLevel->name }}</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-white font-black text-lg">{{ $kyuLevel->name }}</h3>
+                                        <p class="text-white/40 text-xs font-semibold uppercase tracking-widest">{{ $kyuLevel->techniques->count() }} Teknik Wajib</p>
+                                    </div>
+                                </div>
+                                <div class="hidden sm:flex items-center gap-2 bg-white/5 rounded-full px-4 py-2">
+                                    <i class="fas {{ str_starts_with($kyuLevel->name, 'Dan') ? 'fa-star' : 'fa-circle' }} text-orange-400 text-[10px]"></i>
+                                    <span class="text-white/50 text-[11px] font-bold uppercase tracking-widest">
+                                        {{ str_starts_with($kyuLevel->name, 'Dan') ? 'Tingkatan Hitam' : 'Tingkatan Kyu' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- Techniques list grid --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 divide-y divide-white/5 sm:divide-y-0">
+                                @foreach($kyuLevel->techniques as $no => $technique)
+                                    <div class="group flex items-start gap-4 px-6 py-4 hover:bg-white/3 transition-colors border-b border-white/5 last:border-b-0"
+                                         style="{{ $loop->last && $loop->count % 3 !== 0 ? '' : '' }}">
+                                        <span class="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black"
+                                              style="background: {{ str_starts_with($kyuLevel->name, 'Dan') ? 'rgba(59,130,246,0.15)' : 'rgba(234,88,12,0.15)' }}; color: {{ str_starts_with($kyuLevel->name, 'Dan') ? '#60a5fa' : '#fb923c' }};">
+                                            {{ $no + 1 }}
+                                        </span>
+                                        <span class="text-white/80 group-hover:text-white text-sm font-medium leading-snug transition-colors">
+                                            {{ $technique->name }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </section>
@@ -563,14 +703,14 @@
             </p>
             <div class="flex flex-wrap justify-center gap-4">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-10 py-5 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
+                    <a href="{{ route('dashboard') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
                         <i class="fas fa-tachometer-alt"></i> Masuk Dashboard
                     </a>
                 @else
-                    <a href="{{ route('register') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-10 py-5 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
+                    <a href="{{ route('register') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
                         <i class="fas fa-file-signature"></i> Daftar Akun Kontingen
                     </a>
-                    <a href="{{ route('login') }}" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-10 py-5 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3">
+                    <a href="{{ route('login') }}" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </a>
                 @endauth
