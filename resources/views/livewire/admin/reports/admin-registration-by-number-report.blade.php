@@ -18,9 +18,9 @@
             <div class="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-orange-500/10 transition-colors duration-700"></div>
             
             <div class="relative">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div class="grid grid-cols-1 gap-10">
                     <!-- Left: Control -->
-                    <div class="lg:col-span-4 border-r border-slate-100 lg:pr-10">
+                    <div class="border-r border-slate-100 lg:pr-10">
                         <div class="mb-10">
                             <h2 class="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Pilih Kontingen</h2>
                             <p class="text-[15px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed">
@@ -42,7 +42,7 @@
                             </div>
 
                             @if($contingentId && $stats)
-                                <div class="p-6 bg-slate-900 rounded-3xl text-white shadow-xl shadow-slate-900/20">
+                                <div class="p-6 bg-white rounded-3xl text-slate shadow-xl shadow-slate-900/20">
                                     <h4 class="text-[15px] font-black text-orange-400 uppercase tracking-widest mb-4">Statistik Kontingen</h4>
                                     <div class="space-y-4">
                                         <div class="flex items-center justify-between">
@@ -77,7 +77,7 @@
                     </div>
 
                     <!-- Right: Preview -->
-                    <div class="lg:col-span-8">
+                    <div>
                         @if($contingentId && $stats)
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                                 <div>

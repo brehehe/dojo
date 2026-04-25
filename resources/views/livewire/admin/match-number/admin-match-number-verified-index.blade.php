@@ -149,7 +149,9 @@
                                                         <!-- Berat Badan -->
                                                         <td class="py-3 px-4 border border-slate-200 text-center">
                                                             @if($i < count($athletes))
-                                                                <span class="text-[14px] font-bold text-slate-700">{{ $athletes[$i]['weight'] ?? '-' }}</span>
+                                                                <span class="text-[14px] font-bold text-slate-700">{{ isset($athletes[$i]) 
+        ? rtrim(rtrim(number_format($athletes[$i]['weight'], 2, '.', ''), '0'), '.') 
+        : '-' }}</span>
                                                             @endif
                                                         </td>
                                                         <!-- Teknik -->

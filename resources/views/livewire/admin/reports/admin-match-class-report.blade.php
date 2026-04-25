@@ -18,9 +18,9 @@
             <div class="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-orange-500/10 transition-colors duration-700"></div>
             
             <div class="relative">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div class="grid grid-cols-1 gap-10">
                     <!-- Left: Control -->
-                    <div class="lg:col-span-4 lg:border-r lg:border-slate-100 lg:pr-10">
+                    <div class=" lg:border-r lg:border-slate-100 lg:pr-10">
                         <div class="mb-10">
                             <h2 class="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Kriteria Laporan</h2>
                             <p class="text-[15px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed">
@@ -52,7 +52,7 @@
                     </div>
 
                     <!-- Right: Preview -->
-                    <div class="lg:col-span-8">
+                    <div class="">
                         @if($contingentId)
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                 <div>

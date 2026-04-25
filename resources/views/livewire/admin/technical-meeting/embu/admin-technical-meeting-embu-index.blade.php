@@ -629,13 +629,14 @@
                                                         </td>
                                                         <td class="px-4 py-3 border-r border-slate-200">
                                                             @if($isNewTeam)
-                                                                <div class="flex flex-wrap gap-1.5">
-                                                                    @forelse($ath->readable_techniques as $tIdx => $tName)
-                                                                        <span class="text-[15px] font-black text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-lg uppercase">{{ $tIdx + 1 }}. {{ $tName }}</span>
-                                                                    @empty
-                                                                        <span class="text-[15px] text-slate-300 italic">—</span>
-                                                                    @endforelse
-                                                                </div>
+                                                                @forelse($ath->readable_techniques as $tIdx => $tName)
+                                                                    <div class="flex items-center gap-2 mb-2">
+                                                                        <span class="w-5 h-5 inline-flex items-center justify-center bg-orange-100 text-orange-600 rounded-md text-[11px] font-black border border-orange-200 shrink-0">{{ $tIdx + 1 }}</span>
+                                                                        <span class="text-[14px] font-black text-slate-800 uppercase tracking-tight">{{ $tName }}</span>
+                                                                    </div>
+                                                                @empty
+                                                                    <span class="text-[15px] text-slate-300 italic">—</span>
+                                                                @endforelse
                                                             @else
                                                                 <span class="text-[15px] text-slate-300 italic">↳ sda.</span>
                                                             @endif

@@ -222,12 +222,12 @@
                                     <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
                                         <thead class="bg-slate-800 text-white">
                                             <tr>
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[1%]">No.</th>
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[20%]">Nama</th>
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[20%]">Tingkat</th>
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[50%]">Urutan komposisi yang dimainkan :</th>
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[10%]">Kelas</th>
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[10%]">Berat Badan</th>
+                                                <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[1%]">No.</th>
+                                                <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[20%]">Nama</th>
+                                                <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[20%]">Tingkat</th>
+                                                <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[50%]">Urutan komposisi yang dimainkan :</th>
+                                                <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[10%]">Kelas</th>
+                                                <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[10%]">Berat Badan</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-200">
@@ -238,34 +238,53 @@
                                             @endphp
                                             @for($i = 0; $i < $rowCount; $i++)
                                                 <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
-                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200">
+                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200 whitespace-nowrap">
                                                         @if($i < count($athletes))
                                                             <span class="font-bold text-[15px]">{{ $i + 1 }}</span>
                                                         @endif
                                                     </td>
-                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200">
-                                                        @if($i < count($athletes))
-                                                            <span class="font-bold text-[15px]">{{ $athletes[$i]->name }}</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200">
+                                                    <td class="px-6 py-4 whitespace-nowrap border-r border-slate-200 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }}">
+    @if(isset($athletes[$i]))
+        <div class="flex flex-col leading-tight">
+            <span class="text-[15px] font-semibold text-slate-800">
+                {{ $athletes[$i]->name }}
+            </span>
+            <span class="text-[13px] text-slate-500">
+                {{ $athletes[$i]->nik }}
+            </span>
+        </div>
+    @else
+        <span class="text-slate-400 text-sm">-</span>
+    @endif
+</td>
+                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200 whitespace-nowrap">
                                                         @if($i < count($athletes))
                                                             <span class="font-bold text-[15px]">{{ $athletes[$i]->pivot->rank ?? '-' }}</span>
                                                         @endif
                                                     </td>
-                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200">
+                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200 whitespace-nowrap">
                                                         @if($i < count($techniques))
                                                             <span class="font-bold text-[15px]">{{ $i + 1 }}. {{ $allTechniques[$techniques[$i]] ?? '-' }}</span>
                                                         @endif
                                                     </td>
-                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200">
+                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200 whitespace-nowrap">
                                                         @if($i < count($athletes))
-                                                            <span class="font-bold text-[15px]">{{ $athletes[$i]->pivot->weight ?? '-' }}</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200">
-                                                        @if($i < count($athletes))
-                                                            <span class="font-bold text-[15px]">{{ $athletes[$i]->pivot->weight ?? '-' }}</span>
+                                                            <span class="font-bold text-[15px]">
+                                                            {{ isset($athletes[$i]) 
+                                                                ? rtrim(rtrim(number_format($athletes[$i]->pivot->weight, 2, '.', ''), '0'), '.') 
+                                                                : '-' 
+                                                            }}
+                                                        </span>
+                                                                                                                @endif
+                                                                                                            </td>
+                                                                                                            <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200 whitespace-nowrap">
+                                                                                                                @if($i < count($athletes))
+                                                                                                                    <span class="font-bold text-[15px]">
+                                                            {{ isset($athletes[$i]) 
+                                                                ? rtrim(rtrim(number_format($athletes[$i]->pivot->weight, 2, '.', ''), '0'), '.') 
+                                                                : '-' 
+                                                            }}
+                                                        </span>
                                                         @endif
                                                     </td>
                                                 </tr>
