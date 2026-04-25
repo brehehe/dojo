@@ -374,7 +374,7 @@ class TournamentDummySeeder extends Seeder
         // Select techniques (only for embu; pick 2-5 random techniques)
         $selectedTechniqueIds = [];
         if ($matchNumber->draft_type === 'embu' && ! empty($techniqueIds)) {
-            $count = min(rand(2, 5), count($techniqueIds));
+            $count = min(6, count($techniqueIds));
             $shuffled = $techniqueIds;
             shuffle($shuffled);
             $selectedTechniqueIds = array_slice($shuffled, 0, $count);

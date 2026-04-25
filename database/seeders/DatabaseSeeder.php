@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             RefereeSeeder::class,
             MatchNumberSeeder::class,
             SessionRundownSeeder::class,
+            TechniqueSeeder::class,
             TournamentDummySeeder::class,
         ]);
     }

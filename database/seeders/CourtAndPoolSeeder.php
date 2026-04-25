@@ -36,14 +36,5 @@ class CourtAndPoolSeeder extends Seeder
                 'order' => $i,
             ]);
         }
-
-        // Create 20 Pools
-        for ($i = 1; $i <= 20; $i++) {
-            Technique::create([
-                'name' => 'Teknik '.$i,
-                'order' => $i,
-            ]);
-        }
-
     }
 }
