@@ -1,5 +1,5 @@
 <div class="min-h-screen bg-slate-50 p-4 md:p-8" wire:poll.2s="loadActiveMatch">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-full mx-auto">
         <!-- Status Bar -->
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
@@ -13,12 +13,19 @@
                     </p>
                 </div>
             </div>
-            @if($judgeIndex)
-                <div
-                    class="px-4 py-2 bg-slate-900 text-white rounded-2xl text-[15px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
-                    JURI {{ $judgeIndex }}
-                </div>
-            @endif
+            <div class="flex items-center gap-3">
+                <a href="/dashboard" 
+                   class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm">
+                    <i class="fas fa-home"></i>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </a>
+                @if($judgeIndex)
+                    <div
+                        class="px-4 py-2 bg-slate-900 text-white rounded-2xl text-[15px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
+                        JURI {{ $judgeIndex }}
+                    </div>
+                @endif
+            </div>
         </div>
 
         {{-- Warning: user is not a registered referee --}}
