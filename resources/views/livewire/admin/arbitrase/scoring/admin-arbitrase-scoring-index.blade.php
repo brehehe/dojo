@@ -1,21 +1,27 @@
 <div class="space-y-6 animate-in fade-in duration-500 h-full">
 
     {{-- ═══ HEADER ═══ --}}
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    {{-- ═══ FIXED RESET BUTTON ═══ --}}
+    <div class="fixed bottom-8 right-4 z-[100] md:bottom-10 md:right-6">
+        <button wire:click="clearAllCourts" wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
+            class="flex items-center gap-2 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white shadow-2xl shadow-rose-200 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 border-2 border-white/20 backdrop-blur-sm">
+            <i class="fas fa-eraser text-lg"></i>
+            <span class="hidden sm:inline">Reset Semua Lapangan</span>
+            <span class="sm:hidden">Reset</span>
+        </button>
+    </div>
+
+    {{-- ═══ HEADER ═══ --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pr-32 md:pr-48">
         <div>
             <h1 class="text-2xl font-black text-slate-800 tracking-tight">Dashboard Panitera</h1>
             <p class="text-[15px] font-bold uppercase tracking-widest text-slate-800 mt-1">Panggil Drawing per Lapangan
                 — Filter by Kontingen, Pool, Court, Sesi, Rundown & Babak</p>
         </div>
-        {{-- Reset All button --}}
         <div class="flex items-center gap-3">
             <button wire:click="resetFilters"
                 class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-xl text-[15px] font-black uppercase tracking-widest transition-colors">
                 <i class="fas fa-filter"></i> Reset Filter
-            </button>
-            <button wire:click="clearAllCourts" wire:confirm="Reset semua lapangan ke kosong?"
-                class="flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-[15px] font-black uppercase tracking-widest transition-colors">
-                <i class="fas fa-eraser"></i> Reset Semua Lapangan
             </button>
         </div>
     </div>
@@ -94,19 +100,16 @@
                 {{-- TV Monitor links --}}
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <a href="{{ route('admin.arbitrase.scoring.monitor', $courtCard->id) }}" target="_blank"
-                        class="w-full flex items-center justify-center py-2 bg-slate-800 hover:bg-slate-700 text-white text-[13px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
-                        title="Monitor Panggilan">
-                        <i class="fas fa-tv mr-1 text-slate-300"></i> TV Panggilan
+                        class="w-full flex items-center justify-center py-2 bg-slate-800 hover:bg-slate-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
+                        title="Monitor Panggilan">Panggilan
                     </a>
                     <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.court', $courtCard->id) }}" target="_blank"
-                        class="w-full flex items-center justify-center py-2 bg-amber-500 hover:bg-amber-600 text-white text-[13px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
-                        title="Monitor Hasil Sementara">
-                        <i class="fas fa-trophy mr-1 text-amber-100"></i> TV Hasil
+                        class="w-full flex items-center justify-center py-2 bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
+                        title="Monitor Hasil Sementara">Hasil
                     </a>
                     <a href="{{ route('admin.arbitrase.scoring.monitor-timer.court', $courtCard->id) }}" target="_blank"
-                        class="w-full flex items-center justify-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
-                        title="Monitor Timer Lapangan">
-                        <i class="fas fa-stopwatch mr-1 text-emerald-100"></i> TV Timer
+                        class="w-full flex items-center justify-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
+                        title="Monitor Timer Lapangan">Timer
                     </a>
                 </div>
             </div>
@@ -393,17 +396,18 @@
 
                             {{-- Aksi --}}
                             <td class="px-4 py-3 text-center align-middle border-r border-slate-200">
-                                <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-center gap-2">
                                     @if($mn)
                                         <a href="{{ route($detailRoute, $mn->id) }}?round={{ $drawing->round ?? '' }}&pool_id={{ $pool?->id ?? '' }}"
-                                            class="inline-flex items-center justify-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm">
-                                            <i class="fas fa-edit"></i> Input Nilai
+                                            class="inline-flex items-center justify-center gap-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+                                            title="Input Nilai">
+                                            <i class="fas fa-edit"></i>
                                         </a>
                                         <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.match', $mn->id) }}?round={{ $drawing->round ?? '' }}&pool_id={{ $pool?->id ?? '' }}"
                                             target="_blank"
                                             class="inline-flex items-center justify-center gap-2 px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 border border-emerald-200"
                                             title="Monitor Hasil Sementara">
-                                            <i class="fas fa-tv"></i> Monitor
+                                            <i class="fas fa-tv"></i>
                                         </a>
                                     @endif
                                 </div>

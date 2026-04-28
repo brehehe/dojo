@@ -28,26 +28,6 @@
                 @endif
             </div>
         </div>
-        <div class="flex gap-4">
-            <div
-                class="bg-slate-800/80 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-3 shadow-lg">
-                <div class="flex flex-col text-right">
-                    <span
-                        class="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">Shortcut</span>
-                    <span class="text-xs font-bold text-slate-300 mt-1">Space <kbd
-                            class="bg-slate-700 px-1.5 py-0.5 rounded text-white ml-1">Start/Pause</kbd></span>
-                </div>
-            </div>
-            <div
-                class="bg-slate-800/80 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-3 shadow-lg">
-                <div class="flex flex-col text-right">
-                    <span
-                        class="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">Shortcut</span>
-                    <span class="text-xs font-bold text-slate-300 mt-1">Esc <kbd
-                            class="bg-slate-700 px-1.5 py-0.5 rounded text-white ml-1">Reset</kbd></span>
-                </div>
-            </div>
-        </div>
     </div>
 
     {{-- Main Timer Component --}}
@@ -115,16 +95,6 @@
             :class="{ 'text-emerald-400': running, 'text-amber-400': !running && time > 0 && countdown === 0, 'text-orange-500': countdown > 0, 'text-white': time === 0 && countdown === 0 }">
             <span x-show="countdown > 0" x-text="formatCountdown()"></span>
             <span x-show="countdown === 0" x-text="formatTime()">00:00.00</span>
-        </div>
-
-        {{-- Note: No local controls here anymore. Controlled purely by Admin Dashboard --}}
-        <div class="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-6">
-            <div
-                class="bg-slate-800/80 backdrop-blur-md px-6 py-3 rounded-2xl border border-slate-700 flex items-center gap-3 shadow-lg">
-                <i class="fas fa-lock text-slate-500"></i>
-                <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Dikendalikan dari Dashboard
-                    Juri</span>
-            </div>
         </div>
     </div>
 </div>

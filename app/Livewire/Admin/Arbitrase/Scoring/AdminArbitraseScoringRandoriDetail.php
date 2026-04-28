@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
+use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
@@ -49,7 +50,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
             $drawingData = $matchNumber->drawing_data ?? [];
 
             // Migrate legacy single-elimination to double_elimination if needed
-            if (!isset($drawingData['bracket_type']) || $drawingData['bracket_type'] !== 'double_elimination') {
+            if (! isset($drawingData['bracket_type']) || $drawingData['bracket_type'] !== 'double_elimination') {
                 $drawingData = $this->migrateLegacyBracket($drawingData);
                 if ($drawingData) {
                     $this->matchNumber->update(['drawing_data' => $drawingData]);
@@ -58,14 +59,14 @@ class AdminArbitraseScoringRandoriDetail extends Component
 
             $this->drawingData = $drawingData ?? [];
         } catch (\Exception $e) {
-            logger()->error('Error mounting Randori Scoring: ' . $e->getMessage());
+            logger()->error('Error mounting Randori Scoring: '.$e->getMessage());
         }
     }
 
     /** Wrap old single-elimination 'rounds' format into double_elimination UB only. */
     private function migrateLegacyBracket(array $data): array
     {
-        if (empty($data) || (!isset($data['rounds']) && !isset($data['bracket']))) {
+        if (empty($data) || (! isset($data['rounds']) && ! isset($data['bracket']))) {
             return $data;
         }
 
@@ -131,7 +132,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
 
             foreach ($matches as $m => $match) {
                 // Skip if already has winner_next
-                if (!empty($match['winner_next'])) {
+                if (! empty($match['winner_next'])) {
                     continue;
                 }
 
@@ -242,7 +243,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
                 continue;
             }
 
-            if (!$match) {
+            if (! $match) {
                 continue;
             }
 
@@ -252,7 +253,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
             $winnerData = $match[$winnerSlot] ?? null;
             $loserData = $match[$loserSlot] ?? null;
 
-            if (!$winnerData) {
+            if (! $winnerData) {
                 continue;
             }
 
@@ -298,7 +299,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Bracket Diperbaiki',
-            'text' => 'Routing diperbaiki & ' . $fixed . ' hasil di-replay ulang. Lanjutkan input skor.',
+            'text' => 'Routing diperbaiki & '.$fixed.' hasil di-replay ulang. Lanjutkan input skor.',
         ]);
     }
 
@@ -306,7 +307,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
 
     public function callMatch(string $bracket, int $roundIdx, int $matchIdx)
     {
-        $nodeKey = $bracket . '_' . $roundIdx . '_' . $matchIdx;
+        $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
         $this->matchNumber->update(['active_bracket_node' => $nodeKey]);
 
         // Pastikan drawingData ter-sync dengan DB
@@ -327,14 +328,18 @@ class AdminArbitraseScoringRandoriDetail extends Component
 
             // Handle mapping bracket keys
             $targetBracket = $bracket;
-            if ($bracket === 'ub') $targetBracket = 'upper_bracket';
-            if ($bracket === 'lb') $targetBracket = 'lower_bracket';
+            if ($bracket === 'ub') {
+                $targetBracket = 'upper_bracket';
+            }
+            if ($bracket === 'lb') {
+                $targetBracket = 'lower_bracket';
+            }
 
             // Announcement
             $match = $this->drawingData[$targetBracket]['rounds'][$roundIdx][$matchIdx] ?? null;
 
             if ($match) {
-                $this->dispatchAnnouncer($match, strtoupper($targetBracket) . ' Round ' . ($roundIdx + 1));
+                $this->dispatchAnnouncer($match, strtoupper($targetBracket).' Round '.($roundIdx + 1));
             }
         }
 
@@ -378,13 +383,49 @@ class AdminArbitraseScoringRandoriDetail extends Component
         ]);
     }
 
+    public function dismissMatch()
+    {
+        // Reset Timer Cache
+        $courtId = $this->getCourtId();
+        if ($courtId) {
+            $state = [
+                'status' => 'stopped',
+                'elapsed_ms' => 0,
+                'started_at_ms' => null,
+            ];
+            Cache::put("court_{$courtId}_timer", $state);
+            $this->dispatch('timer-updated');
+        }
+
+        $this->matchNumber->update(['active_bracket_node' => null]);
+
+        $drawing = DrawingMatchNumber::with('court')
+            ->where('match_number_id', $this->matchNumber->id)
+            ->first();
+
+        if ($drawing && $drawing->court_id) {
+            $drawing->court->update([
+                'active_match_id' => null,
+                'active_drawing_id' => null,
+                'active_registration_id' => null,
+                'active_bracket_node' => null,
+            ]);
+        }
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Panggilan Ditutup',
+            'text' => 'Wasit, TV Monitor, dan Timer telah direset.',
+        ]);
+    }
+
     // ─── BUKA MODAL SKOR ─────────────────────────────────────
 
     public function openMatchModal(string $bracket, int $roundIdx, int $matchIdx)
     {
         $match = $this->getMatchData($bracket, $roundIdx, $matchIdx);
 
-        if (!$match || (!$match['athlete1'] && !$match['athlete2'])) {
+        if (! $match || (! $match['athlete1'] && ! $match['athlete2'])) {
             return;
         }
 
@@ -395,7 +436,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
             'data' => $match,
         ];
 
-        $nodeKey = $bracket . '_' . $roundIdx . '_' . $matchIdx;
+        $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
         $existing = RandoriMatchResult::where('match_number_id', $this->matchNumber->id)
             ->where('bracket_node', $nodeKey)
             ->first();
@@ -435,7 +476,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
     {
         $gf = $this->drawingData['grand_final'] ?? null;
 
-        if (!$gf || (!$gf['athlete1'] && !$gf['athlete2'])) {
+        if (! $gf || (! $gf['athlete1'] && ! $gf['athlete2'])) {
             return;
         }
 
@@ -516,7 +557,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
      */
     public function submitScoring()
     {
-        if (!$this->activeMatch) {
+        if (! $this->activeMatch) {
             return;
         }
 
@@ -552,7 +593,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
             return;
         }
 
-        if (!$match) {
+        if (! $match) {
             return;
         }
 
@@ -560,7 +601,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
         $loserSlot = ($winnerSlot === 'athlete1') ? 'athlete2' : 'athlete1';
         $loserData = $match[$loserSlot] ?? null;
 
-        if (!$winnerData) {
+        if (! $winnerData) {
             return;
         }
 
@@ -610,11 +651,11 @@ class AdminArbitraseScoringRandoriDetail extends Component
         $data = $this->propagateBracketByes($data);
 
         // ── Save result to DB ────────────────────────────────
-        $nodeKey = $bracket . '_' . $roundIdx . '_' . $matchIdx;
+        $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
         RandoriMatchResult::updateOrCreate(
             ['match_number_id' => $this->matchNumber->id, 'bracket_node' => $nodeKey],
             [
-                'bracket_node_index' => $roundIdx . '_' . $matchIdx,
+                'bracket_node_index' => $roundIdx.'_'.$matchIdx,
                 'bracket_section' => $bracket,
                 'winner_color' => $winnerSlot,
                 'score_red' => $this->scoreRed,
@@ -635,7 +676,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Pemenang Dicatat!',
-            'text' => ($winnerData['name'] ?? '-') . ' maju ke babak berikutnya.',
+            'text' => ($winnerData['name'] ?? '-').' maju ke babak berikutnya.',
         ]);
     }
 
@@ -768,7 +809,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
     public function getTimerState()
     {
         $courtId = $this->getCourtId();
-        if (!$courtId) {
+        if (! $courtId) {
             return ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null];
         }
 
@@ -782,7 +823,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
     public function startCountdown()
     {
         $courtId = $this->getCourtId();
-        if (!$courtId) {
+        if (! $courtId) {
             return;
         }
 
@@ -796,7 +837,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
     public function startTimer()
     {
         $courtId = $this->getCourtId();
-        if (!$courtId) {
+        if (! $courtId) {
             return;
         }
 
@@ -812,7 +853,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
     public function pauseTimer()
     {
         $courtId = $this->getCourtId();
-        if (!$courtId) {
+        if (! $courtId) {
             return;
         }
 
@@ -832,7 +873,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
     public function stopTimer()
     {
         $courtId = $this->getCourtId();
-        if (!$courtId) {
+        if (! $courtId) {
             return;
         }
 
@@ -880,6 +921,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
             'text' => 'Panggilan ditutup.',
         ]);
     }
+
     private function dispatchAnnouncer(array $match, string $label)
     {
         $a1 = $match['athlete1'] ?? null;
@@ -911,5 +953,55 @@ class AdminArbitraseScoringRandoriDetail extends Component
         $text .= "Silakan menuju {$courtName}. Sekali lagi, panggilan pertandingan untuk {$matchName}. Silakan menuju {$courtName}. Terima kasih.";
 
         $this->dispatch('play-announcer', ['text' => $text]);
+    }
+
+    public function clearCourt(int $courtId): void
+    {
+        $court = Court::findOrFail($courtId);
+        $court->update([
+            'active_match_id' => null,
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+            'active_drawing_id' => null,
+        ]);
+
+        // Clear timer cache for this court
+        Cache::forget("court_{$courtId}_timer");
+
+        $this->dispatch('swal', [
+            'icon' => 'info',
+            'title' => 'Lapangan Dibersihkan',
+            'text' => $court->name.' sekarang idle / kosong.',
+        ]);
+    }
+
+    public function clearAllCourts(): void
+    {
+        $allCourts = Court::all();
+
+        // Reset all courts
+        foreach ($allCourts as $court) {
+            $court->update([
+                'active_match_id' => null,
+                'active_registration_id' => null,
+                'active_bracket_node' => null,
+                'active_drawing_id' => null,
+            ]);
+
+            // Clear timer cache for each court
+            Cache::forget("court_{$court->id}_timer");
+        }
+
+        // Reset all match numbers active states
+        MatchNumber::query()->update([
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+        ]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Semua Lapangan & Match Di-reset',
+            'text' => 'Seluruh status aktif telah dibersihkan secara serentak.',
+        ]);
     }
 }

@@ -125,13 +125,29 @@
                                 <i class="fas fa-bullhorn text-[15px]"></i> Panggil
                             </button>
                         @else
-                            <button
-                                wire:click="openMatchModal('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
-                                class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-orange-600 transition-all shadow-sm"
-                                title="Input Skor"
-                            >
-                                <i class="fas fa-edit text-[15px]"></i> Skor
-                            </button>
+                            <div class="flex items-center gap-1.5">
+                                <button
+                                    wire:click="callMatch('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
+                                    class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-amber-100 text-amber-700 hover:bg-amber-500 hover:text-white transition-all border border-amber-200"
+                                    title="Panggil Ulang"
+                                >
+                                    <i class="fas fa-redo text-[15px]"></i>
+                                </button>
+                                <button
+                                    wire:click="dismissMatch()"
+                                    class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all border border-rose-100"
+                                    title="Tutup Panggilan"
+                                >
+                                    <i class="fas fa-times text-[15px]"></i>
+                                </button>
+                                <button
+                                    wire:click="openMatchModal('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
+                                    class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-orange-600 transition-all shadow-sm"
+                                    title="Input Skor"
+                                >
+                                    <i class="fas fa-edit text-[15px]"></i> Skor
+                                </button>
+                            </div>
                         @endif
                     </div>
 

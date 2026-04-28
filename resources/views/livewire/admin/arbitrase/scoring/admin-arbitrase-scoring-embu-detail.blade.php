@@ -1,4 +1,13 @@
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 p-4 md:p-6" x-data="{ round: 1 }">
+    {{-- ═══ FIXED RESET BUTTON ═══ --}}
+    <div class="fixed bottom-8 right-4 z-[100] md:bottom-10 md:right-6">
+        <button wire:click="clearAllCourts" wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
+            class="flex items-center gap-2 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white shadow-2xl shadow-rose-200 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 border-2 border-white/20 backdrop-blur-sm">
+            <i class="fas fa-eraser text-lg"></i>
+            <span class="hidden sm:inline">Reset Semua Lapangan</span>
+            <span class="sm:hidden">Reset</span>
+        </button>
+    </div>
     <div class="max-w-[1500px] mx-auto space-y-4">
 
         {{-- ====== HEADER ====== --}}
@@ -348,13 +357,13 @@
                             ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-2xl scale-[1.02] z-10' 
                             : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-300 hover:shadow-xl' }}">
                         
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-transform duration-500 group-hover:scale-110
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-transform duration-500 group-hover:scale-110 flex-shrink-0
                                     {{ $isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-slate-400 border border-slate-100 shadow-sm' }}">
                                     {{ $item['sequence_number'] ?? ($no + 1) }}
                                 </div>
-                                <div class="flex-1 min-w-0">
+                                <div class="min-w-0">
                                     <h4 class="text-[15px] font-black text-slate-800 uppercase leading-tight truncate" title="@foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach">
                                         @foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach
                                     </h4>
@@ -365,8 +374,12 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-1.5 absolute top-4 right-4">
+                            <div class="flex items-center gap-1.5 flex-shrink-0">
                                 @if($isActive)
+                                    <button wire:click="callParticipant({{ $item['id'] }})"
+                                        class="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="Panggil Ulang">
+                                        <i class="fas fa-redo text-sm"></i>
+                                    </button>
                                     <button wire:click="dismissParticipant()" 
                                         class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="Tutup / Lepas dari Wasit">
                                         <i class="fas fa-times text-sm"></i>

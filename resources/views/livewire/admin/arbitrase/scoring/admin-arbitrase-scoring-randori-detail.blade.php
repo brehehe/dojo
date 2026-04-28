@@ -1,4 +1,13 @@
 <div class="p-4 md:p-6 space-y-6">
+    {{-- ═══ FIXED RESET BUTTON ═══ --}}
+    <div class="fixed bottom-8 right-4 z-[100] md:bottom-10 md:right-6">
+        <button wire:click="clearAllCourts" wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
+            class="flex items-center gap-2 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white shadow-2xl shadow-rose-200 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 border-2 border-white/20 backdrop-blur-sm">
+            <i class="fas fa-eraser text-lg"></i>
+            <span class="hidden sm:inline">Reset Semua Lapangan</span>
+            <span class="sm:hidden">Reset</span>
+        </button>
+    </div>
 
     {{-- ====== HEADER ====== --}}
     <div>
@@ -219,14 +228,26 @@
                                             <i class="fas fa-bullhorn text-[15px]"></i> Panggil
                                         </button>
                                     @else
-                                        <button wire:click="openGrandFinalModal()"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[15px] font-black uppercase bg-slate-900 text-white hover:bg-amber-600 transition-all shadow-sm">
-                                            <i class="fas fa-edit text-[15px]"></i> Input Skor
-                                        </button>
+                                        <div class="flex items-center gap-2">
+                                            <button wire:click="callGrandFinal()"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-amber-100 border border-amber-300 text-amber-700 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                                                title="Panggil Ulang">
+                                                <i class="fas fa-redo text-[15px]"></i>
+                                            </button>
+                                            <button wire:click="dismissMatch()"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                                                title="Tutup Panggilan">
+                                                <i class="fas fa-times text-[15px]"></i>
+                                            </button>
+                                            <button wire:click="openGrandFinalModal()"
+                                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[15px] font-black uppercase bg-slate-900 text-white hover:bg-amber-600 transition-all shadow-sm">
+                                                <i class="fas fa-edit text-[15px]"></i> Input Skor
+                                            </button>
+                                        </div>
                                     @endif
                                 </div>
                                 
-                                                                     <div wire:ignore x-data="{
+                                        <div wire:ignore x-data="{
                                             time: 0,
                                             running: false,
                                             countdown: 0,
@@ -455,15 +476,128 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button wire:click="resetDetailedScoring"
-                                    wire:confirm="Reset semua nilai di panel ini ke nol?"
-                                    class="h-12 px-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-[15px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
-                                <i class="fas fa-undo"></i> Reset Nilai
-                            </button>
-                            <button wire:click="$set('showModal', false)" class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-95">
-                                <i class="fas fa-times text-lg"></i>
-                            </button>
+                        <div class="flex items-center gap-4">
+                            <div wire:ignore x-data="{
+                                        time: 0,
+                                        running: false,
+                                        countdown: 0,
+                                        lastTickSecond: -1,
+                                        interpolInterval: null,
+                                        syncInterval: null,
+                                        formatTime() {
+                                            let t = Math.max(0, this.time);
+                                            let m = Math.floor(t / 60000);
+                                            let s = Math.floor((t % 60000) / 1000);
+                                            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                                        },
+                                        formatCountdown() {
+                                            if (this.countdown === 5) return 'Siap';
+                                            if (this.countdown === 4) return '3';
+                                            if (this.countdown === 3) return '2';
+                                            if (this.countdown === 2) return '1';
+                                            if (this.countdown === 1) return 'Mulai';
+                                            return '';
+                                        },
+                                        async sync() {
+                                            let state = await $wire.getTimerState();
+                                            if (!state) return;
+                                            
+                                            let oldCountdown = this.countdown;
+                                            
+                                            if (state.status === 'running') {
+                                                this.running = true;
+                                                this.countdown = 0;
+                                                this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+                                            } else if (state.status === 'countdown') {
+                                                this.running = false;
+                                                let remaining = state.countdown_end_ms - Date.now();
+                                                this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                                this.time = state.elapsed_ms || 0;
+                                                if (remaining <= 0) { $wire.startTimer(); }
+                                            } else {
+                                                this.running = false;
+                                                this.countdown = 0;
+                                                this.time = state.elapsed_ms || 0;
+                                            }
+
+                                            // Trigger Countdown Voice
+                                            if (this.countdown > 0 && this.countdown !== oldCountdown) {
+                                                window.speakCountdown(this.formatCountdown());
+                                            }
+                                        },
+                                        init() {
+                                            this.sync();
+                                            this.interpolInterval = setInterval(() => { 
+                                                if (this.running) {
+                                                    this.time += 30; 
+                                                    let currentSecond = Math.floor(this.time / 1000);
+                                                    
+                                                    // Play tick only if second has actually changed
+                                                    if (currentSecond > this.lastTickSecond) {
+                                                        window.playTimerTick(1000, 0.05);
+                                                        this.lastTickSecond = currentSecond;
+                                                    }
+                                                } else {
+                                                    // Update tracker while paused so it doesn't double-tick on resume
+                                                    this.lastTickSecond = Math.floor(this.time / 1000);
+                                                }
+                                            }, 30);
+                                            this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                                        },
+                                        start() {
+                                            if (!this.running && this.countdown === 0) {
+                                                $wire.startCountdown();
+                                            }
+                                        },
+                                        pause() { $wire.pauseTimer(); },
+                                        stop() { $wire.stopTimer(); },
+                                        finish() {
+                                            let capturedTime = this.time;
+                                            $wire.pauseTimer();
+                                            Swal.fire({
+                                                title: 'Apakah anda yakin?',
+                                                html: '<p>Pertandingan akan ditandai <b>Selesai</b>.<br>Panggilan akan ditutup / dinonaktifkan.</p>',
+                                                icon: 'warning',
+                                                showCancelButton: true,
+                                                confirmButtonText: 'Ya, Selesai!',
+                                                cancelButtonText: 'Batal',
+                                                confirmButtonColor: '#2563eb',
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    $wire.finishMatch();
+                                                } else {
+                                                    $wire.startTimer();
+                                                }
+                                            });
+                                        }
+                                    }" class="flex items-center gap-4 bg-amber-50/50 border border-amber-200/60 px-4 py-2 rounded-2xl">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-stopwatch text-amber-500"></i>
+                                        <div class="text-xl font-black font-mono tracking-wider min-w-[60px]" :class="countdown > 0 ? 'text-orange-500' : 'text-amber-700'">
+                                            <span x-show="countdown > 0" x-text="formatCountdown()"></span>
+                                            <span x-show="countdown === 0" x-text="formatTime()">00:00</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <button x-show="!running && countdown === 0" @click="start()" class="w-8 h-8 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors shadow-sm" title="Start Timer"><i class="fas fa-play text-xs"></i></button>
+                                        <button x-show="running" @click="pause()" class="w-8 h-8 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shadow-sm" title="Pause Timer"><i class="fas fa-pause text-xs"></i></button>
+                                        <button @click="stop()" class="w-8 h-8 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors shadow-sm" title="Stop & Reset"><i class="fas fa-stop text-xs"></i></button>
+                                        <button x-show="running || time > 0" @click="finish()" class="h-8 px-3 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm ml-1" title="Selesai & Tutup">
+                                            <i class="fas fa-flag-checkered text-xs mr-1"></i><span class="text-[11px] font-black uppercase tracking-wider">Selesai</span>
+                                        </button>
+                                    </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button wire:click="resetDetailedScoring"
+                                        wire:confirm="Reset semua nilai di panel ini ke nol?"
+                                        class="h-12 px-4 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-[15px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+                                    <i class="fas fa-undo"></i> Reset Nilai
+                                </button>
+                                <button wire:click="$set('showModal', false)" class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-95">
+                                    <i class="fas fa-times text-lg"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 

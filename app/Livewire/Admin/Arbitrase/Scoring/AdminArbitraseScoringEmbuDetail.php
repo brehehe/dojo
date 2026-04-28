@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
+use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
 use App\Models\MatchNumber\MatchNumber;
@@ -305,6 +306,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 if ($a->nilai_akhir != $b->nilai_akhir) {
                     return $b->nilai_akhir <=> $a->nilai_akhir; // Descending
                 }
+
                 return $b->judge_1 <=> $a->judge_1; // Tie-break: Judge 1 Descending
             })->values();
         } else {
@@ -318,15 +320,16 @@ class AdminArbitraseScoringEmbuDetail extends Component
             $sorted = $scores->sort(function ($a, $b) use ($penyisihanScores) {
                 $pA = $penyisihanScores[$a->registration_id] ?? null;
                 $pB = $penyisihanScores[$b->registration_id] ?? null;
-                
+
                 $totalA = $a->nilai_akhir + ($pA ? $pA->nilai_akhir : 0);
                 $totalB = $b->nilai_akhir + ($pB ? $pB->nilai_akhir : 0);
 
                 if ($totalA != $totalB) {
                     return $totalB <=> $totalA; // Descending
                 }
+
                 // If tied, use Judge 1 from current (Final) round
-                return $b->judge_1 <=> $a->judge_1; 
+                return $b->judge_1 <=> $a->judge_1;
             })->values();
         }
 
@@ -363,12 +366,11 @@ class AdminArbitraseScoringEmbuDetail extends Component
         // The score at the boundary (last qualifying position)
         $boundaryScoreObj = $scores->get($threshold - 1);
         $boundaryVal = $boundaryScoreObj?->nilai_akhir;
-        $boundaryJ1  = $boundaryScoreObj?->judge_1;
+        $boundaryJ1 = $boundaryScoreObj?->judge_1;
 
         // Find all who share this exact score and Judge 1 tie-break (if needed)
         // Actually, a tie for qualifying usually means exactly same final score AND same tiebreaker
-        $tied = $scores->filter(fn ($s) => 
-            (float) $s->nilai_akhir === (float) $boundaryVal && 
+        $tied = $scores->filter(fn ($s) => (float) $s->nilai_akhir === (float) $boundaryVal &&
             (float) $s->judge_1 === (float) $boundaryJ1
         );
 
@@ -598,11 +600,11 @@ class AdminArbitraseScoringEmbuDetail extends Component
         $registrations = $registrations->sort(function ($a, $b) {
             $rankA = $a['score']?->rank ?? 999;
             $rankB = $b['score']?->rank ?? 999;
-            
+
             if ($rankA != $rankB) {
                 return $rankA <=> $rankB;
             }
-            
+
             return $a['sequence_number'] <=> $b['sequence_number'];
         })->values();
 
@@ -652,6 +654,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
             'started_at_ms' => null,
         ]);
     }
+
     public function startCountdown()
     {
         $courtId = $this->getCourtId();
@@ -721,7 +724,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
     public function dismissParticipant()
     {
         $this->matchNumber->update(['active_registration_id' => null]);
-        
+
         $courtId = $this->getCourtId();
         if ($courtId) {
             $state = [
@@ -730,16 +733,66 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 'started_at_ms' => null,
             ];
             Cache::put("court_{$courtId}_timer", $state);
-            
-            \App\Models\Court\Court::where('id', $courtId)->update([
+
+            Court::where('id', $courtId)->update([
                 'active_registration_id' => null,
             ]);
         }
 
         $this->dispatch('swal', [
-            'icon' => 'info',
+            'icon' => 'success',
             'title' => 'Panggilan Ditutup',
-            'text' => 'Peserta telah dilepas dari layar wasit.',
+            'text' => 'Wasit, TV Monitor, dan Timer telah direset.',
+        ]);
+    }
+
+    public function clearCourt(int $courtId): void
+    {
+        $court = Court::findOrFail($courtId);
+        $court->update([
+            'active_match_id' => null,
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+            'active_drawing_id' => null,
+        ]);
+
+        // Clear timer cache for this court
+        Cache::forget("court_{$courtId}_timer");
+
+        $this->dispatch('swal', [
+            'icon' => 'info',
+            'title' => 'Lapangan Dibersihkan',
+            'text' => $court->name.' sekarang idle / kosong.',
+        ]);
+    }
+
+    public function clearAllCourts(): void
+    {
+        $allCourts = Court::all();
+
+        // Reset all courts
+        foreach ($allCourts as $court) {
+            $court->update([
+                'active_match_id' => null,
+                'active_registration_id' => null,
+                'active_bracket_node' => null,
+                'active_drawing_id' => null,
+            ]);
+
+            // Clear timer cache for each court
+            Cache::forget("court_{$court->id}_timer");
+        }
+
+        // Reset all match numbers active states
+        MatchNumber::query()->update([
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+        ]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Semua Lapangan & Match Di-reset',
+            'text' => 'Seluruh status aktif telah dibersihkan secara serentak.',
         ]);
     }
 }

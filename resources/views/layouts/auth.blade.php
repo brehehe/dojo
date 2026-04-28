@@ -10,7 +10,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
     
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -22,7 +22,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="font-['Ubuntu'] antialiased bg-[#0f2b3d] overflow-x-hidden min-h-screen flex items-center justify-center p-6 relative">
+<body class="font-sans antialiased bg-[#0f2b3d] overflow-x-hidden min-h-screen flex items-center justify-center p-6 relative">
     <!-- Animated background decoration -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
         <div class="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-orange-600 rounded-full blur-[120px] animate-pulse"></div>
