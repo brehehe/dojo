@@ -4,7 +4,9 @@ namespace App\Livewire\Admin\TechnicalMeeting\Randori;
 
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
+use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\Pool\Pool;
 use App\Models\RandoriMatchResult;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
@@ -22,7 +24,35 @@ class AdminTechnicalMeetingRandoriIndex extends Component
 
     public ?int $selectedCourtId = null;
 
+    public ?int $selectedAgeGroupId = null;
+
+    public ?int $selectedMatchNumberId = null;
+
+    public ?int $selectedPoolId = null;
+
+    public ?string $selectedGender = null;
+
     public string $globalTab = 'sebelum';
+
+    public function updatedSelectedAgeGroupId()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
+    public function updatedSelectedCourtId()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
+    public function updatedSelectedPoolId()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
+    public function updatedSelectedGender()
+    {
+        $this->selectedMatchNumberId = null;
+    }
 
     public function paginationView(): string
     {
@@ -58,6 +88,19 @@ class AdminTechnicalMeetingRandoriIndex extends Component
 
         // Spread athletes to avoid same contingent in early matchups
         $grouped = $athletesQuery->groupBy('contingent_name');
+        $uniqueContingentCount = $grouped->count();
+
+        if ($uniqueContingentCount <= 3) {
+            $this->generatingMatchId = null;
+
+            // $this->dispatch('swal', [
+            //     'icon' => 'error',
+            //     'title' => 'Gagal Membuat Bagan',
+            //     'text' => "Kelas ini hanya diikuti oleh {$uniqueContingentCount} kontingen. Minimal 4 kontingen agar dapat dipertandingkan.",
+            // ]);
+            return;
+        }
+
         $spreadAthletes = [];
         $maxPerContingent = $grouped->max(fn ($c) => $c->count());
         for ($i = 0; $i < $maxPerContingent; $i++) {
@@ -81,8 +124,16 @@ class AdminTechnicalMeetingRandoriIndex extends Component
             $bracketSize *= 2;
         }
 
-        // 3. Build Double Elimination structure
-        $drawingData = $this->buildDoubleElimination($athletes, $bracketSize);
+        // 3. Build Elimination structure
+        if ($totalAthletes <= 4) {
+            $drawingData = $this->buildDoubleElimination($athletes, $bracketSize);
+            $typeLabel = 'Double Elimination';
+            $drawingData['type'] = 'double_elimination';
+        } else {
+            $drawingData = $this->buildSingleElimination($athletes, $bracketSize);
+            $typeLabel = 'Single Elimination';
+            $drawingData['type'] = 'single_elimination';
+        }
 
         $match->update([
             'drawing_data' => $drawingData,
@@ -115,135 +166,104 @@ class AdminTechnicalMeetingRandoriIndex extends Component
         $this->generatingMatchId = null;
         $this->dispatch('swal', [
             'icon' => 'success',
-            'title' => 'Bagan Double Elimination Dibuat!',
-            'text' => $totalAthletes.' atlet | Bagan '.$bracketSize.' slot | UB + LB',
+            'title' => 'Bagan '.$typeLabel.' Dibuat!',
+            'text' => $totalAthletes.' atlet | Bagan '.$bracketSize.' slot',
         ]);
     }
 
     private function buildDoubleElimination(array $athletes, int $bracketSize): array
     {
         $n = count($athletes);
-
-        // ── MAXIMIZE PEREMPATAN: floor(n/2) real matches, at most 1 lolos ────
-        // numPrelim  = floor(n/2)  → everyone fights, except 1 if odd number
-        // numDirect  = n % 2       → 0 if even (everyone fights), 1 if odd (top seed lolos)
-        // e.g.  4 → 2 matches, 0 lolos | 5 → 2 matches, 1 lolos
-        //        7 → 3 matches, 1 lolos | 9 → 4 matches, 1 lolos | 10 → 5 matches, 0 lolos
-        $numPrelim = (int) ($n / 2); // floor(n/2)
-        $numDirect = $n % 2;         // 0 or 1
-        $directAthletes = array_slice($athletes, 0, $numDirect);
-        $prelimAthletes = array_slice($athletes, $numDirect); // 2 * numPrelim athletes
-
-        // ── Recalculate mainSize based on R1 athlete count = ceil(n/2) ────────
-        // R1 will receive numPrelim winners + numDirect lolos = ceil(n/2) athletes.
-        // mainSize = next power-of-2 ≥ ceil(n/2) to keep the bracket power-of-2.
-        $r1AthleteCount = $numPrelim + $numDirect; // = ceil(n/2)
-        $mainSize = 2;
-        while ($mainSize < $r1AthleteCount) {
-            $mainSize *= 2;
+        if ($n === 0) {
+            return [];
         }
-        $bracketSize = $mainSize * 2; // full bracket size (unused for round calc but kept for info)
 
-        // ── Seeded positions in main bracket (mainSize slots) ────────────────
-        $mainSeedOrder = $this->generateSeedOrder($mainSize); // pos => seedNum
-        $seedToPos = array_flip($mainSeedOrder);          // seedNum => pos
+        // 1. Determine Bracket Size (Next Power of 2)
+        $size = 2;
+        while ($size < $n) {
+            $size *= 2;
+        }
+        $bracketSize = $size;
 
-        // Pre-fill mainSize slots with direct athletes and reserve for prelim winners
-        $r1Slots = array_fill(0, $mainSize, null);
-        $r0TargetSlots = []; // r0 match index => r1 slot position
+        $mainK = (int) log($bracketSize, 2);
+        // LB Rounds = 2 * log2(N) - 2
+        $lbRoundsCount = max(0, 2 * $mainK - 2);
 
-        for ($s = 1; $s <= $mainSize; $s++) {
-            $pos = $seedToPos[$s] ?? ($s - 1);
-            if ($s <= $numDirect) {
-                $r1Slots[$pos] = $directAthletes[$s - 1];
+        // 2. Drawing Seeding
+        $seedOrder = $this->generateSeedOrder($bracketSize);
+        $seedToPos = array_flip($seedOrder);
+
+        // 3. Fill initial slots, padding with BYE
+        $slots = array_fill(0, $bracketSize, ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-']);
+        for ($i = 0; $i < $n; $i++) {
+            $pos = $seedToPos[$i + 1] ?? $i;
+            $slots[$pos] = $athletes[$i];
+        }
+
+        // 4. Initialize Lower Bracket Structure
+        $lbRounds = [];
+        for ($lr = 0; $lr < $lbRoundsCount; $lr++) {
+            $lbRounds[$lr] = [];
+            if ($lr % 2 === 0) {
+                // Rounds 0, 2, 4... receive losers from UB
+                $lbMatchCount = $bracketSize / (2 ** (($lr / 2) + 2));
             } else {
-                $r0Idx = $s - $numDirect - 1;
-                $r0TargetSlots[$r0Idx] = $pos;
+                // Rounds 1, 3, 5... receive winners from previous LB round
+                $lbMatchCount = $bracketSize / (2 ** ((($lr - 1) / 2) + 2));
+            }
+
+            for ($m = 0; $m < $lbMatchCount; $m++) {
+                $isLBFinal = ($lr === $lbRoundsCount - 1);
+                $isLBSemi = ($lr === $lbRoundsCount - 2);
+
+                $winnerNext = $isLBFinal
+                    ? ['bracket' => 'gf', 'slot' => 'athlete2']
+                    : ['bracket' => 'lb', 'round' => $lr + 1, 'match' => ($lr % 2 === 0) ? $m : (int) ($m / 2), 'slot' => ($lr % 2 === 0) ? 'athlete2' : ($m % 2 === 0 ? 'athlete1' : 'athlete2')];
+
+                $loserNext = ['bracket' => 'eliminated'];
+                if ($isLBFinal) {
+                    $loserNext = ['bracket' => 'ranked', 'rank' => 3];
+                } elseif ($isLBSemi) {
+                    $loserNext = ['bracket' => 'ranked', 'rank' => 4];
+                }
+
+                $lbRounds[$lr][] = [
+                    'athlete1' => null,
+                    'athlete2' => null,
+                    'winner' => null,
+                    'winner_data' => null,
+                    'winner_next' => $winnerNext,
+                    'loser_next' => $loserNext,
+                    'is_bye' => false,
+                ];
             }
         }
 
-        // ── LB / UB round counts (based on mainSize, not bracketSize) ────────
-        $mainK = (int) log($mainSize, 2); // Main bracket UB rounds (R1..Rfinal)
-        $hasPrelim = $numPrelim > 0;
-        $lbRoundsCount = max(0, 2 * $mainK);
-        $lbFinalIdx = $lbRoundsCount - 1;
-
+        // 5. Initialize Upper Bracket Structure
         $ubRounds = [];
-        $r0Matches = [];
-
-        // ── R0: PRELIMINARY MATCHES (athletes who must fight first) ──────────
-        for ($m = 0; $m < $numPrelim; $m++) {
-            $a1 = $prelimAthletes[$m * 2] ?? null;
-            $a2 = $prelimAthletes[$m * 2 + 1] ?? null;
-
-            $r1Pos = $r0TargetSlots[$m] ?? ($numDirect + $m);
-            $r1Match = (int) ($r1Pos / 2);
-            $r1Slot = ($r1Pos % 2 === 0) ? 'athlete1' : 'athlete2';
-
-            // FIX: pair losers two-by-two into the same LB R0 match
-            // UB M0 loser → LB R0 M0 a1, UB M1 loser → LB R0 M0 a2
-            // UB M2 loser → LB R0 M1 a1, UB M3 loser → LB R0 M1 a2, …
-            $lbR0Match = (int) ($m / 2);
-            $lbR0Slot = $m % 2 === 0 ? 'athlete1' : 'athlete2';
-
-            $r0Matches[] = [
-                'athlete1' => $a1,
-                'athlete2' => $a2,
-                'winner' => null,
-                'winner_data' => null,
-                'winner_next' => ['bracket' => 'ub', 'round' => 1, 'match' => $r1Match, 'slot' => $r1Slot],
-                'loser_next' => ['bracket' => 'lb', 'round' => 0, 'match' => $lbR0Match, 'slot' => $lbR0Slot],
-                'is_bye' => false,
-                'is_prelim' => true,
-                'is_direct' => false,
-            ];
-        }
-
-        // ── R0: DIRECT PASS athletes (shown in Perempatan but don't fight) ───
-        // Shown in Perempatan column as "Lolos Langsung" so ALL athletes appear
-        // in the same column before the bracket progresses to Round 1.
-        for ($s = 1; $s <= $numDirect; $s++) {
-            $pos = $seedToPos[$s] ?? ($s - 1);
-            $r1Match = (int) ($pos / 2);
-            $r1Slot = ($pos % 2 === 0) ? 'athlete1' : 'athlete2';
-            $athlete = $directAthletes[$s - 1];
-
-            $r0Matches[] = [
-                'athlete1' => $athlete,
-                'athlete2' => null,
-                'winner' => 'athlete1',
-                'winner_data' => $athlete,
-                'winner_next' => ['bracket' => 'ub', 'round' => 1, 'match' => $r1Match, 'slot' => $r1Slot],
-                'loser_next' => ['bracket' => 'none'],
-                'is_bye' => false,
-                'is_prelim' => false,
-                'is_direct' => true,
-            ];
-        }
-
-        // Always push R0 (even if only direct-pass entries — still need the column)
-        $ubRounds[] = $r0Matches;
-
-        // ── MAIN BRACKET: UB R1..R_mainK ────────────────────────────────────
-        $ubOffset = $hasPrelim ? 1 : 0; // UB round array index offset due to R0
-        for ($r = 1; $r <= $mainK; $r++) {
-            $matchCount = $mainSize >> $r; // mainSize / 2^r
-            $isUBFinal = ($r === $mainK);
+        for ($r = 0; $r < $mainK; $r++) {
+            $matchCount = $bracketSize / (2 ** ($r + 1));
+            $isUBFinal = ($r === $mainK - 1);
             $round = [];
 
             for ($m = 0; $m < $matchCount; $m++) {
-                // Populate athletes for R1 from pre-filled slots
-                $a1 = ($r === 1) ? ($r1Slots[$m * 2] ?? null) : null;
-                $a2 = ($r === 1) ? ($r1Slots[$m * 2 + 1] ?? null) : null;
+                $a1 = ($r === 0) ? $slots[$m * 2] : null;
+                $a2 = ($r === 0) ? $slots[$m * 2 + 1] : null;
+
+                $winnerNext = $isUBFinal
+                    ? ['bracket' => 'gf', 'slot' => 'athlete1']
+                    : ['bracket' => 'ub', 'round' => $r + 1, 'match' => (int) ($m / 2), 'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2'];
 
                 if ($isUBFinal) {
-                    $winnerNext = ['bracket' => 'gf', 'slot' => 'athlete1'];
-                    $loserNext = ['bracket' => 'lb', 'round' => $lbFinalIdx, 'match' => 0, 'slot' => 'athlete1'];
+                    $loserNext = $lbRoundsCount > 0 ? ['bracket' => 'lb', 'round' => $lbRoundsCount - 1, 'match' => 0, 'slot' => 'athlete1'] : ['bracket' => 'gf', 'slot' => 'athlete2'];
                 } else {
-                    $winnerNext = ['bracket' => 'ub', 'round' => $r + $ubOffset, 'match' => (int) ($m / 2), 'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2'];
-                    // FIX: r=1 → LB R1, r=2 → LB R3, r=3 → LB R5 … (standard double-elim mapping)
-                    $lbDrop = 2 * ($r - 1) + 1;
-                    $loserNext = ['bracket' => 'lb', 'round' => min($lbDrop, $lbFinalIdx - 1), 'match' => $m, 'slot' => 'athlete1'];
+                    if ($r === 0) {
+                        $loserNext = $lbRoundsCount > 0 ? ['bracket' => 'lb', 'round' => 0, 'match' => (int) ($m / 2), 'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2'] : ['bracket' => 'eliminated'];
+                    } else {
+                        // Crossover: to avoid immediate rematches, we invert the match index for UB drops > R0
+                        $dropMatch = $matchCount - 1 - $m;
+                        $loserNext = $lbRoundsCount > 0 ? ['bracket' => 'lb', 'round' => 2 * $r - 1, 'match' => $dropMatch, 'slot' => 'athlete1'] : ['bracket' => 'eliminated'];
+                    }
                 }
 
                 $round[] = [
@@ -260,67 +280,15 @@ class AdminTechnicalMeetingRandoriIndex extends Component
             $ubRounds[] = $round;
         }
 
-        // ── LOWER BRACKET ────────────────────────────────────────────────────
-        $lbRounds = [];
-        for ($lr = 0; $lr < $lbRoundsCount; $lr++) {
-            $isLBFinal = ($lr === $lbFinalIdx);
-
-            // LB R0: one match per PAIR of UB R0 losers → ceil(numPrelim / 2)
-            if ($lr === 0) {
-                $lbMatchCount = max(1, (int) ceil($numPrelim / 2));
-            } elseif ($isLBFinal) {
-                $lbMatchCount = 1;
-            } elseif ($lr % 2 === 1) {
-                // Odd LB rounds receive UB losers from UB R = (lr+1)/2
-                // That UB round has mainSize >> ubDropR matches → same count needed here
-                $ubDropR = (int) (($lr + 1) / 2);
-                $lbMatchCount = max(1, $mainSize >> $ubDropR); // FIX: removed the wrong +1
-            } else {
-                $lbMatchCount = max(1, (int) (count($lbRounds[$lr - 1]) / 2));
-            }
-
-            $round = [];
-            for ($m = 0; $m < $lbMatchCount; $m++) {
-                if ($isLBFinal) {
-                    $winnerNext = ['bracket' => 'gf', 'slot' => 'athlete2'];
-                    $loserNext = ['bracket' => 'ranked', 'rank' => 3];
-                } elseif ($lr % 2 === 1 && $lr > 0) {
-                    $nextLB = $lr + 1;
-                    $winnerNext = $nextLB >= $lbFinalIdx
-                        ? ['bracket' => 'lb', 'round' => $lbFinalIdx, 'match' => 0, 'slot' => 'athlete2']
-                        : ['bracket' => 'lb', 'round' => $nextLB, 'match' => (int) ($m / 2), 'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2'];
-                    $loserNext = ['bracket' => 'eliminated'];
-                } else {
-                    if ($lr === 0) {
-                        $winnerNext = ['bracket' => 'lb', 'round' => 1, 'match' => $m, 'slot' => 'athlete2'];
-                    } else {
-                        $nextDrop = $lr + 1;
-                        $winnerNext = $nextDrop >= $lbFinalIdx
-                            ? ['bracket' => 'lb', 'round' => $lbFinalIdx, 'match' => 0, 'slot' => 'athlete2']
-                            : ['bracket' => 'lb', 'round' => $nextDrop, 'match' => $m, 'slot' => 'athlete2'];
-                    }
-                    $loserNext = ['bracket' => 'eliminated'];
-                }
-
-                $round[] = [
-                    'athlete1' => null,
-                    'athlete2' => null,
-                    'winner' => null,
-                    'winner_data' => null,
-                    'winner_next' => $winnerNext,
-                    'loser_next' => $loserNext,
-                    'is_bye' => false,
-                ];
-            }
-            $lbRounds[] = $round;
-        }
+        // 6. Propagate BYEs through the bracket
+        $this->propagateBracketByes($ubRounds, $lbRounds);
 
         return [
             'bracket_type' => 'double_elimination',
             'bracket_size' => $bracketSize,
             'total_athletes' => $n,
             'total_entries' => $n,
-            'has_preliminary' => $hasPrelim,
+            'has_preliminary' => false,
             'upper_bracket' => ['rounds' => $ubRounds],
             'lower_bracket' => ['rounds' => $lbRounds],
             'grand_final' => ['athlete1' => null, 'athlete2' => null, 'winner' => null, 'winner_data' => null],
@@ -328,8 +296,197 @@ class AdminTechnicalMeetingRandoriIndex extends Component
         ];
     }
 
+    private function propagateBracketByes(array &$ubRounds, array &$lbRounds): void
+    {
+        // 1. Propagate UB
+        foreach ($ubRounds as $rIdx => &$round) {
+            foreach ($round as $mIdx => &$match) {
+                $a1IsBye = isset($match['athlete1']['id']) && $match['athlete1']['id'] === 'BYE';
+                $a2IsBye = isset($match['athlete2']['id']) && $match['athlete2']['id'] === 'BYE';
+
+                if ($a1IsBye && $a2IsBye) {
+                    $match['is_bye'] = true;
+                    $match['winner'] = 'none';
+                    $match['winner_data'] = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                    $loserData = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                } elseif ($a1IsBye && $match['athlete2'] !== null) {
+                    $match['is_bye'] = true;
+                    $match['winner'] = 'athlete2';
+                    $match['winner_data'] = $match['athlete2'];
+                    $loserData = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                } elseif ($a2IsBye && $match['athlete1'] !== null) {
+                    $match['is_bye'] = true;
+                    $match['winner'] = 'athlete1';
+                    $match['winner_data'] = $match['athlete1'];
+                    $loserData = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                } else {
+                    continue;
+                }
+
+                // Push winner up
+                if ($match['winner_next']['bracket'] === 'ub') {
+                    $wn = $match['winner_next'];
+                    $ubRounds[$wn['round']][$wn['match']][$wn['slot']] = $match['winner_data'];
+                } elseif ($match['winner_next']['bracket'] === 'gf') {
+                    // GF handled at render/scoring time
+                }
+
+                // Push loser down to LB
+                if ($match['loser_next']['bracket'] === 'lb') {
+                    $ln = $match['loser_next'];
+                    $lbRounds[$ln['round']][$ln['match']][$ln['slot']] = $loserData;
+                }
+            }
+        }
+
+        // 2. Propagate LB (Cascade)
+        $changed = true;
+        while ($changed) {
+            $changed = false;
+            foreach ($lbRounds as $rIdx => &$round) {
+                foreach ($round as $mIdx => &$match) {
+                    if ($match['is_bye'] || $match['winner'] !== null) {
+                        continue;
+                    }
+
+                    $a1IsBye = isset($match['athlete1']['id']) && $match['athlete1']['id'] === 'BYE';
+                    $a2IsBye = isset($match['athlete2']['id']) && $match['athlete2']['id'] === 'BYE';
+
+                    if ($a1IsBye && $a2IsBye) {
+                        $match['is_bye'] = true;
+                        $match['winner'] = 'none';
+                        $match['winner_data'] = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                        $changed = true;
+                    } elseif ($a1IsBye && $match['athlete2'] !== null) {
+                        $match['is_bye'] = true;
+                        $match['winner'] = 'athlete2';
+                        $match['winner_data'] = $match['athlete2'];
+                        $changed = true;
+                    } elseif ($a2IsBye && $match['athlete1'] !== null) {
+                        $match['is_bye'] = true;
+                        $match['winner'] = 'athlete1';
+                        $match['winner_data'] = $match['athlete1'];
+                        $changed = true;
+                    }
+
+                    if ($match['is_bye'] && $match['winner'] !== null) {
+                        if ($match['winner_next']['bracket'] === 'lb') {
+                            $wn = $match['winner_next'];
+                            $lbRounds[$wn['round']][$wn['match']][$wn['slot']] = $match['winner_data'];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private function buildSingleElimination(array $athletes, int $bracketSize): array
+    {
+        $n = count($athletes);
+        if ($n === 0) {
+            return [];
+        }
+
+        $size = 2;
+        while ($size < $n) {
+            $size *= 2;
+        }
+        $bracketSize = $size;
+        $mainK = (int) log($bracketSize, 2);
+
+        $seedOrder = $this->generateSeedOrder($bracketSize);
+        $seedToPos = array_flip($seedOrder);
+
+        $slots = array_fill(0, $bracketSize, ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-']);
+        for ($i = 0; $i < $n; $i++) {
+            $pos = $seedToPos[$i + 1] ?? $i;
+            $slots[$pos] = $athletes[$i];
+        }
+
+        $ubRounds = [];
+        for ($r = 0; $r < $mainK; $r++) {
+            $matchesInRound = $bracketSize / (2 ** ($r + 1));
+            $round = [];
+            for ($m = 0; $m < $matchesInRound; $m++) {
+                $isFinal = ($r === $mainK - 1);
+                $isSemi = ($r === $mainK - 2);
+
+                if ($isFinal) {
+                    $winnerNext = ['bracket' => 'ranked', 'rank' => 1];
+                    $loserNext = ['bracket' => 'ranked', 'rank' => 2];
+                } else {
+                    $winnerNext = [
+                        'bracket' => 'ub',
+                        'round' => $r + 1,
+                        'match' => intdiv($m, 2),
+                        'slot' => ($m % 2 === 0) ? 'athlete1' : 'athlete2',
+                    ];
+                    if ($isSemi) {
+                        // Juara 3 bersama: assign to rank 3 and rank 4
+                        $rank = ($m % 2 === 0) ? 3 : 4;
+                        $loserNext = ['bracket' => 'ranked', 'rank' => $rank];
+                    } else {
+                        $loserNext = ['bracket' => 'eliminated'];
+                    }
+                }
+
+                $round[] = [
+                    'athlete1' => $r === 0 ? $slots[$m * 2] : null,
+                    'athlete2' => $r === 0 ? $slots[$m * 2 + 1] : null,
+                    'winner' => null,
+                    'winner_data' => null,
+                    'winner_next' => $winnerNext,
+                    'loser_next' => $loserNext,
+                    'is_bye' => false,
+                ];
+            }
+            $ubRounds[] = $round;
+        }
+
+        // Propagate BYE (BYE)
+        foreach ($ubRounds as $rIdx => &$round) {
+            foreach ($round as $mIdx => &$match) {
+                $a1IsBye = isset($match['athlete1']['id']) && $match['athlete1']['id'] === 'BYE';
+                $a2IsBye = isset($match['athlete2']['id']) && $match['athlete2']['id'] === 'BYE';
+
+                if ($a1IsBye && $a2IsBye) {
+                    $match['is_bye'] = true;
+                    $match['winner'] = 'none';
+                    $match['winner_data'] = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                    $loserData = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                } elseif ($a1IsBye && $match['athlete2'] !== null) {
+                    $match['is_bye'] = true;
+                    $match['winner'] = 'athlete2';
+                    $match['winner_data'] = $match['athlete2'];
+                    $loserData = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                } elseif ($a2IsBye && $match['athlete1'] !== null) {
+                    $match['is_bye'] = true;
+                    $match['winner'] = 'athlete1';
+                    $match['winner_data'] = $match['athlete1'];
+                    $loserData = ['id' => 'BYE', 'name' => 'BYE', 'contingent' => '-'];
+                } else {
+                    continue;
+                }
+
+                if ($match['winner_next']['bracket'] === 'ub') {
+                    $wn = $match['winner_next'];
+                    $ubRounds[$wn['round']][$wn['match']][$wn['slot']] = $match['winner_data'];
+                }
+            }
+        }
+
+        return [
+            'type' => 'single_elimination',
+            'bracket_size' => $bracketSize,
+            'upper_bracket' => ['rounds' => $ubRounds],
+            'lower_bracket' => ['rounds' => []],
+            'grand_final' => null,
+            'juara' => [],
+        ];
+    }
+
     /**
-     * Generate standard tournament seed order for a bracket of given size.
+     * Drawing standard tournament seed order for a bracket of given size.
      * Returns array[position => seedNumber] interleaved so top seeds meet only in the final.
      * e.g. size=4: [1,4,2,3] → Match0=(seed1 vs seed4), Match1=(seed2 vs seed3)
      */
@@ -376,8 +533,32 @@ class AdminTechnicalMeetingRandoriIndex extends Component
         ]);
     }
 
+    public function updateDrawingField(int $id, string $field, $value): void
+    {
+        $drawing = DrawingMatchNumber::find($id);
+        if ($drawing) {
+            $drawing->update([$field => $value]);
+            $this->dispatch('swal', [
+                'icon' => 'success',
+                'title' => 'Data Diperbarui',
+                'text' => 'Data drawing berhasil diupdate.',
+            ]);
+        }
+    }
+
+    public function updateMatchDrawingsField(int $matchId, string $field, $value): void
+    {
+        DrawingMatchNumber::where('match_number_id', $matchId)->update([$field => $value]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Data Diperbarui',
+            'text' => 'Seluruh jadwal untuk match ini telah diperbarui.',
+        ]);
+    }
+
     /**
-     * Generate standard tournament seeding array to space out athletes.
+     * Drawing standard tournament seeding array to space out athletes.
      * E.g., for 8: [0, 7, 3, 4, 1, 6, 2, 5]
      */
     private function generateSeedingArray(int $size): array
@@ -412,11 +593,64 @@ class AdminTechnicalMeetingRandoriIndex extends Component
 
     public function render()
     {
-        $paginatedMatches = MatchNumber::where('draft_type', 'randori')
+        $paginatedMatchesQuery = MatchNumber::where('draft_type', 'randori')
             ->has('athletes')
             ->with(['ageGroup'])
-            ->latest()
-            ->paginate(1000);
+            ->orderBy('name', 'asc');
+
+        if ($this->selectedGender) {
+            $paginatedMatchesQuery->where('gender', $this->selectedGender);
+        }
+
+        if ($this->selectedAgeGroupId) {
+            $paginatedMatchesQuery->where('age_group_id', $this->selectedAgeGroupId);
+        }
+
+        if ($this->selectedMatchNumberId) {
+            $paginatedMatchesQuery->where('id', $this->selectedMatchNumberId);
+        }
+
+        if ($this->selectedCourtId) {
+            $paginatedMatchesQuery->whereHas('drawings', function ($q) {
+                $q->where('court_id', $this->selectedCourtId);
+            });
+        }
+
+        if ($this->selectedPoolId) {
+            $paginatedMatchesQuery->whereHas('drawings', function ($q) {
+                $q->where('pool_id', $this->selectedPoolId);
+            });
+        }
+
+        $paginatedMatches = $paginatedMatchesQuery->paginate(1000);
+
+        $filterAgeGroups = AgeGroup::orderBy('order', 'asc')->get();
+        $filterMatchNumbersQuery = MatchNumber::where('draft_type', 'randori')
+            ->has('athletes')
+            ->with(['ageGroup']);
+
+        if ($this->selectedGender) {
+            $filterMatchNumbersQuery->where('gender', $this->selectedGender);
+        }
+
+        if ($this->selectedAgeGroupId) {
+            $filterMatchNumbersQuery->where('age_group_id', $this->selectedAgeGroupId);
+        }
+
+        if ($this->selectedCourtId) {
+            $filterMatchNumbersQuery->whereHas('drawings', function ($q) {
+                $q->where('court_id', $this->selectedCourtId);
+            });
+        }
+
+        if ($this->selectedPoolId) {
+            $filterMatchNumbersQuery->whereHas('drawings', function ($q) {
+                $q->where('pool_id', $this->selectedPoolId);
+            });
+        }
+
+        $filterMatchNumbers = $filterMatchNumbersQuery->orderBy('name', 'asc')->get();
+        $filterPools = Pool::orderBy('order', 'asc')->get();
 
         $courts = Court::orderBy('order')->get();
         // Hanya ambil rundown dengan type pertandingan
@@ -434,6 +668,9 @@ class AdminTechnicalMeetingRandoriIndex extends Component
 
             if ($this->selectedCourtId) {
                 $drawingsQuery->where('court_id', $this->selectedCourtId);
+            }
+            if ($this->selectedPoolId) {
+                $drawingsQuery->where('pool_id', $this->selectedPoolId);
             }
 
             $drawingsFromDb = $drawingsQuery->get();
@@ -482,6 +719,9 @@ class AdminTechnicalMeetingRandoriIndex extends Component
             'courts' => $courts,
             'rundowns' => $rundowns,
             'sessionTimes' => $sessionTimes,
+            'filterAgeGroups' => $filterAgeGroups,
+            'filterMatchNumbers' => $filterMatchNumbers,
+            'filterPools' => $filterPools,
         ]);
     }
 }

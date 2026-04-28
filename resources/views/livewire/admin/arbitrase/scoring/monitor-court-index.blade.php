@@ -1,13 +1,13 @@
-<div wire:poll.2s class="min-h-screen bg-slate-900 flex flex-col justify-between font-sans overflow-hidden select-none">
+<div wire:poll.2s class="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-hidden select-none">
 
     @if(!$court->active_match_id || !$court->activeMatch)
         <!-- IDLE STATE -->
-        <div class="flex-1 flex flex-col items-center justify-center h-full">
-            <div class="w-48 h-48 rounded-[3rem] bg-slate-800 flex items-center justify-center shadow-2xl mb-12 animate-bounce">
-                <i class="fas fa-tv text-7xl text-black"></i>
+        <div class="flex-1 flex flex-col items-center justify-center h-full p-6 text-center">
+            <div class="w-32 h-32 md:w-48 md:h-48 rounded-[2rem] md:rounded-[3rem] bg-white flex items-center justify-center shadow-xl mb-8 md:mb-12 animate-bounce border border-slate-200">
+                <i class="fas fa-tv text-5xl md:text-7xl text-slate-300"></i>
             </div>
-            <h1 class="text-7xl font-black text-white tracking-widest uppercase mb-4 opacity-50">{{ $court->name }}</h1>
-            <p class="text-2xl font-bold text-slate-900 uppercase tracking-widest animate-pulse">Menunggu Panggilan Pertandingan...</p>
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-slate-800 tracking-widest uppercase mb-4 opacity-50">{{ $court->name }}</h1>
+            <p class="text-xl md:text-2xl font-bold text-slate-500 uppercase tracking-widest animate-pulse">Menunggu Panggilan Pertandingan...</p>
         </div>
     @else
         <!-- ACTIVE MATCH STATE -->
@@ -45,14 +45,14 @@
             <i class="fas {{ $isRandori ? 'fa-fire-alt' : 'fa-layer-group' }} absolute -right-12 -top-12 text-[200px] text-white opacity-10 blur-sm pointer-events-none"></i>
 
             <div class="relative z-10 flex flex-col items-center justify-center text-center gap-4">
-                <div class="inline-flex items-center gap-4 bg-white/20 backdrop-blur-md px-6 py-2 rounded-full border border-white/20">
-                    <span class="w-3 h-3 bg-white rounded-full animate-pulse"></span>
-                    <h2 class="text-xl font-black text-white uppercase tracking-widest">{{ $court->name }} MENGUNDANG</h2>
+                <div class="inline-flex items-center gap-2 md:gap-4 bg-white/20 backdrop-blur-md px-4 py-1.5 md:px-6 md:py-2 rounded-full border border-white/20">
+                    <span class="w-2 h-2 md:w-3 md:h-3 bg-white rounded-full animate-pulse"></span>
+                    <h2 class="text-sm md:text-xl font-black text-white uppercase tracking-widest">{{ $court->name }} MENGUNDANG</h2>
                 </div>
-                <h1 class="text-6xl md:text-7xl lg:text-[5.5rem] leading-none font-black text-white uppercase tracking-tighter drop-shadow-lg">
+                <h1 class="text-4xl md:text-6xl xl:text-[5.5rem] leading-none font-black text-white uppercase tracking-tighter drop-shadow-lg px-4">
                     {{ $match->name }}
                 </h1>
-                <p class="text-3xl text-white/80 font-black uppercase tracking-[0.3em]">
+                <p class="text-lg md:text-2xl xl:text-3xl text-white/80 font-black uppercase tracking-[0.2em] md:tracking-[0.3em] px-4">
                     Kategori {{ ucfirst($match->draft_type) }} &bull; {{ $match->ageGroup?->name ?? 'Dewasa' }}
                 </p>
 
@@ -83,73 +83,73 @@
         </div>
 
         <!-- Body / Kontingen Display -->
-        <div class="flex-1 px-16 py-16 flex flex-col items-center justify-center">
+        <div class="flex-1 px-4 md:px-8 xl:px-16 py-8 flex flex-col items-center justify-center w-full">
 
             @if($isRandori)
                 <!-- RANDORI LAYOUT (Versus Style) -->
                 @if($athletes->count() >= 2)
-                    <div class="grid grid-cols-1 md:grid-cols-3 w-full max-w-full gap-8 items-center">
+                    <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] w-full max-w-7xl gap-6 md:gap-8 items-center">
 
                         <!-- SUDUT MERAH (AKA) -->
-                        <div class="bg-rose-600 rounded-[3rem] p-10 shadow-2xl shadow-rose-900/30 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform">
-                            <div class="px-6 py-2 bg-white/20 rounded-2xl mb-6 border border-white/30 backdrop-blur-md">
-                                <span class="text-xl font-black text-white uppercase tracking-widest">SUDUT MERAH (AKA)</span>
+                        <div class="bg-rose-600 rounded-[2rem] p-6 md:p-8 shadow-xl shadow-rose-600/20 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform w-full">
+                            <div class="px-4 py-1.5 md:px-6 md:py-2 bg-white/20 rounded-xl mb-4 md:mb-6 border border-white/30 backdrop-blur-md">
+                                <span class="text-sm md:text-lg font-black text-white uppercase tracking-widest">SUDUT MERAH (AKA)</span>
                             </div>
 
                             {{-- Foto AKA --}}
-                            <div class="w-[400px] h-[400px] rounded-[2rem] overflow-hidden border-4 border-rose-300/40 shadow-2xl mb-6 bg-rose-800">
+                            <div class="w-32 h-32 md:w-48 md:h-48 xl:w-64 xl:h-64 rounded-[1.5rem] overflow-hidden border-4 border-rose-300/40 shadow-xl mb-4 md:mb-6 bg-rose-800 shrink-0">
                                 @if($athletes[0]->photo_path)
                                     <img src="{{ asset('storage/' . $athletes[0]->photo_path) }}"
                                          alt="{{ $athletes[0]->name }}"
                                          class="w-full h-full object-cover object-center">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center">
-                                        <span class="text-[120px] font-black text-rose-300 uppercase">
+                                        <span class="text-5xl md:text-7xl xl:text-[90px] font-black text-rose-300 uppercase">
                                             {{ substr($athletes[0]->name, 0, 1) }}
                                         </span>
                                     </div>
                                 @endif
                             </div>
 
-                            <h2 class="text-4xl font-black text-white uppercase leading-tight mb-4">{{ $athletes[0]->name }}</h2>
-                            <div class="w-full bg-rose-800 rounded-3xl py-5 border border-rose-500/50">
-                                <p class="text-[15px] font-bold text-rose-300 uppercase tracking-widest mb-1">Kontingen</p>
-                                <p class="text-3xl font-black text-rose-100 uppercase">
+                            <h2 class="text-xl md:text-3xl font-black text-white uppercase leading-tight mb-3 line-clamp-2">{{ $athletes[0]->name }}</h2>
+                            <div class="w-full bg-rose-800 rounded-2xl py-3 md:py-4 border border-rose-500/50">
+                                <p class="text-xs md:text-sm font-bold text-rose-300 uppercase tracking-widest mb-1">Kontingen</p>
+                                <p class="text-lg md:text-2xl font-black text-rose-100 uppercase truncate px-2">
                                     {{ $athletes[0]->registrations->first()?->contingent?->name ?? 'Unknown' }}</p>
                             </div>
                         </div>
 
                         <!-- VS -->
-                        <div class="flex flex-col items-center justify-center py-12 md:py-0 relative">
-                            <span class="text-[120px] font-black text-black italic block relative z-10">VS</span>
-                            <div class="hidden md:block absolute top-1/2 left-0 right-0 h-1 bg-slate-800 z-0"></div>
+                        <div class="flex flex-col items-center justify-center py-4 md:py-6 relative">
+                            <span class="text-4xl md:text-6xl lg:text-[80px] font-black text-slate-300 italic block relative z-10 drop-shadow-sm">VS</span>
+                            <div class="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-1 bg-slate-200 z-0"></div>
                         </div>
 
                         <!-- SUDUT BIRU (AO) -->
-                        <div class="bg-blue-600 rounded-[3rem] p-10 shadow-2xl shadow-blue-900/30 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform">
-                            <div class="px-6 py-2 bg-white/20 rounded-2xl mb-6 border border-white/30 backdrop-blur-md">
-                                <span class="text-xl font-black text-white uppercase tracking-widest">SUDUT BIRU (AO)</span>
+                        <div class="bg-blue-600 rounded-[2rem] p-6 md:p-8 shadow-xl shadow-blue-600/20 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform w-full">
+                            <div class="px-4 py-1.5 md:px-6 md:py-2 bg-white/20 rounded-xl mb-4 md:mb-6 border border-white/30 backdrop-blur-md">
+                                <span class="text-sm md:text-lg font-black text-white uppercase tracking-widest">SUDUT BIRU (AO)</span>
                             </div>
 
                             {{-- Foto AO --}}
-                            <div class="w-[400px] h-[400px] rounded-[2rem] overflow-hidden border-4 border-blue-300/40 shadow-2xl mb-6 bg-blue-800">
+                            <div class="w-32 h-32 md:w-48 md:h-48 xl:w-64 xl:h-64 rounded-[1.5rem] overflow-hidden border-4 border-blue-300/40 shadow-xl mb-4 md:mb-6 bg-blue-800 shrink-0">
                                 @if($athletes[1]->photo_path)
                                     <img src="{{ asset('storage/' . $athletes[1]->photo_path) }}"
                                          alt="{{ $athletes[1]->name }}"
                                          class="w-full h-full object-cover object-center">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center">
-                                        <span class="text-[120px] font-black text-blue-300 uppercase">
+                                        <span class="text-5xl md:text-7xl xl:text-[90px] font-black text-blue-300 uppercase">
                                             {{ substr($athletes[1]->name, 0, 1) }}
                                         </span>
                                     </div>
                                 @endif
                             </div>
 
-                            <h2 class="text-4xl font-black text-white uppercase leading-tight mb-4">{{ $athletes[1]->name }}</h2>
-                            <div class="w-full bg-blue-800 rounded-3xl py-5 border border-blue-500/50">
-                                <p class="text-[15px] font-bold text-blue-300 uppercase tracking-widest mb-1">Kontingen</p>
-                                <p class="text-3xl font-black text-blue-100 uppercase">
+                            <h2 class="text-xl md:text-3xl font-black text-white uppercase leading-tight mb-3 line-clamp-2">{{ $athletes[1]->name }}</h2>
+                            <div class="w-full bg-blue-800 rounded-2xl py-3 md:py-4 border border-blue-500/50">
+                                <p class="text-xs md:text-sm font-bold text-blue-300 uppercase tracking-widest mb-1">Kontingen</p>
+                                <p class="text-lg md:text-2xl font-black text-blue-100 uppercase truncate px-2">
                                     {{ $athletes[1]->registrations->first()?->contingent?->name ?? 'Unknown' }}</p>
                             </div>
                         </div>
@@ -161,44 +161,47 @@
 
             @else
                 <!-- EMBU LAYOUT (Grid / List Style) -->
-                <div class="w-full">
+                <div class="w-full max-w-7xl mx-auto">
                     {{-- Header info kontingen & pool --}}
                     @if($dContingent || $dPool)
-                        <div class="flex items-center justify-center gap-6 mb-10">
+                        <div class="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 md:mb-10">
                             @if($dContingent)
-                                <div class="inline-flex items-center gap-3 bg-emerald-500/15 border border-emerald-500/20 px-8 py-4 rounded-3xl">
-                                    <i class="fas fa-shield-alt text-3xl text-emerald-400"></i>
-                                    <span class="text-3xl font-black text-emerald-300 uppercase tracking-wider">{{ $dContingent->name }}</span>
+                                <div class="inline-flex items-center gap-2 md:gap-3 bg-emerald-50 border border-emerald-200 px-6 py-3 md:px-8 md:py-4 rounded-2xl md:rounded-3xl shadow-sm">
+                                    <i class="fas fa-shield-alt text-2xl md:text-3xl text-emerald-500"></i>
+                                    <span class="text-xl md:text-3xl font-black text-emerald-700 uppercase tracking-wider">{{ $dContingent->name }}</span>
                                 </div>
                             @endif
                             @if($dPool)
-                                <div class="inline-flex items-center gap-3 bg-indigo-500/15 border border-indigo-500/20 px-8 py-4 rounded-3xl">
-                                    <i class="fas fa-th text-3xl text-indigo-400"></i>
-                                    <span class="text-3xl font-black text-indigo-300 uppercase tracking-wider">Pool {{ $dPool->name }}</span>
+                                <div class="inline-flex items-center gap-2 md:gap-3 bg-indigo-50 border border-indigo-200 px-6 py-3 md:px-8 md:py-4 rounded-2xl md:rounded-3xl shadow-sm">
+                                    <i class="fas fa-th text-2xl md:text-3xl text-indigo-500"></i>
+                                    <span class="text-xl md:text-3xl font-black text-indigo-700 uppercase tracking-wider">Pool {{ $dPool->name }}</span>
                                 </div>
                             @endif
                         </div>
                     @endif
 
-                    <h3 class="text-center text-4xl md:text-5xl font-black text-slate-800 uppercase tracking-widest mb-16">
-                        Daftar Penampil</h3>
-                    <div class="grid grid-cols-1 gap-x-12 gap-y-8">
+                    <h3 class="text-center text-2xl md:text-4xl lg:text-5xl font-black text-slate-800 uppercase tracking-widest mb-8 md:mb-16 relative">
+                        <span class="bg-slate-50 px-6 relative z-10">Daftar Penampil</span>
+                        <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200 z-0"></div>
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
                         @foreach($athletes as $index => $ath)
-                            <div class="bg-slate-800 border-2 border-slate-700 rounded-[2rem] p-8 shadow-xl flex gap-8 items-center transform hover:scale-[1.02] transition-transform">
+                            <div class="bg-white border-2 border-slate-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 lg:p-8 shadow-md flex flex-col sm:flex-row gap-4 md:gap-6 lg:gap-8 items-center transform hover:scale-[1.02] transition-transform">
                                 {{-- Nomor urut --}}
-                                <div class="w-16 h-16 bg-slate-700 rounded-2xl flex items-center justify-center shrink-0 border border-slate-600 shadow-inner">
-                                    <span class="text-4xl font-black text-slate-300">{{ $index + 1 }}</span>
+                                <div class="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border border-slate-200 shadow-inner">
+                                    <span class="text-2xl md:text-4xl font-black text-slate-400">{{ $index + 1 }}</span>
                                 </div>
 
                                 {{-- Foto Atlet --}}
-                                <div class="w-[400px] h-[400px] rounded-[1.5rem] shrink-0 overflow-hidden border-4 border-slate-600 shadow-2xl bg-slate-700">
+                                <div class="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-2xl md:rounded-[1.5rem] shrink-0 overflow-hidden border-4 border-slate-100 shadow-lg bg-slate-100">
                                     @if($ath->photo_path)
                                         <img src="{{ asset('storage/' . $ath->photo_path) }}"
                                              alt="{{ $ath->name }}"
                                              class="w-full h-full object-cover object-center">
                                     @else
-                                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-700 to-emerald-900">
-                                            <span class="text-[120px] font-black text-white uppercase">
+                                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-700">
+                                            <span class="text-5xl md:text-7xl lg:text-[90px] font-black text-white uppercase">
                                                 {{ substr($ath->name, 0, 1) }}
                                             </span>
                                         </div>
@@ -206,11 +209,11 @@
                                 </div>
 
                                 {{-- Info Atlet --}}
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="text-4xl font-black text-white uppercase mb-3 leading-tight truncate">{{ $ath->name }}</h4>
-                                    <div class="inline-flex items-center gap-3 bg-emerald-500/10 px-5 py-3 rounded-2xl border border-emerald-500/20">
-                                        <i class="fas fa-shield-alt text-2xl text-emerald-400"></i>
-                                        <span class="text-2xl font-bold text-emerald-400 uppercase tracking-wider">
+                                <div class="flex-1 min-w-0 text-center sm:text-left w-full">
+                                    <h4 class="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 uppercase mb-3 leading-tight line-clamp-2">{{ $ath->name }}</h4>
+                                    <div class="inline-flex flex-wrap justify-center sm:justify-start items-center gap-2 md:gap-3 bg-emerald-50 px-4 py-2 md:px-5 md:py-3 rounded-xl md:rounded-2xl border border-emerald-100">
+                                        <i class="fas fa-shield-alt text-lg md:text-2xl text-emerald-500 shrink-0"></i>
+                                        <span class="text-base md:text-xl lg:text-2xl font-bold text-emerald-700 uppercase tracking-wider truncate">
                                             {{ $ath->registrations->first()?->contingent?->name ?? '-' }}
                                         </span>
                                     </div>
@@ -226,18 +229,18 @@
     @endif
 
     <!-- Footer -->
-    <div class="bg-black/90 px-12 py-6 flex items-center justify-between flex-shrink-0 border-t border-white/5">
+    <div class="bg-white px-6 md:px-12 py-4 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4 flex-shrink-0 border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
         <div class="flex items-center gap-4">
-            <span class="text-xl font-black text-white tracking-widest uppercase">PERKAMI TIMING SYSTEM</span>
+            <span class="text-lg md:text-xl font-black text-slate-800 tracking-widest uppercase">PERKEMI TIMING SYSTEM</span>
         </div>
-        <div class="flex items-center gap-6 text-slate-900">
+        <div class="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-slate-500">
             @if(isset($dSession))
-                <span class="text-[15px] font-bold uppercase tracking-widest">{{ $dSession->name }}</span>
+                <span class="text-sm md:text-[15px] font-bold uppercase tracking-widest">{{ $dSession->name }}</span>
             @endif
             @if(isset($dRundown))
-                <span class="text-[15px] font-bold uppercase tracking-widest">{{ $dRundown->name ?? $dRundown->date }}</span>
+                <span class="text-sm md:text-[15px] font-bold uppercase tracking-widest">{{ $dRundown->name ?? $dRundown->date }}</span>
             @endif
-            <span class="text-[15px] font-bold uppercase tracking-widest">LIVE ARBITRASE</span>
+            <span class="text-sm md:text-[15px] font-black text-slate-400 uppercase tracking-widest">LIVE ARBITRASE</span>
         </div>
     </div>
 </div>

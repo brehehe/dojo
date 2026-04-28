@@ -13,10 +13,13 @@ class RandoriMatchResult extends Model
     protected $fillable = [
         'match_number_id',
         'bracket_node_index',
+        'bracket_node',
+        'bracket_section',
         'winner_athlete_id',
         'winner_color',
         'score_red',
         'score_blue',
+        'metadata',
     ];
 
     public function matchNumber()

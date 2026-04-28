@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\WelcomeController;
+use App\Livewire\Admin\Announcer\AnnouncerIndex;
 use App\Livewire\Admin\Arbitrase\GenerateReferee\AdminArbitraseGenerateRefereeIndex;
+use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringEmbuDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
@@ -9,6 +11,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuResultIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
+use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Master\AgeGroup\AdminMasterAgeGroupIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteDetailIndex;
@@ -154,6 +157,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('arbitrase')->name('arbitrase.')->group(function () {
             Route::get('/referees', AdminMasterRefereeIndex::class)->name('referees');
             Route::get('/generate-referee', AdminArbitraseGenerateRefereeIndex::class)->name('generate-referee');
+            Route::get('/laporan-hasil', AdminLaporanHasilIndex::class)->name('laporan-hasil');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
@@ -162,6 +166,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/monitor-hasil/match/{matchId}', MonitorHasilIndex::class)->name('monitor-hasil.match');
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
+                Route::get('/monitor-timer/court/{courtId}', MonitorTimerIndex::class)->name('monitor-timer.court');
             });
         });
 
@@ -175,6 +180,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/embu-testbench', AdminEmbuScoringTestbench::class)->name('embu.testbench');
                 Route::get('/embu-result', AdminEmbuResultIndex::class)->name('embu.result');
             });
+            Route::get('/announcer', AnnouncerIndex::class)->name('announcer');
         });
 
         Route::prefix('referee')->name('referee.')->group(function () {

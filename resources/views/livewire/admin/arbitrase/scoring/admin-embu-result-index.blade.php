@@ -68,7 +68,7 @@
                     @foreach($champions->take(3) as $champ)
                         @php
                             $rankIcon = match($champ->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => '#'.$champ->rank };
-                            $athletes = $champ->registration?->athletes ?? collect();
+                            $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id) ?? collect();
                         @endphp
                         <div class="flex items-center gap-3 bg-white/15 rounded-2xl px-4 py-3">
                             <span class="text-xl">{{ $rankIcon }}</span>
@@ -126,44 +126,58 @@
                     </div>
                 </div>
                 <div class="divide-y divide-slate-50">
-                    @forelse($penyisihanRanking as $idx => $reg)
+                    @forelse($penyisihanRanking as $poolId => $poolParticipants)
                         @php
-                            $score = $reg['effective_score'];
-                            $isTied = in_array($reg['id'], $tiedPenyisihanIds);
-                            $qualifies = $idx < $finalQuota;
+                            $poolCount = $penyisihanRanking->count();
+                            $finalQuotaPerPool = $poolCount === 1 ? 999 : ($poolCount === 2 ? 4 : ($poolCount === 3 ? 3 : 2));
+                            $quotaText = $poolCount === 1 ? 'Semua Lolos' : "Top {$finalQuotaPerPool} Lolos";
                         @endphp
-                        <div class="px-5 py-3 flex items-center gap-3 {{ $qualifies ? '' : 'opacity-50' }} {{ $isTied ? 'bg-rose-50' : '' }}">
-                            <div class="w-7 h-7 rounded-lg font-black text-[15px] flex items-center justify-center shrink-0 border
-                                {{ $idx === 0 ? 'bg-amber-100 text-amber-700 border-amber-300' : ($idx === 1 ? 'bg-slate-100 text-slate-900 border-slate-300' : ($idx === 2 ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-slate-50 text-slate-800 border-slate-100')) }}">
-                                {{ $idx + 1 }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                @foreach($reg['athletes'] as $ath)
-                                    <p class="text-[15px] font-black text-slate-800 uppercase leading-none truncate">{{ $ath->name }}</p>
-                                @endforeach
-                                <p class="text-[15px] text-slate-800 font-bold mt-0.5 truncate">{{ $reg['contingent']?->name }}</p>
-                            </div>
-                            <div class="text-right shrink-0 flex items-center gap-2">
-                                @if($isTied)
-                                    <span class="text-[15px] font-black bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-md uppercase">SERI</span>
-                                @endif
-                                @if($score)
-                                    <div>
-                                        <p class="text-[15px] font-black text-black tabular-nums">{{ number_format($score->nilai_akhir, 1) }}</p>
-                                        @if($reg['tiebreak_score'])
-                                            <p class="text-[15px] text-rose-500 font-bold">TB: {{ number_format($reg['tiebreak_score']->nilai_akhir, 1) }}</p>
-                                        @endif
-                                    </div>
-                                @else
-                                    <p class="text-[15px] italic text-slate-300">-</p>
-                                @endif
-                                @if($qualifies && $finalExists)
-                                    <span class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
-                                        <i class="fas fa-check text-emerald-600 text-[15px]"></i>
-                                    </span>
-                                @endif
-                            </div>
+                        <div class="bg-slate-50 border-b border-slate-100 px-5 py-2.5 flex items-center justify-between">
+                            <p class="text-[14px] font-black text-slate-800 uppercase tracking-widest">{{ $poolParticipants->first()['pool_name'] ?? 'Pool' }}</p>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest bg-slate-200/50 px-2 py-0.5 rounded-md">{{ $quotaText }}</span>
                         </div>
+                        @foreach($poolParticipants as $idx => $reg)
+                            @php
+                                $score = $reg['effective_score'];
+                                $isTied = in_array($reg['id'], $tiedPenyisihanIds);
+                                $poolCount = $penyisihanRanking->count();
+                                $finalQuotaPerPool = $poolCount === 1 ? 999 : ($poolCount === 2 ? 4 : ($poolCount === 3 ? 3 : 2));
+                                $qualifies = $idx < $finalQuotaPerPool;
+                            @endphp
+                            <div class="px-5 py-3 flex items-center gap-3 {{ $qualifies ? '' : 'opacity-50' }} {{ $isTied ? 'bg-rose-50' : '' }}">
+                                <div class="w-7 h-7 rounded-lg font-black text-[15px] flex items-center justify-center shrink-0 border
+                                    {{ $idx === 0 ? 'bg-amber-100 text-amber-700 border-amber-300' : ($idx === 1 ? 'bg-slate-100 text-slate-900 border-slate-300' : ($idx === 2 ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-slate-50 text-slate-800 border-slate-100')) }}">
+                                    {{ $idx + 1 }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    @foreach($reg['athletes'] as $ath)
+                                        <p class="text-[15px] font-black text-slate-800 uppercase leading-none truncate">{{ $ath->name }}</p>
+                                    @endforeach
+                                    <p class="text-[15px] text-slate-800 font-bold mt-0.5 truncate">{{ $reg['contingent']?->name }}</p>
+                                </div>
+                                <div class="text-right shrink-0 flex items-center gap-2">
+                                    @if($isTied)
+                                        <span class="text-[15px] font-black bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-md uppercase">SERI</span>
+                                    @endif
+                                    @if($score)
+                                        <div class="text-right">
+                                            <p class="text-[15px] font-black text-black tabular-nums">{{ number_format($score->nilai_akhir, 1) }}</p>
+                                            <p class="text-[12px] font-bold text-slate-500">W1: {{ number_format($score->judge_1, 1) }}</p>
+                                            @if($reg['tiebreak_score'])
+                                                <p class="text-[13px] text-rose-500 font-bold mt-0.5">TB: {{ number_format($reg['tiebreak_score']->nilai_akhir, 1) }}</p>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <p class="text-[15px] italic text-slate-300">-</p>
+                                    @endif
+                                    @if($qualifies && $finalExists)
+                                        <span class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center ml-1">
+                                            <i class="fas fa-check text-emerald-600 text-[12px]"></i>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
                     @empty
                         <div class="py-16 text-center">
                             <i class="fas fa-list text-slate-200 text-3xl mb-3 block"></i>
@@ -192,7 +206,7 @@
                                 <i class="fas fa-equals mr-1"></i> Tanding Ulang
                             </button>
                         @endif
-                        @if($finalExists && $finalRanking->whereNotNull('accumulated')->isNotEmpty())
+                        @if($finalExists)
                             <button wire:click="$set('showChampionModal', true)"
                                     class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[15px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm">
                                 <i class="fas fa-crown mr-1"></i> Konfirmasi Juara
@@ -235,8 +249,11 @@
                                         <span>+</span>
                                         <span>F: {{ $reg['final_score'] ? number_format($reg['final_score']->nilai_akhir, 1) : '–' }}</span>
                                     </div>
-                                    @if($reg['accumulated'] !== null)
+                                    @if($reg['accumulated'] > 0 || $reg['final_scored'] ?? false)
                                         <p class="text-[15px] font-black text-amber-600 tabular-nums">{{ number_format($reg['accumulated'], 1) }}</p>
+                                        @if(!($reg['final_scored'] ?? false))
+                                            <p class="text-[11px] italic text-slate-400">Final belum dinilai</p>
+                                        @endif
                                     @else
                                         <p class="text-[15px] italic text-slate-300">Belum dinilai</p>
                                     @endif
@@ -269,11 +286,6 @@
                     </div>
 
                     <div class="space-y-3 mb-5">
-                        <div>
-                            <label class="text-[15px] font-black text-slate-800 uppercase tracking-widest block mb-1">Kuota Lolos ke Final</label>
-                            <input type="number" wire:model="finalQuota" min="2" max="20"
-                                   class="w-full border border-slate-200 rounded-xl px-3 py-2 text-[15px] font-bold focus:outline-none focus:ring-2 focus:ring-orange-400/30">
-                        </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[15px] font-black text-slate-800 uppercase tracking-widest block mb-1">Court</label>
@@ -430,7 +442,7 @@
                     @endif
 
                     <div class="space-y-2 mb-5 max-h-64 overflow-y-auto">
-                        @foreach($finalRanking->whereNotNull('accumulated')->take(5) as $idx => $reg)
+                        @foreach($finalRanking->take(5) as $idx => $reg)
                             <div class="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
                                 <span class="text-lg">{{ match($idx) { 0 => '🥇', 1 => '🥈', 2 => '🥉', default => '#'.($idx+1) } }}</span>
                                 <div class="flex-1 min-w-0">
@@ -438,7 +450,7 @@
                                         <p class="text-[15px] font-black text-black uppercase truncate">{{ $ath->name }}</p>
                                     @endforeach
                                 </div>
-                                <p class="text-[15px] font-black text-amber-600 tabular-nums">{{ number_format($reg['accumulated'], 1) }}</p>
+                                <p class="text-[15px] font-black text-amber-600 tabular-nums">{{ number_format($reg['accumulated'] ?? 0, 1) }}</p>
                             </div>
                         @endforeach
                     </div>

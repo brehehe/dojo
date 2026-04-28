@@ -31,20 +31,43 @@
         {{-- ===== LEFT: MATCH & PARTICIPANT SELECTOR ===== --}}
         <div class="space-y-4">
 
-            {{-- Match selector --}}
+            {{-- Filters Panel --}}
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
-                    <i class="fas fa-list-ul text-slate-800 text-[15px]"></i>
+                    <i class="fas fa-filter text-slate-800 text-[15px]"></i>
                     <p class="text-[15px] font-black text-slate-900 uppercase tracking-widest">Pilih Nomor Embu</p>
                 </div>
-                <div class="p-3">
-                    <select wire:model.live="selectedMatchId"
-                            class="w-full appearance-none bg-slate-50 border border-slate-200 text-black text-[15px] font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all">
-                        <option value="">-- Pilih Nomor Pertandingan --</option>
-                        @foreach($embuMatches as $em)
-                            <option value="{{ $em->id }}">{{ $em->name }} #{{ $em->id }}</option>
-                        @endforeach
-                    </select>
+                <div class="p-5 space-y-4 bg-slate-50/50">
+                    {{-- Age Group filter pills --}}
+                    <div>
+                        <p class="text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Kelompok Umur</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button wire:click="$set('selectedAgeGroupId', null)"
+                                    class="px-3 py-1.5 rounded-xl text-[14px] font-black uppercase tracking-widest transition-all border
+                                           {{ is_null($selectedAgeGroupId) ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300' }}">
+                                Semua
+                            </button>
+                            @foreach($ageGroups as $ag)
+                                <button wire:click="$set('selectedAgeGroupId', {{ $ag->id }})"
+                                        class="px-3 py-1.5 rounded-xl text-[14px] font-black uppercase tracking-widest transition-all border
+                                               {{ $selectedAgeGroupId == $ag->id ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:text-emerald-600' }}">
+                                    {{ $ag->name }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Match selector --}}
+                    <div>
+                        <p class="text-[13px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nomor Pertandingan</p>
+                        <select wire:model.live="selectedMatchId"
+                                class="w-full appearance-none bg-white border border-slate-200 text-black text-[14px] font-bold rounded-xl px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/30 transition-all">
+                            <option value="">-- Pilih Nomor --</option>
+                            @foreach($embuMatches as $em)
+                                <option value="{{ $em->id }}">{{ $em->name }}{{ $em->ageGroup ? ' · '.$em->ageGroup->name : '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
 

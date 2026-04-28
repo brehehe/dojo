@@ -10,13 +10,13 @@
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex flex-wrap gap-2">
                 <button wire:click="generateAllDrawings"
-                        wire:confirm="Generate drawing otomatis untuk semua nomor Randori? Sistem Auto-Scheduler akan mentribusikan Court dan Jadwal secara otomatis untuk mencegah bentrok."
+                        wire:confirm="Drawing drawing otomatis untuk semua nomor Randori? Sistem Auto-Scheduler akan mentribusikan Court dan Jadwal secara otomatis untuk mencegah bentrok."
                         wire:loading.attr="disabled"
                         wire:target="generateAllDrawings"
                         class="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-[15px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm shadow-red-600/20 disabled:opacity-50">
                     <span wire:loading.remove wire:target="generateAllDrawings"><i class="fas fa-magic"></i></span>
                     <span wire:loading wire:target="generateAllDrawings"><i class="fas fa-spinner fa-spin"></i></span>
-                    Generate Semua
+                    Drawing Semua
                 </button>
                 <button onclick="window.print()" class="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-700 text-white text-[15px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all active:scale-95">
                     <i class="fas fa-print"></i>
@@ -52,50 +52,92 @@
         </div>
     </div>
 
-    {{-- ===== MAIN CONTROL BAR ===== --}}
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-0 border-b border-slate-100">
-            <div class="flex overflow-x-auto scrollbar-hide">
-                <button @click="globalTab = 'sebelum'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'sebelum' ? 'border-red-500 text-red-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-users text-[15px]"></i>
-                    <span>Daftar Pendaftar Atlet</span>
-                </button>
-                <button @click="globalTab = 'hasil'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'hasil' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-sitemap text-[15px]"></i>
-                    <span>Bagan Pertandingan</span>
-                </button>
-                <button @click="globalTab = 'nomor'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'nomor' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-list-ol text-[15px]"></i>
-                    <span>Nomor Match</span>
-                </button>
-                <button @click="globalTab = 'bracket'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'bracket' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-medal text-[15px]"></i>
-                    <span>Hasil Bracket</span>
-                </button>
+    {{-- ===== TABS NAVIGATION ===== --}}
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
+        <div class="flex overflow-x-auto scrollbar-hide">
+            <button @click="globalTab = 'sebelum'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'sebelum' ? 'border-red-500 text-red-600 bg-red-50/30' : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-users text-[15px]"></i>
+                <span>Daftar Pendaftar Atlet</span>
+            </button>
+            <button @click="globalTab = 'hasil'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'hasil' ? 'border-amber-500 text-amber-600 bg-amber-50/30' : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-sitemap text-[15px]"></i>
+                <span>Bagan Pertandingan</span>
+            </button>
+            <button @click="globalTab = 'nomor'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'nomor' ? 'border-emerald-500 text-emerald-600 bg-emerald-50/30' : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-list-ol text-[15px]"></i>
+                <span>Nomor Match</span>
+            </button>
+            <button @click="globalTab = 'bracket'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'bracket' ? 'border-rose-500 text-rose-600 bg-rose-50/30' : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-medal text-[15px]"></i>
+                <span>Hasil Bracket</span>
+            </button>
+        </div>
+    </div>
+
+    {{-- ===== FILTER CONTROLS ===== --}}
+    <div class="bg-slate-900/5 border border-slate-200/60 rounded-2xl p-3 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {{-- Filter: Gender --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-gender" wire:model.live="selectedGender" placeholder="Semua Gender" variant="filter">
+                    <option value="">Semua Gender</option>
+                    <option value="Male">Laki-laki (Male)</option>
+                    <option value="Female">Perempuan (Female)</option>
+                    <option value="Mix">Campuran (Mix)</option>
+                </x-select>
+            </div>
+
+            {{-- Filter: Kategori Umur --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-age-group" wire:model.live="selectedAgeGroupId" placeholder="Semua Kategori Umur" variant="filter">
+                    <option value="">Semua Kategori Umur</option>
+                    @foreach($filterAgeGroups as $ageGroup)
+                        <option value="{{ $ageGroup->id }}">{{ $ageGroup->name }}</option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            {{-- Filter: Match --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select 
+                    wire:key="filter-match-number-{{ $selectedAgeGroupId }}-{{ $selectedCourtId }}-{{ $selectedPoolId }}-{{ count($filterMatchNumbers) }}"
+                    wire:model.live="selectedMatchNumberId" 
+                    placeholder="Semua Match" 
+                    variant="filter"
+                >
+                    <option value="">Semua Match</option>
+                    @foreach($filterMatchNumbers as $mn)
+                        <option value="{{ $mn->id }}">{{ $mn->name }} - {{ $mn?->ageGroup?->name }}</option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            {{-- Filter: Court --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-court" wire:model.live="selectedCourtId" placeholder="Semua Court" variant="filter">
+                    <option value="">Semua Court</option>
+                    @foreach($courts as $court)
+                        <option value="{{ $court->id }}">{{ $court->name }}</option>
+                    @endforeach
+                </x-select>
             </div>
             
-            {{-- Court Filter --}}
-            <div class="px-4 py-3 sm:border-l border-t sm:border-t-0 border-slate-100 shrink-0">
-                <div class="relative">
-                    <select wire:model.live="selectedCourtId"
-                            class="appearance-none bg-slate-50 border border-slate-200 text-black text-[15px] font-bold rounded-xl pl-4 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all w-full sm:w-44">
-                        <option value="">Semua Court</option>
-                        @foreach($courts as $court)
-                            <option value="{{ $court->id }}">{{ $court->name }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-800">
-                        <i class="fas fa-chevron-down text-[15px]"></i>
-                    </div>
-                </div>
+            {{-- Filter: Pool --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-pool" wire:model.live="selectedPoolId" placeholder="Semua Pool" variant="filter">
+                    <option value="">Semua Pool</option>
+                    @foreach($filterPools as $pool)
+                        <option value="{{ $pool->id }}">{{ $pool->name }}</option>
+                    @endforeach
+                </x-select>
             </div>
         </div>
     </div>
@@ -159,7 +201,7 @@
                                                     wire:loading.attr="disabled"
                                                     wire:target="generateDrawing({{ $mId }})"
                                                     class="inline-flex items-center gap-1.5 text-[15px] font-black text-red-600 border border-red-200 hover:bg-red-50 px-3 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50 whitespace-nowrap">
-                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sync text-[15px]"></i> Regenerate</span>
+                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sync text-[15px]"></i> Re-Drawing</span>
                                                 <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Loading...</span>
                                             </button>
                                         @else
@@ -167,15 +209,15 @@
                                                     wire:loading.attr="disabled"
                                                     wire:target="generateDrawing({{ $mId }})"
                                                     class="inline-flex items-center gap-1.5 text-[15px] font-black text-white bg-slate-900 hover:bg-slate-700 px-4 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50 whitespace-nowrap">
-                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sitemap text-[15px]"></i> Generate Bagan</span>
-                                                <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Generating...</span>
+                                                <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sitemap text-[15px]"></i> Drawing</span>
+                                                <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Drawing...</span>
                                             </button>
                                         @endif
                                         <span class="text-[15px] text-slate-300 font-bold uppercase italic whitespace-nowrap">#{{ $mId }}</span>
                                     </div>
                                 </div>
 
-                                {{-- Tab Content: Hasil Generate Bagan --}}
+                                {{-- Tab Content: Hasil Drawing Bagan --}}
                                 <div x-show="globalTab === 'hasil'" x-cloak class="p-5">
                                     @if($drawing)
                                         {{-- Format Banner --}}
@@ -186,7 +228,7 @@
                                                 </div>
                                                 <div class="min-w-0">
                                                     <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Format Randori</p>
-                                                    <p class="text-[12px] font-black text-white mt-0.5 truncate">Bagan Peserta {{ $drawing['bracket_size'] }}</p>
+                                                    <p class="text-[12px] font-black text-white mt-0.5 truncate">Bagan Peserta {{ $drawing['bracket_size'] ?? '—' }}</p>
                                                 </div>
                                             </div>
 
@@ -245,37 +287,34 @@
                                         @endphp
 
                                         {{-- ═══ UPPER BRACKET ═══ --}}
-                                        <div class="mb-6">
-                                            <div class="flex items-center gap-2 mb-3">
-                                                <span class="text-[15px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">Upper Bracket</span>
-                                                <div class="flex-1 h-px bg-indigo-100"></div>
+                                        <div class="mb-6 rounded-xl border border-indigo-200 overflow-hidden shadow-sm">
+                                            <div class="bg-indigo-600 px-4 py-2.5">
+                                                <h3 class="text-[13px] font-black text-white uppercase tracking-widest">&uarr; Upper Bracket &mdash; Winner Path</h3>
                                             </div>
-                                            <div class="bg-slate-900/5 border border-slate-200 rounded-2xl p-4 overflow-x-auto scrollbar-hide">
-                                                <div class="flex gap-8 min-w-max pb-2 items-start">
+                                            <div class="bg-white p-5 overflow-x-auto scrollbar-hide">
+                                                <div class="flex gap-8 min-w-max items-start">
                                                     @php
-                                                        // R0 always exists (contains both prelim + direct athletes)
                                                         $hasPrelim = $drawing['has_preliminary'] ?? true;
                                                     @endphp
                                                     @foreach($ubRounds as $rIdx => $ubRound)
                                                         @php
                                                             $isR0 = ($rIdx === 0);
-                                                            // Label: R0 = Perempatan, then Babak 1, ..., Semi Final, Final
-                                                            if ($isR0) {
-                                                                $roundLabel   = 'Perempatan';
-                                                                $labelColor   = 'text-orange-400';
+                                                            if ($isR0 && $hasPrelim) {
+                                                                $roundLabel   = 'UB R0 (Prelim)';
+                                                                $labelColor   = 'text-indigo-400';
                                                             } elseif ($rIdx === count($ubRounds) - 1) {
                                                                 $roundLabel   = 'UB Final';
-                                                                $labelColor   = 'text-indigo-500';
+                                                                $labelColor   = 'text-indigo-600';
                                                             } elseif ($rIdx === count($ubRounds) - 2) {
                                                                 $roundLabel   = 'UB Semi Final';
-                                                                $labelColor   = 'text-indigo-400';
+                                                                $labelColor   = 'text-indigo-500';
                                                             } else {
-                                                                $roundLabel   = 'UB Babak ' . $rIdx;
-                                                                $labelColor   = 'text-slate-800';
+                                                                $roundLabel   = 'UB R' . ($rIdx + ($hasPrelim ? 0 : 1));
+                                                                $labelColor   = 'text-slate-500';
                                                             }
                                                         @endphp
-                                                        <div class="flex flex-col gap-3 {{ $isR0 ? 'w-[200px]' : 'w-[220px]' }}">
-                                                            <p class="text-[15px] font-black text-center uppercase tracking-widest {{ $labelColor }}">
+                                                        <div class="flex flex-col gap-4 w-[220px]">
+                                                            <p class="text-[12px] font-black uppercase tracking-widest text-center {{ $labelColor }}">
                                                                 {{ $roundLabel }}
                                                             </p>
 
@@ -289,24 +328,16 @@
                                                                 @endphp
 
                                                                 @if($isDirect)
-                                                                    {{-- Direct pass card: slim, green "Lolos Langsung" --}}
                                                                     <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
                                                                         <div class="w-1 h-4 rounded-full bg-emerald-400 shrink-0"></div>
                                                                         <div class="flex-1 min-w-0">
                                                                             <p class="text-[15px] font-black text-emerald-800 uppercase truncate">{{ $a1['name'] ?? '-' }}</p>
                                                                             <p class="text-[15px] text-emerald-500 uppercase truncate">{{ $a1['contingent'] ?? '' }}</p>
                                                                         </div>
-                                                                        <span class="text-[7px] font-black text-emerald-500 bg-white border border-emerald-200 px-1.5 py-0.5 rounded-full uppercase whitespace-nowrap">Lolos →</span>
+                                                                        <span class="text-[7px] font-black text-emerald-500 bg-white border border-emerald-200 px-1.5 py-0.5 rounded-full uppercase whitespace-nowrap">Lolos &rarr;</span>
                                                                     </div>
                                                                 @else
-                                                                    {{-- Real match (prelim or main bracket) --}}
                                                                     <div class="bg-white border-2 {{ $winner ? 'border-indigo-300' : ($isPrelim ? 'border-orange-200' : 'border-slate-200') }} rounded-xl overflow-hidden shadow-sm">
-                                                                        @if($isPrelim)
-                                                                            <div class="bg-orange-50 px-2.5 py-0.5 border-b border-orange-100">
-                                                                                <span class="text-[7px] font-black text-orange-400 uppercase tracking-widest">Perempatan</span>
-                                                                            </div>
-                                                                        @endif
-                                                                        {{-- Athlete 1 --}}
                                                                         <div class="flex items-center gap-2 p-2.5 border-b border-slate-100 {{ $winner === 'athlete1' ? 'bg-indigo-50' : '' }}">
                                                                             <div class="w-1.5 h-5 rounded-full bg-red-500 shrink-0"></div>
                                                                             <div class="flex-1 min-w-0">
@@ -319,7 +350,6 @@
                                                                             </div>
                                                                             @if($winner === 'athlete1')<span class="text-[15px] font-black text-indigo-600 shrink-0">W</span>@endif
                                                                         </div>
-                                                                        {{-- Athlete 2 --}}
                                                                         <div class="flex items-center gap-2 p-2.5 {{ $winner === 'athlete2' ? 'bg-indigo-50' : '' }}">
                                                                             <div class="w-1.5 h-5 rounded-full bg-blue-600 shrink-0"></div>
                                                                             <div class="flex-1 min-w-0">
@@ -337,42 +367,24 @@
                                                             @endforeach
                                                         </div>
                                                     @endforeach
-
-
-
-                                                    {{-- UB Champion placeholder --}}
-                                                    <div class="flex flex-col gap-4 w-[140px]">
-                                                        <p class="text-[15px] font-black text-center uppercase tracking-widest text-amber-500">🏆 UB Winner</p>
-                                                        <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 text-center shadow-sm">
-                                                            @php $ubWinner = $drawing['juara'][1] ?? null; @endphp
-                                                            @if($ubWinner)
-                                                                <p class="text-[15px] font-black text-amber-700 uppercase">{{ $ubWinner['name'] }}</p>
-                                                                <p class="text-[15px] text-amber-500 mt-0.5">{{ $ubWinner['contingent'] ?? '' }}</p>
-                                                            @else
-                                                                <i class="fas fa-trophy text-amber-300 text-xl mb-1 block"></i>
-                                                                <p class="text-[15px] text-amber-400 font-bold uppercase">Menunggu</p>
-                                                            @endif
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {{-- ═══ LOWER BRACKET ═══ --}}
                                         @if(count($lbRounds) > 0)
-                                            <div class="mb-6">
-                                                <div class="flex items-center gap-2 mb-3">
-                                                    <span class="text-[15px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">Lower Bracket</span>
-                                                    <div class="flex-1 h-px bg-orange-100"></div>
-                                                    <span class="text-[15px] text-slate-800 italic">Kalah sekali masih bisa bertanding</span>
+                                            <div class="mb-6 rounded-xl border border-orange-200 overflow-hidden shadow-sm">
+                                                <div class="bg-orange-500 px-4 py-2.5">
+                                                    <h3 class="text-[13px] font-black text-white uppercase tracking-widest">&darr; Loser Bracket &mdash; Second Chance Path</h3>
                                                 </div>
-                                                <div class="bg-orange-50/30 border border-orange-100 rounded-2xl p-4 overflow-x-auto scrollbar-hide">
-                                                    <div class="flex gap-8 min-w-max pb-2 items-start">
+                                                <div class="bg-white p-5 overflow-x-auto scrollbar-hide">
+                                                    <div class="flex gap-8 min-w-max items-start">
                                                         @foreach($lbRounds as $lrIdx => $lbRound)
                                                             <div class="flex flex-col gap-4 w-[220px]">
-                                                                <p class="text-[15px] font-black text-center uppercase tracking-widest text-orange-400">
+                                                                <p class="text-[12px] font-black text-center uppercase tracking-widest text-orange-400">
                                                                     @if($lrIdx === count($lbRounds) - 1) LB Final
-                                                                    @else LB Ronde {{ $lrIdx + 1 }} @endif
+                                                                    @elseif($lrIdx === count($lbRounds) - 2) LB Semi Final
+                                                                    @else LB R{{ $lrIdx + 1 }} @endif
                                                                 </p>
                                                                 @foreach($lbRound as $lmIdx => $lmatch)
                                                                     @php
@@ -409,21 +421,6 @@
                                                                 @endforeach
                                                             </div>
                                                         @endforeach
-
-                                                        {{-- LB Champion placeholder --}}
-                                                        <div class="flex flex-col gap-4 w-[140px]">
-                                                            <p class="text-[15px] font-black text-center uppercase tracking-widest text-orange-500">LB Winner</p>
-                                                            <div class="bg-orange-50 border-2 border-orange-300 rounded-xl p-4 text-center shadow-sm">
-                                                                @php $lbWinner = $drawing['juara'][2] ?? null; @endphp
-                                                                @if($lbWinner)
-                                                                    <p class="text-[15px] font-black text-orange-700 uppercase">{{ $lbWinner['name'] }}</p>
-                                                                    <p class="text-[15px] text-orange-500 mt-0.5">{{ $lbWinner['contingent'] ?? '' }}</p>
-                                                                @else
-                                                                    <i class="fas fa-medal text-orange-300 text-xl mb-1 block"></i>
-                                                                    <p class="text-[15px] text-orange-400 font-bold uppercase">Menunggu</p>
-                                                                @endif
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -431,43 +428,45 @@
 
                                         {{-- ═══ GRAND FINAL ═══ --}}
                                         @if($gf)
-                                            <div>
-                                                <div class="flex items-center gap-2 mb-3">
-                                                    <span class="text-[15px] font-black text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-lg uppercase tracking-widest">🏆 Grand Final</span>
-                                                    <div class="flex-1 h-px bg-amber-200"></div>
+                                            <div class="mb-6 rounded-xl border border-amber-300 overflow-hidden shadow-sm">
+                                                <div class="bg-amber-500 px-4 py-2.5">
+                                                    <h3 class="text-[13px] font-black text-white uppercase tracking-widest">🏆 Grand Final &mdash; UB Champion vs LB Champion</h3>
                                                 </div>
-                                                <div class="bg-amber-50/50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-4 flex-wrap shadow-sm">
+                                                <div class="bg-amber-50 p-6 flex flex-col md:flex-row items-center justify-center gap-6">
                                                     {{-- GF Athlete 1 (UB Winner) --}}
-                                                    <div class="flex-1 min-w-[160px] bg-white border {{ ($gf['winner'] ?? null) === 'athlete1' ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-200' }} rounded-xl p-3 text-center shadow-sm">
-                                                        <span class="text-[15px] font-black text-indigo-500 uppercase block mb-1">UB Winner</span>
+                                                    <div class="w-full md:w-[280px] bg-white border-2 {{ ($gf['winner'] ?? null) === 'athlete1' ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-200' }} rounded-xl p-5 text-center shadow-sm">
+                                                        <span class="text-[11px] font-black text-indigo-500 uppercase tracking-widest block mb-2">UB Champion</span>
                                                         @if($gf['athlete1'] ?? null)
-                                                            <p class="text-[15px] font-black text-slate-800 uppercase">{{ $gf['athlete1']['name'] }}</p>
-                                                            <p class="text-[15px] text-slate-800">{{ $gf['athlete1']['contingent'] ?? '' }}</p>
+                                                            <p class="text-[16px] font-black text-slate-800 uppercase">{{ $gf['athlete1']['name'] }}</p>
+                                                            <p class="text-[14px] text-slate-500 mt-1 uppercase">{{ $gf['athlete1']['contingent'] ?? '' }}</p>
                                                         @else
-                                                            <p class="text-[15px] text-slate-300 italic">Menunggu...</p>
+                                                            <p class="text-[15px] text-slate-300 italic py-2">Menunggu...</p>
                                                         @endif
                                                     </div>
 
                                                     <div class="text-center shrink-0">
-                                                        <span class="text-[15px] font-black text-amber-600 uppercase bg-amber-100 border border-amber-200 px-3 py-1 rounded-full">VS</span>
+                                                        <span class="text-[14px] font-black text-amber-600 uppercase bg-amber-100 border border-amber-200 px-4 py-2 rounded-full">VS</span>
                                                     </div>
 
                                                     {{-- GF Athlete 2 (LB Winner) --}}
-                                                    <div class="flex-1 min-w-[160px] bg-white border {{ ($gf['winner'] ?? null) === 'athlete2' ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-200' }} rounded-xl p-3 text-center shadow-sm">
-                                                        <span class="text-[15px] font-black text-orange-500 uppercase block mb-1">LB Winner</span>
+                                                    <div class="w-full md:w-[280px] bg-white border-2 {{ ($gf['winner'] ?? null) === 'athlete2' ? 'border-amber-400 ring-2 ring-amber-300' : 'border-slate-200' }} rounded-xl p-5 text-center shadow-sm">
+                                                        <span class="text-[11px] font-black text-orange-500 uppercase tracking-widest block mb-2">LB Champion</span>
                                                         @if($gf['athlete2'] ?? null)
-                                                            <p class="text-[15px] font-black text-slate-800 uppercase">{{ $gf['athlete2']['name'] }}</p>
-                                                            <p class="text-[15px] text-slate-800">{{ $gf['athlete2']['contingent'] ?? '' }}</p>
+                                                            <p class="text-[16px] font-black text-slate-800 uppercase">{{ $gf['athlete2']['name'] }}</p>
+                                                            <p class="text-[14px] text-slate-500 mt-1 uppercase">{{ $gf['athlete2']['contingent'] ?? '' }}</p>
                                                         @else
-                                                            <p class="text-[15px] text-slate-300 italic">Menunggu...</p>
+                                                            <p class="text-[15px] text-slate-300 italic py-2">Menunggu...</p>
                                                         @endif
                                                     </div>
 
                                                     @if($gf['winner'] ?? null)
-                                                        <div class="text-center shrink-0 px-3">
-                                                            <span class="text-[15px] font-black text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-lg block">
-                                                                🏆 {{ $gf['winner_data']['name'] ?? '-' }}
-                                                            </span>
+                                                        <div class="w-full md:w-auto text-center mt-4 md:mt-0 md:ml-4">
+                                                            <div class="inline-flex flex-col items-center bg-amber-500 border border-amber-600 px-6 py-3 rounded-xl shadow-md">
+                                                                <span class="text-[10px] text-amber-100 uppercase font-black tracking-widest mb-1">Juara 1</span>
+                                                                <span class="text-[16px] font-black text-white uppercase flex items-center gap-2">
+                                                                    <i class="fas fa-trophy"></i> {{ $gf['winner_data']['name'] ?? '-' }}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -482,7 +481,7 @@
                                         <div class="border-2 border-dashed border-slate-200 rounded-xl py-12 px-6 text-center">
                                             <i class="fas fa-sitemap text-slate-300 text-3xl mb-4"></i>
                                             <p class="text-[12px] font-black text-slate-800 uppercase tracking-widest">Bagan belum dibuat</p>
-                                            <p class="text-[15px] text-slate-800 mt-1">Klik <strong>Generate Bagan</strong> untuk mengundi peserta ke dalam Tree.</p>
+                                            <p class="text-[15px] text-slate-800 mt-1">Klik <strong>Drawing Bagan</strong> untuk mengundi peserta ke dalam Tree.</p>
                                         </div>
                                     @endif
                                 </div>
@@ -683,14 +682,12 @@
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
                     <thead class="bg-slate-800 text-white">
-                        <tr class="bg-indigo-900 text-white">
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">No. Match</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Tipe</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Kategori & Babak</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Kontingen / Pool</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Jadwal & Sesi</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Tempat</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Posisi</th>
+                        <tr>
+                            <th class="px-5 py-3.5 text-center text-[15px] font-black uppercase tracking-widest border border-slate-700">#</th>
+                            <th class="px-5 py-3.5 text-center text-[15px] font-black uppercase tracking-widest border border-slate-700">Type</th>
+                            <th class="px-5 py-3.5 text-left text-[15px] font-black uppercase tracking-widest border border-slate-700">Match / Kategori</th>
+                            <th class="px-5 py-3.5 text-left text-[15px] font-black uppercase tracking-widest border border-slate-700">Kontingen / Bagan</th>
+                            <th class="px-5 py-3.5 text-center text-[15px] font-black uppercase tracking-widest border border-slate-700">Posisi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
@@ -699,7 +696,33 @@
                             @foreach($ageGroups as $ageName => $matches)
                                 @foreach($matches as $mId => $data)
                                     @if(isset($data['db_drawing_entries']) && $data['db_drawing_entries']->isNotEmpty())
-                                        @php $hasAtLeastOneDrawing = true; @endphp
+                                        @php 
+                                            $hasAtLeastOneDrawing = true; 
+                                            $firstMatchEntry = $data['db_drawing_entries']->first();
+                                        @endphp
+                                        <tr class="bg-slate-800">
+                                            <td colspan="5" class="px-5 py-2">
+                                                <div class="flex items-center gap-4">
+                                                    <span class="text-[12px] font-black text-white/60 uppercase tracking-widest">Update Match #{{ $mId }}:</span>
+                                                    {{-- Edit Court --}}
+                                                    <select wire:change="updateMatchDrawingsField({{ $mId }}, 'court_id', $event.target.value)" 
+                                                            class="text-[11px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded px-2 py-1 outline-none transition cursor-pointer">
+                                                        <option value="" class="text-slate-900">No Court</option>
+                                                        @foreach($courts as $c)
+                                                            <option value="{{ $c->id }}" {{ $firstMatchEntry->court_id == $c->id ? 'selected' : '' }} class="text-slate-900">{{ $c->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    {{-- Edit Rundown --}}
+                                                    <select wire:change="updateMatchDrawingsField({{ $mId }}, 'rundown_id', $event.target.value)" 
+                                                            class="text-[11px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded px-2 py-1 outline-none transition cursor-pointer">
+                                                        <option value="" class="text-slate-900">No Rundown</option>
+                                                        @foreach($rundowns as $r)
+                                                            <option value="{{ $r->id }}" {{ $firstMatchEntry->rundown_id == $r->id ? 'selected' : '' }} class="text-slate-900">{{ $r->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </td>
+                                        </tr>
                                         @foreach($data['db_drawing_entries'] as $entry)
                                             <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
                                                 <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
@@ -719,23 +742,6 @@
                                                 <td class="px-5 py-3.5 border-r border-slate-200">
                                                     <p class="text-[15px] font-black text-black uppercase whitespace-nowrap">{{ $entry->registration->contingent->name ?? 'Unknown' }}</p>
                                                     <p class="text-[15px] text-slate-800 mt-0.5 uppercase font-bold">{{ $entry->pool->name ?? 'BAGAN' }}</p>
-                                                </td>
-                                                <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
-                                                    @if($entry->schedule_date || $entry->rundown || $entry->sessionTime)
-                                                        @if($entry->schedule_date || $entry->rundown)
-                                                        <span class="block bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-lg text-[15px] font-black uppercase">
-                                                            {{ $entry->schedule_date ? \Carbon\Carbon::parse($entry->schedule_date)->locale('id')->isoFormat('D MMM') : 'Tgl(-)' }} · {{ $entry->rundown->name ?? '-' }}
-                                                        </span>
-                                                        @endif
-                                                        @if($entry->sessionTime)
-                                                            <span class="block text-[15px] text-slate-900 mt-1 uppercase font-bold">{{ $entry->sessionTime->name }} ({{ $entry->sessionTime->start_time->format('H:i') }} - {{ $entry->sessionTime->end_time ? $entry->sessionTime->end_time->format('H:i') : 'Selesai' }})</span>
-                                                        @endif
-                                                    @else
-                                                        <span class="inline-block text-slate-300 text-[15px] italic">Belum diatur</span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-5 py-3.5 border-l border-slate-100 text-center whitespace-nowrap border-r border-slate-200">
-                                                    <span class="inline-block border border-indigo-100 text-indigo-600 px-2.5 py-1 rounded-lg text-[15px] font-black uppercase bg-indigo-50/50">{{ $entry->court->name ?? '—' }}</span>
                                                 </td>
                                                 <td class="px-5 py-3.5 text-center whitespace-nowrap border-r border-slate-200">
                                                     <span class="inline-block border border-amber-200 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg text-[15px] font-black">Posisi {{ $entry->sequence_number + 1 }}</span>

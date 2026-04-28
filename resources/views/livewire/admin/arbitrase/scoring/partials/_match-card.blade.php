@@ -109,23 +109,144 @@
             </div>
 
             {{-- Action footer --}}
-            @if($hasBothAthletes && !$isDone)
-                <div class="border-t border-slate-100 bg-slate-50/60 px-3 py-2 flex items-center justify-end gap-1.5">
-                    <button
-                        wire:click="callMatch('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
-                        class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide transition-all
-                            {{ $isActive ? $schemeCallBtnActive : $schemeCallBtn }}"
-                        title="Panggil ke layar Wasit"
-                    >
-                        <i class="fas fa-bullhorn text-[15px]"></i> Panggil
-                    </button>
-                    <button
-                        wire:click="openMatchModal('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
-                        class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-orange-600 transition-all shadow-sm"
-                        title="Input Skor"
-                    >
-                        <i class="fas fa-edit text-[15px]"></i> Skor
-                    </button>
+            @if($match['is_bye'] ?? false)
+                <div class="border-t border-emerald-100 bg-emerald-50/40 px-3 py-1.5 flex items-center justify-center">
+                    <span class="text-[15px] font-black text-emerald-500 uppercase tracking-widest"><i class="fas fa-forward mr-1"></i>Lolos Otomatis</span>
+                </div>
+            @elseif($hasBothAthletes && !$isDone)
+                <div class="border-t border-slate-100 bg-slate-50/60 px-3 py-2 flex flex-col gap-2">
+                    <div class="flex items-center justify-end gap-1.5">
+                        @if(!$isActive)
+                            <button
+                                wire:click="callMatch('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
+                                class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide transition-all {{ $schemeCallBtn }}"
+                                title="Panggil ke layar Wasit"
+                            >
+                                <i class="fas fa-bullhorn text-[15px]"></i> Panggil
+                            </button>
+                        @else
+                            <button
+                                wire:click="openMatchModal('{{ $bracket }}', {{ $roundIdx }}, {{ $matchIdx }})"
+                                class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-slate-900 text-white hover:bg-orange-600 transition-all shadow-sm"
+                                title="Input Skor"
+                            >
+                                <i class="fas fa-edit text-[15px]"></i> Skor
+                            </button>
+                        @endif
+                    </div>
+
+                    @if($isActive)
+                        <div wire:ignore x-data="{
+                                time: 0,
+                                running: false,
+                                countdown: 0,
+                                lastTickSecond: -1,
+                                interpolInterval: null,
+                                syncInterval: null,
+                                formatTime() {
+                                    let t = Math.max(0, this.time);
+                                    let m = Math.floor(t / 60000);
+                                    let s = Math.floor((t % 60000) / 1000);
+                                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                                },
+                                formatCountdown() {
+                                    if (this.countdown === 5) return 'Siap';
+                                    if (this.countdown === 4) return '3';
+                                    if (this.countdown === 3) return '2';
+                                    if (this.countdown === 2) return '1';
+                                    if (this.countdown === 1) return 'Mulai';
+                                    return '';
+                                },
+                                async sync() {
+                                    let state = await $wire.getTimerState();
+                                    if (!state) return;
+                                    
+                                    let oldCountdown = this.countdown;
+
+                                    if (state.status === 'running') {
+                                        this.running = true;
+                                        this.countdown = 0;
+                                        this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+                                    } else if (state.status === 'countdown') {
+                                        this.running = false;
+                                        let remaining = state.countdown_end_ms - Date.now();
+                                        this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                        this.time = state.elapsed_ms || 0;
+                                        if (remaining <= 0) { $wire.startTimer(); }
+                                    } else {
+                                        this.running = false;
+                                        this.countdown = 0;
+                                        this.time = state.elapsed_ms || 0;
+                                    }
+
+                                    // Trigger Countdown Voice
+                                    if (this.countdown > 0 && this.countdown !== oldCountdown) {
+                                        window.speakCountdown(this.formatCountdown());
+                                    }
+                                },
+                                init() {
+                                    this.sync();
+                                    this.interpolInterval = setInterval(() => { 
+                                        if (this.running) {
+                                            this.time += 30; 
+                                            let currentSecond = Math.floor(this.time / 1000);
+                                            if (currentSecond > this.lastTickSecond) {
+                                                window.playTimerTick(1000, 0.05);
+                                                this.lastTickSecond = currentSecond;
+                                            }
+                                        } else {
+                                            this.lastTickSecond = Math.floor(this.time / 1000);
+                                        }
+                                    }, 30);
+                                    this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                                },
+                                start() {
+                                    if (!this.running && this.countdown === 0) {
+                                        $wire.startCountdown();
+                                    }
+                                },
+                                pause() { $wire.pauseTimer(); },
+                                stop() { $wire.stopTimer(); },
+                                finish() {
+                                    let capturedTime = this.time;
+                                    $wire.pauseTimer();
+                                    Swal.fire({
+                                        title: 'Apakah anda yakin?',
+                                        html: '<p>Pertandingan akan ditandai <b>Selesai</b>.<br>Panggilan akan ditutup / dinonaktifkan.</p>',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Ya, Selesai!',
+                                        cancelButtonText: 'Batal',
+                                        confirmButtonColor: '#2563eb',
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            $wire.finishMatch();
+                                        } else {
+                                            $wire.startTimer();
+                                        }
+                                    });
+                                }
+                            }" class="flex items-center justify-between border-t border-orange-200/60 pt-2">
+                            <div class="flex items-center gap-1.5">
+                                <button @click="window.playTimerTick(1200, 0.1)" class="w-5 h-5 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-full transition-colors mr-1" title="Test Suara">
+                                    <i class="fas fa-volume-up text-[10px]"></i>
+                                </button>
+                                <i class="fas fa-stopwatch text-orange-500"></i>
+                                <div class="text-[15px] font-black font-mono tracking-wider" :class="countdown > 0 ? 'text-amber-500' : 'text-orange-700'">
+                                    <span x-show="countdown > 0" x-text="formatCountdown()"></span>
+                                    <span x-show="countdown === 0" x-text="formatTime()">00:00</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button x-show="!running && countdown === 0" @click="start()" class="w-7 h-7 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-md transition-colors" title="Start Timer"><i class="fas fa-play text-[10px]"></i></button>
+                                <button x-show="running" @click="pause()" class="w-7 h-7 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-md transition-colors" title="Pause Timer"><i class="fas fa-pause text-[10px]"></i></button>
+                                <button @click="stop()" class="w-7 h-7 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white rounded-md transition-colors" title="Stop & Reset"><i class="fas fa-stop text-[10px]"></i></button>
+                                <button x-show="running || time > 0" @click="finish()" class="h-7 px-2 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors ml-1" title="Selesai & Tutup">
+                                    <i class="fas fa-flag-checkered text-[9px] mr-1"></i><span class="text-[9px] font-black uppercase tracking-wider">Selesai</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             @elseif($isDone)
                 <div class="border-t border-slate-100 bg-slate-50/40 px-3 py-1.5 flex items-center justify-center">

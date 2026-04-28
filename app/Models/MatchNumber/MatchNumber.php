@@ -8,6 +8,7 @@ use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\RandoriMatchResult;
 use App\Models\Referee;
+use App\Models\TournamentResult;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -67,6 +68,11 @@ class MatchNumber extends Model
     public function drawings()
     {
         return $this->hasMany(DrawingMatchNumber::class);
+    }
+
+    public function tournamentResults()
+    {
+        return $this->hasMany(TournamentResult::class);
     }
 
     public function getGenderIndoAttribute(): string

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             SessionRundownSeeder::class,
             TechniqueSeeder::class,
             TournamentDummySeeder::class,
+            // Embu9ContingentSeeder::class,
         ]);
     }
 }

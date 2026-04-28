@@ -86,7 +86,7 @@ class AdminEmbuResultIndex extends Component
 
     // ─── PENYISIHAN ───────────────────────────────────────────
 
-    /** Return sorted Penyisihan registrations with scores & rank. */
+    /** Return grouped and sorted Penyisihan registrations with scores & rank. */
     private function getPenyisihanRanking(): Collection
     {
         if (! $this->selectedMatchId) {
@@ -98,9 +98,15 @@ class AdminEmbuResultIndex extends Component
             return collect();
         }
 
-        return $match->athletes
+        $drawings = DrawingMatchNumber::with('pool')
+            ->where('match_number_id', $this->selectedMatchId)
+            ->where('round', 'Penyisihan')
+            ->get()
+            ->keyBy('registration_id');
+
+        $participants = $match->athletes
             ->groupBy('pivot.registration_id')
-            ->map(function ($athletes, $regId) use ($match) {
+            ->map(function ($athletes, $regId) use ($match, $drawings) {
                 $reg = Registration::with('contingent')->find($regId);
 
                 $score = $match->embuScores
@@ -118,6 +124,8 @@ class AdminEmbuResultIndex extends Component
 
                 return [
                     'id' => $regId,
+                    'pool_id' => $drawings[$regId]?->pool_id ?? 0,
+                    'pool_name' => $drawings[$regId]?->pool?->name ?? 'No Pool',
                     'athletes' => $athletes,
                     'contingent' => $reg?->contingent,
                     'score' => $score,
@@ -125,8 +133,27 @@ class AdminEmbuResultIndex extends Component
                     'effective_score' => $tiebreakScore ?? $score,
                 ];
             })
-            ->sortBy(fn ($r) => $r['effective_score']?->nilai_akhir ?? PHP_INT_MAX)
             ->values();
+
+        // Sort: 1. Nilai Akhir (DESC), 2. Wasit Utama / judge_1 (DESC)
+        $sorted = $participants->sort(function ($a, $b) {
+            $naA = (float) ($a['effective_score']?->nilai_akhir ?? -1);
+            $naB = (float) ($b['effective_score']?->nilai_akhir ?? -1);
+            if ($naA !== $naB) {
+                return $naB <=> $naA;
+            }
+
+            $j1A = (float) ($a['effective_score']?->judge_1 ?? -1);
+            $j1B = (float) ($b['effective_score']?->judge_1 ?? -1);
+            if ($j1A !== $j1B) {
+                return $j1B <=> $j1A;
+            }
+
+            return 0;
+        })->values();
+
+        // Group by Pool
+        return $sorted->groupBy('pool_id');
     }
 
     /** Return sorted Final registrations with scores. */
@@ -178,12 +205,10 @@ class AdminEmbuResultIndex extends Component
                 ->first();
 
             $effectivePenyisihan = ($penyisihanTbScore ?? $penyisihanScore)?->nilai_akhir ?? 0;
-            $effectiveFinal = ($finalTbScore ?? $finalScore)?->nilai_akhir ?? null;
+            $effectiveFinal = ($finalTbScore ?? $finalScore)?->nilai_akhir ?? 0;
 
-            // Accumulated = penyisihan + final (only if final scored)
-            $accumulated = $effectiveFinal !== null
-                ? (float) $effectivePenyisihan + (float) $effectiveFinal
-                : null;
+            // Accumulated = penyisihan + final (always, even if final not scored yet)
+            $accumulated = (float) $effectivePenyisihan + (float) $effectiveFinal;
 
             return [
                 'id' => $regId,
@@ -192,6 +217,7 @@ class AdminEmbuResultIndex extends Component
                 'penyisihan_score' => $penyisihanTbScore ?? $penyisihanScore,
                 'final_score' => $finalTbScore ?? $finalScore,
                 'accumulated' => $accumulated,
+                'final_scored' => ($finalTbScore ?? $finalScore) !== null,
             ];
         })
             ->sortByDesc('accumulated')
@@ -203,7 +229,8 @@ class AdminEmbuResultIndex extends Component
     public function detectFinalTies(): array
     {
         $rankings = $this->getFinalRanking();
-        $scored = $rankings->whereNotNull('accumulated');
+        // Ignore those without scores to prevent false positive ties
+        $scored = $rankings->filter(fn ($r) => $r['accumulated'] !== null && $r['accumulated'] > 0);
 
         if ($scored->count() < 2) {
             return [];
@@ -223,29 +250,64 @@ class AdminEmbuResultIndex extends Component
         return $tiedIds;
     }
 
+    // ─── THB RULES ────────────────────────────────────────────
+
+    private function getPoolQualifiersLimit(int $poolCount): int
+    {
+        if ($poolCount === 1) {
+            return 999;
+        } // All participants go to final
+        if ($poolCount === 2) {
+            return 4;
+        }   // 8 finalists
+        if ($poolCount === 3) {
+            return 3;
+        }   // 9 finalists
+        if ($poolCount >= 4) {
+            return 2;
+        }    // 8 finalists
+
+        return 0;
+    }
+
     // ─── DETECT TIES IN PENYISIHAN AT BOUNDARY ─────────────────
 
     private function detectPenyisihanBoundaryTies(): array
     {
-        // Tie at position $finalQuota
-        $ranking = $this->getPenyisihanRanking();
-        $ranked = $ranking->whereNotNull('effective_score');
+        $poolRankings = $this->getPenyisihanRanking();
+        $poolCount = $poolRankings->count();
+        $quota = $this->getPoolQualifiersLimit($poolCount);
 
-        if ($ranked->count() <= $this->finalQuota) {
-            return [];
+        $tiedIds = [];
+
+        foreach ($poolRankings as $poolId => $ranking) {
+            $ranked = $ranking->values();
+
+            if ($ranked->count() <= $quota) {
+                continue;
+            }
+
+            $boundaryIdx = $quota - 1;
+
+            $boundaryNa = (float) ($ranked->get($boundaryIdx)['effective_score']?->nilai_akhir ?? -1);
+            $boundaryJ1 = (float) ($ranked->get($boundaryIdx)['effective_score']?->judge_1 ?? -1);
+
+            $nextNa = (float) ($ranked->get($boundaryIdx + 1)['effective_score']?->nilai_akhir ?? -1);
+            $nextJ1 = (float) ($ranked->get($boundaryIdx + 1)['effective_score']?->judge_1 ?? -1);
+
+            if ($boundaryNa >= 0 && $boundaryNa === $nextNa && $boundaryJ1 === $nextJ1) {
+                // Find all who are tied with boundary
+                $tied = $ranked->filter(function ($r) use ($boundaryNa, $boundaryJ1) {
+                    $na = (float) ($r['effective_score']?->nilai_akhir ?? -1);
+                    $j1 = (float) ($r['effective_score']?->judge_1 ?? -1);
+
+                    return $na === $boundaryNa && $j1 === $boundaryJ1;
+                });
+                $tiedIds = array_merge($tiedIds, $tied->pluck('id')->toArray());
+            }
         }
 
-        $boundaryScore = (float) ($ranked->get($this->finalQuota - 1)['effective_score']?->nilai_akhir ?? -1);
-        $nextScore = (float) ($ranked->get($this->finalQuota)['effective_score']?->nilai_akhir ?? -1);
-
-        if ($boundaryScore !== $nextScore || $boundaryScore < 0) {
-            return [];
-        }
-
-        // All with boundary score
-        return $ranked->filter(fn ($r) => (float) ($r['effective_score']?->nilai_akhir ?? -1) === $boundaryScore)
-            ->pluck('id')
-            ->toArray();
+        return $tiedIds;
     }
 
     // ─── GENERATE FINAL ──────────────────────────────────────
@@ -258,7 +320,7 @@ class AdminEmbuResultIndex extends Component
             ->first();
 
         $this->finalCourtId = $existing?->court_id;
-        $this->finalPoolId = $existing?->pool_id;
+        $this->finalPoolId = null; // Usually Final is in a single pool, so we can leave it empty or create a 'FINAL POOL'
         $this->finalSessionTimeId = $existing?->session_time_id;
         $this->finalRundownId = $existing?->rundown_id;
         $this->finalScheduleDate = $existing?->schedule_date;
@@ -272,21 +334,27 @@ class AdminEmbuResultIndex extends Component
             $this->dispatch('swal', [
                 'icon' => 'warning',
                 'title' => 'Ada Nilai Seri di Batas Kuota!',
-                'text' => count($tiedIds).' peserta memiliki nilai sama di batas lolos. Buat jadwal tanding ulang terlebih dahulu.',
+                'text' => count($tiedIds).' peserta memiliki nilai sama di batas lolos (Mengingat wasit utama juga sama). Buat jadwal tanding ulang terlebih dahulu.',
             ]);
 
             return;
         }
 
-        $ranking = $this->getPenyisihanRanking();
-        $qualifiers = $ranking->whereNotNull('effective_score')
-            ->take($this->finalQuota);
+        $poolRankings = $this->getPenyisihanRanking();
+        $poolCount = $poolRankings->count();
+        $quota = $this->getPoolQualifiersLimit($poolCount);
+
+        $qualifiers = collect();
+        foreach ($poolRankings as $poolId => $ranking) {
+            $poolQualifiers = $ranking->take($quota);
+            $qualifiers = $qualifiers->merge($poolQualifiers);
+        }
 
         if ($qualifiers->isEmpty()) {
             $this->dispatch('swal', [
                 'icon' => 'warning',
-                'title' => 'Belum ada nilai Penyisihan',
-                'text' => 'Masukkan nilai peserta di babak Penyisihan terlebih dahulu.',
+                'title' => 'Gagal Generate',
+                'text' => 'Tidak ada peserta di kelas ini.',
             ]);
 
             return;
@@ -297,6 +365,8 @@ class AdminEmbuResultIndex extends Component
             ->where('round', 'Final')
             ->delete();
 
+        // Sort qualifiers based on their performance again just in case, or leave it grouped?
+        // Usually, Final drawing order is random or sorted. Here we just loop.
         foreach ($qualifiers->values() as $seq => $reg) {
             DrawingMatchNumber::create([
                 'match_number_id' => $this->selectedMatchId,
@@ -405,10 +475,10 @@ class AdminEmbuResultIndex extends Component
             return;
         }
 
-        $rankings = $this->getFinalRanking()->whereNotNull('accumulated')->values();
+        $rankings = $this->getFinalRanking()->values();
 
         if ($rankings->isEmpty()) {
-            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum ada nilai Final']);
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Gagal Konfirmasi', 'text' => 'Tidak ada peserta di babak Final.']);
 
             return;
         }
@@ -458,7 +528,7 @@ class AdminEmbuResultIndex extends Component
         $champions = $this->selectedMatchId
             ? EmbuChampion::where('match_number_id', $this->selectedMatchId)
                 ->orderBy('rank')
-                ->with(['registration.contingent', 'registration.athletes'])
+                ->with(['registration.contingent', 'matchNumber.athletes'])
                 ->get()
             : collect();
 

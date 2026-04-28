@@ -226,8 +226,10 @@
                                                 <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[20%]">Nama</th>
                                                 <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[20%]">Tingkat</th>
                                                 <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[50%]">Urutan komposisi yang dimainkan :</th>
+                                               @if ($data['details']->draft_type == 'randori')
                                                 <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[10%]">Kelas</th>
                                                 <th class="px-4 py-3 text-[12px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap w-[10%]">Berat Badan</th>
+                                               @endif
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-200">
@@ -267,6 +269,7 @@
                                                             <span class="font-bold text-[15px]">{{ $i + 1 }}. {{ $allTechniques[$techniques[$i]] ?? '-' }}</span>
                                                         @endif
                                                     </td>
+                                                    @if ($data['details']->draft_type == 'randori')
                                                     <td class="py-4 px-6 {{ $i < $rowCount - 1 ? 'border-b border-slate-300' : '' }} border-r border-slate-200 whitespace-nowrap">
                                                         @if($i < count($athletes))
                                                             <span class="font-bold text-[15px]">
@@ -287,6 +290,7 @@
                                                         </span>
                                                         @endif
                                                     </td>
+                                                    @endif
                                                 </tr>
                                             @endfor
                                         </tbody>

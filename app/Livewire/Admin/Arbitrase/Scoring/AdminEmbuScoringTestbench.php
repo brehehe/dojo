@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Arbitrase\Scoring;
 
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
+use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Registration;
 use Livewire\Attributes\Layout;
@@ -14,6 +15,8 @@ class AdminEmbuScoringTestbench extends Component
 {
     // ─── Match selection ──────────────────────────────────────
     public ?int $selectedMatchId = null;
+
+    public ?int $selectedAgeGroupId = null;
 
     public string $currentRound = 'Penyisihan';
 
@@ -53,6 +56,14 @@ class AdminEmbuScoringTestbench extends Component
         if ($first) {
             $this->selectedMatchId = $first->id;
         }
+    }
+
+    public function updatedSelectedAgeGroupId(): void
+    {
+        $this->selectedMatchId = null;
+        $this->reset(['activeRegistrationId', 'denda', 'showRankingPanel']);
+        $this->resetJudgeScores();
+        $this->currentRound = 'Penyisihan';
     }
 
     public function updatedSelectedMatchId(): void
@@ -132,8 +143,25 @@ class AdminEmbuScoringTestbench extends Component
 
     public function callParticipant(int $registrationId): void
     {
-        MatchNumber::find($this->selectedMatchId)
-            ?->update(['active_registration_id' => $registrationId]);
+        $match = MatchNumber::find($this->selectedMatchId);
+        if ($match) {
+            $match->update(['active_registration_id' => $registrationId]);
+
+            // Announcement Logic for Testbench
+            $registration = Registration::with('contingent')->find($registrationId);
+            if ($registration) {
+                $athletes = $match->athletes()
+                    ->wherePivot('registration_id', $registrationId)
+                    ->pluck('name')
+                    ->implode(', ');
+                $contingent = $registration->contingent->name;
+                $matchName = $match->name;
+
+                $text = "Panggilan untuk kontingen {$contingent}. Atas nama {$athletes}. Silakan menuju lapangan. Untuk kategori {$matchName}. Sekali lagi, panggilan untuk kontingen {$contingent}. Atas nama {$athletes}. Silakan menuju lapangan. Terima kasih.";
+
+                $this->dispatch('play-announcer', ['text' => $text]);
+            }
+        }
 
         $this->dispatch('swal', [
             'icon' => 'success',
@@ -263,9 +291,12 @@ class AdminEmbuScoringTestbench extends Component
     {
         $embuMatches = MatchNumber::where('draft_type', 'embu')
             ->whereHas('athletes')
+            ->when($this->selectedAgeGroupId, fn ($q) => $q->where('age_group_id', $this->selectedAgeGroupId))
             ->with('ageGroup')
             ->orderBy('name')
             ->get();
+
+        $ageGroups = AgeGroup::orderBy('name')->get();
 
         $match = $this->selectedMatchId
             ? MatchNumber::with(['athletes', 'embuScores', 'ageGroup'])->find($this->selectedMatchId)
@@ -307,6 +338,7 @@ class AdminEmbuScoringTestbench extends Component
             'embuMatches' => $embuMatches,
             'match' => $match,
             'registrations' => $registrations,
+            'ageGroups' => $ageGroups,
         ]);
     }
 }

@@ -75,60 +75,100 @@
         </div>
     </div>
 
-    {{-- ===== MAIN CONTROL BAR ===== --}}
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm">
-        {{-- Tab Bar + Filter Row --}}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-0 border-b border-slate-100">
-            {{-- Horizontal Tabs --}}
-            <div class="flex overflow-x-auto scrollbar-hide">
-                <button @click="globalTab = 'sebelum'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'sebelum'
-                        ? 'border-orange-500 text-orange-600'
-                        : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-users text-[15px]"></i>
-                    <span>Pendaftar</span>
-                </button>
-                <button @click="globalTab = 'hasil'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'hasil'
-                        ? 'border-indigo-500 text-indigo-600'
-                        : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-project-diagram text-[15px]"></i>
-                    <span>Drawing &amp; Pool</span>
-                </button>
-                <button @click="globalTab = 'nomor'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'nomor'
-                        ? 'border-emerald-500 text-emerald-600'
-                        : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-list-ol text-[15px]"></i>
-                    <span>Nomor Match</span>
-                </button>
-                <button @click="globalTab = 'penilaian'"
-                    class="flex items-center gap-2 px-5 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
-                    :class="globalTab === 'penilaian'
-                        ? 'border-rose-500 text-rose-600'
-                        : 'border-transparent text-slate-800 hover:text-black hover:border-slate-200'">
-                    <i class="fas fa-medal text-[15px]"></i>
-                    <span>Hasil Penilaian</span>
-                </button>
+    {{-- ===== TABS NAVIGATION ===== --}}
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
+        <div class="flex overflow-x-auto scrollbar-hide">
+            <button @click="globalTab = 'sebelum'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'sebelum'
+                    ? 'border-orange-500 text-orange-600 bg-orange-50/30'
+                    : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-users text-[15px]"></i>
+                <span>Pendaftar</span>
+            </button>
+            <button @click="globalTab = 'hasil'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'hasil'
+                    ? 'border-indigo-500 text-indigo-600 bg-indigo-50/30'
+                    : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-project-diagram text-[15px]"></i>
+                <span>Drawing &amp; Pool</span>
+            </button>
+            <button @click="globalTab = 'nomor'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'nomor'
+                    ? 'border-emerald-500 text-emerald-600 bg-emerald-50/30'
+                    : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-list-ol text-[15px]"></i>
+                <span>Nomor Match</span>
+            </button>
+            <button @click="globalTab = 'penilaian'"
+                class="flex items-center gap-2 px-6 py-4 text-[15px] font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all duration-200 shrink-0"
+                :class="globalTab === 'penilaian'
+                    ? 'border-rose-500 text-rose-600 bg-rose-50/30'
+                    : 'border-transparent text-slate-800 hover:text-black hover:bg-slate-50/50'">
+                <i class="fas fa-medal text-[15px]"></i>
+                <span>Hasil Penilaian</span>
+            </button>
+        </div>
+    </div>
+
+    {{-- ===== FILTER CONTROLS ===== --}}
+    <div class="bg-slate-900/5 border border-slate-200/60 rounded-2xl p-3 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {{-- Filter: Gender --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-gender" wire:model.live="selectedGender" placeholder="Semua Gender" variant="filter">
+                    <option value="">Semua Gender</option>
+                    <option value="Male">Laki-laki (Male)</option>
+                    <option value="Female">Perempuan (Female)</option>
+                    <option value="Mix">Campuran (Mix)</option>
+                </x-select>
             </div>
 
-            {{-- Court Filter --}}
-            <div class="px-4 py-3 sm:border-l border-t sm:border-t-0 border-slate-100 shrink-0">
-                <div class="relative">
-                    <select wire:model.live="selectedCourtId"
-                            class="appearance-none bg-slate-50 border border-slate-200 text-black text-[15px] font-bold rounded-xl pl-4 pr-9 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all w-full sm:w-44">
-                        <option value="">Semua Court</option>
-                        @foreach($courts as $court)
-                            <option value="{{ $court->id }}">{{ $court->name }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-800">
-                        <i class="fas fa-chevron-down text-[15px]"></i>
-                    </div>
-                </div>
+            {{-- Filter: Kategori Umur --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-age-group" wire:model.live="selectedAgeGroupId" placeholder="Semua Kategori Umur" variant="filter">
+                    <option value="">Semua Kategori Umur</option>
+                    @foreach($filterAgeGroups as $ageGroup)
+                        <option value="{{ $ageGroup->id }}">{{ $ageGroup->name }}</option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            {{-- Filter: Match Number --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select 
+                    wire:key="filter-match-number-{{ $selectedAgeGroupId }}-{{ $selectedCourtId }}-{{ $selectedPoolId }}-{{ count($filterMatchNumbers) }}"
+                    wire:model.live="selectedMatchNumberId" 
+                    placeholder="Semua Match" 
+                    variant="filter"
+                >
+                    <option value="">Semua Match</option>
+                    @foreach($filterMatchNumbers as $mn)
+                        <option value="{{ $mn->id }}">{{ $mn->name }} - {{ $mn?->ageGroup?->name }}</option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            {{-- Filter: Court --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-court" wire:model.live="selectedCourtId" placeholder="Semua Court" variant="filter">
+                    <option value="">Semua Court</option>
+                    @foreach($courts as $court)
+                        <option value="{{ $court->id }}">{{ $court->name }}</option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            {{-- Filter: Pool --}}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-1">
+                <x-select wire:key="filter-pool" wire:model.live="selectedPoolId" placeholder="Semua Pool" variant="filter">
+                    <option value="">Semua Pool</option>
+                    @foreach($filterPools as $pool)
+                        <option value="{{ $pool->id }}">{{ $pool->name }}</option>
+                    @endforeach
+                </x-select>
             </div>
         </div>
     </div>
@@ -200,7 +240,7 @@
                                         wire:loading.attr="disabled"
                                         wire:target="generateDrawing({{ $mId }})"
                                         class="inline-flex items-center gap-1.5 text-[15px] font-black text-orange-600 border border-orange-200 hover:bg-orange-50 px-3 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50">
-                                    <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sync text-[15px]"></i> Regenerate</span>
+                                    <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-sync text-[15px]"></i> Re-Drawing</span>
                                     <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Loading...</span>
                                 </button>
                             @else
@@ -208,8 +248,8 @@
                                         wire:loading.attr="disabled"
                                         wire:target="generateDrawing({{ $mId }})"
                                         class="inline-flex items-center gap-1.5 text-[15px] font-black text-white bg-slate-900 hover:bg-slate-700 px-4 py-1 rounded-lg uppercase transition active:scale-95 disabled:opacity-50">
-                                    <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-dice text-[15px]"></i> Generate Drawing</span>
-                                    <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Generating...</span>
+                                    <span wire:loading.remove wire:target="generateDrawing({{ $mId }})"><i class="fas fa-dice text-[15px]"></i> Drawing</span>
+                                    <span wire:loading wire:target="generateDrawing({{ $mId }})"><i class="fas fa-spinner fa-spin text-[15px]"></i> Drawing...</span>
                                 </button>
                             @endif
                             <span class="text-[15px] text-slate-300 font-bold uppercase italic">#{{ $mId }}</span>
@@ -226,8 +266,8 @@
                                          <i class="fas @if($drawing['format'] === '2_babak') fa-layer-group @else fa-object-group @endif text-[15px]"></i>
                                      </div>
                                      <div class="min-w-0">
-                                         <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Format (THB Pasal H)</p>
-                                         <p class="text-[12px] font-black text-white mt-0.5 truncate">{{ $drawing['description'] }}</p>
+                                         <p class="text-[15px] font-black text-white uppercase tracking-widest">Format (THB Pasal H)</p>
+                                         <p class="text-[12px] font-black text-white/70 mt-0.5 truncate">{{ $drawing['description'] }}</p>
                                      </div>
                                  </div>
 
@@ -241,14 +281,14 @@
                                              <i class="fas fa-calendar-check text-[15px]"></i>
                                          </div>
                                          <div class="min-w-0">
-                                             <p class="text-[15px] font-black text-slate-800 uppercase tracking-widest">Jadwal Pertandingan</p>
+                                             <p class="text-[15px] font-black text-white uppercase tracking-widest">Jadwal Pertandingan</p>
                                              @if($firstEntry->schedule_date || $firstEntry->rundown)
-                                             <p class="text-[15px] font-black text-orange-200 mt-0.5 whitespace-nowrap">
+                                             <p class="text-[15px] font-bold text-white/70 mt-0.5 whitespace-nowrap">
                                                  {{ $firstEntry->schedule_date ? \Carbon\Carbon::parse($firstEntry->schedule_date)->locale('id')->isoFormat('D MMM') : 'Tgl(-)' }} • {{ $firstEntry->rundown->name ?? '-' }}
                                              </p>
                                              @endif
                                              @if($firstEntry->sessionTime)
-                                             <p class="text-[15px] font-bold text-slate-900 uppercase mt-0.5">
+                                             <p class="text-[15px] font-bold text-white uppercase mt-0.5">
                                                  {{ $firstEntry->sessionTime->name }} ({{ $firstEntry->sessionTime->start_time->format('H:i') }} - {{ $firstEntry->sessionTime->end_time ? $firstEntry->sessionTime->end_time->format('H:i') : 'Selesai' }})
                                              </p>
                                              @endif
@@ -260,18 +300,18 @@
                                      @if($drawing['format'] === 'pool')
                                          <div class="text-center">
                                              <p class="text-[14px] font-black text-orange-400">{{ $drawing['pool_count'] }}</p>
-                                             <p class="text-[15px] text-slate-900 font-bold uppercase">Pool</p>
+                                             <p class="text-[15px] text-white font-bold uppercase">Pool</p>
                                          </div>
                                          <div class="w-px h-8 bg-slate-700"></div>
                                          <div class="text-center">
                                              <p class="text-[14px] font-black text-blue-400">{{ $drawing['qualifiers'] }}</p>
-                                             <p class="text-[15px] text-slate-900 font-bold uppercase">Lolos</p>
+                                             <p class="text-[15px] text-white font-bold uppercase">Lolos</p>
                                          </div>
                                          <div class="w-px h-8 bg-slate-700"></div>
                                      @endif
                                      <div class="text-center">
                                          <p class="text-[14px] font-black text-emerald-400">{{ $drawing['total_entries'] }}</p>
-                                         <p class="text-[15px] text-slate-900 font-bold uppercase">Kontingen</p>
+                                         <p class="text-[15px] text-white font-bold uppercase">Kontingen</p>
                                      </div>
                                  </div>
                              </div>
@@ -290,39 +330,61 @@
                                     {{-- Pool Header --}}
                                      @php
                                          $firstPoolEntry = $poolEntries->first();
-                                         $poolName = $firstPoolEntry->pool->name ?? ($drawing['format'] === '2_babak' ? 'PENYISIHAN' : 'Unknown');
+                                         $poolName = $firstPoolEntry->pool->name ?? ($firstPoolEntry->round === 'Final' ? 'FINAL' : ($drawing['format'] === '2_babak' ? 'PENYISIHAN' : 'Unknown'));
                                          
                                          $poolColorClass = match(true) {
                                              str_contains($poolName, 'A') || $poolName === 'PENYISIHAN' => 'from-indigo-600 to-indigo-700',
                                              str_contains($poolName, 'B') => 'from-violet-600 to-violet-700',
                                              str_contains($poolName, 'C') => 'from-teal-600 to-teal-700',
                                              str_contains($poolName, 'D') => 'from-emerald-600 to-emerald-700',
+                                             $poolName === 'FINAL' => 'from-amber-500 to-amber-600',
                                              default => 'from-rose-600 to-rose-700',
                                          };
                                      @endphp
-                                     <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-br {{ $poolColorClass }}">
-                                         <div class="flex items-center gap-4">
-                                             <div>
-                                                 <p class="text-[15px] font-black text-white/60 uppercase tracking-widest">{{ $drawing['format'] === '2_babak' ? 'Babak' : 'Pool' }}</p>
-                                                 <p class="text-[15px] font-black text-white uppercase leading-tight">{{ $poolName }}</p>
-                                             </div>
-                                             @if($firstPoolEntry && ($firstPoolEntry->court_id || $firstPoolEntry->session_time_id))
-                                                 <div class="h-8 w-px bg-white/20 hidden sm:block"></div>
-                                                 <div class="hidden sm:block">
-                                                     <p class="text-[15px] font-black text-white/60 uppercase tracking-widest">{{ $firstPoolEntry->court->name ?? '-' }} • {{ $firstPoolEntry->rundown->name ?? '-' }}</p>
-                                                     <p class="text-[15px] font-black text-white uppercase leading-tight">
-                                                         {{ $firstPoolEntry->sessionTime->name ?? '-' }}
-                                                     </p>
+                                     <div class="bg-gradient-to-br {{ $poolColorClass }} px-4 py-3">
+                                         <div class="flex items-center justify-between">
+                                             <div class="flex items-center gap-4">
+                                                 <div>
+                                                     <p class="text-[15px] font-black text-white/60 uppercase tracking-widest">{{ $poolName === 'FINAL' || $drawing['format'] === '2_babak' ? 'Babak' : 'Pool' }}</p>
+                                                     <p class="text-[15px] font-black text-white uppercase leading-tight">{{ $poolName }}</p>
                                                  </div>
-                                             @endif
+                                                 <div class="h-8 w-px bg-white/20 hidden sm:block"></div>
+                                                 <div class="flex flex-wrap items-center gap-3">
+                                                     {{-- Edit Court --}}
+                                                     <select wire:change="updatePoolField({{ $mId }}, {{ $poolId ?? 'null' }}, '{{ $firstPoolEntry->round }}', 'court_id', $event.target.value)" 
+                                                             class="text-[12px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded px-2 py-1 outline-none transition cursor-pointer">
+                                                         <option value="" class="text-slate-900">No Court</option>
+                                                         @foreach($courts as $c)
+                                                             <option value="{{ $c->id }}" {{ $firstPoolEntry->court_id == $c->id ? 'selected' : '' }} class="text-slate-900">{{ $c->name }}</option>
+                                                         @endforeach
+                                                     </select>
+
+                                                     {{-- Edit Rundown --}}
+                                                     <select wire:change="updatePoolField({{ $mId }}, {{ $poolId ?? 'null' }}, '{{ $firstPoolEntry->round }}', 'rundown_id', $event.target.value)" 
+                                                             class="text-[12px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded px-2 py-1 outline-none transition cursor-pointer">
+                                                         <option value="" class="text-slate-900">No Rundown</option>
+                                                         @foreach($rundowns as $r)
+                                                             <option value="{{ $r->id }}" {{ $firstPoolEntry->rundown_id == $r->id ? 'selected' : '' }} class="text-slate-900">{{ $r->name }}</option>
+                                                         @endforeach
+                                                     </select>
+
+                                                     {{-- Edit Pool (Rename group's pool) --}}
+                                                     <select wire:change="updatePoolField({{ $mId }}, {{ $poolId ?? 'null' }}, '{{ $firstPoolEntry->round }}', 'pool_id', $event.target.value)" 
+                                                             class="text-[12px] font-black bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded px-2 py-1 outline-none transition cursor-pointer">
+                                                         <option value="" class="text-slate-900">No Pool</option>
+                                                         @foreach($filterPools as $p)
+                                                             <option value="{{ $p->id }}" {{ $firstPoolEntry->pool_id == $p->id ? 'selected' : '' }} class="text-slate-900">{{ $p->name }}</option>
+                                                         @endforeach
+                                                     </select>
+                                                 </div>
+                                             </div>
+                                             <span class="text-[15px] font-black text-white/80">{{ count($poolEntries) }} Kontingen</span>
                                          </div>
-                                         <span class="text-[15px] font-black text-white/80">{{ count($poolEntries) }} Kontingen</span>
                                      </div>
                                     {{-- Pool Table --}}
                                     <table class="w-full text-left border-collapse border border-slate-200 rounded-xl overflow-hidden">
                                         <thead class="bg-slate-800 text-white">
                                             <tr class="border-b border-slate-100">
-                                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">No.</th>
                                                 <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">Kontingen</th>
                                                 <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">Urutan</th>
                                             </tr>
@@ -330,9 +392,7 @@
                                         <tbody class="divide-y divide-slate-200">
                                             @foreach($poolEntries as $entry)
                                             <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
-                                                <td class="px-4 py-3 text-center border-r border-slate-200">
-                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg border border-slate-200 text-[15px] font-black text-slate-900">{{ $entry->sequence_number }}</span>
-                                                </td>
+                                                
                                                 <td class="px-4 py-3 text-[15px] font-black text-black uppercase border-r border-slate-200">{{ $entry->registration->contingent->name ?? 'Unknown' }}</td>
                                                 <td class="px-4 py-3 text-center text-[15px] font-black text-slate-800 border-r border-slate-200">{{ $entry->sequence_number }}</td>
                                             </tr>

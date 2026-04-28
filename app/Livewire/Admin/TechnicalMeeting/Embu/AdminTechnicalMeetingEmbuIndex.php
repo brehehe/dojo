@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\TechnicalMeeting\Embu;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
+use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Pool\Pool;
 use App\Models\Rundown\Rundown;
@@ -22,14 +23,26 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
     public ?int $selectedCourtId = null;
 
+    public ?int $selectedAgeGroupId = null;
+
+    public ?int $selectedMatchNumberId = null;
+
+    public ?int $selectedPoolId = null;
+
+    public ?string $selectedGender = null;
+
     public string $globalTab = 'sebelum';
 
     public ?int $generatingMatchId = null;
 
     public ?int $finalMatchId = null;
+
     public ?int $finalCourtId = null;
+
     public ?int $finalRundownId = null;
+
     public ?int $finalSessionTimeId = null;
+
     public bool $isGeneratingFinal = false;
 
     public function paginationView(): string
@@ -37,12 +50,32 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         return 'livewire.admin.pagination';
     }
 
+    public function updatedSelectedAgeGroupId()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
+    public function updatedSelectedCourtId()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
+    public function updatedSelectedPoolId()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
+    public function updatedSelectedGender()
+    {
+        $this->selectedMatchNumberId = null;
+    }
+
     // ──────────────────────────────────────────────────
     // DRAWING GENERATION
     // ──────────────────────────────────────────────────
 
     /**
-     * Generate drawing for a specific match number.
+     * Drawing drawing for a specific match number.
      * Rules (THB Pasal H):
      *  ≤ 9 entries → 2 Babak (Penyisihan + Final), no pools
      *  ≥ 10 entries → Pool system:
@@ -56,12 +89,7 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
         $match = MatchNumber::findOrFail($matchId);
 
-        // 1. Clear existing drawing records for this match and round
-        DrawingMatchNumber::where('match_number_id', $matchId)
-            ->where('round', $round)
-            ->delete();
-
-        // 2. Get all distinct registration_ids (each = one team/contingent entry)
+        // 1. Get all distinct registration_ids (each = one team/contingent entry)
         $registrations = DB::table('athlete_match_number')
             ->where('match_number_id', $matchId)
             ->select('registration_id')
@@ -71,11 +99,37 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
         $totalEntries = $registrations->count();
 
+        // 2. Clear existing drawing records for this match and round
+        DrawingMatchNumber::where('match_number_id', $matchId)
+            ->where('round', $round)
+            ->delete();
+
+        // Jika melakukan regenerate Penyisihan, maka data Final lama harus dihapus
+        // karena pool dan peserta akan diacak ulang.
+        if ($round === 'Penyisihan') {
+            DrawingMatchNumber::where('match_number_id', $matchId)
+                ->where('round', 'Final')
+                ->delete();
+        }
+
         // Get contingent names per registration
         $regContingents = DB::table('registrations')
             ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
             ->whereIn('registrations.id', $registrations->pluck('registration_id'))
             ->pluck('contingents.name', 'registrations.id');
+
+        $uniqueContingentCount = $regContingents->unique()->count();
+
+        if ($uniqueContingentCount < 3) {
+            $this->generatingMatchId = null;
+
+            // $this->dispatch('swal', [
+            //     'icon' => 'error',
+            //     'title' => 'Gagal Membuat Bagan',
+            //     'text' => "Kelas ini hanya diikuti oleh {$uniqueContingentCount} kontingen. Minimal 3 kontingen agar dapat dipertandingkan.",
+            // ]);
+            return;
+        }
 
         // Build entry list with contingent name
         $entries = $registrations->map(function ($reg) use ($regContingents) {
@@ -197,6 +251,38 @@ class AdminTechnicalMeetingEmbuIndex extends Component
             ]);
         }
 
+        // Drawing Final round separately so it can be re-shuffled
+        if ($format === '2_babak') {
+            shuffle($entries); // Acak ulang urutan untuk Final
+
+            foreach ($entries as $index => $entry) {
+                // Get the same court from the first pool (Pool 1)
+                $court = $courts->get($courtBaseIdx % $cCount);
+                $courtId = $court ? $court->id : null;
+                $orderInPool = $index + 1;
+
+                // Specific metadata for rules
+                $metadata = [];
+                if (str_contains(strtolower($match->name), 'beregu')) {
+                    $metadata['composition_rule'] = 'Tandoku (start) - Paired (middle) - Tandoku (end)';
+                }
+
+                DrawingMatchNumber::create([
+                    'match_number_id' => $matchId,
+                    'registration_id' => $entry['registration_id'],
+                    'pool_id' => null, // Final round usually has no pool
+                    'court_id' => $courtId,
+                    'schedule_date' => $rundownDate,
+                    'session_time_id' => $sessionTimeId,
+                    'rundown_id' => $rundownId,
+                    'round' => 'Final',
+                    'sequence_number' => $orderInPool,
+                    'draft_type' => 'embu',
+                    'metadata' => $metadata,
+                ]);
+            }
+        }
+
         // Sync drawing_data blob for legacy display support
         $drawingData = [
             'total_entries' => $totalEntries,
@@ -226,8 +312,41 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         ]);
     }
 
+    public function updateDrawingField(int $id, string $field, $value): void
+    {
+        $drawing = DrawingMatchNumber::find($id);
+        if ($drawing) {
+            $drawing->update([$field => $value]);
+            $this->dispatch('swal', [
+                'icon' => 'success',
+                'title' => 'Data Diperbarui',
+                'text' => 'Data drawing berhasil diupdate.',
+            ]);
+        }
+    }
+
+    public function updatePoolField(int $matchId, $poolId, string $round, string $field, $value): void
+    {
+        $query = DrawingMatchNumber::where('match_number_id', $matchId)
+            ->where('round', $round);
+
+        if ($poolId) {
+            $query->where('pool_id', $poolId);
+        } else {
+            $query->whereNull('pool_id');
+        }
+
+        $query->update([$field => $value]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Data Diperbarui',
+            'text' => 'Seluruh peserta di pool ini telah diperbarui.',
+        ]);
+    }
+
     /**
-     * Generate drawing for all Embu matches that don't have drawing yet.
+     * Drawing drawing for all Embu matches that don't have drawing yet.
      * Optionally force regenerate all.
      */
     public function generateAllDrawings(bool $forceRegenerate = true, string $round = 'Penyisihan'): void
@@ -251,7 +370,7 @@ class AdminTechnicalMeetingEmbuIndex extends Component
     // GENERATE FINAL
     // ──────────────────────────────────────────────────
 
-    public function promptGenerateFinal(int $matchId): void
+    public function promptDrawingFinal(int $matchId): void
     {
         $this->finalMatchId = $matchId;
         $this->finalCourtId = null;
@@ -262,15 +381,19 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
     public function generateFinal(): void
     {
-        if (!$this->finalMatchId) return;
+        if (! $this->finalMatchId) {
+            return;
+        }
         $matchId = $this->finalMatchId;
         $match = MatchNumber::findOrFail($matchId);
-        
+
         // Ensure no previous final exists
         DrawingMatchNumber::where('match_number_id', $matchId)->where('round', 'Final')->delete();
 
         $drawingData = $match->drawing_data;
-        if (!$drawingData) return;
+        if (! $drawingData) {
+            return;
+        }
 
         $format = $drawingData['format'] ?? '2_babak';
         $qualifiersLimit = $drawingData['qualifiers'] ?? 0;
@@ -279,7 +402,7 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         $penyisihanScores = EmbuScore::where('match_number_id', $matchId)
             ->where('round_label', 'Penyisihan')
             ->get();
-            
+
         // Group by tiebreak_round to effectively just use the latest one for each group of tied participants?
         // Wait, for Embu, tiebreak_round defines the latest round scores.
         $latestTiebreak = $penyisihanScores->max('tiebreak_round');
@@ -298,8 +421,9 @@ class AdminTechnicalMeetingEmbuIndex extends Component
                 ->keyBy('registration_id');
 
             // inject pool_id to valid scores
-            $validScores = $validScores->map(function($score) use ($drawings) {
+            $validScores = $validScores->map(function ($score) use ($drawings) {
                 $score->pool_id = $drawings->has($score->registration_id) ? $drawings->get($score->registration_id)->pool_id : null;
+
                 return $score;
             });
 
@@ -324,7 +448,9 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         $sessionDate = null;
         if ($this->finalRundownId) {
             $rd = Rundown::find($this->finalRundownId);
-            if ($rd) $sessionDate = $rd->date;
+            if ($rd) {
+                $sessionDate = $rd->date;
+            }
         }
 
         foreach ($sortedFinalists as $index => $finalist) {
@@ -348,7 +474,7 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         $this->finalMatchId = null;
         $this->dispatch('drawing-final-generated', matchId: $matchId);
     }
-    
+
     // ──────────────────────────────────────────────────
     // TANDING ULANG & SIMPAN JUARA
     // ──────────────────────────────────────────────────
@@ -364,15 +490,17 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         $latestScores = $scores->where('tiebreak_round', $latestTiebreak);
 
         $counts = $latestScores->countBy(function ($score) {
-            return (string)$score->nilai_akhir;
+            return (string) $score->nilai_akhir;
         });
-        
-        $tiedValues = $counts->filter(fn($val) => $val > 1)->keys()->toArray();
-        if (empty($tiedValues)) return; // Tidak ada seri
+
+        $tiedValues = $counts->filter(fn ($val) => $val > 1)->keys()->toArray();
+        if (empty($tiedValues)) {
+            return;
+        } // Tidak ada seri
 
         // Buat match baru tiebreak untuk mereka yang nilainya seri
         $tiedScores = $latestScores->filter(function ($score) use ($tiedValues) {
-            return in_array((string)$score->nilai_akhir, $tiedValues, true);
+            return in_array((string) $score->nilai_akhir, $tiedValues, true);
         });
 
         foreach ($tiedScores as $score) {
@@ -411,9 +539,62 @@ class AdminTechnicalMeetingEmbuIndex extends Component
     {
         $paginatedMatches = MatchNumber::where('draft_type', 'embu')
             ->has('athletes')
-            ->with(['ageGroup'])
-            ->latest()
+            ->with(['ageGroup']);
+
+        if ($this->selectedGender) {
+            $paginatedMatches->where('gender', $this->selectedGender);
+        }
+
+        if ($this->selectedAgeGroupId) {
+            $paginatedMatches->where('age_group_id', $this->selectedAgeGroupId);
+        }
+
+        if ($this->selectedMatchNumberId) {
+            $paginatedMatches->where('id', $this->selectedMatchNumberId);
+        }
+
+        if ($this->selectedCourtId) {
+            $paginatedMatches->whereHas('drawings', function ($q) {
+                $q->where('court_id', $this->selectedCourtId);
+            });
+        }
+
+        if ($this->selectedPoolId) {
+            $paginatedMatches->whereHas('drawings', function ($q) {
+                $q->where('pool_id', $this->selectedPoolId);
+            });
+        }
+
+        $paginatedMatches = $paginatedMatches->orderBy('name', 'asc')
             ->paginate(1000);
+
+        $filterAgeGroups = AgeGroup::orderBy('order', 'asc')->get();
+        $filterMatchNumbersQuery = MatchNumber::where('draft_type', 'embu')
+            ->has('athletes')
+            ->with(['ageGroup']);
+
+        if ($this->selectedGender) {
+            $filterMatchNumbersQuery->where('gender', $this->selectedGender);
+        }
+
+        if ($this->selectedAgeGroupId) {
+            $filterMatchNumbersQuery->where('age_group_id', $this->selectedAgeGroupId);
+        }
+
+        if ($this->selectedCourtId) {
+            $filterMatchNumbersQuery->whereHas('drawings', function ($q) {
+                $q->where('court_id', $this->selectedCourtId);
+            });
+        }
+
+        if ($this->selectedPoolId) {
+            $filterMatchNumbersQuery->whereHas('drawings', function ($q) {
+                $q->where('pool_id', $this->selectedPoolId);
+            });
+        }
+
+        $filterMatchNumbers = $filterMatchNumbersQuery->orderBy('name', 'asc')->get();
+        $filterPools = Pool::orderBy('order', 'asc')->get();
 
         $allTechniqueNames = Technique::pluck('name', 'id')->toArray();
         $courts = Court::orderBy('order')->get();
@@ -432,6 +613,9 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
             if ($this->selectedCourtId) {
                 $drawingsQuery->where('court_id', $this->selectedCourtId);
+            }
+            if ($this->selectedPoolId) {
+                $drawingsQuery->where('pool_id', $this->selectedPoolId);
             }
 
             $drawingsFromDb = $drawingsQuery->get();
@@ -492,6 +676,9 @@ class AdminTechnicalMeetingEmbuIndex extends Component
             'courts' => $courts,
             'rundowns' => $rundowns,
             'sessionTimes' => $sessionTimes,
+            'filterAgeGroups' => $filterAgeGroups,
+            'filterMatchNumbers' => $filterMatchNumbers,
+            'filterPools' => $filterPools,
         ]);
     }
 }

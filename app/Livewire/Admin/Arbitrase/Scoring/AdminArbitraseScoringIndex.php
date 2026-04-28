@@ -5,6 +5,8 @@ namespace App\Livewire\Admin\Arbitrase\Scoring;
 use App\Models\Contingent;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
+use App\Models\Group\AgeGroup;
+use App\Models\MatchNumber\MatchNumber;
 use App\Models\Pool\Pool;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
@@ -32,6 +34,12 @@ class AdminArbitraseScoringIndex extends Component
     public string $filterType = ''; // embu | randori
 
     public string $filterContingent = '';
+
+    public string $filterAgeGroup = '';
+
+    public string $filterMatchNumber = '';
+
+    public string $filterGender = '';
 
     /** Reset pagination when any filter changes. */
     public function updated(string $property): void
@@ -155,11 +163,24 @@ class AdminArbitraseScoringIndex extends Component
         $pools = Pool::orderBy('order')->get();
         $contingents = Contingent::orderBy('name')->get();
 
-        // Distinct rounds from existing drawing data
         $rounds = DrawingMatchNumber::whereNotNull('round')
             ->distinct()
             ->orderBy('round')
             ->pluck('round');
+
+        $ageGroups = AgeGroup::orderBy('order')->get();
+
+        $matchNumberQuery = MatchNumber::orderBy('name');
+        if ($this->filterAgeGroup) {
+            $matchNumberQuery->where('age_group_id', $this->filterAgeGroup);
+        }
+        if ($this->filterGender) {
+            $matchNumberQuery->where('gender', $this->filterGender);
+        }
+        if ($this->filterType) {
+            $matchNumberQuery->where('draft_type', $this->filterType);
+        }
+        $matchNumbers = $matchNumberQuery->get();
 
         // ── Core query: grouped per scheduled match session ─────────
         $query = DrawingMatchNumber::with([
@@ -169,25 +190,25 @@ class AdminArbitraseScoringIndex extends Component
             'sessionTime',
             'rundown',
         ])->whereNotNull('match_number_id')
-        ->select(
-            'match_number_id',
-            'court_id',
-            'pool_id',
-            'session_time_id',
-            'rundown_id',
-            'round',
-            'draft_type'
-        )
-        ->selectRaw('MIN(id) as id, COUNT(registration_id) as total_athletes, MIN(sequence_number) as sequence_number')
-        ->groupBy(
-            'match_number_id',
-            'court_id',
-            'pool_id',
-            'session_time_id',
-            'rundown_id',
-            'round',
-            'draft_type'
-        );
+            ->select(
+                'match_number_id',
+                'court_id',
+                'pool_id',
+                'session_time_id',
+                'rundown_id',
+                'round',
+                'draft_type'
+            )
+            ->selectRaw('MIN(id) as id, COUNT(registration_id) as total_athletes, MIN(sequence_number) as sequence_number')
+            ->groupBy(
+                'match_number_id',
+                'court_id',
+                'pool_id',
+                'session_time_id',
+                'rundown_id',
+                'round',
+                'draft_type'
+            );
 
         // ── Filters ────────────────────────────────────────────────────────────
         if (! empty($this->filterCourt)) {
@@ -207,6 +228,19 @@ class AdminArbitraseScoringIndex extends Component
         }
         if (! empty($this->filterType)) {
             $query->where('draft_type', $this->filterType);
+        }
+        if (! empty($this->filterAgeGroup)) {
+            $query->whereHas('matchNumber', function ($q) {
+                $q->where('age_group_id', $this->filterAgeGroup);
+            });
+        }
+        if (! empty($this->filterMatchNumber)) {
+            $query->where('match_number_id', $this->filterMatchNumber);
+        }
+        if (! empty($this->filterGender)) {
+            $query->whereHas('matchNumber', function ($q) {
+                $q->where('gender', $this->filterGender);
+            });
         }
 
         // Filter by contingent via registration relationship
@@ -237,6 +271,8 @@ class AdminArbitraseScoringIndex extends Component
             'pools' => $pools,
             'contingents' => $contingents,
             'rounds' => $rounds,
+            'ageGroups' => $ageGroups,
+            'matchNumbers' => $matchNumbers,
             'routePrefix' => $routePrefix,
         ]);
     }

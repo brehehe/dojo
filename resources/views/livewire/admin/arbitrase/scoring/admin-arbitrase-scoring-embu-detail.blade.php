@@ -22,6 +22,18 @@
             </div>
         </div>
 
+        {{-- ====== POOL TABS ====== --}}
+        @if(isset($availablePools) && $availablePools->count() > 1)
+            <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
+                @foreach($availablePools as $p)
+                    <button wire:click="setPool({{ $p->id }})" class="px-5 py-2 rounded-full text-[15px] font-black uppercase tracking-widest transition-all
+                        {{ $selectedPoolId === $p->id ? 'bg-indigo-600 text-white shadow-md shadow-indigo-300/50' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+                        {{ $p->name }}
+                    </button>
+                @endforeach
+            </div>
+        @endif
+
         {{-- ====== INFO BAR ====== --}}
         @php
             $drawing = $firstDrawing;
@@ -84,8 +96,10 @@
                     <i class="fas fa-calculator mr-1"></i> Rumus: Jumlah 3 nilai tengah
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[15px] font-black uppercase tracking-wide transition-all">
+            <div class="flex items-center gap-3">
+
+
+                <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[15px] font-black uppercase tracking-wide transition-all h-[42px]">
                     <i class="fas fa-print text-[15px]"></i> Cetak
                 </button>
             </div>
@@ -148,6 +162,10 @@
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">WAKTU</th>
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">DENDA</th>
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">NILAI AKHIR</th>
+                            @if($currentRound === 'Final')
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center bg-indigo-900">NILAI PENYISIHAN</th>
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center bg-emerald-900">TOTAL AKUMULASI</th>
+                            @endif
                         </tr>
                         <tr class="bg-slate-800 text-slate-800 text-[15px]">
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap"></th>
@@ -166,6 +184,10 @@
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap"></th>
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap"></th>
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap"></th>
+                            @if($currentRound === 'Final')
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap bg-indigo-900/50"></th>
+                                <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap bg-emerald-900/50"></th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
@@ -194,7 +216,7 @@
                                 $isActive = $matchNumber->active_registration_id == $item['id'];
                             @endphp
                             <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
-                                <td class="px-3 py-3 text-center font-black text-slate-900 border-r border-slate-100">{{ $no + 1 }}</td>
+                                <td class="px-3 py-3 text-center font-black text-slate-900 border-r border-slate-100">{{ $item['sequence_number'] ?? ($no + 1) }}</td>
                                 <td class="px-4 py-3 border-r border-slate-100">
                                     <div class="flex flex-col">
                                         <span class="font-black text-slate-800 text-[15px] uppercase tracking-tight">
@@ -240,6 +262,14 @@
                                 <td class="px-3 py-3 text-center border-r border-slate-200">
                                     <span class="font-black text-slate-900 text-[15px]">{{ $nilaiAkhir > 0 ? number_format($nilaiAkhir, 1) : '-' }}</span>
                                 </td>
+                                @if($currentRound === 'Final')
+                                    <td class="px-3 py-3 text-center border-r border-slate-200 bg-indigo-50/50">
+                                        <span class="font-black text-indigo-700 text-[15px]">{{ isset($item['penyisihan_score']) && $item['penyisihan_score'] ? number_format($item['penyisihan_score']->nilai_akhir, 1) : '-' }}</span>
+                                    </td>
+                                    <td class="px-3 py-3 text-center border-r border-slate-200 bg-emerald-50">
+                                        <span class="font-black text-emerald-700 text-lg">{{ $item['accumulated_score'] > 0 ? number_format($item['accumulated_score'], 1) : '-' }}</span>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
@@ -260,27 +290,150 @@
             <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 @foreach($registrations as $no => $item)
                     @php $isActive = $matchNumber->active_registration_id == $item['id']; @endphp
-                    <div class="flex items-center gap-3 p-3 rounded-xl border {{ $isActive ? 'border-indigo-300 bg-indigo-50 shadow-md shadow-indigo-500/10' : 'border-slate-200 bg-white' }} shadow-sm">
-                        <div class="w-10 h-10 rounded-full {{ $isActive ? 'bg-indigo-600' : 'bg-slate-100' }} flex items-center justify-center flex-shrink-0">
-                            <span class="text-[15px] font-black {{ $isActive ? 'text-white' : 'text-slate-900' }}">{{ $no + 1 }}</span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-[15px] font-black text-slate-800 truncate uppercase mt-0.5" title="@foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach">
-                                @foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach
+                    <div class="flex flex-col gap-2 p-3 rounded-xl border {{ $isActive ? 'border-indigo-300 bg-indigo-50 shadow-md shadow-indigo-500/10' : 'border-slate-200 bg-white' }} shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full {{ $isActive ? 'bg-indigo-600' : 'bg-slate-100' }} flex items-center justify-center flex-shrink-0">
+                                <span class="text-[15px] font-black {{ $isActive ? 'text-white' : 'text-slate-900' }}">{{ $item['sequence_number'] ?? ($no + 1) }}</span>
                             </div>
-                            <div class="text-[15px] text-slate-800 font-bold uppercase truncate">{{ $item['contingent']?->name }}</div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-[15px] font-black text-slate-800 truncate uppercase mt-0.5" title="@foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach">
+                                    @foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach
+                                </div>
+                                <div class="text-[15px] text-slate-800 font-bold uppercase truncate">{{ $item['contingent']?->name }}</div>
+                            </div>
+                            <div class="flex gap-1.5 flex-shrink-0">
+                                <button wire:click="openScoringModal({{ $item['id'] }})"
+                                    class="flex items-center justify-center px-3 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-slate-900 hover:bg-slate-700 text-white shadow-sm transition-all" title="Input Skor Admin">
+                                    <i class="fas fa-edit text-[15px]"></i> Skor
+                                </button>
+                                @if(!$isActive)
+                                    <button wire:click="callParticipant({{ $item['id'] }})"
+                                        class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide transition-all bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-900" title="Panggil ke Wasit & Monitor">
+                                        <i class="fas fa-bullhorn text-[15px]"></i> Panggil
+                                    </button>
+                                @endif
+                            </div>
                         </div>
-                        <div class="flex gap-1.5 flex-shrink-0">
-                            <button wire:click="callParticipant({{ $item['id'] }})"
-                                class="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide transition-all
-                                    {{ $isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-amber-500 hover:text-white text-slate-900' }}" title="Panggil ke Wasit & Monitor">
-                                <i class="fas fa-bullhorn text-[15px]"></i> Panggil
-                            </button>
-                            <button wire:click="openScoringModal({{ $item['id'] }})"
-                                class="flex items-center justify-center px-3 py-1.5 rounded-lg text-[15px] font-black uppercase tracking-wide bg-slate-900 hover:bg-slate-700 text-white shadow-sm transition-all" title="Input Skor Admin">
-                                <i class="fas fa-edit text-[15px]"></i>
-                            </button>
-                        </div>
+
+                        {{-- Timer Controls --}}
+                        @if($isActive)
+                            <div wire:ignore x-data="{
+                                    time: 0,
+                                    running: false,
+                                    countdown: 0,
+                                    lastTickSecond: -1,
+                                    interpolInterval: null,
+                                    syncInterval: null,
+                                    registrationId: {{ $item['id'] }},
+                                    formatTime() {
+                                        let t = Math.max(0, this.time);
+                                        let m = Math.floor(t / 60000);
+                                        let s = Math.floor((t % 60000) / 1000);
+                                        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                                    },
+                                    formatCountdown() {
+                                        if (this.countdown === 5) return 'Siap';
+                                        if (this.countdown === 4) return '3';
+                                        if (this.countdown === 3) return '2';
+                                        if (this.countdown === 2) return '1';
+                                        if (this.countdown === 1) return 'Mulai';
+                                        return '';
+                                    },
+                                    async sync() {
+                                        let state = await $wire.getTimerState();
+                                        if (!state) return;
+                                        
+                                        let oldCountdown = this.countdown;
+
+                                        if (state.status === 'running') {
+                                            this.running = true;
+                                            this.countdown = 0;
+                                            this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+                                        } else if (state.status === 'countdown') {
+                                            this.running = false;
+                                            let remaining = state.countdown_end_ms - Date.now();
+                                            this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                            this.time = state.elapsed_ms || 0;
+                                            if (remaining <= 0) { $wire.startTimer(); }
+                                        } else {
+                                            this.running = false;
+                                            this.countdown = 0;
+                                            this.time = state.elapsed_ms || 0;
+                                        }
+
+                                        // Trigger Countdown Voice
+                                        if (this.countdown > 0 && this.countdown !== oldCountdown) {
+                                            window.speakCountdown(this.formatCountdown());
+                                        }
+                                    },
+                                    init() {
+                                        this.sync();
+                                        this.interpolInterval = setInterval(() => { 
+                                            if (this.running) {
+                                                this.time += 30; 
+                                                let currentSecond = Math.floor(this.time / 1000);
+                                                
+                                                // Play tick only if second has actually changed
+                                                if (currentSecond > this.lastTickSecond) {
+                                                    window.playTimerTick(1000, 0.05);
+                                                    this.lastTickSecond = currentSecond;
+                                                }
+                                            } else {
+                                                this.lastTickSecond = Math.floor(this.time / 1000);
+                                            }
+                                        }, 30);
+                                        this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                                    },
+                                    start() {
+                                        if (!this.running && this.countdown === 0) {
+                                            $wire.startCountdown();
+                                        }
+                                    },
+                                    pause() { $wire.pauseTimer(); },
+                                    stop() { $wire.stopTimer(); },
+                                    finish() {
+                                        let capturedTime = this.time;
+                                        $wire.pauseTimer();
+                                        Swal.fire({
+                                            title: 'Apakah anda yakin?',
+                                            html: '<p>Pertandingan akan ditandai <b>Selesai</b>.<br>Denda waktu akan dihitung otomatis & nilai wasit diakumulasikan.</p>',
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Ya, Selesai!',
+                                            cancelButtonText: 'Batal',
+                                            confirmButtonColor: '#2563eb',
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                $wire.finishMatch(this.registrationId, capturedTime);
+                                            } else {
+                                                $wire.startTimer();
+                                            }
+                                        });
+                                    }
+                                }" class="flex items-center justify-between border-t border-indigo-200/60 pt-2 mt-1">
+                                <div class="flex items-center gap-2">
+                                    <button @click="window.playTimerTick(1200, 0.1)" class="w-5 h-5 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-400 rounded-full transition-colors mr-1" title="Test Suara">
+                                        <i class="fas fa-volume-up text-[10px]"></i>
+                                    </button>
+                                    <i class="fas fa-stopwatch text-indigo-500"></i>
+                                    <div class="text-lg font-black font-mono tracking-wider" :class="countdown > 0 ? 'text-amber-500' : 'text-indigo-700'">
+                                        <span x-show="countdown > 0" x-text="formatCountdown()"></span>
+                                        <span x-show="countdown === 0" x-text="formatTime()">00:00</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button x-show="!running && countdown === 0" @click="start()" class="w-8 h-8 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors shadow-sm" title="Start Timer"><i class="fas fa-play text-sm"></i></button>
+                                    <button x-show="running" @click="pause()" class="w-8 h-8 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors shadow-sm" title="Pause Timer"><i class="fas fa-pause text-sm"></i></button>
+                                    <button @click="stop()" class="w-8 h-8 flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors shadow-sm" title="Stop & Reset Timer"><i class="fas fa-stop text-sm"></i></button>
+                                    <button x-show="running || time > 0" @click="finish()" class="h-8 px-2 flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors shadow-sm ml-1" title="Selesai & Tutup">
+                                        <i class="fas fa-flag-checkered text-xs mr-1"></i> <span class="text-xs font-black uppercase tracking-wider">Selesai</span>
+                                    </button>
+                                    <button @click="pause(); $wire.applyTimerPenalty(time)" class="px-2.5 py-1.5 ml-1 flex items-center gap-1.5 text-[12px] uppercase tracking-wider font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors shadow-sm" title="Hitung Denda Otomatis">
+                                        <i class="fas fa-calculator text-indigo-200"></i> Denda
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -288,10 +441,18 @@
 
         {{-- ====== REKAP PERINGKAT ====== --}}
         @php
-            $ranked = $registrations->filter(fn($i) => $i['score']?->total_score > 0)->sortByDesc(fn($i) => $i['score']->total_score)->values();
+            $ranked = $registrations->filter(fn($i) => ($i['score']?->nilai_akhir > 0) || ($currentRound === 'Final' && $i['accumulated_score'] > 0))
+                ->sortBy(function($i) use ($currentRound) {
+                    if ($currentRound === 'Penyisihan') {
+                        return -$i['score']->nilai_akhir; // Highest is best
+                    } else {
+                        return -$i['accumulated_score']; // Highest accumulated is best
+                    }
+                })
+                ->values();
         @endphp
         @if($ranked->count() > 0)
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
             <div class="px-5 py-4 bg-gradient-to-r from-amber-500 to-orange-500 flex items-center gap-3">
                 <i class="fas fa-trophy text-white text-lg"></i>
                 <div>
@@ -307,7 +468,7 @@
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">NO</th>
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">NAMA PESERTA</th>
                             <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap">KONTINGEN</th>
-                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">NILAI AKHIR</th>
+                            <th class="px-4 py-3 text-[15px] font-black uppercase tracking-widest border border-slate-700 whitespace-nowrap text-center">{{ $currentRound === 'Final' ? 'TOTAL AKUMULASI' : 'NILAI AKHIR' }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
@@ -342,7 +503,14 @@
                                     {{ $item['contingent']?->name }}
                                 </td>
                                 <td class="px-4 py-3 text-center font-black text-lg {{ $rankNum === 1 ? 'text-amber-500' : 'text-black' }} border-r border-slate-200">
-                                    {{ number_format($item['score']->total_score, 1) }}
+                                    <div class="flex flex-col items-center">
+                                        <span>{{ number_format($currentRound === 'Final' ? $item['accumulated_score'] : optional($item['score'])->nilai_akhir ?? 0, 1) }}</span>
+                                        @if($currentRound === 'Final' && isset($item['penyisihan_score']) && $item['penyisihan_score'])
+                                            <span class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                                P: {{ number_format($item['penyisihan_score']->nilai_akhir, 1) }} | F: {{ isset($item['score']) && $item['score'] ? number_format($item['score']->nilai_akhir, 1) : '0.0' }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

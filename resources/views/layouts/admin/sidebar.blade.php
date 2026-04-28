@@ -116,6 +116,7 @@
             <div x-show="open && !collapsed" x-collapse class="pl-9 pr-2 py-1 space-y-1">
                 <a href="{{ route('admin.arbitrase.referees') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.referees') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Master Wasit</a>
                 <a href="{{ route('admin.arbitrase.generate-referee') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.generate-referee') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Penugasan Wasit</a>
+                <a href="{{ route('admin.arbitrase.laporan-hasil') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-hasil') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Hasil Juara</a>
             </div>
         </div>
         @endrole
@@ -140,6 +141,10 @@
                     <span class="text-[10px] font-black bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded uppercase">TEST</span>
                 </a>
                 <a href="{{ route('admin.panitera.scoring.embu.result') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300' }}">Hasil & Juara Embu</a>
+                <a href="{{ route('admin.panitera.announcer') }}" class="flex items-center py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.panitera.announcer') ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300' }}">
+                    <span class="flex-1">Panggilan (PA)</span>
+                    <span class="text-[10px] font-black bg-indigo-900/50 text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">VOICE</span>
+                </a>
             </div>
         </div>
         @endrole

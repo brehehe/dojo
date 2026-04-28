@@ -8,16 +8,22 @@
 
     $isGf = $bracket === 'gf';
     
-    // Style adjustments for dark TV Monitor
-    $borderClass = $isGf ? 'border-amber-500/50 shadow-amber-500/20' : ($bracket === 'ub' ? 'border-rose-500/30' : 'border-indigo-500/30');
+    // Style adjustments for light TV Monitor
+    $borderClass = $isGf ? 'border-amber-300 shadow-amber-500/10' : ($bracket === 'ub' ? 'border-rose-200' : 'border-indigo-200');
     if ($isDone) {
-        $borderClass = $isGf ? 'border-amber-500 shadow-amber-500/40' : ($bracket === 'ub' ? 'border-rose-500 shadow-rose-500/20' : 'border-indigo-500 shadow-indigo-500/20');
+        $borderClass = $isGf ? 'border-amber-400 shadow-amber-500/20' : ($bracket === 'ub' ? 'border-rose-300 shadow-rose-500/10' : 'border-indigo-300 shadow-indigo-500/10');
+    }
+    
+    // Active styling overrides
+    $isActive = $isActive ?? false;
+    if ($isActive) {
+        $borderClass = 'border-blue-500 shadow-lg shadow-blue-500/30 scale-105 z-20 transition-all duration-300';
     }
 @endphp
 
-<div class="relative w-64 md:w-72">
+<div class="relative w-64 md:w-72 lg:w-80 {{ $isActive ? 'z-20' : '' }}">
     {{-- Match label badge --}}
-    <div class="absolute -top-3 left-3 z-10 px-1.5 py-0.5 bg-slate-800 text-slate-800 text-[15px] md:text-[15px] font-black rounded border border-slate-700 uppercase tracking-wide">
+    <div class="absolute -top-3 left-3 z-10 px-1.5 py-0.5 bg-white text-slate-500 text-[11px] md:text-xs lg:text-sm font-black rounded-lg border border-slate-200 uppercase tracking-wide shadow-sm">
         @if($isGf)
             Grand Final
         @else
@@ -25,70 +31,74 @@
         @endif
     </div>
 
-    {{-- Is Done badge --}}
-    @if($isDone)
-        <div class="absolute -top-3 right-3 z-10 px-1.5 py-0.5 bg-emerald-500 text-white text-[15px] md:text-[15px] font-black rounded uppercase">
+    {{-- Active badge --}}
+    @if($isActive)
+        <div class="absolute -top-3 right-3 z-20 px-3 py-0.5 bg-blue-500 text-white text-[11px] md:text-xs lg:text-sm font-black rounded-lg uppercase shadow-lg shadow-blue-500/40 animate-pulse flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full"></span> ACTIVE
+        </div>
+    @elseif($isDone)
+        <div class="absolute -top-3 right-3 z-10 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] md:text-xs lg:text-sm font-black rounded-lg uppercase shadow-sm">
             Selesai
         </div>
     @endif
 
     {{-- Card --}}
-    <div class="bg-slate-800 rounded-xl border-2 {{ $borderClass }} shadow-lg overflow-hidden transition-all">
+    <div class="bg-white rounded-2xl border-2 {{ $borderClass }} shadow-md overflow-hidden transition-all">
         @if(!$hasSomeAthlete)
             {{-- Empty / TBD --}}
             <div class="px-3 py-6 flex flex-col items-center justify-center gap-1">
-                <i class="fas fa-clock text-slate-900 text-2xl"></i>
-                <span class="text-[15px] md:text-[15px] font-bold text-slate-900 uppercase tracking-wide">Menunggu...</span>
+                <i class="fas fa-clock text-slate-300 text-3xl"></i>
+                <span class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wide mt-2">Menunggu...</span>
             </div>
         @else
             {{-- Athlete 1 (Merah/AKA) --}}
-            <div class="px-3 py-3 border-b border-slate-700 flex items-center gap-2
-                {{ $isDone && $winnerNode === 'athlete1' ? 'bg-rose-900/30' : '' }}">
-                <div class="w-1.5 h-10 rounded-full flex-shrink-0
-                    {{ $isDone && $winnerNode === 'athlete1' ? 'bg-rose-500 shadow-lg shadow-rose-500' : 'bg-rose-500/30' }}">
+            <div class="px-3 py-3 md:py-4 border-b border-slate-100 flex items-center gap-3
+                {{ $isDone && $winnerNode === 'athlete1' ? 'bg-rose-50' : '' }}">
+                <div class="w-2 h-10 md:h-12 rounded-full flex-shrink-0
+                    {{ $isDone && $winnerNode === 'athlete1' ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-rose-200' }}">
                 </div>
                 <div class="flex-1 min-w-0">
                     @if($a1)
-                        <div class="text-[15px] md:text-[15px] font-black uppercase tracking-tight truncate
-                            {{ $isDone && $winnerNode === 'athlete1' ? 'text-white' : 'text-slate-300' }}">
+                        <div class="text-sm md:text-base font-black uppercase tracking-tight truncate
+                            {{ $isDone && $winnerNode === 'athlete1' ? 'text-slate-800' : 'text-slate-600' }}">
                             {{ $a1['name'] }}
                         </div>
                         @if($a1['contingent'] ?? null)
-                            <div class="text-[15px] md:text-[15px] text-slate-900 truncate">{{ $a1['contingent'] }}</div>
+                            <div class="text-xs md:text-sm font-bold text-slate-400 truncate mt-0.5">{{ $a1['contingent'] }}</div>
                         @endif
                     @else
-                        <div class="text-[15px] md:text-[15px] text-slate-900 italic font-bold">TBD</div>
+                        <div class="text-sm md:text-base text-slate-300 italic font-bold">TBD</div>
                     @endif
                 </div>
                 @if($isDone && $winnerNode === 'athlete1')
-                    <span class="text-[15px] font-black bg-rose-500 text-white px-1.5 py-0.5 rounded flex-shrink-0 shadow-md">W</span>
+                    <span class="text-[11px] md:text-xs font-black bg-rose-100 text-rose-600 border border-rose-200 px-2 py-1 rounded-lg flex-shrink-0 shadow-sm">W</span>
                 @endif
             </div>
 
             {{-- VS --}}
-            <div class="py-1 bg-slate-900 flex items-center justify-center text-[15px] font-black text-slate-900 tracking-widest uppercase">vs</div>
+            <div class="py-1 bg-slate-50 border-y border-slate-100 flex items-center justify-center text-xs md:text-sm font-black text-slate-300 tracking-widest uppercase shadow-inner">vs</div>
 
             {{-- Athlete 2 (Putih/SHIRO) --}}
-            <div class="px-3 py-3 flex items-center gap-2
-                {{ $isDone && $winnerNode === 'athlete2' ? 'bg-indigo-900/30' : '' }}">
-                <div class="w-1.5 h-10 rounded-full flex-shrink-0
-                    {{ $isDone && $winnerNode === 'athlete2' ? 'bg-indigo-500 shadow-lg shadow-indigo-500' : 'bg-indigo-500/30' }}">
+            <div class="px-3 py-3 md:py-4 flex items-center gap-3
+                {{ $isDone && $winnerNode === 'athlete2' ? 'bg-indigo-50' : '' }}">
+                <div class="w-2 h-10 md:h-12 rounded-full flex-shrink-0
+                    {{ $isDone && $winnerNode === 'athlete2' ? 'bg-indigo-500 shadow-sm shadow-indigo-500/50' : 'bg-indigo-200' }}">
                 </div>
                 <div class="flex-1 min-w-0">
                     @if($a2)
-                        <div class="text-[15px] md:text-[15px] font-black uppercase tracking-tight truncate
-                            {{ $isDone && $winnerNode === 'athlete2' ? 'text-white' : 'text-slate-300' }}">
+                        <div class="text-sm md:text-base font-black uppercase tracking-tight truncate
+                            {{ $isDone && $winnerNode === 'athlete2' ? 'text-slate-800' : 'text-slate-600' }}">
                             {{ $a2['name'] }}
                         </div>
                         @if($a2['contingent'] ?? null)
-                            <div class="text-[15px] md:text-[15px] text-slate-900 truncate">{{ $a2['contingent'] }}</div>
+                            <div class="text-xs md:text-sm font-bold text-slate-400 truncate mt-0.5">{{ $a2['contingent'] }}</div>
                         @endif
                     @else
-                        <div class="text-[15px] md:text-[15px] text-slate-900 italic font-bold">TBD</div>
+                        <div class="text-sm md:text-base text-slate-300 italic font-bold">TBD</div>
                     @endif
                 </div>
                 @if($isDone && $winnerNode === 'athlete2')
-                    <span class="text-[15px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded flex-shrink-0 shadow-md">W</span>
+                    <span class="text-[11px] md:text-xs font-black bg-indigo-100 text-indigo-600 border border-indigo-200 px-2 py-1 rounded-lg flex-shrink-0 shadow-sm">W</span>
                 @endif
             </div>
         @endif
