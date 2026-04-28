@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\PaymentMethod\PaymentMethod;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -26,6 +27,29 @@ class DatabaseSeeder extends Seeder
             TechniqueSeeder::class,
             TournamentDummySeeder::class,
             // Embu9ContingentSeeder::class,
+        ]);
+
+        PaymentMethod::create([
+            'bank' => 'Tunai',
+            'name' => 'Tunai',
+        ]);
+
+        PaymentMethod::create([
+            'bank' => 'BNI',
+            'account_number' => '0705667627',
+            'name' => 'KONI Kabupaten Bekasi',
+        ]);
+
+        PaymentMethod::create([
+            'bank' => 'BRI',
+            'account_number' => '0705667627',
+            'name' => 'KONI Kabupaten Bekasi',
+        ]);
+
+        PaymentMethod::create([
+            'bank' => 'Mandiri',
+            'account_number' => '0705667627',
+            'name' => 'KONI Kabupaten Bekasi',
         ]);
     }
 }
