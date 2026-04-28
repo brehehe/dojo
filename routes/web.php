@@ -14,6 +14,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\Profile\AdminProfileIndex;
 use App\Livewire\Admin\Master\AgeGroup\AdminMasterAgeGroupIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteDetailIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteFormIndex;
@@ -94,6 +95,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboard::class)->name('dashboard');
+        Route::get('/profile', AdminProfileIndex::class)->name('profile');
 
         Route::prefix('master')->name('master.')->group(function () {
             Route::get('/users', AdminMasterUserIndex::class)->name('users');

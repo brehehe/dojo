@@ -75,7 +75,7 @@
                             </div>
                         </div>
                         <div class="px-3 pb-2 pt-2">
-                            <a href="#" class="flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-slate-700 hover:bg-slate-50 hover:text-orange-600 rounded-xl transition-all">
+                            <a href="{{ route('admin.profile') }}" class="flex items-center gap-3 px-4 py-3 text-[15px] font-bold text-slate-700 hover:bg-slate-50 hover:text-orange-600 rounded-xl transition-all">
                                 <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                                     <i class="fas fa-user-circle"></i>
                                 </div>
