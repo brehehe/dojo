@@ -214,7 +214,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
             [
                 'match_number_id' => $this->matchNumber->id,
                 'registration_id' => $registrationId,
-                'round' => $this->currentRound,
+                'round_label' => $this->currentRound,
             ],
             [
                 'judge_1' => 0, 'judge_2' => 0, 'judge_3' => 0, 'judge_4' => 0, 'judge_5' => 0,
@@ -300,8 +300,13 @@ class AdminArbitraseScoringEmbuDetail extends Component
             ->get();
 
         if ($this->currentRound === 'Penyisihan') {
-            // Penyisihan: highest score = rank 1
-            $sorted = $scores->sortByDesc('nilai_akhir')->values();
+            // Sort by Nilai Akhir (Primary) and Judge 1 (Secondary tie-break)
+            $sorted = $scores->sort(function ($a, $b) {
+                if ($a->nilai_akhir != $b->nilai_akhir) {
+                    return $b->nilai_akhir <=> $a->nilai_akhir; // Descending
+                }
+                return $b->judge_1 <=> $a->judge_1; // Tie-break: Judge 1 Descending
+            })->values();
         } else {
             // Final: highest accumulated score = rank 1
             $penyisihanScores = EmbuScore::where('match_number_id', $this->matchNumber->id)
@@ -310,10 +315,18 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 ->groupBy('registration_id')
                 ->map(fn ($group) => $group->sortByDesc('tiebreak_round')->first());
 
-            $sorted = $scores->sortByDesc(function ($score) use ($penyisihanScores) {
-                $pScore = $penyisihanScores[$score->registration_id] ?? null;
+            $sorted = $scores->sort(function ($a, $b) use ($penyisihanScores) {
+                $pA = $penyisihanScores[$a->registration_id] ?? null;
+                $pB = $penyisihanScores[$b->registration_id] ?? null;
+                
+                $totalA = $a->nilai_akhir + ($pA ? $pA->nilai_akhir : 0);
+                $totalB = $b->nilai_akhir + ($pB ? $pB->nilai_akhir : 0);
 
-                return $score->nilai_akhir + ($pScore ? $pScore->nilai_akhir : 0);
+                if ($totalA != $totalB) {
+                    return $totalB <=> $totalA; // Descending
+                }
+                // If tied, use Judge 1 from current (Final) round
+                return $b->judge_1 <=> $a->judge_1; 
             })->values();
         }
 
@@ -333,7 +346,8 @@ class AdminArbitraseScoringEmbuDetail extends Component
     {
         $scores = EmbuScore::where('match_number_id', $this->matchNumber->id)
             ->where('round_label', $this->currentRound)
-            ->orderBy('nilai_akhir') // lowest first for Penyisihan
+            ->orderByDesc('nilai_akhir') // highest first
+            ->orderByDesc('judge_1')      // tie-break
             ->get();
 
         if ($scores->isEmpty()) {
@@ -347,10 +361,16 @@ class AdminArbitraseScoringEmbuDetail extends Component
         }
 
         // The score at the boundary (last qualifying position)
-        $boundaryScore = $scores->get($threshold - 1)?->nilai_akhir;
+        $boundaryScoreObj = $scores->get($threshold - 1);
+        $boundaryVal = $boundaryScoreObj?->nilai_akhir;
+        $boundaryJ1  = $boundaryScoreObj?->judge_1;
 
-        // Find all who share this exact score (tied at boundary)
-        $tied = $scores->filter(fn ($s) => (float) $s->nilai_akhir === (float) $boundaryScore);
+        // Find all who share this exact score and Judge 1 tie-break (if needed)
+        // Actually, a tie for qualifying usually means exactly same final score AND same tiebreaker
+        $tied = $scores->filter(fn ($s) => 
+            (float) $s->nilai_akhir === (float) $boundaryVal && 
+            (float) $s->judge_1 === (float) $boundaryJ1
+        );
 
         if ($tied->count() <= 1) {
             return []; // not a tie
@@ -574,11 +594,17 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 ];
             });
 
-        // Selalu urutkan daftar panggil dan tabel berdasarkan URUTAN TAMPIL (sequence_number)
-        // Agar tidak rancu / melompat saat nilai diinput
-        $registrations = $registrations
-            ->sortBy('sequence_number')
-            ->values();
+        // Urutkan berdasarkan rank (jika sudah ada), jika belum gunakan sequence_number
+        $registrations = $registrations->sort(function ($a, $b) {
+            $rankA = $a['score']?->rank ?? 999;
+            $rankB = $b['score']?->rank ?? 999;
+            
+            if ($rankA != $rankB) {
+                return $rankA <=> $rankB;
+            }
+            
+            return $a['sequence_number'] <=> $b['sequence_number'];
+        })->values();
 
         $firstDrawingQuery = $this->matchNumber->drawings->where('round', $this->currentRound);
         if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
@@ -690,5 +716,30 @@ class AdminArbitraseScoringEmbuDetail extends Component
         ];
         Cache::put("court_{$courtId}_timer", $state);
         $this->dispatch('timer-updated');
+    }
+
+    public function dismissParticipant()
+    {
+        $this->matchNumber->update(['active_registration_id' => null]);
+        
+        $courtId = $this->getCourtId();
+        if ($courtId) {
+            $state = [
+                'status' => 'stopped',
+                'elapsed_ms' => 0,
+                'started_at_ms' => null,
+            ];
+            Cache::put("court_{$courtId}_timer", $state);
+            
+            \App\Models\Court\Court::where('id', $courtId)->update([
+                'active_registration_id' => null,
+            ]);
+        }
+
+        $this->dispatch('swal', [
+            'icon' => 'info',
+            'title' => 'Panggilan Ditutup',
+            'text' => 'Peserta telah dilepas dari layar wasit.',
+        ]);
     }
 }

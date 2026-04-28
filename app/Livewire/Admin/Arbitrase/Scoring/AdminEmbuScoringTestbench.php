@@ -114,24 +114,36 @@ class AdminEmbuScoringTestbench extends Component
 
         // Load existing scores if any
         if ($this->selectedMatchId) {
-            $match = MatchNumber::find($this->selectedMatchId);
-            foreach (range(1, 5) as $j) {
-                $existing = EmbuScore::where('match_number_id', $this->selectedMatchId)
-                    ->where('registration_id', $registrationId)
-                    ->where('round_label', $this->currentRound)
-                    ->latest()->first();
+            $existingScore = EmbuScore::where('match_number_id', $this->selectedMatchId)
+                ->where('registration_id', $registrationId)
+                ->where('round_label', $this->currentRound)
+                ->latest()->first();
 
-                if ($existing) {
-                    $this->denda = (float) ($existing->denda ?? 0);
-                    // Existing per-judge details stored in RefereeScoreDetail
-                    // For simplicity, pre-fill each judge equally with judge_N values
-                    $val = $existing->{'judge_'.$j} ?? 0;
-                    foreach ($this->judgeScores[$j] as $k => $_) {
-                        // Distribute score evenly across items (approximation for pre-fill)
-                        $this->judgeScores[$j][$k] = 0;
+            if ($existingScore) {
+                $this->denda = (float) ($existingScore->denda ?? 0);
+                
+                // Load detailed breakdown from RefereeScoreDetail
+                $details = \App\Models\RefereeScoreDetail::where('match_number_id', $this->selectedMatchId)
+                    ->where('scorable_type', Registration::class)
+                    ->where('scorable_id', $registrationId)
+                    ->get();
+
+                foreach (range(1, 5) as $j) {
+                    // Try to find detail for this judge index (assuming 1-based index in testbench maps to judge_index)
+                    // Note: In real scenarios referee_id is used, but for testbench we often map by judge_index
+                    $detail = $details->where('judge_index', $j)->first();
+                    
+                    if ($detail && is_array($detail->details)) {
+                        foreach ($detail->details as $k => $v) {
+                            if (isset($this->judgeScores[$j][$k])) {
+                                $this->judgeScores[$j][$k] = (float)$v;
+                            }
+                        }
+                    } else {
+                        // Fallback: if no detail but total exists, maybe it was an admin override
+                        // We can't know the breakdown, so we just set it to 0 as already reset
                     }
                 }
-                break; // Only load once
             }
         }
 
@@ -223,6 +235,45 @@ class AdminEmbuScoringTestbench extends Component
             ]
         );
 
+        // Also save detailed breakdown to RefereeScoreDetail for simulation/consistency
+        // Try to resolve real referee assignments for this match/court/session
+        $drawing = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
+            ->where('registration_id', $this->activeRegistrationId)
+            ->where('round', $this->currentRound)
+            ->first();
+
+        $schedules = collect();
+        if ($drawing && $drawing->court_id) {
+            $schedules = \App\Models\ScheduleReferee::where('court_id', $drawing->court_id)
+                ->where('session_time_id', $drawing->session_time_id)
+                ->where('rundown_id', $drawing->rundown_id)
+                ->get()
+                ->keyBy('judge_index');
+        }
+
+        // Fallback referees if schedules are empty (to prevent not-null error in testbench)
+        $fallbackReferees = \App\Models\Referee::limit(5)->pluck('id');
+
+        foreach (range(1, 5) as $j) {
+            $refereeId = $schedules->get($j)?->referee_id ?? $fallbackReferees[$j-1] ?? $fallbackReferees->first();
+            
+            if (!$refereeId) continue; // Should not happen if there are referees in DB
+
+            \App\Models\RefereeScoreDetail::updateOrCreate(
+                [
+                    'match_number_id' => $this->selectedMatchId,
+                    'scorable_type' => Registration::class,
+                    'scorable_id' => $this->activeRegistrationId,
+                    'judge_index' => $j,
+                    'referee_id' => $refereeId,
+                ],
+                [
+                    'details' => $this->judgeScores[$j],
+                    'total_calculated_score' => $this->judgeTotals[$j],
+                ]
+            );
+        }
+
         $this->recalculateRanks();
         $this->showRankingPanel = true;
 
@@ -265,9 +316,36 @@ class AdminEmbuScoringTestbench extends Component
             ->where('round_label', $this->currentRound)
             ->get();
 
-        $sorted = $this->currentRound === 'Penyisihan'
-            ? $scores->sortBy('nilai_akhir')->values()
-            : $scores->sortByDesc('nilai_akhir')->values();
+        if ($this->currentRound === 'Penyisihan') {
+            // Sort by Nilai Akhir (Primary) and Judge 1 (Secondary tie-break)
+            $sorted = $scores->sort(function ($a, $b) {
+                if ($a->nilai_akhir != $b->nilai_akhir) {
+                    return $b->nilai_akhir <=> $a->nilai_akhir; // Descending
+                }
+                return $b->judge_1 <=> $a->judge_1; // Tie-break: Judge 1 Descending
+            })->values();
+        } else {
+            // Final: highest accumulated score = rank 1
+            $penyisihanScores = EmbuScore::where('match_number_id', $this->selectedMatchId)
+                ->where('round_label', 'Penyisihan')
+                ->get()
+                ->groupBy('registration_id')
+                ->map(fn ($group) => $group->sortByDesc('tiebreak_round')->first());
+
+            $sorted = $scores->sort(function ($a, $b) use ($penyisihanScores) {
+                $pA = $penyisihanScores[$a->registration_id] ?? null;
+                $pB = $penyisihanScores[$b->registration_id] ?? null;
+                
+                $totalA = $a->nilai_akhir + ($pA ? $pA->nilai_akhir : 0);
+                $totalB = $b->nilai_akhir + ($pB ? $pB->nilai_akhir : 0);
+
+                if ($totalA != $totalB) {
+                    return $totalB <=> $totalA; // Descending
+                }
+                // If tied, use Judge 1 from current (Final) round
+                return $b->judge_1 <=> $a->judge_1; 
+            })->values();
+        }
 
         foreach ($sorted as $idx => $score) {
             $score->update(['rank' => $idx + 1]);
@@ -328,10 +406,15 @@ class AdminEmbuScoringTestbench extends Component
                     ];
                 });
 
-            // Sort by nilai_akhir
-            $registrations = $this->currentRound === 'Penyisihan'
-                ? $registrations->sortBy(fn ($r) => $r['score']?->nilai_akhir ?? PHP_INT_MAX)->values()
-                : $registrations->sortByDesc(fn ($r) => $r['score']?->nilai_akhir ?? -1)->values();
+            // Sort by rank (if exists), otherwise by nilai_akhir descending
+            $registrations = $registrations->sort(function ($a, $b) {
+                $rankA = $a['score']?->rank ?? 999;
+                $rankB = $b['score']?->rank ?? 999;
+                if ($rankA != $rankB) {
+                    return $rankA <=> $rankB;
+                }
+                return ($b['score']?->nilai_akhir ?? 0) <=> ($a['score']?->nilai_akhir ?? 0);
+            })->values();
         }
 
         return view('livewire.admin.arbitrase.scoring.admin-embu-scoring-testbench', [
