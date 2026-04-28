@@ -125,6 +125,9 @@ class AdminArbitraseScoringIndex extends Component
             'active_drawing_id' => null,
         ]);
 
+        // Clear timer cache for this court
+        \Illuminate\Support\Facades\Cache::forget("court_{$courtId}_timer");
+
         $this->dispatch('swal', [
             'icon' => 'info',
             'title' => 'Lapangan Dibersihkan',
@@ -134,17 +137,54 @@ class AdminArbitraseScoringIndex extends Component
 
     public function clearAllCourts(): void
     {
-        Court::query()->update([
-            'active_match_id' => null,
+        $allCourts = Court::all();
+
+        // Reset all courts
+        foreach ($allCourts as $court) {
+            $court->update([
+                'active_match_id' => null,
+                'active_registration_id' => null,
+                'active_bracket_node' => null,
+                'active_drawing_id' => null,
+            ]);
+            
+            // Clear timer cache for each court
+            \Illuminate\Support\Facades\Cache::forget("court_{$court->id}_timer");
+        }
+
+        // Reset all match numbers active states
+        MatchNumber::query()->update([
             'active_registration_id' => null,
             'active_bracket_node' => null,
-            'active_drawing_id' => null,
         ]);
 
         $this->dispatch('swal', [
             'icon' => 'success',
-            'title' => 'Semua Lapangan Di-reset',
-            'text' => 'Seluruh lapangan sekarang kosong secara serentak.',
+            'title' => 'Semua Lapangan & Match Di-reset',
+            'text' => 'Seluruh status aktif telah dibersihkan secara serentak.',
+        ]);
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->filterCourt = '';
+        $this->filterSession = '';
+        $this->filterRundown = '';
+        $this->filterPool = '';
+        $this->filterRound = '';
+        $this->filterType = '';
+        $this->filterContingent = '';
+        $this->filterAgeGroup = '';
+        $this->filterMatchNumber = '';
+        $this->filterGender = '';
+        
+        $this->resetPage();
+
+        $this->dispatch('swal', [
+            'icon' => 'info',
+            'title' => 'Filter Direset',
+            'text' => 'Semua pencarian dan filter telah dikosongkan.',
         ]);
     }
 

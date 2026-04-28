@@ -24,6 +24,14 @@
             <div class="flex items-center gap-2 md:gap-6">
                 <!-- Icons Utility -->
                 <div class="hidden sm:flex items-center gap-1 md:gap-3">
+                    {{-- Announcer Stop Button --}}
+                    <button onclick="window.stopAnnouncer()" 
+                            class="flex items-center gap-2 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all active:scale-95 group"
+                            title="Hentikan Suara Panggilan">
+                        <i class="fas fa-volume-mute text-sm group-hover:animate-pulse"></i>
+                        <span class="hidden lg:inline">Stop Suara</span>
+                    </button>
+
                     <button class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all relative group">
                         <i class="far fa-envelope text-lg"></i>
                     </button>

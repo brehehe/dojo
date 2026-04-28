@@ -175,15 +175,15 @@
 
 
         // ✅ FUNCTION STOP
-        function stopAnnouncer() {
+        window.stopAnnouncer = function() {
             isPlayingAnnouncer = false;
-
             window.speechSynthesis.cancel();
 
             if (currentAudio) {
                 currentAudio.pause();
                 currentAudio.currentTime = 0;
             }
+            console.log('Announcer stopped manually.');
         }
 
         // ✅ TIMER SOUND HELPERS
