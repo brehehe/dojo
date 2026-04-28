@@ -12,53 +12,98 @@
             <p class="text-sm text-slate-500 font-medium mt-0.5">Embu & Randori · Generate & simpan juara ke database</p>
         </div>
 
-        <button wire:click="generateAllResults" wire:confirm="Generate semua hasil juara ke database? Data lama akan ditimpa."
-            wire:loading.attr="disabled"
-            class="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-60 shrink-0">
-            <span wire:loading.remove wire:target="generateAllResults">
-                <i class="fas fa-database mr-1"></i> Generate Semua
-            </span>
-            <span wire:loading wire:target="generateAllResults">
-                <i class="fas fa-spinner fa-spin mr-1"></i> Memproses...
-            </span>
-        </button>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.arbitrase.laporan-skor') }}"
+                class="inline-flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-indigo-600 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-sm">
+                <i class="fas fa-list-ol mr-1"></i> Lihat Semua Skor
+            </a>
+
+            <button wire:click="generateAllResults" wire:confirm="Generate semua hasil juara ke database? Data lama akan ditimpa."
+                wire:loading.attr="disabled"
+                class="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-60 shrink-0">
+                <span wire:loading.remove wire:target="generateAllResults">
+                    <i class="fas fa-database mr-1"></i> Generate Semua
+                </span>
+                <span wire:loading wire:target="generateAllResults">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> Memproses...
+                </span>
+            </button>
+        </div>
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-        <div class="w-full md:w-1/3">
-            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Cari</label>
-            <div class="relative">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                <input type="text" wire:model.live.debounce.300ms="search"
-                    class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-all"
-                    placeholder="Nama nomor pertandingan...">
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Cari</label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" wire:model.live.debounce.300ms="search"
+                        class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium transition-all"
+                        placeholder="Nama nomor pertandingan...">
+                </div>
+            </div>
+
+            <div wire:key="filter-draft-type">
+                <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Kategori</label>
+                <x-select wire:model.live="draftTypeFilter" variant="filter">
+                    <option value="">Semua Kategori</option>
+                    <option value="embu">Embu</option>
+                    <option value="randori">Randori</option>
+                </x-select>
+            </div>
+
+            <div wire:key="filter-age-group">
+                <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Kelompok Umur</label>
+                <x-select wire:model.live="ageGroupFilter" variant="filter">
+                    <option value="">Semua Kelompok</option>
+                    @foreach($ageGroups as $ag)
+                        <option value="{{ $ag->id }}">{{ $ag->name }}</option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            <div wire:key="filter-gender">
+                <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Jenis Kelamin</label>
+                <x-select wire:model.live="genderFilter" variant="filter">
+                    <option value="">Semua Gender</option>
+                    <option value="Putra">Putra</option>
+                    <option value="Putri">Putri</option>
+                    <option value="Campuran">Campuran</option>
+                </x-select>
+            </div>
+
+            <div wire:key="filter-has-winners">
+                <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Status Juara</label>
+                <x-select wire:model.live="hasWinnersFilter" variant="filter">
+                    <option value="">Semua Status</option>
+                    <option value="yes">Sudah Ada Juara</option>
+                    <option value="no">Belum Ada Juara</option>
+                </x-select>
             </div>
         </div>
-        <div class="w-full md:w-1/5">
-            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Kategori</label>
-            <select wire:model.live="draftTypeFilter"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
-                <option value="">Semua</option>
-                <option value="Embu">Embu</option>
-                <option value="Randori">Randori</option>
-            </select>
-        </div>
-        <div class="w-full md:w-1/5">
-            <label class="block text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Kelompok Umur</label>
-            <select wire:model.live="ageGroupFilter"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
-                <option value="">Semua</option>
-                @foreach($ageGroups as $ag)
-                    <option value="{{ $ag->id }}">{{ $ag->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="w-full md:w-auto">
-            <button onclick="window.print()"
-                class="w-full md:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center justify-center gap-2">
-                <i class="fas fa-print"></i> Cetak
-            </button>
+
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 pt-2 border-t border-slate-50">
+            <div class="w-full md:w-1/2" wire:key="filter-match-number">
+                <x-select wire:model.live="matchNumberFilter" variant="filter">
+                    <option value="">Semua Nomor Pertandingan (Dropdown)</option>
+                    @foreach($allMatchNumbersDropdown as $mn)
+                        <option value="{{ $mn->id }}">{{ $mn->name }} ({{ $mn->gender }})</option>
+                    @endforeach
+                </x-select>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button wire:click="generateAllResults" 
+                    wire:confirm="Generate semua hasil yang tersedia? Ini akan menimpa data lama."
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fas fa-sync"></i> Generate Semua
+                </button>
+                <button onclick="window.print()"
+                    class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fas fa-print"></i> Cetak Laporan
+                </button>
+            </div>
         </div>
     </div>
 

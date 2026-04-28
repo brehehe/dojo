@@ -6,6 +6,7 @@ use App\Models\EmbuChampion;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
 use App\Models\Registration;
+use App\Models\TournamentResult;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -32,33 +33,17 @@ class Results extends Component
             ->pluck('id')
             ->toArray();
 
-        $embuResults = collect([]);
-        $randoriResults = collect([]);
-
-        if ($this->filterType === 'all' || $this->filterType === 'embu') {
-            $embuResults = EmbuChampion::whereIn('registration_id', $registrationIds)
-                ->with(['matchNumber.ageGroup', 'registration.contingent'])
-                ->orderBy('match_number_id')
-                ->orderBy('rank')
-                ->get();
-        }
-
-        if ($this->filterType === 'all' || $this->filterType === 'randori') {
-            $randoriMatchNumberIds = MatchNumber::where('draft_type', 'randori')
-                ->whereHas('drawings', fn ($q) => $q->whereIn('registration_id', $registrationIds))
-                ->pluck('id');
-
-            $randoriResults = RandoriMatchResult::whereIn('match_number_id', $randoriMatchNumberIds)
-                ->with(['matchNumber.ageGroup', 'winner'])
-                ->orderBy('match_number_id')
-                ->orderBy('bracket_node')
-                ->get();
-        }
+        $results = TournamentResult::where('contingent_name', $contingent->name)
+            ->with(['matchNumber.ageGroup'])
+            ->when($this->filterType !== 'all', fn ($q) => $q->where('draft_type', $this->filterType))
+            ->orderBy('draft_type')
+            ->orderBy('match_number_id')
+            ->orderBy('rank')
+            ->get();
 
         return view('livewire.contingent.results', [
             'contingent' => $contingent,
-            'embuResults' => $embuResults,
-            'randoriResults' => $randoriResults,
+            'results' => $results,
         ]);
     }
 }

@@ -117,6 +117,7 @@
                 <a href="{{ route('admin.arbitrase.referees') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.referees') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Master Wasit</a>
                 <a href="{{ route('admin.arbitrase.generate-referee') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.generate-referee') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Penugasan Wasit</a>
                 <a href="{{ route('admin.arbitrase.laporan-hasil') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-hasil') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Hasil Juara</a>
+                <a href="{{ route('admin.arbitrase.laporan-skor') }}" class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-skor') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Skor Menyeluruh</a>
             </div>
         </div>
         @endrole

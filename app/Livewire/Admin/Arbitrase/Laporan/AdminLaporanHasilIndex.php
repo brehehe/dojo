@@ -21,17 +21,21 @@ class AdminLaporanHasilIndex extends Component
     public string $draftTypeFilter = '';
 
     public string $ageGroupFilter = '';
+    public string $matchNumberFilter = '';
+    public string $genderFilter = '';
+    public string $hasWinnersFilter = ''; // 'all', 'yes', 'no'
 
     public bool $showConfirmModal = false;
-
     public ?int $generateMatchId = null;
-
     public string $generateMatchName = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
         'draftTypeFilter' => ['except' => ''],
         'ageGroupFilter' => ['except' => ''],
+        'matchNumberFilter' => ['except' => ''],
+        'genderFilter' => ['except' => ''],
+        'hasWinnersFilter' => ['except' => ''],
     ];
 
     public function updatingSearch(): void
@@ -45,6 +49,21 @@ class AdminLaporanHasilIndex extends Component
     }
 
     public function updatingAgeGroupFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingMatchNumberFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingGenderFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingHasWinnersFilter(): void
     {
         $this->resetPage();
     }
@@ -127,6 +146,7 @@ class AdminLaporanHasilIndex extends Component
         }
 
         $juara = [];
+        $matchNumber->loadMissing('athletes');
         foreach ($ranked as $idx => $score) {
             $rankNum = $idx + 1;
             if ($rankNum > 4) {
@@ -134,9 +154,14 @@ class AdminLaporanHasilIndex extends Component
             }
 
             $reg = $score->registration;
+            $competingAthletes = $matchNumber->athletes
+                ->filter(fn ($a) => $a->pivot->registration_id == $score->registration_id)
+                ->pluck('name')
+                ->join(' & ');
+
             $juara[$rankNum] = [
                 'registration_id' => $score->registration_id,
-                'athlete_names' => $reg?->athletes->pluck('name')->join(' & ') ?? '-',
+                'athlete_names' => $competingAthletes ?: ($reg?->athletes->pluck('name')->join(' & ') ?? '-'),
                 'contingent_name' => $reg?->contingent?->name ?? '-',
                 'penyisihan_score' => $score->penyisihan_val,
                 'final_score' => $score->final_val,
@@ -279,11 +304,16 @@ class AdminLaporanHasilIndex extends Component
     public function render()
     {
         $ageGroups = AgeGroup::orderBy('order')->get();
+        $allMatchNumbers = MatchNumber::orderBy('name')->get();
 
         $matchNumbers = MatchNumber::with(['ageGroup', 'embuScores', 'athletes', 'tournamentResults'])
-            ->when($this->search, fn ($q) => $q->where('name', 'like', '%'.$this->search.'%'))
+            ->when($this->search, fn ($q) => $q->where('name', 'ilike', '%'.$this->search.'%'))
             ->when($this->draftTypeFilter, fn ($q) => $q->where('draft_type', $this->draftTypeFilter))
             ->when($this->ageGroupFilter, fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
+            ->when($this->matchNumberFilter, fn ($q) => $q->where('id', $this->matchNumberFilter))
+            ->when($this->genderFilter, fn ($q) => $q->where('gender', $this->genderFilter))
+            ->when($this->hasWinnersFilter === 'yes', fn ($q) => $q->has('tournamentResults'))
+            ->when($this->hasWinnersFilter === 'no', fn ($q) => $q->doesntHave('tournamentResults'))
             ->orderBy('draft_type')
             ->orderBy('age_group_id')
             ->orderBy('order')
@@ -300,6 +330,7 @@ class AdminLaporanHasilIndex extends Component
         return view('livewire.admin.arbitrase.laporan.admin-laporan-hasil-index', [
             'matchNumbers' => $matchNumbers,
             'ageGroups' => $ageGroups,
+            'allMatchNumbersDropdown' => $allMatchNumbers,
         ]);
     }
 }

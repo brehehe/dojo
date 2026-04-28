@@ -4,6 +4,7 @@ use App\Http\Controllers\WelcomeController;
 use App\Livewire\Admin\Announcer\AnnouncerIndex;
 use App\Livewire\Admin\Arbitrase\GenerateReferee\AdminArbitraseGenerateRefereeIndex;
 use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanHasilIndex;
+use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanSkorIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringEmbuDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
@@ -158,6 +159,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/referees', AdminMasterRefereeIndex::class)->name('referees');
             Route::get('/generate-referee', AdminArbitraseGenerateRefereeIndex::class)->name('generate-referee');
             Route::get('/laporan-hasil', AdminLaporanHasilIndex::class)->name('laporan-hasil');
+            Route::get('/laporan-skor', AdminLaporanSkorIndex::class)->name('laporan-skor');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
