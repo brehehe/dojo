@@ -206,6 +206,100 @@
             margin: 20px 0;
             border: 1px solid #bae6fd;
         }
+
+        /* RESPONSIVE SETTINGS */
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 15px 15px 35px;
+                border-radius: 0;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+                padding-left: 15px;
+                border-left-width: 6px;
+            }
+
+            .subhead {
+                font-size: 0.8rem;
+                line-height: 1.4;
+            }
+
+            .section {
+                padding: 15px;
+                border-radius: 15px;
+                margin-bottom: 20px;
+            }
+
+            .section-title {
+                font-size: 0.9rem;
+                padding: 6px 14px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .atlet-card {
+                padding: 15px;
+                border-radius: 18px;
+            }
+
+            .atlet-header {
+                font-size: 0.9rem;
+                padding: 10px 15px;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .atlet-header .btn-remove {
+                width: 100%;
+            }
+
+            .btn-add {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .submit-btn {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+
+            .bpjs-section {
+                padding: 15px;
+            }
+
+            .info-box, .warning-box {
+                font-size: 0.8rem;
+                padding: 12px 15px;
+            }
+
+            /* Payment summary & method adjustments */
+            .grid-cols-1.md\:grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+
+            .gender-block .pl-4.md\:pl-8 {
+                padding-left: 15px !important;
+            }
+
+            /* Fix for overlapping photo section */
+            .section div[class*="flex flex-col md:flex-row"] {
+                flex-direction: column !important;
+                text-align: center;
+            }
+        }
     </style>
 
     @if($is_success)
@@ -712,15 +806,15 @@
                                 <h3 class="text-xl font-bold mb-6 text-orange-400">Ringkasan Biaya</h3>
                                 <div class="space-y-4 text-[15px]">
                                     <div class="flex justify-between border-b border-white/10 pb-2">
-                                        <span class="text-slate-800">Pendaftaran Kontingen</span>
+                                        <span class="text-white">Pendaftaran Kontingen</span>
                                         <span class="font-mono">Rp {{ number_format($contingent_fee, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between border-b border-white/10 pb-2">
-                                        <span class="text-slate-800">Total Biaya Atlet ({{ count($athletes) }} Orang)</span>
+                                        <span class="text-white">Total Biaya Atlet ({{ count($athletes) }} Orang)</span>
                                         <span class="font-mono">Rp {{ number_format($this->getTotalAthleteFee(), 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between border-b border-white/10 pb-2">
-                                        <span class="text-slate-800">Kode Unik Verifikasi</span>
+                                        <span class="text-white">Kode Unik Verifikasi</span>
                                         <span class="font-mono text-orange-400">+ Rp {{ number_format($unique_code, 0, ',', '.') }}</span>
                                     </div>
                                     <div class="flex justify-between pt-4">
@@ -728,7 +822,7 @@
                                         <span class="text-2xl font-black text-orange-400 font-mono italic">Rp {{ number_format($this->finalTotal, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
-                                <p class="mt-6 text-[15px] text-slate-800 leading-relaxed italic">
+                                <p class="mt-6 text-[15px] text-white leading-relaxed italic">
                                     * Mohon transfer tepat hingga 3 digit terakhir untuk mempercepat proses verifikasi otomatis oleh sistem.
                                 </p>
                             </div>
@@ -739,41 +833,24 @@
                         <div class="space-y-6">
                             <div>
                                 <label class="block text-[15px] font-bold text-black mb-3">Pilih Metode Pembayaran</label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <label class="relative cursor-pointer">
-                                        <input type="radio" wire:model="payment_method" value="BSI" class="peer sr-only">
-                                        <div class="p-4 border-2 border-slate-100 rounded-2xl peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-900 transition-all text-center">
-                                            <div class="font-black text-[15px]">BANK BSI</div>
-                                            <div class="text-[15px] text-slate-900">Fast Verification</div>
-                                        </div>
-                                    </label>
-                                    <label class="relative cursor-pointer">
-                                        <input type="radio" wire:model="payment_method" value="BCA" class="peer sr-only">
-                                        <div class="p-4 border-2 border-slate-100 rounded-2xl peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-900 transition-all text-center">
-                                            <div class="font-black text-[15px]">BANK BCA</div>
-                                            <div class="text-[15px] text-slate-900">Manual Check</div>
-                                        </div>
-                                    </label>
-                                </div>
+                                <select wire:model.live="payment_method" class="form-input-custom">
+                                    <option value="">-- Pilih Metode Pembayaran --</option>
+                                    @foreach ($paymentMethods as $paymentMethod)
+                                        <option value="{{ $paymentMethod->bank }}">{{ $paymentMethod->bank }} - {{ $paymentMethod->account_number }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
+                            @if ($payment_method_detail?->account_number)
                             <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                                @if($payment_method === 'BSI')
                                     <div class="text-[15px] text-orange-900">
-                                        <strong class="block mb-2 font-black">💳 REKENING TUJUAN (BSI)</strong>
-                                        Bank Syariah Indonesia (BSI)<br>
-                                        Nomor Rekening: <span class="font-mono font-bold">730.947.3196</span><br>
-                                        Atas Nama: <span class="font-bold">PERKEMI PENGKOT SURABAYA</span>
+                                        <strong class="block mb-2 font-black">💳 REKENING TUJUAN ({{ $payment_method_detail->bank }})</strong>
+                                        {{ $payment_method_detail->bank_name }}<br>
+                                        Nomor Rekening: <span class="font-mono font-bold">{{ $payment_method_detail->account_number }}</span><br>
+                                        Atas Nama: <span class="font-bold">{{ $payment_method_detail->name }}</span>
                                     </div>
-                                @else
-                                    <div class="text-[15px] text-blue-900">
-                                        <strong class="block mb-2 font-black">💳 REKENING TUJUAN (BCA)</strong>
-                                        Bank Central Asia (BCA)<br>
-                                        Nomor Rekening: <span class="font-mono font-bold">018.xxxx.xxx</span><br>
-                                        Atas Nama: <span class="font-bold">ADMIN KEMPO SURABAYA</span>
-                                    </div>
-                                @endif
-                            </div>
+                                </div>
+                            @endif
 
                             <div class="form-group">
                                 <label class="block text-[15px] font-bold text-black mb-2">Upload Bukti Transfer <span class="required">*</span></label>

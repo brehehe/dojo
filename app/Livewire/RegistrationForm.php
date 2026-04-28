@@ -10,6 +10,7 @@ use App\Models\Group\WeightGroup;
 use App\Models\KyuLevel;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Official;
+use App\Models\PaymentMethod\PaymentMethod;
 use App\Models\Registration;
 use App\Models\User;
 use Carbon\Carbon;
@@ -31,6 +32,7 @@ class RegistrationForm extends Component
     public string $leader_email = '';
     public string $address = '';
     public $transfer_proof;
+    public $payment_method_detail = null;
     public bool $is_authenticated = false;
 
     // B. OFFICIAL
@@ -85,7 +87,7 @@ class RegistrationForm extends Component
     public bool $is_success = false;
 
     // Payment & Pricing
-    public string $payment_method = 'BCA';
+    public string $payment_method = 'Tunai';
 
     public int $unique_code = 0;
 
@@ -540,7 +542,8 @@ class RegistrationForm extends Component
                 if (!isset($summary[$gender][$ageGroupName][$mId])) {
                     // Resolve tech names
                     $selectedTechs = $this->matchTechniques[$mId] ?? [];
-                    if (!is_array($selectedTechs)) $selectedTechs = [];
+                    if (!is_array($selectedTechs))
+                        $selectedTechs = [];
 
                     $techNames = [];
                     foreach ($selectedTechs as $tid) {
@@ -748,8 +751,21 @@ class RegistrationForm extends Component
         $this->is_success = true;
     }
 
+    public function updatedPaymentMethod($value)
+    {
+        $this->payment_method = $value;
+        $this->getPaymentMethodDetail();
+    }
+
+    public function getPaymentMethodDetail()
+    {
+        $this->payment_method_detail = PaymentMethod::where('bank', $this->payment_method)->first();
+    }
+
     public function render()
     {
-        return view('livewire.registration-form');
+        return view('livewire.registration-form', [
+            'paymentMethods' => PaymentMethod::where('is_active', true)->get(),
+        ]);
     }
 }

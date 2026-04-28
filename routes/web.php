@@ -14,6 +14,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\Master\PaymentMethod\AdminMasterPaymentIndex;
 use App\Livewire\Admin\Profile\AdminProfileIndex;
 use App\Livewire\Admin\Master\AgeGroup\AdminMasterAgeGroupIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteDetailIndex;
@@ -109,6 +110,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/court', AdminMasterCourtIndex::class)->name('court');
             Route::get('/pool', AdminMasterPoolIndex::class)->name('pool');
             Route::get('/session-time', AdminMasterSessionTimeIndex::class)->name('session-time');
+            Route::get('/payment-method', AdminMasterPaymentIndex::class)->name('payment-method');
 
             // Role Management
             Route::get('/roles', AdminMasterRoleIndex::class)->name('roles.index');
