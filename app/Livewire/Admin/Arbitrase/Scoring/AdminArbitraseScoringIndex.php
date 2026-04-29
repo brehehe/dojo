@@ -204,6 +204,25 @@ class AdminArbitraseScoringIndex extends Component
         $this->loadExistingReferees();
     }
 
+    public function syncFromSchedule()
+    {
+        $this->loadExistingReferees();
+
+        if (count($this->selectedReferees) === 5) {
+            $this->dispatch('swal', [
+                'icon' => 'success',
+                'title' => 'Data Ditemukan',
+                'text' => '5 wasit telah ditarik dari jadwal.',
+            ]);
+        } else {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Data Tidak Lengkap',
+                'text' => 'Hanya ditemukan '.count($this->selectedReferees).' wasit di jadwal untuk sesi ini.',
+            ]);
+        }
+    }
+
     protected function loadExistingReferees()
     {
         if ($this->assigningRundownId && $this->assigningSessionId && $this->assigningCourtId) {
