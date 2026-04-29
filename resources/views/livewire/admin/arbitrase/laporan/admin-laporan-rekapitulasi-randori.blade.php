@@ -96,7 +96,7 @@
                 <x-table.td class="text-center font-black text-black uppercase">{{ $row->pool }}</x-table.td>
                 <x-table.td class="text-center">
                     <span
-                        class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase {{ $row->pita === 'Merah' ? 'bg-rose-500/10 text-rose-500' : 'bg-black text-black' }}">
+                        class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase {{ $row->pita === 'Merah' ? 'bg-rose-500/10 text-rose-500' : 'bg-blue-500/10 text-blue-500' }}">
                         {{ $row->pita }}
                     </span>
                 </x-table.td>

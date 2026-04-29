@@ -170,9 +170,9 @@
                 & Arbitrase</span>
             <hr class="border-white/5 mt-2 mb-1" x-show="collapsed">
         </div>
-        <div x-data="{ open: {{ request()->routeIs('admin.arbitrase.*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->routeIs('admin.arbitrase.referees', 'admin.arbitrase.generate-referee') ? 'true' : 'false' }} }">
             <button @click="open = !open"
-                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.arbitrase.*') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
+                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.arbitrase.referees', 'admin.arbitrase.generate-referee') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
                 :class="collapsed ? 'justify-center px-0' : 'justify-between px-3'">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-balance-scale w-5 text-center text-[15px] opacity-70 group-hover:opacity-100"></i>
@@ -188,18 +188,6 @@
                 <a href="{{ route('admin.arbitrase.generate-referee') }}"
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.generate-referee') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Penugasan
                     Wasit</a>
-                <a href="{{ route('admin.arbitrase.laporan-hasil') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-hasil') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
-                    Hasil Juara</a>
-                <a href="{{ route('admin.arbitrase.laporan-skor') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-skor') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
-                    Skor Menyeluruh</a>
-                <a href="{{ route('admin.arbitrase.rekapitulasi-randori') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-randori') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
-                    Randori</a>
-                <a href="{{ route('admin.arbitrase.rekapitulasi-embu') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-embu') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
-                    Embu</a>
             </div>
         </div>
         @endrole
@@ -210,9 +198,9 @@
                 x-show="!collapsed">Panitera</span>
             <hr class="border-white/5 mt-2 mb-1" x-show="collapsed">
         </div>
-        <div x-data="{ open: {{ request()->routeIs('admin.panitera.*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->routeIs('admin.panitera.*', 'admin.arbitrase.laporan-hasil', 'admin.arbitrase.laporan-skor', 'admin.arbitrase.rekapitulasi-randori', 'admin.arbitrase.rekapitulasi-embu') ? 'true' : 'false' }} }">
             <button @click="open = !open"
-                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.panitera.*') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
+                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.panitera.*', 'admin.arbitrase.laporan-hasil', 'admin.arbitrase.laporan-skor', 'admin.arbitrase.rekapitulasi-randori', 'admin.arbitrase.rekapitulasi-embu') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
                 :class="collapsed ? 'justify-center px-0' : 'justify-between px-3'">
                 <div class="flex items-center gap-3">
                     <i
@@ -241,6 +229,18 @@
                     <span
                         class="text-[10px] font-black bg-indigo-900/50 text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">VOICE</span>
                 </a>
+                <a href="{{ route('admin.arbitrase.laporan-hasil') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-hasil') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
+                    Hasil Juara</a>
+                <a href="{{ route('admin.arbitrase.laporan-skor') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-skor') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
+                    Skor Menyeluruh</a>
+                <a href="{{ route('admin.arbitrase.rekapitulasi-randori') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-randori') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
+                    Randori</a>
+                <a href="{{ route('admin.arbitrase.rekapitulasi-embu') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-embu') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
+                    Embu</a>
             </div>
         </div>
         @endrole

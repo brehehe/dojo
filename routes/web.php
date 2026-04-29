@@ -14,6 +14,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuResultIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
+use App\Livewire\Admin\Arbitrase\Scoring\MonitorRefereeIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\HomeDashboardIndex;
@@ -186,6 +187,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
                 Route::get('/monitor-timer/court/{courtId}', MonitorTimerIndex::class)->name('monitor-timer.court');
+                Route::get('/monitor-referee/court/{courtId}', MonitorRefereeIndex::class)->name('monitor-referee.court');
             });
         });
 

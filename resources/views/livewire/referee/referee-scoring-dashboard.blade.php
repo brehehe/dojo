@@ -21,8 +21,8 @@
                 </a>
                 @if($judgeIndex)
                     <div
-                        class="px-4 py-2 bg-slate-900 text-white rounded-2xl text-[15px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
-                        JURI {{ $judgeIndex }}
+                        class="px-4 py-2 bg-slate-900 text-white rounded-2xl text-[13px] font-black uppercase tracking-widest shadow-lg shadow-slate-900/20">
+                        {{ $this->judgeLabel }}
                     </div>
                 @endif
             </div>

@@ -19,7 +19,7 @@
         </div>
 
         {{-- ====== ROUND INDICATOR ====== --}}
-        <div class="flex items-center justify-center gap-4">
+        <div class="flex flex-wrap items-center justify-center gap-4">
             <div class="flex items-center gap-2 px-4 py-2 rounded-full text-[15px] font-black uppercase tracking-widest
                 {{ $currentRound === 'Penyisihan' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-300/50' : 'bg-slate-100 text-slate-800' }}">
                 <i class="fas fa-filter text-[15px]"></i> 1. Penyisihan
@@ -460,7 +460,7 @@
                 </div>
             </div>
         </div>
-        <div class="p-6 grid grid-cols-4 gap-5">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             @foreach($registrations as $no => $item)
                 @php $isActive = $matchNumber->active_registration_id == $item['id']; @endphp
                 <div class="group relative flex flex-col gap-4 p-5 rounded-[2rem] border transition-all duration-500 
@@ -496,10 +496,10 @@
                                     <i class="fas fa-times text-sm"></i>
                                 </button>
                             @endif
-                            <button wire:click="openScoringModal({{ $item['id'] }})"
+                            <!-- <button wire:click="openScoringModal({{ $item['id'] }})"
                                 class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-900 shadow-sm transition-all" title="Input Skor Admin">
                                 <i class="fas fa-edit text-sm"></i>
-                            </button>
+                            </button> -->
                         </div>
                     </div>
 
@@ -664,7 +664,7 @@
     </div>
     
     {{-- ====== FOOTER INFO ====== --}}
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div class="flex items-center gap-2 mb-3">
                 <i class="fas fa-user-tie text-slate-800"></i>
@@ -796,7 +796,7 @@
                             <i class="fas fa-users"></i>
                             <span class="text-[15px] font-black uppercase tracking-widest">Beregu / Pasangan (Target: 90s - 120s)</span>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-2xl border border-indigo-100 flex justify-between items-center">
                                 <span class="text-slate-600 font-bold">80s - 89s</span>
                                 <span class="text-rose-500 font-black">-5</span>
@@ -822,7 +822,7 @@
                             <i class="fas fa-user"></i>
                             <span class="text-[15px] font-black uppercase tracking-widest">Single / Solo (Target: 60s - 90s)</span>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-2xl border border-emerald-100 flex justify-between items-center">
                                 <span class="text-slate-600 font-bold">50s - 59s</span>
                                 <span class="text-rose-500 font-black">-5</span>

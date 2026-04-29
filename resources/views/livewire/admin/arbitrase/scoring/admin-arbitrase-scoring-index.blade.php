@@ -3,7 +3,8 @@
     {{-- ═══ HEADER ═══ --}}
     {{-- ═══ FIXED RESET BUTTON ═══ --}}
     <div class="fixed bottom-8 right-4 z-[100] md:bottom-10 md:right-6">
-        <button wire:click="clearAllCourts" wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
+        <button wire:click="clearAllCourts"
+            wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
             class="flex items-center gap-2 px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white shadow-2xl shadow-rose-200 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all active:scale-95 border-2 border-white/20 backdrop-blur-sm">
             <i class="fas fa-eraser text-lg"></i>
             <span class="hidden sm:inline">Reset Semua Lapangan</span>
@@ -97,8 +98,47 @@
                     @endif
                 </div>
 
+                {{-- Current Referees List --}}
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Panel Wasit</span>
+                        <div class="flex items-center gap-2">
+                            @if($courtCard->current_referees->count() > 0)
+                                <button wire:confirm="Apakah Anda yakin ingin mengosongkan panel wasit untuk lapangan ini?" 
+                                        wire:click="resetActiveReferees({{ $courtCard->id }})"
+                                        class="text-[9px] font-black text-rose-500 uppercase hover:text-rose-700 transition-colors">
+                                    Reset
+                                </button>
+                                <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-tight">{{ $courtCard->current_referees->count() }} Wasit</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-1.5">
+                        @forelse($courtCard->current_referees as $sch)
+                            <div class="flex items-center gap-2 text-[11px] font-bold text-slate-700 bg-slate-50/50 rounded-lg p-1 border border-slate-100/50">
+                                <span class="w-4 h-4 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center text-[9px] font-black shrink-0 shadow-sm">{{ $sch->judge_index }}</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[11px] font-bold text-slate-700 truncate">{{ $sch->referee?->name }}</p>
+                                    <p class="text-[8px] font-black text-indigo-500 uppercase tracking-tighter">
+                                        @switch($sch->judge_index)
+                                            @case(1) Wasit Nasional (Ketua) @break
+                                            @case(2) Wasit Daerah 1 @break
+                                            @case(3) Wasit Daerah 2 @break
+                                            @case(4) Wasit Pembantu 1 @break
+                                            @case(5) Wasit Pembantu 2 @break
+                                            @default Juri {{ $sch->judge_index }}
+                                        @endswitch
+                                    </p>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-[11px] text-slate-300 italic py-1">Belum ada penugasan untuk sesi ini.</div>
+                        @endforelse
+                    </div>
+                </div>
+
                 {{-- TV Monitor links --}}
-                <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="mt-4 grid grid-cols-2 xl:grid-cols-2 gap-2">
                     <a href="{{ route('admin.arbitrase.scoring.monitor', $courtCard->id) }}" target="_blank"
                         class="w-full flex items-center justify-center py-2 bg-slate-800 hover:bg-slate-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
                         title="Monitor Panggilan">Panggilan
@@ -111,6 +151,19 @@
                         class="w-full flex items-center justify-center py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
                         title="Monitor Timer Lapangan">Timer
                     </a>
+                    <div class="flex gap-1">
+                        <a href="{{ route('admin.arbitrase.scoring.monitor-referee.court', $courtCard->id) }}"
+                            target="_blank"
+                            class="flex-1 flex items-center justify-center py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-colors active:scale-95 shadow-sm"
+                            title="Monitor Daftar Wasit">Wasit
+                        </a>
+                        <button
+                            wire:click="openRefereeModal({{ $courtCard->id }}, {{ $courtCard->activeDrawing?->rundown_id ?? 'null' }}, {{ $courtCard->activeDrawing?->session_time_id ?? 'null' }})"
+                            class="w-8 h-8 flex items-center justify-center bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl transition-all flex-shrink-0"
+                            title="Atur Penugasan Wasit">
+                            <i class="fas fa-user-plus text-[10px]"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         @endforeach
@@ -302,7 +355,8 @@
                                 </div>
                                 @if($mn?->ageGroup)
                                     <div class="text-[15px] text-slate-800 font-bold uppercase tracking-widest mt-0.5">
-                                        {{ $mn->ageGroup->name }}</div>
+                                        {{ $mn->ageGroup->name }}
+                                    </div>
                                 @endif
 
                                 {{-- Winner Info --}}
@@ -378,7 +432,8 @@
                                 @if($session)
                                     <div class="text-[15px] font-black text-slate-800">{{ $session->name }}</div>
                                     <div class="text-[12px] font-bold text-slate-500">{{ substr($session->start_time, 0, 5) }} -
-                                        {{ substr($session->end_time, 0, 5) }}</div>
+                                        {{ substr($session->end_time, 0, 5) }}
+                                    </div>
                                 @else
                                     <span class="text-[15px] text-slate-300">—</span>
                                 @endif
@@ -437,4 +492,129 @@
         </div>
     </div>
 
+    {{-- ===== MODAL: REFEREE ASSIGNMENT ===== --}}
+    @if($showRefereeModal)
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+            <div
+                class="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+                <div class="p-8">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">Penugasan Wasit</h2>
+                            <p class="text-[13px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                {{ \App\Models\Court\Court::find($assigningCourtId)?->name ?? 'Lalu' }}
+                            </p>
+                        </div>
+                        <button wire:click="$set('showRefereeModal', false)"
+                            class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-800 hover:text-rose-500 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Tanggal /
+                                Hari</label>
+                            <x-select wire:model.live="assigningRundownId" placeholder="Pilih Tanggal" wire:key="select-rundown-{{ $assigningCourtId }}">
+                                <option value="">Pilih Tanggal</option>
+                                @foreach($rundowns as $rd)
+                                    <option value="{{ $rd->id }}">{{ $rd->name ?? $rd->date }}</option>
+                                @endforeach
+                            </x-select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Sesi /
+                                Shift</label>
+                            <x-select wire:model.live="assigningSessionId" placeholder="Pilih Sesi" wire:key="select-session-{{ $assigningCourtId }}">
+                                <option value="">Pilih Sesi</option>
+                                @foreach($sessions as $ss)
+                                    <option value="{{ $ss->id }}">{{ $ss->name }}</option>
+                                @endforeach
+                            </x-select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-sm"></i>
+                            <input type="text" wire:model.live.debounce.300ms="searchReferee"
+                                class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[14px] font-bold focus:bg-white focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                                placeholder="Cari nama, sertifikasi, atau asal wasit...">
+                        </div>
+
+                        <div class="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden">
+                            <div class="max-h-[300px] overflow-y-auto custom-scrollbar p-4">
+                                <div class="grid grid-cols-1 gap-2">
+                                    @foreach($allReferees as $ref)
+                                        <label
+                                            class="flex items-center gap-4 p-3 rounded-xl border transition-all cursor-pointer 
+                                                    {{ in_array((string) $ref->id, $selectedReferees) ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-indigo-200' }}">
+                                            <input type="checkbox" wire:model.live="selectedReferees" value="{{ $ref->id }}"
+                                                class="hidden">
+                                            <div class="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0">
+                                                @if($ref->photo)
+                                                    <img src="{{ asset('storage/' . $ref->photo) }}"
+                                                        class="w-full h-full object-cover">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center text-slate-300">
+                                                        <i class="fas fa-user text-sm"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-[14px] font-black text-slate-800 uppercase truncate">
+                                                    {{ $ref->name }}</p>
+                                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                    {{ $ref->certification_level }} &bull; {{ $ref->province }}</p>
+                                            </div>
+                                            @if(in_array((string) $ref->id, $selectedReferees))
+                                                <div
+                                                    class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black">
+                                                    {{ array_search((string) $ref->id, $selectedReferees) + 1 }}
+                                                </div>
+                                            @endif
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between px-2">
+                            <span class="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                                Terpilih: {{ count($selectedReferees) }} / 5 Wasit
+                            </span>
+                            @if(count($selectedReferees) > 5)
+                                <span
+                                    class="text-[11px] font-black text-rose-500 uppercase tracking-widest animate-pulse">Maksimal
+                                    5 wasit!</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex flex-col gap-3">
+                        <div class="flex gap-3">
+                            <button wire:click="$set('showRefereeModal', false)"
+                                class="flex-1 py-4 bg-slate-50 hover:bg-slate-100 text-slate-800 font-black uppercase tracking-widest rounded-2xl transition-all">
+                                Batal
+                            </button>
+                            <button wire:click="saveRefereeAssignment"
+                                class="flex-[2] py-4 bg-slate-900 hover:bg-indigo-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-slate-900/10 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                {{ count($selectedReferees) !== 5 ? 'disabled' : '' }}>
+                                Simpan Penugasan
+                            </button>
+                        </div>
+                        
+                        @if(count($selectedReferees) > 0)
+                            <button 
+                                wire:confirm="Apakah Anda yakin ingin menghapus seluruh penugasan wasit untuk sesi ini?"
+                                wire:click="resetCourtReferees"
+                                class="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-black uppercase tracking-widest text-[11px] rounded-xl transition-all border border-rose-100">
+                                <i class="fas fa-trash-alt mr-2"></i> Kosongkan Penugasan Wasit
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

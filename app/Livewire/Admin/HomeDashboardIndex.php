@@ -7,9 +7,12 @@ use App\Models\Contingent;
 use App\Models\Registration;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class HomeDashboardIndex extends Component
 {
+    use WithPagination;
+
     public function getStats(): array
     {
         $totalAthletes = Athlete::count();
@@ -73,9 +76,9 @@ class HomeDashboardIndex extends Component
         return Contingent::latest()->take(8)->get();
     }
 
-    public function getLatestRegistrations(): Collection
+    public function getLatestRegistrations()
     {
-        return Registration::with('contingent')->latest()->take(5)->get();
+        return Registration::with('contingent')->latest()->paginate(5);
     }
 
     public function render()

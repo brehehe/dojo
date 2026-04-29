@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Referee;
 
+use App\Models\ActiveCourtReferee;
 use App\Models\EmbuScore;
 use App\Models\RandoriMatchResult;
 use App\Models\Referee;
@@ -92,23 +93,30 @@ class RefereeScoringDashboard extends Component
         $newAssignedRundown = null;
         $newJudgeIndex = null;
 
-        $mySchedules = ScheduleReferee::with(['court.activeMatch', 'sessionTime', 'rundown'])
+        // Priority 1: Check ActiveCourtReferee (Manual override from Scoring Dashboard)
+        $activeAssignment = ActiveCourtReferee::with(['court.activeMatch'])
             ->where('referee_id', $this->referee->id)
-            ->get();
+            ->first();
 
-        foreach ($mySchedules as $schedule) {
-            if (! $schedule->court_id || ! $schedule->court) {
-                continue;
-            }
+        if ($activeAssignment && $activeAssignment->court?->active_match_id) {
+            $newActiveMatch = $activeAssignment->court->activeMatch;
+            $newAssignedCourt = $activeAssignment->court;
+            $newJudgeIndex = $activeAssignment->judge_index;
+        }
 
-            $court = $schedule->court;
-            if ($court->active_match_id && $court->activeMatch) {
-                $matchHasOurDrawing = $court->activeMatch->drawings()
-                    ->where('session_time_id', $schedule->session_time_id)
-                    ->where('rundown_id', $schedule->rundown_id)
-                    ->exists();
+        // Priority 2: Fallback to Schedule (Auto detection)
+        if (! $newActiveMatch) {
+            $mySchedules = ScheduleReferee::with(['court.activeMatch', 'sessionTime', 'rundown'])
+                ->where('referee_id', $this->referee->id)
+                ->get();
 
-                if ($matchHasOurDrawing || true) {
+            foreach ($mySchedules as $schedule) {
+                if (! $schedule->court_id || ! $schedule->court) {
+                    continue;
+                }
+
+                $court = $schedule->court;
+                if ($court->active_match_id && $court->activeMatch) {
                     $newActiveMatch = $court->activeMatch;
                     $newAssignedCourt = $court;
                     $newAssignedSession = $schedule->sessionTime;
@@ -135,6 +143,18 @@ class RefereeScoringDashboard extends Component
                 $this->resetForm();
             }
         }
+    }
+
+    public function getJudgeLabelProperty()
+    {
+        return match ($this->judgeIndex) {
+            1 => 'Wasit Nasional (Ketua)',
+            2 => 'Wasit Daerah 1',
+            3 => 'Wasit Daerah 2',
+            4 => 'Wasit Pembantu 1',
+            5 => 'Wasit Pembantu 2',
+            default => 'Juri '.$this->judgeIndex
+        };
     }
 
     public function loadExistingDetails()

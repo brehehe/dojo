@@ -2,14 +2,19 @@
 
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
+use App\Models\ActiveCourtReferee;
 use App\Models\Contingent;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Pool\Pool;
+use App\Models\Referee;
 use App\Models\Rundown\Rundown;
+use App\Models\ScheduleReferee;
 use App\Models\SessionTime;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -40,6 +45,19 @@ class AdminArbitraseScoringIndex extends Component
     public string $filterMatchNumber = '';
 
     public string $filterGender = '';
+
+    // Referee Assignment Properties
+    public bool $showRefereeModal = false;
+
+    public $assigningRundownId;
+
+    public $assigningSessionId;
+
+    public $assigningCourtId;
+
+    public $searchReferee = '';
+
+    public $selectedReferees = [];
 
     /** Reset pagination when any filter changes. */
     public function updated(string $property): void
@@ -126,7 +144,7 @@ class AdminArbitraseScoringIndex extends Component
         ]);
 
         // Clear timer cache for this court
-        \Illuminate\Support\Facades\Cache::forget("court_{$courtId}_timer");
+        Cache::forget("court_{$courtId}_timer");
 
         $this->dispatch('swal', [
             'icon' => 'info',
@@ -147,9 +165,9 @@ class AdminArbitraseScoringIndex extends Component
                 'active_bracket_node' => null,
                 'active_drawing_id' => null,
             ]);
-            
+
             // Clear timer cache for each court
-            \Illuminate\Support\Facades\Cache::forget("court_{$court->id}_timer");
+            Cache::forget("court_{$court->id}_timer");
         }
 
         // Reset all match numbers active states
@@ -162,6 +180,138 @@ class AdminArbitraseScoringIndex extends Component
             'icon' => 'success',
             'title' => 'Semua Lapangan & Match Di-reset',
             'text' => 'Seluruh status aktif telah dibersihkan secara serentak.',
+        ]);
+    }
+
+    public function openRefereeModal($courtId, $rundownId = null, $sessionId = null)
+    {
+        $this->assigningCourtId = $courtId;
+        $this->assigningRundownId = $rundownId ? (string) $rundownId : null;
+        $this->assigningSessionId = $sessionId ? (string) $sessionId : null;
+        $this->showRefereeModal = true;
+        $this->searchReferee = '';
+
+        $this->loadExistingReferees();
+    }
+
+    public function updatedAssigningRundownId()
+    {
+        $this->loadExistingReferees();
+    }
+
+    public function updatedAssigningSessionId()
+    {
+        $this->loadExistingReferees();
+    }
+
+    protected function loadExistingReferees()
+    {
+        if ($this->assigningRundownId && $this->assigningSessionId && $this->assigningCourtId) {
+            $this->selectedReferees = ScheduleReferee::where('court_id', (int) $this->assigningCourtId)
+                ->where('rundown_id', (int) $this->assigningRundownId)
+                ->where('session_time_id', (int) $this->assigningSessionId)
+                ->where('judge_index', '>', 0)
+                ->orderBy('judge_index')
+                ->pluck('referee_id')
+                ->map(fn ($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selectedReferees = [];
+        }
+    }
+
+    public function saveRefereeAssignment()
+    {
+        $this->validate([
+            'assigningRundownId' => 'required',
+            'assigningSessionId' => 'required',
+            'selectedReferees' => 'required|array|min:5|max:5',
+        ], [
+            'selectedReferees.min' => 'Wajib memilih tepat 5 wasit.',
+            'selectedReferees.max' => 'Wajib memilih tepat 5 wasit.',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Clear old
+            ScheduleReferee::where('rundown_id', $this->assigningRundownId)
+                ->where('session_time_id', $this->assigningSessionId)
+                ->where('court_id', $this->assigningCourtId)
+                ->where('judge_index', '>', 0)
+                ->delete();
+
+            // Save new to Schedule
+            foreach ($this->selectedReferees as $index => $refereeId) {
+                ScheduleReferee::create([
+                    'rundown_id' => $this->assigningRundownId,
+                    'session_time_id' => $this->assigningSessionId,
+                    'court_id' => $this->assigningCourtId,
+                    'referee_id' => $refereeId,
+                    'judge_index' => $index + 1,
+                ]);
+            }
+
+            // Sync to Active Court Referees (Live Display)
+            ActiveCourtReferee::where('court_id', $this->assigningCourtId)->delete();
+            foreach ($this->selectedReferees as $index => $refereeId) {
+                ActiveCourtReferee::create([
+                    'court_id' => $this->assigningCourtId,
+                    'referee_id' => $refereeId,
+                    'judge_index' => $index + 1,
+                ]);
+            }
+
+            DB::commit();
+
+            $this->showRefereeModal = false;
+            $this->dispatch('swal', [
+                'icon' => 'success',
+                'title' => 'Penugasan Berhasil',
+                'text' => 'Panel wasit telah diperbarui.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Gagal Menyimpan',
+                'text' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function resetActiveReferees($courtId)
+    {
+        ActiveCourtReferee::where('court_id', $courtId)->delete();
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Panel Dikosongkan',
+            'text' => 'Seluruh wasit aktif untuk lapangan ini telah dihapus.',
+        ]);
+    }
+
+    public function resetCourtReferees()
+    {
+        if (! $this->assigningCourtId || ! $this->assigningRundownId || ! $this->assigningSessionId) {
+            return;
+        }
+
+        ScheduleReferee::where('court_id', $this->assigningCourtId)
+            ->where('rundown_id', $this->assigningRundownId)
+            ->where('session_time_id', $this->assigningSessionId)
+            ->where('judge_index', '>', 0)
+            ->delete();
+
+        // Also clear active display
+        ActiveCourtReferee::where('court_id', $this->assigningCourtId)->delete();
+
+        $this->selectedReferees = [];
+        $this->showRefereeModal = false;
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Penugasan Dihapus',
+            'text' => 'Seluruh wasit untuk sesi ini telah dikosongkan.',
         ]);
     }
 
@@ -178,7 +328,7 @@ class AdminArbitraseScoringIndex extends Component
         $this->filterAgeGroup = '';
         $this->filterMatchNumber = '';
         $this->filterGender = '';
-        
+
         $this->resetPage();
 
         $this->dispatch('swal', [
@@ -197,6 +347,20 @@ class AdminArbitraseScoringIndex extends Component
             'activeDrawing.rundown',
             'activeDrawing.registration.contingent',
         ])->orderBy('order')->get();
+
+        $now = now();
+        $currentTimeSession = SessionTime::whereTime('start_time', '<=', $now)
+            ->whereTime('end_time', '>=', $now)
+            ->first();
+        $currentDateRundown = Rundown::where('date', $now->toDateString())->first();
+
+        // Attach current referees for each court's context (Live Display)
+        foreach ($courts as $court) {
+            $court->current_referees = ActiveCourtReferee::with('referee.user')
+                ->where('court_id', $court->id)
+                ->orderBy('judge_index')
+                ->get();
+        }
 
         $sessions = SessionTime::orderBy('start_time')->get();
         $rundowns = Rundown::orderBy('date')->get();
@@ -303,6 +467,17 @@ class AdminArbitraseScoringIndex extends Component
 
         $routePrefix = request()->is('*panitera*') ? 'admin.panitera.scoring' : 'admin.arbitrase.scoring';
 
+        $refereesQuery = Referee::with('user');
+        if (! empty($this->searchReferee)) {
+            $refereesQuery->whereHas('user', function ($q) {
+                $q->where('name', 'ilike', '%'.$this->searchReferee.'%');
+            })->orWhere('license_number', 'ilike', '%'.$this->searchReferee.'%')
+                ->orWhere('certification_level', 'ilike', '%'.$this->searchReferee.'%');
+        }
+        $allReferees = $refereesQuery->get()->sortBy([
+            ['certification_level', 'asc'],
+        ]);
+
         return view('livewire.admin.arbitrase.scoring.admin-arbitrase-scoring-index', [
             'drawings' => $query->paginate(20),
             'courts' => $courts,
@@ -314,6 +489,7 @@ class AdminArbitraseScoringIndex extends Component
             'ageGroups' => $ageGroups,
             'matchNumbers' => $matchNumbers,
             'routePrefix' => $routePrefix,
+            'allReferees' => $allReferees,
         ]);
     }
 }

@@ -134,7 +134,11 @@
         }"
         x-init="
             $el.classList.toggle('hd-light', !darkMode);
-            $watch('darkMode', val => $el.classList.toggle('hd-light', !val));
+            document.documentElement.classList.toggle('dark', darkMode);
+            $watch('darkMode', val => {
+                $el.classList.toggle('hd-light', !val);
+                document.documentElement.classList.toggle('dark', val);
+            });
         "
     >
         <div class="flex h-screen overflow-hidden">

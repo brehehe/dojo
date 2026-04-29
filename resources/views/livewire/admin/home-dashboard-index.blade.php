@@ -1,362 +1,360 @@
-<div class="min-h-screen pb-10 space-y-6">
-
-    {{-- HERO HEADER --}}
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 via-indigo-950 to-slate-900 p-7 shadow-2xl border border-white/10">
-        <div class="absolute inset-0 opacity-30" style="background-image: radial-gradient(circle at 15% 50%, #6366f1 0%, transparent 45%), radial-gradient(circle at 85% 20%, #8b5cf6 0%, transparent 35%), radial-gradient(circle at 60% 85%, #06b6d4 0%, transparent 35%);"></div>
-        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+<div class="space-y-6 sm:space-y-8 pb-10">
+    
+    {{-- WELCOME SECTION (Fluid & Soft) --}}
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 text-xs font-semibold mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Sistem Terhubung & Aktif
+            </div>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
+                Selamat Datang, {{ auth()->user()->name }} 👋
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">
+                Berikut adalah ringkasan aktivitas dan data Smart Perkemi saat ini.
+            </p>
+        </div>
+        <div class="flex items-center gap-3 bg-white dark:bg-slate-900 px-5 py-3 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
             <div>
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full px-3 py-1">
-                        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                        <span class="text-emerald-300 text-[10px] font-black uppercase tracking-widest">Sistem Aktif</span>
-                    </div>
-                </div>
-                <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight mb-1.5">Selamat Datang 👋</h1>
-                <p class="text-indigo-200 text-sm font-medium">{{ auth()->user()->name }} — Smart Perkemi Admin Dashboard</p>
-            </div>
-            <div class="flex-shrink-0 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-6 py-4 text-right">
-                <div id="hd-time" class="text-2xl font-black text-white tabular-nums">--:--:--</div>
-                <div id="hd-date" class="text-indigo-200 text-xs font-semibold mt-0.5">Loading...</div>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-200" id="fluid-time">--:--:--</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400" id="fluid-date">Memuat tanggal...</p>
             </div>
         </div>
     </div>
 
-    {{-- STATS GRID --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        @php
-        $statsCards = [
-            ['label' => 'Total Atlet',   'value' => $stats['total_athletes'],   'color' => 'blue',   'icon' => 'fa-id-card',        'badge' => 'Terdaftar',  'badge_icon' => 'fa-check-circle'],
-            ['label' => 'Kontingen',     'value' => $stats['total_contingents'], 'color' => 'emerald','icon' => 'fa-shield-alt',     'badge' => 'Kab/Kota',   'badge_icon' => 'fa-map-marker-alt'],
-            ['label' => 'Menunggu',      'value' => $stats['pending_count'],    'color' => 'amber',  'icon' => 'fa-hourglass-half', 'badge' => 'Perlu Aksi', 'badge_icon' => 'fa-clock'],
-            ['label' => 'Verified',      'value' => $stats['verified_count'],   'color' => 'violet', 'icon' => 'fa-clipboard-check','badge' => null,         'badge_icon' => null],
-        ];
-        @endphp
-
-        @foreach($statsCards as $card)
-        <div class="group hd-card border rounded-3xl p-5 overflow-hidden hover:-translate-y-1 transition-all duration-300 cursor-default hd-shadow">
-            <div class="relative z-10">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-colors"
-                     style="background-color: color-mix(in srgb, var(--{{ $card['color'] === 'blue' ? 'hd-text-2' : 'hd-text-2' }}) 5%, transparent)"
-                     class="bg-{{ $card['color'] }}-500/15 border border-{{ $card['color'] }}-500/20 group-hover:bg-{{ $card['color'] }}-500/25">
-                    <i class="fas {{ $card['icon'] }} text-{{ $card['color'] }}-400 text-sm"></i>
-                </div>
-                <div class="text-3xl font-black hd-text-1 mb-1 hd-counter {{ $card['color'] === 'amber' ? '!text-amber-500' : ($card['color'] === 'violet' ? '!text-violet-400' : '') }}"
-                     data-target="{{ $card['value'] }}">0</div>
-                <p class="text-[10px] font-black uppercase tracking-widest hd-text-3">{{ $card['label'] }}</p>
-
-                @if($card['badge'])
-                <div class="mt-3 inline-flex items-center gap-1.5 text-[10px] font-bold rounded-lg px-2 py-1 border
-                            text-{{ $card['color'] }}-500 border-{{ $card['color'] }}-500/25"
-                     :style="darkMode ? 'background:rgba(var(--tw-color),0.10)' : 'background:#f0fdf4'">
-                    <i class="fas {{ $card['badge_icon'] }} text-[9px]"></i> {{ $card['badge'] }}
-                </div>
-                @else
-                <div class="mt-3">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-[10px] hd-text-3 font-bold">Verifikasi</span>
-                        <span class="text-[10px] text-violet-400 font-black">{{ $stats['verification_rate'] }}%</span>
-                    </div>
-                    <div class="h-1.5 rounded-full overflow-hidden" :class="darkMode ? 'bg-white/5' : 'bg-slate-200'">
-                        <div class="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full" style="width: {{ $stats['verification_rate'] }}%"></div>
-                    </div>
-                </div>
-                @endif
-            </div>
-        </div>
-        @endforeach
-    </div>
-
-    {{-- CHARTS ROW --}}
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {{-- Line Chart --}}
-        <div class="lg:col-span-2 hd-card border rounded-3xl p-6 hd-shadow">
-            <div class="flex items-center justify-between mb-5">
+    {{-- STATS CARDS (Elegant & Clean) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Atlet -->
+        <div class="card bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
                 <div>
-                    <h2 class="text-sm font-black hd-text-1 uppercase tracking-widest">Pertumbuhan Atlet</h2>
-                    <p class="text-[11px] hd-text-3 font-medium mt-0.5">6 Bulan Terakhir</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total Atlet</p>
+                    <h3 class="text-3xl font-bold text-slate-800 dark:text-white">{{ number_format($stats['total_athletes']) }}</h3>
                 </div>
-                <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                    <i class="fas fa-chart-area text-indigo-400 text-xs"></i>
+                <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500 text-xl">
+                    <i class="fas fa-users"></i>
                 </div>
             </div>
-            <div class="relative h-52" wire:ignore>
-                <canvas id="hd-athlete-chart"></canvas>
+            <div class="mt-4 flex items-center text-xs text-slate-500 dark:text-slate-400">
+                <span class="text-blue-500 font-semibold mr-1"><i class="fas fa-check-circle"></i> Terdaftar</span> di sistem
             </div>
         </div>
 
-        {{-- Donut Chart --}}
-        <div class="hd-card border rounded-3xl p-6 hd-shadow">
-            <div class="flex items-center justify-between mb-5">
+        <!-- Kontingen -->
+        <div class="card bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
                 <div>
-                    <h2 class="text-sm font-black hd-text-1 uppercase tracking-widest">Status</h2>
-                    <p class="text-[11px] hd-text-3 font-medium mt-0.5">Pendaftaran</p>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Kontingen</p>
+                    <h3 class="text-3xl font-bold text-slate-800 dark:text-white">{{ number_format($stats['total_contingents']) }}</h3>
                 </div>
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                    <i class="fas fa-chart-pie text-emerald-400 text-xs"></i>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-xl">
+                    <i class="fas fa-building"></i>
                 </div>
             </div>
-            <div class="relative h-36 flex items-center justify-center mb-4" wire:ignore>
-                <canvas id="hd-status-chart"></canvas>
+            <div class="mt-4 flex items-center text-xs text-slate-500 dark:text-slate-400">
+                <span class="text-emerald-500 font-semibold mr-1"><i class="fas fa-map-marker-alt"></i> Kab/Kota</span> aktif
             </div>
-            <div class="space-y-2.5">
-                @foreach([['Verified', 'bg-emerald-500', $statusBreakdown['verified']], ['Pending', 'bg-amber-400', $statusBreakdown['pending']], ['Ditolak', 'bg-rose-500', $statusBreakdown['rejected']]] as [$label, $dotClass, $count])
-                @if($count > 0 || $label !== 'Ditolak')
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full {{ $dotClass }} flex-shrink-0"></span>
-                        <span class="text-xs font-semibold hd-text-2">{{ $label }}</span>
-                    </div>
-                    <span class="text-xs font-black hd-text-1">{{ $count }}</span>
+        </div>
+
+        <!-- Pending -->
+        <div class="card bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Menunggu Verifikasi</p>
+                    <h3 class="text-3xl font-bold text-amber-500">{{ number_format($stats['pending_count']) }}</h3>
                 </div>
-                @endif
-                @endforeach
+                <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 text-xl">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-slate-500 dark:text-slate-400">
+                <a href="{{ route('admin.registrations.index') }}" class="text-amber-500 font-semibold hover:underline flex items-center gap-1">
+                    Tinjau Sekarang <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Verified Rate -->
+        <div class="card bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Progres Verifikasi</p>
+                    <h3 class="text-3xl font-bold text-purple-500">{{ $stats['verification_rate'] }}%</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center text-purple-500 text-xl">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+                    <div class="bg-purple-500 h-1.5 rounded-full transition-all duration-1000" style="width: {{ $stats['verification_rate'] }}%"></div>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- QUICK ACTIONS --}}
+    {{-- QUICK ACTIONS (Soft Style) --}}
     <div>
-        <h2 class="text-[10px] font-black uppercase tracking-widest hd-text-3 mb-3 px-1 flex items-center gap-2">
-            <i class="fas fa-bolt text-amber-500"></i> Aksi Cepat
+        <h2 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <i class="fas fa-bolt text-amber-500"></i> Akses Cepat
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            @foreach([
-                ['route' => 'admin.registrations.index', 'label' => 'Verifikasi', 'sub' => 'Pendaftaran', 'icon' => 'fa-file-signature', 'grad' => 'from-blue-600 to-indigo-700', 'shadow' => 'shadow-blue-500/20 hover:shadow-blue-500/35', 'sub_color' => 'text-blue-200', 'border' => 'border-blue-500/30'],
-                ['route' => 'admin.master.contingents.index', 'label' => 'Kontingen', 'sub' => 'Master Data', 'icon' => 'fa-users', 'grad' => 'from-emerald-600 to-teal-700', 'shadow' => 'shadow-emerald-500/20 hover:shadow-emerald-500/35', 'sub_color' => 'text-emerald-200', 'border' => 'border-emerald-500/30'],
-                ['route' => 'admin.technical-meeting.embu', 'label' => 'T. Meeting', 'sub' => 'Pengundian', 'icon' => 'fa-random', 'grad' => 'from-amber-500 to-orange-600', 'shadow' => 'shadow-amber-500/20 hover:shadow-amber-500/35', 'sub_color' => 'text-amber-100', 'border' => 'border-amber-500/30'],
-                ['route' => 'admin.arbitrase.scoring.index', 'label' => 'Arbitrase', 'sub' => 'Scoring Live', 'icon' => 'fa-gavel', 'grad' => 'from-rose-600 to-pink-700', 'shadow' => 'shadow-rose-500/20 hover:shadow-rose-500/35', 'sub_color' => 'text-rose-200', 'border' => 'border-rose-500/30'],
-            ] as $action)
-            <a href="{{ route($action['route']) }}"
-               class="group flex flex-col items-center gap-3 bg-gradient-to-br {{ $action['grad'] }} text-white p-5 rounded-2xl shadow-lg {{ $action['shadow'] }} hover:-translate-y-1 transition-all duration-300 border {{ $action['border'] }}">
-                <div class="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:bg-white/25 transition-all duration-300">
-                    <i class="fas {{ $action['icon'] }} text-lg"></i>
-                </div>
-                <div class="text-center">
-                    <div class="font-black text-sm uppercase tracking-wide">{{ $action['label'] }}</div>
-                    <div class="{{ $action['sub_color'] }} text-[10px] font-semibold mt-0.5">{{ $action['sub'] }}</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @php
+            $actions = [
+                ['route' => 'admin.registrations.index', 'label' => 'Verifikasi', 'sub' => 'Pendaftaran', 'icon' => 'fa-file-signature', 'color' => 'blue'],
+                ['route' => 'admin.master.contingents.index', 'label' => 'Kontingen', 'sub' => 'Master Data', 'icon' => 'fa-users', 'color' => 'emerald'],
+                ['route' => 'admin.technical-meeting.embu', 'label' => 'T. Meeting', 'sub' => 'Pengundian', 'icon' => 'fa-random', 'color' => 'amber'],
+                ['route' => 'admin.arbitrase.scoring.index', 'label' => 'Arbitrase', 'sub' => 'Scoring Live', 'icon' => 'fa-gavel', 'color' => 'rose'],
+            ];
+            @endphp
+            @foreach($actions as $action)
+            <a href="{{ route($action['route']) }}" class="group block bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-{{ $action['color'] }}-200 dark:hover:border-{{ $action['color'] }}-500/30 transition-all duration-300">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-{{ $action['color'] }}-50 dark:bg-{{ $action['color'] }}-500/10 flex items-center justify-center text-{{ $action['color'] }}-500 group-hover:scale-110 transition-transform">
+                        <i class="fas {{ $action['icon'] }}"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-{{ $action['color'] }}-500 transition-colors">{{ $action['label'] }}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ $action['sub'] }}</div>
+                    </div>
                 </div>
             </a>
             @endforeach
         </div>
     </div>
 
-    {{-- TABLES ROW --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {{-- Latest Contingents --}}
-        <div class="hd-card border rounded-3xl p-5 hd-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-black hd-text-1 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fas fa-list-alt text-indigo-400"></i> Kontingen Terbaru
-                </h2>
-                <a href="{{ route('admin.master.contingents.index') }}"
-                   class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                    Lihat Semua <i class="fas fa-arrow-right text-[9px]"></i>
-                </a>
-            </div>
-            <div class="space-y-1.5">
-                @foreach($latestContingents as $contingent)
-                <div class="flex items-center gap-3 p-2.5 rounded-xl hd-hover transition-colors group">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center flex-shrink-0">
-                        <span class="text-[10px] font-black text-indigo-400">{{ strtoupper(substr($contingent->name, 0, 2)) }}</span>
+    {{-- CHARTS & TABLES --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {{-- Left Column: Line Chart & Registrations --}}
+        <div class="lg:col-span-2 space-y-6">
+            {{-- Line Chart --}}
+            <div class="card bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800 dark:text-slate-200">Pertumbuhan Atlet</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Statistik 6 bulan terakhir</p>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-black hd-text-1 truncate uppercase">{{ $contingent->name }}</p>
-                        <p class="text-[10px] hd-text-3 font-medium truncate">{{ $contingent->kab_kota }}</p>
+                    <div class="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400">
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <a href="{{ route('admin.master.contingents.detail', $contingent) }}"
-                       class="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 hover:bg-indigo-500/20 transition-all">
-                        <i class="fas fa-eye text-[10px]"></i>
-                    </a>
                 </div>
-                @endforeach
+                <div class="relative h-64" wire:ignore>
+                    <canvas id="fluidAthleteChart"></canvas>
+                </div>
+            </div>
+
+            {{-- Latest Registrations --}}
+            <div class="card bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-200">Registrasi Terbaru</h2>
+                    <a href="{{ route('admin.registrations.index') }}" class="text-sm text-blue-500 hover:underline">Lihat Semua</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/50">
+                            <tr>
+                                <th class="px-4 py-3 rounded-l-lg font-semibold">Kontingen</th>
+                                <th class="px-4 py-3 font-semibold">Waktu</th>
+                                <th class="px-4 py-3 rounded-r-lg font-semibold text-right">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @forelse($latestRegistrations as $reg)
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
+                                    {{ $reg->contingent->name ?? '—' }}
+                                </td>
+                                <td class="px-4 py-3 text-slate-500 dark:text-slate-400">
+                                    {{ $reg->created_at->diffForHumans() }}
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    @if($reg->status === 'verified')
+                                        <span class="px-2 py-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-md text-xs font-semibold">Verified</span>
+                                    @elseif($reg->status === 'pending')
+                                        <span class="px-2 py-1 bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 rounded-md text-xs font-semibold">Pending</span>
+                                    @else
+                                        <span class="px-2 py-1 bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 rounded-md text-xs font-semibold">{{ ucfirst($reg->status) }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" class="px-4 py-6 text-center text-slate-500">Belum ada data registrasi.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                {{-- Pagination --}}
+                {{ $latestRegistrations->links('vendor.pagination.luwes') }}
             </div>
         </div>
 
-        {{-- Latest Registrations --}}
-        <div class="hd-card border rounded-3xl p-5 hd-shadow">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xs font-black hd-text-1 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fas fa-file-alt text-rose-400"></i> Registrasi Terbaru
-                </h2>
-                <a href="{{ route('admin.registrations.index') }}"
-                   class="text-[10px] font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors">
-                    Lihat Semua <i class="fas fa-arrow-right text-[9px]"></i>
-                </a>
-            </div>
-            <div class="space-y-1.5">
-                @foreach($latestRegistrations as $reg)
-                @php
-                    $sc = match($reg->status) {
-                        'verified' => ['emerald','fa-check'],
-                        'pending'  => ['amber','fa-clock'],
-                        default    => ['rose','fa-times'],
-                    };
-                @endphp
-                <div class="flex items-center gap-3 p-2.5 rounded-xl hd-hover transition-colors">
-                    <div class="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center
-                                bg-{{ $sc[0] }}-500/10 border border-{{ $sc[0] }}-500/20 text-{{ $sc[0] }}-400">
-                        <i class="fas {{ $sc[1] }} text-[10px]"></i>
+        {{-- Right Column: Donut Chart & Contingents --}}
+        <div class="space-y-6">
+            {{-- Donut Chart --}}
+            <div class="card bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800 dark:text-slate-200">Status Registrasi</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Persentase keseluruhan</p>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-black hd-text-1 truncate uppercase">{{ $reg->contingent->name ?? '—' }}</p>
-                        <p class="text-[10px] hd-text-3 font-medium">{{ $reg->created_at->diffForHumans() }}</p>
-                    </div>
-                    <span class="text-[10px] font-black px-2 py-1 rounded-lg border
-                                 bg-{{ $sc[0] }}-500/10 text-{{ $sc[0] }}-400 border-{{ $sc[0] }}-500/20">
-                        {{ ucfirst($reg->status) }}
-                    </span>
                 </div>
-                @endforeach
+                <div class="relative h-48 flex items-center justify-center mb-6" wire:ignore>
+                    <canvas id="fluidStatusChart"></canvas>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl text-center">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Verified</p>
+                        <p class="text-lg font-bold text-emerald-500">{{ $statusBreakdown['verified'] }}</p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl text-center">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Pending</p>
+                        <p class="text-lg font-bold text-amber-500">{{ $statusBreakdown['pending'] }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Latest Contingents --}}
+            <div class="card bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-base font-bold text-slate-800 dark:text-slate-200">Kontingen Terbaru</h2>
+                    <a href="{{ route('admin.master.contingents.index') }}" class="text-sm text-blue-500 hover:underline">Semua</a>
+                </div>
+                <div class="space-y-3">
+                    @forelse($latestContingents as $contingent)
+                    <div class="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-sm shrink-0">
+                            {{ strtoupper(substr($contingent->name, 0, 1)) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ $contingent->name }}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ $contingent->kab_kota }}</p>
+                        </div>
+                        <a href="{{ route('admin.master.contingents.detail', $contingent) }}" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-500 transition-colors">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </a>
+                    </div>
+                    @empty
+                    <div class="text-center text-sm text-slate-500 py-4">Belum ada kontingen.</div>
+                    @endforelse
+                </div>
             </div>
         </div>
+
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-(function() {
-    // ── Clock ──────────────────────────────────────────────────────
-    function updateClock() {
-        var now = new Date();
-        var t = document.getElementById('hd-time');
-        var d = document.getElementById('hd-date');
-        if (t) t.textContent = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-        if (d) d.textContent = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+document.addEventListener('livewire:initialized', () => {
+    // Clock
+    function updateFluidClock() {
+        const now = new Date();
+        const timeEl = document.getElementById('fluid-time');
+        const dateEl = document.getElementById('fluid-date');
+        if (timeEl) timeEl.textContent = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        if (dateEl) dateEl.textContent = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
     }
-    updateClock();
-    setInterval(updateClock, 1000);
+    updateFluidClock();
+    setInterval(updateFluidClock, 1000);
 
-    // ── Animated Counters ─────────────────────────────────────────
-    document.querySelectorAll('.hd-counter').forEach(function(el) {
-        var target = parseInt(el.getAttribute('data-target'), 10) || 0;
-        var current = 0;
-        var step = Math.max(1, Math.ceil(target / 60));
-        var timer = setInterval(function() {
-            current = Math.min(current + step, target);
-            el.textContent = current.toLocaleString('id-ID');
-            if (current >= target) clearInterval(timer);
-        }, 20);
-    });
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDark ? '#94a3b8' : '#64748b'; // slate-400 : slate-500
+    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
-    // ── Theme Helper ─────────────────────────────────────────────
-    function isDarkMode() {
-        return localStorage.getItem('hd-theme') !== 'light';
-    }
-    function getChartColors(dark) {
-        return {
-            grid:    dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)',
-            tick:    dark ? '#475569' : '#94a3b8',
-            tooltip: dark ? { bg:'#1a1d2e', border:'rgba(99,102,241,0.3)', title:'#a5b4fc', body:'#e2e8f0' }
-                          : { bg:'#ffffff', border:'#e2e8f0',              title:'#4338ca', body:'#475569' },
-            line:    { border:'rgba(99,102,241,1)', fill: dark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.08)' },
-            donut:   dark ? ['rgba(16,185,129,0.85)','rgba(245,158,11,0.85)','rgba(244,63,94,0.85)']
-                          : ['#10b981','#f59e0b','#f43f5e'],
-        };
-    }
-
-    // ── Chart Instances ──────────────────────────────────────────
-    var athleteChart = null;
-    var statusChart  = null;
-
-    var monthlyLabels = @json($monthlyAthletes['labels']);
-    var monthlyData   = @json($monthlyAthletes['data']);
-    var verified = {{ $statusBreakdown['verified'] }};
-    var pending  = {{ $statusBreakdown['pending'] }};
-    var rejected = {{ $statusBreakdown['rejected'] }};
-
-    function buildAthleteChart(dark) {
-        var colors = getChartColors(dark);
-        var ctx = document.getElementById('hd-athlete-chart');
-        if (!ctx) return;
-        if (athleteChart) { athleteChart.destroy(); }
-        athleteChart = new Chart(ctx, {
+    // Data
+    const monthlyLabels = @json($monthlyAthletes['labels']);
+    const monthlyData   = @json($monthlyAthletes['data']);
+    
+    // Line Chart
+    const ctxAthlete = document.getElementById('fluidAthleteChart');
+    if (ctxAthlete) {
+        new Chart(ctxAthlete, {
             type: 'line',
             data: {
                 labels: monthlyLabels.length ? monthlyLabels : ['Jan','Feb','Mar','Apr','Mei','Jun'],
                 datasets: [{
-                    label: 'Atlet Baru',
+                    label: 'Atlet Terdaftar',
                     data: monthlyData.length ? monthlyData : [0,0,0,0,0,0],
+                    borderColor: '#3b82f6', // blue-500
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
                     fill: true,
-                    backgroundColor: colors.line.fill,
-                    borderColor: colors.line.border,
-                    borderWidth: 2.5,
-                    pointBackgroundColor: '#6366f1',
-                    pointBorderColor: dark ? '#1a1d2e' : '#ffffff',
+                    tension: 0.4, // Fluid curve
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#3b82f6',
                     pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: colors.tooltip.bg,
-                        borderColor: colors.tooltip.border,
+                        backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                        titleColor: isDark ? '#f8fafc' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#475569',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
-                        titleColor: colors.tooltip.title,
-                        bodyColor: colors.tooltip.body,
-                        padding: 10, cornerRadius: 10,
+                        padding: 12,
+                        boxPadding: 4,
+                        usePointStyle: true,
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: colors.grid, drawBorder: false }, ticks: { font: { size: 11, weight: 'bold' }, color: colors.tick } },
-                    x: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' }, color: colors.tick } }
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColor, font: { family: 'inherit' } }
+                    },
+                    y: {
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: textColor, font: { family: 'inherit' }, precision: 0 },
+                        beginAtZero: true
+                    }
                 }
             }
         });
     }
 
-    function buildStatusChart(dark) {
-        var colors = getChartColors(dark);
-        var ctx = document.getElementById('hd-status-chart');
-        if (!ctx) return;
-        if (statusChart) { statusChart.destroy(); }
-        statusChart = new Chart(ctx, {
+    // Donut Chart
+    const ctxStatus = document.getElementById('fluidStatusChart');
+    if (ctxStatus) {
+        new Chart(ctxStatus, {
             type: 'doughnut',
             data: {
                 labels: ['Verified', 'Pending', 'Ditolak'],
                 datasets: [{
-                    data: [verified, pending, rejected || 0],
-                    backgroundColor: colors.donut,
-                    borderColor: dark ? '#1a1d2e' : '#ffffff',
-                    borderWidth: 2,
-                    hoverOffset: 6,
+                    data: [{{ $statusBreakdown['verified'] }}, {{ $statusBreakdown['pending'] }}, {{ $statusBreakdown['rejected'] ?? 0 }}],
+                    backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'], // emerald, amber, rose
+                    borderWidth: 0,
+                    hoverOffset: 4
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false, cutout: '72%',
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%', // Thinner ring for elegance
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: colors.tooltip.bg,
-                        borderColor: colors.tooltip.border,
+                        backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                        titleColor: isDark ? '#f8fafc' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#475569',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
                         borderWidth: 1,
-                        titleColor: colors.tooltip.title,
-                        bodyColor: colors.tooltip.body,
-                        padding: 10, cornerRadius: 10,
+                        padding: 12
                     }
                 }
             }
         });
     }
-
-    // Init charts
-    setTimeout(function() {
-        var dark = isDarkMode();
-        buildAthleteChart(dark);
-        buildStatusChart(dark);
-    }, 250);
-
-    // ── Listen for theme toggle ───────────────────────────────────
-    document.addEventListener('hd-theme-changed', function(e) {
-        var dark = e.detail.dark;
-        buildAthleteChart(dark);
-        buildStatusChart(dark);
-    });
-})();
+});
 </script>
