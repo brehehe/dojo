@@ -45,4 +45,12 @@ class Referee extends Model
         return $this->belongsToMany(MatchNumber::class, 'match_number_referee')
             ->withTimestamps();
     }
+
+    /**
+     * Get the referee's name from the user relationship.
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->user->name ?? '-';
+    }
 }

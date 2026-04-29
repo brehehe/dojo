@@ -218,8 +218,14 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 'round_label' => $this->currentRound,
             ],
             [
-                'judge_1' => 0, 'judge_2' => 0, 'judge_3' => 0, 'judge_4' => 0, 'judge_5' => 0,
-                'denda' => 0, 'total_score' => 0, 'nilai_akhir' => 0,
+                'judge_1' => 0,
+                'judge_2' => 0,
+                'judge_3' => 0,
+                'judge_4' => 0,
+                'judge_5' => 0,
+                'denda' => 0,
+                'total_score' => 0,
+                'nilai_akhir' => 0,
             ]
         );
 
@@ -370,7 +376,8 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
         // Find all who share this exact score and Judge 1 tie-break (if needed)
         // Actually, a tie for qualifying usually means exactly same final score AND same tiebreaker
-        $tied = $scores->filter(fn ($s) => (float) $s->nilai_akhir === (float) $boundaryVal &&
+        $tied = $scores->filter(
+            fn ($s) => (float) $s->nilai_akhir === (float) $boundaryVal &&
             (float) $s->judge_1 === (float) $boundaryJ1
         );
 
@@ -638,7 +645,13 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
     public function getCourtId()
     {
-        return $this->matchNumber->drawings->first()?->court_id;
+        $drawings = $this->matchNumber->drawings->where('round', $this->currentRound);
+
+        if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
+            $drawings = $drawings->where('pool_id', $this->selectedPoolId);
+        }
+
+        return $drawings->first()?->court_id;
     }
 
     public function getTimerState()
@@ -664,7 +677,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
         $state = Cache::get("court_{$courtId}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
         $state['status'] = 'countdown';
-        $state['countdown_end_ms'] = floor(microtime(true) * 1000) + 5000;
+        $state['countdown_end_ms'] = floor(microtime(true) * 1000) + 2000;
         Cache::put("court_{$courtId}_timer", $state);
         $this->dispatch('timer-updated');
     }

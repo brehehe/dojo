@@ -188,32 +188,14 @@
 
         // ✅ TIMER SOUND HELPERS
         window.playTimerTick = function(frequency = 1000, duration = 0.08) {
+            // User requested to remove tick tick tick
+            return;
+        };
+
+        window.playBuzzer = function(src) {
             try {
-                if (!window.sharedAudioCtx) {
-                    window.sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                const audioCtx = window.sharedAudioCtx;
-                
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                // Gunakan 'square' agar suara lebih tajam/digital
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-                
-                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + duration);
-                console.log('Tick: ' + frequency + 'Hz');
+                const audio = new Audio(src);
+                audio.play().catch(e => console.warn('Buzzer error:', e));
             } catch (e) {
                 console.warn('Audio error:', e);
             }

@@ -6,6 +6,7 @@ use App\Models\EmbuChampion;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\TournamentResult;
+use App\Traits\HasExcelExport;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -14,19 +15,24 @@ use Livewire\WithPagination;
 #[Layout('layouts.admin')]
 class AdminLaporanHasilIndex extends Component
 {
-    use WithPagination;
+    use HasExcelExport, WithPagination;
 
     public string $search = '';
 
     public string $draftTypeFilter = '';
 
     public string $ageGroupFilter = '';
+
     public string $matchNumberFilter = '';
+
     public string $genderFilter = '';
+
     public string $hasWinnersFilter = ''; // 'all', 'yes', 'no'
 
     public bool $showConfirmModal = false;
+
     public ?int $generateMatchId = null;
+
     public string $generateMatchName = '';
 
     protected $queryString = [
@@ -300,6 +306,62 @@ class AdminLaporanHasilIndex extends Component
     }
 
     // ─── RENDER ──────────────────────────────────────────────────
+
+    public function exportExcel()
+    {
+        $matchNumbers = MatchNumber::with(['ageGroup', 'tournamentResults'])
+            ->when($this->search, fn ($q) => $q->where('name', 'ilike', '%'.$this->search.'%'))
+            ->when($this->draftTypeFilter, fn ($q) => $q->where('draft_type', $this->draftTypeFilter))
+            ->when($this->ageGroupFilter, fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
+            ->when($this->matchNumberFilter, fn ($q) => $q->where('id', $this->matchNumberFilter))
+            ->when($this->genderFilter, fn ($q) => $q->where('gender', $this->genderFilter))
+            ->when($this->hasWinnersFilter === 'yes', fn ($q) => $q->has('tournamentResults'))
+            ->when($this->hasWinnersFilter === 'no', fn ($q) => $q->doesntHave('tournamentResults'))
+            ->get();
+
+        $exportData = [];
+        foreach ($matchNumbers as $mn) {
+            $juara = $this->getJuaraForMatch($mn);
+            if (empty($juara)) {
+                $exportData[] = [
+                    'Nomor Pertandingan' => $mn->name,
+                    'Tipe' => $mn->draft_type,
+                    'Kategori' => $mn->ageGroup->name ?? '-',
+                    'Gender' => $mn->gender,
+                    'Rank' => '-',
+                    'Atlet' => 'Belum ada data',
+                    'Kontingen' => '-',
+                    'Penyisihan' => 0,
+                    'Final' => 0,
+                    'Total' => 0,
+                ];
+
+                continue;
+            }
+
+            foreach ($juara as $rank => $data) {
+                $exportData[] = [
+                    'Nomor Pertandingan' => $mn->name,
+                    'Tipe' => $mn->draft_type,
+                    'Kategori' => $mn->ageGroup->name ?? '-',
+                    'Gender' => $mn->gender,
+                    'Rank' => $rank,
+                    'Atlet' => $data['athlete_names'],
+                    'Kontingen' => $data['contingent_name'],
+                    'Penyisihan' => $data['penyisihan_score'],
+                    'Final' => $data['final_score'],
+                    'Total' => $data['accumulated_score'],
+                ];
+            }
+        }
+
+        return $this->downloadExcel(
+            $exportData,
+            ['Nomor Pertandingan', 'Tipe', 'Kategori', 'Gender', 'Rank', 'Atlet', 'Kontingen', 'Penyisihan', 'Final', 'Total'],
+            'Laporan_Hasil_Juara',
+            'Hasil Juara'
+        );
+    }
 
     public function render()
     {

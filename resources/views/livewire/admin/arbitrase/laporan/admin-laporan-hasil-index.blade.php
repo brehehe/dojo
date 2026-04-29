@@ -94,6 +94,10 @@
             </div>
             
             <div class="flex items-center gap-2">
+                <button wire:click="exportExcel"
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center gap-2">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
                 <button wire:click="generateAllResults" 
                     wire:confirm="Generate semua hasil yang tersedia? Ini akan menimpa data lama."
                     class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center gap-2">

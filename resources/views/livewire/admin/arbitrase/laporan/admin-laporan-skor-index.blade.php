@@ -6,6 +6,10 @@
             <p class="text-[15px] font-bold uppercase tracking-widest text-slate-400 mt-1">Laporan Semua Penilaian Peserta & Pertandingan</p>
         </div>
         <div class="flex items-center gap-3">
+            <button wire:click="exportExcel"
+                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </button>
             <button onclick="window.print()"
                 class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-sm transition-colors shadow-sm flex items-center gap-2">
                 <i class="fas fa-print"></i> Cetak Laporan

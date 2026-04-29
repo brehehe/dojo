@@ -3,10 +3,12 @@
 namespace App\Livewire\Referee;
 
 use App\Models\EmbuScore;
-use App\Models\MatchNumber\MatchNumber;
+use App\Models\RandoriMatchResult;
 use App\Models\Referee;
-use App\Models\Court\Court;
+use App\Models\RefereeScoreDetail;
+use App\Models\Registration;
 use App\Models\ScheduleReferee;
+use App\Services\RandoriScoringService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -15,36 +17,47 @@ use Livewire\Component;
 class RefereeScoringDashboard extends Component
 {
     public $referee;
+
     public $activeMatch;
+
     public $assignedCourt = null;
+
     public $assignedSession = null;
+
     public $assignedRundown = null;
+
     public $judgeIndex = null;
 
     // Embu Itemized Scores
     public $embuItems = [
-        'goho_1' => 0, 'goho_2' => 0, 'goho_3' => 0,
-        'juho_1' => 0, 'juho_2' => 0, 'juho_3' => 0,
-        'ekspresi_1' => 0, 'ekspresi_2' => 0, 'ekspresi_3' => 0, 'ekspresi_4' => 0,
+        'goho_1' => '', 'goho_2' => '', 'goho_3' => '',
+        'juho_1' => '', 'juho_2' => '', 'juho_3' => '',
+        'ekspresi_1' => '', 'ekspresi_2' => '', 'ekspresi_3' => '', 'ekspresi_4' => '',
     ];
 
     // Randori Itemized Scores
     public $randoriItems = [
-        'aka' => ['mujoken' => 0, 'ippon' => 0, 'wazaari' => 0, 'batsu5' => 0, 'batsu10' => 0, 'yusei' => 0],
-        'shiro' => ['mujoken' => 0, 'ippon' => 0, 'wazaari' => 0, 'batsu5' => 0, 'batsu10' => 0, 'yusei' => 0],
+        'aka' => ['mujoken' => '', 'ippon' => '', 'wazaari' => '', 'batsu5' => '', 'batsu10' => '', 'yusei' => ''],
+        'shiro' => ['mujoken' => '', 'ippon' => '', 'wazaari' => '', 'batsu5' => '', 'batsu10' => '', 'yusei' => ''],
     ];
 
     public $notes = '';
+
     public $totalScore = 0;
+
     public $totalAka = 0;
+
     public $totalShiro = 0;
 
     public function checkParticipantCalled()
     {
-        if (!$this->activeMatch) return false;
-        return $this->activeMatch->draft_type === 'embu' 
-            ? !is_null($this->activeMatch->active_registration_id) 
-            : !is_null($this->activeMatch->active_bracket_node);
+        if (! $this->activeMatch) {
+            return false;
+        }
+
+        return $this->activeMatch->draft_type === 'embu'
+            ? ! is_null($this->activeMatch->active_registration_id)
+            : ! is_null($this->activeMatch->active_bracket_node);
     }
 
     public function mount()
@@ -59,14 +72,19 @@ class RefereeScoringDashboard extends Component
 
     private function getActiveIdentifier($match)
     {
-        if (!$match) return null;
+        if (! $match) {
+            return null;
+        }
         $subId = $match->draft_type === 'embu' ? $match->active_registration_id : $match->active_bracket_node;
-        return $match->id . '_' . $subId;
+
+        return $match->id.'_'.$subId;
     }
 
     public function loadActiveMatch()
     {
-        if (!$this->referee) return;
+        if (! $this->referee) {
+            return;
+        }
 
         $newActiveMatch = null;
         $newAssignedCourt = null;
@@ -79,7 +97,9 @@ class RefereeScoringDashboard extends Component
             ->get();
 
         foreach ($mySchedules as $schedule) {
-            if (!$schedule->court_id || !$schedule->court) continue;
+            if (! $schedule->court_id || ! $schedule->court) {
+                continue;
+            }
 
             $court = $schedule->court;
             if ($court->active_match_id && $court->activeMatch) {
@@ -88,7 +108,7 @@ class RefereeScoringDashboard extends Component
                     ->where('rundown_id', $schedule->rundown_id)
                     ->exists();
 
-                if ($matchHasOurDrawing || true) { 
+                if ($matchHasOurDrawing || true) {
                     $newActiveMatch = $court->activeMatch;
                     $newAssignedCourt = $court;
                     $newAssignedSession = $schedule->sessionTime;
@@ -123,22 +143,26 @@ class RefereeScoringDashboard extends Component
             $id = $this->activeMatch->active_registration_id;
         } else {
             $bracketNode = $this->activeMatch->active_bracket_node;
-            if (!$bracketNode) return;
-            
+            if (! $bracketNode) {
+                return;
+            }
+
             $parts = explode('_', $bracketNode);
             $bracketSection = $parts[0] ?? 'ub';
             $bracketNodeIndex = (isset($parts[1]) && isset($parts[2])) ? $parts[1].'_'.$parts[2] : '0_0';
-            
-            $randoriMatch = \App\Models\RandoriMatchResult::firstOrCreate(
+
+            $randoriMatch = RandoriMatchResult::firstOrCreate(
                 ['match_number_id' => $this->activeMatch->id, 'bracket_node' => $bracketNode],
                 ['bracket_node_index' => $bracketNodeIndex, 'bracket_section' => $bracketSection]
             );
             $id = $randoriMatch->id;
         }
 
-        if (!$id) return;
+        if (! $id) {
+            return;
+        }
 
-        $existing = \App\Models\RefereeScoreDetail::where('match_number_id', $this->activeMatch->id)
+        $existing = RefereeScoreDetail::where('match_number_id', $this->activeMatch->id)
             ->where('referee_id', $this->referee->id)
             ->where('scorable_id', $id)
             ->first();
@@ -159,13 +183,13 @@ class RefereeScoringDashboard extends Component
     public function resetForm()
     {
         $this->embuItems = [
-            'goho_1' => 0, 'goho_2' => 0, 'goho_3' => 0,
-            'juho_1' => 0, 'juho_2' => 0, 'juho_3' => 0,
-            'ekspresi_1' => 0, 'ekspresi_2' => 0, 'ekspresi_3' => 0, 'ekspresi_4' => 0,
+            'goho_1' => '', 'goho_2' => '', 'goho_3' => '',
+            'juho_1' => '', 'juho_2' => '', 'juho_3' => '',
+            'ekspresi_1' => '', 'ekspresi_2' => '', 'ekspresi_3' => '', 'ekspresi_4' => '',
         ];
         $this->randoriItems = [
-            'aka' => ['mujoken' => 0, 'ippon' => 0, 'wazaari' => 0, 'batsu5' => 0, 'batsu10' => 0, 'yusei' => 0],
-            'shiro' => ['mujoken' => 0, 'ippon' => 0, 'wazaari' => 0, 'batsu5' => 0, 'batsu10' => 0, 'yusei' => 0],
+            'aka' => ['mujoken' => '', 'ippon' => '', 'wazaari' => '', 'batsu5' => '', 'batsu10' => '', 'yusei' => ''],
+            'shiro' => ['mujoken' => '', 'ippon' => '', 'wazaari' => '', 'batsu5' => '', 'batsu10' => '', 'yusei' => ''],
         ];
         $this->notes = '';
         $this->totalScore = 0;
@@ -174,9 +198,18 @@ class RefereeScoringDashboard extends Component
         $this->calculateTotal();
     }
 
-    public function updated($propertyName)
+    public function updated($propertyName, $value)
     {
         if (str_starts_with($propertyName, 'embuItems') || str_starts_with($propertyName, 'randoriItems')) {
+            // Strip leading zeros for numeric inputs (e.g., "05" -> "5")
+            if (is_string($value) && strlen($value) > 1 && $value[0] === '0' && is_numeric($value) && (! isset($value[1]) || $value[1] !== '.')) {
+                $sanitized = ltrim($value, '0');
+                if ($sanitized === '') {
+                    $sanitized = '0';
+                }
+
+                data_set($this, $propertyName, $sanitized);
+            }
             $this->calculateTotal();
         }
     }
@@ -187,69 +220,105 @@ class RefereeScoringDashboard extends Component
             $this->totalScore = 0;
             // Limit Embu score fields to maximum 10 mathematically
             foreach ($this->embuItems as $key => $val) {
-                if (!is_numeric($val) || $val == '') $this->embuItems[$key] = 0;
-                if ($this->embuItems[$key] > 10) $this->embuItems[$key] = 10;
-                $this->totalScore += (float) $this->embuItems[$key];
+                $numericVal = is_numeric($val) ? (float) $val : 0;
+                if ($numericVal > 10) {
+                    $numericVal = 10;
+                    $this->embuItems[$key] = 10;
+                }
+                $this->totalScore += $numericVal;
             }
         } elseif ($this->activeMatch) {
-            // Randori scoring logic multiplier based on user requested rules:
-            // Mujoken Kachi (15) , Ippon (10) , Waza ari (5) , Hasil Batsu 5 (+5 points?? No wait "Hasil Batsu" is penalty for opponent or score for self. Let's make it positive score.)
-            // Actually, THB: Batsu 5 for opponent means 5 points for Us. 
-            $this->totalAka = ($this->randoriItems['aka']['mujoken'] * 15) + 
-                        ($this->randoriItems['aka']['ippon'] * 10) + 
-                        ($this->randoriItems['aka']['wazaari'] * 5) + 
-                        ($this->randoriItems['aka']['batsu5'] * 5) + 
-                        ($this->randoriItems['aka']['batsu10'] * 10) + 
-                        ($this->randoriItems['aka']['yusei'] * 5);
-            
-            $this->totalShiro = ($this->randoriItems['shiro']['mujoken'] * 15) + 
-                          ($this->randoriItems['shiro']['ippon'] * 10) + 
-                          ($this->randoriItems['shiro']['wazaari'] * 5) + 
-                          ($this->randoriItems['shiro']['batsu5'] * 5) + 
-                          ($this->randoriItems['shiro']['batsu10'] * 10) + 
-                          ($this->randoriItems['shiro']['yusei'] * 5);
-            
+            $aka = $this->randoriItems['aka'];
+            $shiro = $this->randoriItems['shiro'];
+
+            $this->totalAka = ((is_numeric($aka['mujoken']) ? $aka['mujoken'] : 0) * 15) +
+                        ((is_numeric($aka['ippon']) ? $aka['ippon'] : 0) * 10) +
+                        ((is_numeric($aka['wazaari']) ? $aka['wazaari'] : 0) * 5) +
+                        ((is_numeric($aka['batsu5']) ? $aka['batsu5'] : 0) * 5) +
+                        ((is_numeric($aka['batsu10']) ? $aka['batsu10'] : 0) * 10) +
+                        ((is_numeric($aka['yusei']) ? $aka['yusei'] : 0) * 5);
+
+            $this->totalShiro = ((is_numeric($shiro['mujoken']) ? $shiro['mujoken'] : 0) * 15) +
+                          ((is_numeric($shiro['ippon']) ? $shiro['ippon'] : 0) * 10) +
+                          ((is_numeric($shiro['wazaari']) ? $shiro['wazaari'] : 0) * 5) +
+                          ((is_numeric($shiro['batsu5']) ? $shiro['batsu5'] : 0) * 5) +
+                          ((is_numeric($shiro['batsu10']) ? $shiro['batsu10'] : 0) * 10) +
+                          ((is_numeric($shiro['yusei']) ? $shiro['yusei'] : 0) * 5);
+
             $this->totalScore = $this->totalAka - $this->totalShiro; // Stored as a differential
         }
     }
 
     public function submitScore()
     {
-        if (!$this->activeMatch || !$this->judgeIndex) return;
+        if (! $this->activeMatch || ! $this->referee) {
+            return;
+        }
+
+        // Verify judge index from assignment just before saving to ensure accuracy
+        $schedule = ScheduleReferee::where('referee_id', $this->referee->id)
+            ->where('court_id', $this->assignedCourt?->id)
+            ->where('session_time_id', $this->assignedSession?->id)
+            ->where('rundown_id', $this->assignedRundown?->id)
+            ->first();
+
+        if (! $schedule) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Gagal Menyimpan',
+                'text' => 'Anda tidak memiliki penugasan yang valid untuk pertandingan ini.',
+            ]);
+
+            return;
+        }
+
+        $this->judgeIndex = $schedule->judge_index;
+
+        if (! $this->judgeIndex) {
+            $this->dispatch('swal', [
+                'icon' => 'error',
+                'title' => 'Gagal Menyimpan',
+                'text' => 'Posisi juri Anda tidak terdefinisi.',
+            ]);
+
+            return;
+        }
 
         if ($this->activeMatch->draft_type === 'embu') {
             $id = $this->activeMatch->active_registration_id;
-            $scorableType = \App\Models\Registration::class;
+            $scorableType = Registration::class;
             $bracketNode = null;
         } else {
             $bracketNode = $this->activeMatch->active_bracket_node;
-            if (!$bracketNode) {
+            if (! $bracketNode) {
                 $this->dispatch('swal', ['icon' => 'error', 'title' => 'Error', 'text' => 'Belum ada peserta yang dipanggil.']);
+
                 return;
             }
-            
+
             $parts = explode('_', $bracketNode);
             $bracketSection = $parts[0] ?? 'ub';
             $bracketNodeIndex = (isset($parts[1]) && isset($parts[2])) ? $parts[1].'_'.$parts[2] : '0_0';
-            
-            $randoriMatch = \App\Models\RandoriMatchResult::firstOrCreate(
+
+            $randoriMatch = RandoriMatchResult::firstOrCreate(
                 ['match_number_id' => $this->activeMatch->id, 'bracket_node' => $bracketNode],
                 ['bracket_node_index' => $bracketNodeIndex, 'bracket_section' => $bracketSection]
             );
             $id = $randoriMatch->id;
-            $scorableType = \App\Models\RandoriMatchResult::class;
+            $scorableType = RandoriMatchResult::class;
         }
 
-        if (!$id) {
+        if (! $id) {
             $this->dispatch('swal', ['icon' => 'error', 'title' => 'Error', 'text' => 'Belum ada peserta yang dipanggil.']);
+
             return;
         }
 
         $details = $this->activeMatch->draft_type === 'embu' ? $this->embuItems : $this->randoriItems;
 
-        \DB::transaction(function() use ($id, $scorableType, $bracketNode, $details) {
+        \DB::transaction(function () use ($id, $scorableType, $bracketNode, $details) {
             // 1. Save Granular Details
-            \App\Models\RefereeScoreDetail::updateOrCreate(
+            RefereeScoreDetail::updateOrCreate(
                 [
                     'match_number_id' => $this->activeMatch->id,
                     'referee_id' => $this->referee->id,
@@ -266,20 +335,20 @@ class RefereeScoringDashboard extends Component
 
             // 2. Sync to Main Table for Quick Access
             if ($this->activeMatch->draft_type === 'embu') {
-                $column = 'judge_' . $this->judgeIndex;
-                \App\Models\EmbuScore::updateOrCreate(
+                $column = 'judge_'.$this->judgeIndex;
+                EmbuScore::updateOrCreate(
                     ['match_number_id' => $this->activeMatch->id, 'registration_id' => $id],
                     [$column => $this->totalScore]
                 );
             } else {
                 // Sync to RandoriJudgeScore via Service
-                $service = app(\App\Services\RandoriScoringService::class);
-                
+                $service = app(RandoriScoringService::class);
+
                 // AKA (Red)
                 $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'ippon', 'aka', $this->randoriItems['aka']['ippon'] + $this->randoriItems['aka']['mujoken']);
                 $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'waza_ari', 'aka', $this->randoriItems['aka']['wazaari'] + $this->randoriItems['aka']['yusei']);
                 $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'hansoku', 'aka', $this->randoriItems['aka']['batsu5'] + $this->randoriItems['aka']['batsu10']);
-                
+
                 // SHIRO (White)
                 $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'ippon', 'shiro', $this->randoriItems['shiro']['ippon'] + $this->randoriItems['shiro']['mujoken']);
                 $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'waza_ari', 'shiro', $this->randoriItems['shiro']['wazaari'] + $this->randoriItems['shiro']['yusei']);
@@ -290,7 +359,7 @@ class RefereeScoringDashboard extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Skor Tersimpan',
-            'text' => 'Nilai Juri ' . $this->judgeIndex . ' telah dicatat.'
+            'text' => 'Nilai Juri '.$this->judgeIndex.' telah dicatat.',
         ]);
     }
 

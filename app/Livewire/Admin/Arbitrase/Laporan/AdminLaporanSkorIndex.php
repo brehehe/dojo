@@ -6,6 +6,8 @@ use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
 use App\Models\Registration;
+use App\Traits\HasExcelExport;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -13,11 +15,14 @@ use Livewire\WithPagination;
 #[Layout('layouts.admin')]
 class AdminLaporanSkorIndex extends Component
 {
-    use WithPagination;
+    use HasExcelExport, WithPagination;
 
     public string $search = '';
+
     public string $draftTypeFilter = '';
+
     public string $ageGroupFilter = '';
+
     public string $genderFilter = '';
 
     protected $queryString = [
@@ -50,7 +55,7 @@ class AdminLaporanSkorIndex extends Component
     /**
      * Get ALL scores for an Embu match.
      */
-    private function getEmbuScores(MatchNumber $matchNumber): \Illuminate\Support\Collection
+    private function getEmbuScores(MatchNumber $matchNumber): Collection
     {
         $scores = $matchNumber->embuScores()
             ->with(['registration.athletes', 'registration.contingent'])
@@ -73,14 +78,14 @@ class AdminLaporanSkorIndex extends Component
             ->map(function ($reg) use ($penyisihanMap, $finalMap, $matchNumber) {
                 $pScore = $penyisihanMap[$reg->id] ?? null;
                 $fScore = $finalMap[$reg->id] ?? null;
-                
+
                 $pVal = $pScore ? (float) $pScore->nilai_akhir : 0;
                 $fVal = $fScore ? (float) $fScore->nilai_akhir : 0;
 
                 // Filter athletes assigned to THIS match
                 $matchNumber->loadMissing('athletes');
                 $athleteNames = $matchNumber->athletes
-                    ->filter(fn($a) => $a->pivot->registration_id == $reg->id)
+                    ->filter(fn ($a) => $a->pivot->registration_id == $reg->id)
                     ->pluck('name')
                     ->join(' & ') ?: ($reg->athletes->pluck('name')->join(' & ') ?: '-');
 
@@ -98,7 +103,7 @@ class AdminLaporanSkorIndex extends Component
     /**
      * Get ALL match results for a Randori match with athlete details from drawing.
      */
-    private function getRandoriScores(MatchNumber $matchNumber): \Illuminate\Support\Collection
+    private function getRandoriScores(MatchNumber $matchNumber): Collection
     {
         $results = RandoriMatchResult::where('match_number_id', $matchNumber->id)
             ->with(['winner'])
@@ -130,8 +135,78 @@ class AdminLaporanSkorIndex extends Component
             $matchInfo = $nodeMap[$res->bracket_node] ?? null;
             $res->athlete1 = $matchInfo['athlete1'] ?? null;
             $res->athlete2 = $matchInfo['athlete2'] ?? null;
+
             return $res;
         });
+    }
+
+    public function exportExcel()
+    {
+        $matchNumbers = MatchNumber::with(['ageGroup'])
+            ->when($this->search, fn ($q) => $q->where('name', 'ilike', '%'.$this->search.'%'))
+            ->when($this->draftTypeFilter, fn ($q) => $q->where('draft_type', $this->draftTypeFilter))
+            ->when($this->ageGroupFilter, fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
+            ->when($this->genderFilter, fn ($q) => $q->where('gender', $this->genderFilter))
+            ->orderBy('draft_type')
+            ->orderBy('age_group_id')
+            ->orderBy('order')
+            ->get();
+
+        $exportData = [];
+        foreach ($matchNumbers as $mn) {
+            $isEmbu = strtolower($mn->draft_type) === 'embu';
+            $scores = $isEmbu ? $this->getEmbuScores($mn) : $this->getRandoriScores($mn);
+
+            if ($scores->isEmpty()) {
+                $exportData[] = [
+                    'Nomor Pertandingan' => $mn->name,
+                    'Tipe' => $mn->draft_type,
+                    'Kategori' => $mn->ageGroup->name ?? '-',
+                    'Gender' => $mn->gender,
+                    'Data' => 'Belum ada penilaian',
+                    'Skor/Status' => '-',
+                ];
+
+                continue;
+            }
+
+            foreach ($scores as $s) {
+                if ($isEmbu) {
+                    $exportData[] = [
+                        'Nomor Pertandingan' => $mn->name,
+                        'Tipe' => $mn->draft_type,
+                        'Kategori' => $mn->ageGroup->name ?? '-',
+                        'Gender' => $mn->gender,
+                        'Data' => $s->athlete_names.' ('.$s->contingent_name.')',
+                        'Penyisihan' => $s->penyisihan_score,
+                        'Final' => $s->final_score,
+                        'Total' => $s->accumulated_score,
+                    ];
+                } else {
+                    // Randori
+                    $exportData[] = [
+                        'Nomor Pertandingan' => $mn->name,
+                        'Tipe' => $mn->draft_type,
+                        'Kategori' => $mn->ageGroup->name ?? '-',
+                        'Gender' => $mn->gender,
+                        'Data' => ($s->athlete1['name'] ?? '?').' vs '.($s->athlete2['name'] ?? '?'),
+                        'Pemenang' => $s->winner->name ?? 'Belum ada',
+                        'Status' => $s->status,
+                    ];
+                }
+            }
+        }
+
+        $headings = $this->draftTypeFilter === 'embu'
+            ? ['Nomor Pertandingan', 'Tipe', 'Kategori', 'Gender', 'Data (Atlet & Kontingen)', 'Penyisihan', 'Final', 'Total']
+            : ['Nomor Pertandingan', 'Tipe', 'Kategori', 'Gender', 'Data (Pertandingan)', 'Pemenang', 'Status'];
+
+        return $this->downloadExcel(
+            $exportData,
+            $headings,
+            'Laporan_Skor_Menyeluruh',
+            'Skor Menyeluruh'
+        );
     }
 
     public function render()
@@ -155,6 +230,7 @@ class AdminLaporanSkorIndex extends Component
             } else {
                 $matchNumber->all_scores = $this->getRandoriScores($matchNumber);
             }
+
             return $matchNumber;
         });
 

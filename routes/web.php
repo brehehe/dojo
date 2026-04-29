@@ -4,6 +4,8 @@ use App\Http\Controllers\WelcomeController;
 use App\Livewire\Admin\Announcer\AnnouncerIndex;
 use App\Livewire\Admin\Arbitrase\GenerateReferee\AdminArbitraseGenerateRefereeIndex;
 use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanHasilIndex;
+use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanRekapitulasiEmbu;
+use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanRekapitulasiRandori;
 use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanSkorIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringEmbuDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringIndex;
@@ -14,8 +16,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
-use App\Livewire\Admin\Master\PaymentMethod\AdminMasterPaymentIndex;
-use App\Livewire\Admin\Profile\AdminProfileIndex;
+use App\Livewire\Admin\HomeDashboardIndex;
 use App\Livewire\Admin\Master\AgeGroup\AdminMasterAgeGroupIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteDetailIndex;
 use App\Livewire\Admin\Master\Athlete\AdminMasterAthleteFormIndex;
@@ -28,6 +29,7 @@ use App\Livewire\Admin\Master\KyuLevel\AdminMasterKyuLevelIndex;
 use App\Livewire\Admin\Master\MatchNumber\AdminMasterMatchNumberIndex;
 use App\Livewire\Admin\Master\Official\AdminMasterOfficialFormIndex;
 use App\Livewire\Admin\Master\Official\AdminMasterOfficialIndex;
+use App\Livewire\Admin\Master\PaymentMethod\AdminMasterPaymentIndex;
 use App\Livewire\Admin\Master\Pool\AdminMasterPoolIndex;
 use App\Livewire\Admin\Master\Referee\AdminMasterRefereeIndex;
 use App\Livewire\Admin\Master\Role\AdminMasterRoleFormIndex;
@@ -38,12 +40,19 @@ use App\Livewire\Admin\Master\Technique\AdminMasterTechniqueIndex;
 use App\Livewire\Admin\Master\User\AdminMasterUserIndex;
 use App\Livewire\Admin\Master\WeightGroup\AdminMasterWeightGroupIndex;
 use App\Livewire\Admin\MatchNumber\AdminMatchNumberVerifiedIndex;
+use App\Livewire\Admin\NewDashboardIndex;
+use App\Livewire\Admin\Profile\AdminProfileIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationShow;
 use App\Livewire\Admin\Reports\AdminAthleteBiodataReport;
 use App\Livewire\Admin\Reports\AdminMatchClassReport;
 use App\Livewire\Admin\Reports\AdminRegistrationByNameReport;
 use App\Livewire\Admin\Reports\AdminRegistrationByNumberReport;
+use App\Livewire\Admin\SmartWasit\AdminLaporanPerbabakIndex;
+use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIawIndex;
+use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIkIndex;
+use App\Livewire\Admin\SmartWasit\AdminLaporanRankingSkwIndex;
+use App\Livewire\Admin\SmartWasit\AdminLaporanSmartWasitSummaryIndex;
 use App\Livewire\Admin\TechnicalMeeting\Embu\AdminTechnicalMeetingEmbuIndex;
 use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriIndex;
 use App\Livewire\Auth\Login;
@@ -96,6 +105,8 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboard::class)->name('dashboard');
+        Route::get('/home-dashboard', HomeDashboardIndex::class)->name('home-dashboard');
+        Route::get('/new-dashboard', NewDashboardIndex::class)->name('new-dashboard');
         Route::get('/profile', AdminProfileIndex::class)->name('profile');
 
         Route::prefix('master')->name('master.')->group(function () {
@@ -164,6 +175,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/generate-referee', AdminArbitraseGenerateRefereeIndex::class)->name('generate-referee');
             Route::get('/laporan-hasil', AdminLaporanHasilIndex::class)->name('laporan-hasil');
             Route::get('/laporan-skor', AdminLaporanSkorIndex::class)->name('laporan-skor');
+            Route::get('/rekapitulasi-randori', AdminLaporanRekapitulasiRandori::class)->name('rekapitulasi-randori');
+            Route::get('/rekapitulasi-embu', AdminLaporanRekapitulasiEmbu::class)->name('rekapitulasi-embu');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
@@ -174,6 +187,14 @@ Route::middleware('auth')->group(function () {
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
                 Route::get('/monitor-timer/court/{courtId}', MonitorTimerIndex::class)->name('monitor-timer.court');
             });
+        });
+
+        Route::prefix('smart-wasit')->name('smart-wasit.')->group(function () {
+            Route::get('/summary', AdminLaporanSmartWasitSummaryIndex::class)->name('summary');
+            Route::get('/ranking-skw', AdminLaporanRankingSkwIndex::class)->name('ranking-skw');
+            Route::get('/ranking-iaw', AdminLaporanRankingIawIndex::class)->name('ranking-iaw');
+            Route::get('/ranking-ik', AdminLaporanRankingIkIndex::class)->name('ranking-ik');
+            Route::get('/perbabak', AdminLaporanPerbabakIndex::class)->name('perbabak');
         });
 
         Route::prefix('panitera')->name('panitera.')->group(function () {

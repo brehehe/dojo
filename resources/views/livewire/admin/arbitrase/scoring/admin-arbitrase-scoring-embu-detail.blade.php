@@ -335,222 +335,23 @@
                 </table>
             </div>
         </div>
+    </div>
 
-        {{-- ====== ACTION BUTTONS ====== --}}
-        <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-            <div class="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                        <i class="fas fa-bullhorn text-sm"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-black text-slate-800 uppercase tracking-tight">Antrian Panggilan Peserta</h3>
-                        <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Klik Panggil untuk menampilkan di Monitor Court</p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                @foreach($registrations as $no => $item)
-                    @php $isActive = $matchNumber->active_registration_id == $item['id']; @endphp
-                    <div class="group relative flex flex-col gap-4 p-5 rounded-[2rem] border transition-all duration-500 
-                        {{ $isActive 
-                            ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-2xl scale-[1.02] z-10' 
-                            : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-300 hover:shadow-xl' }}">
-                        
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-center gap-4 min-w-0">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-transform duration-500 group-hover:scale-110 flex-shrink-0
-                                    {{ $isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-slate-400 border border-slate-100 shadow-sm' }}">
-                                    {{ $item['sequence_number'] ?? ($no + 1) }}
-                                </div>
-                                <div class="min-w-0">
-                                    <h4 class="text-[15px] font-black text-slate-800 uppercase leading-tight truncate" title="@foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach">
-                                        @foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach
-                                    </h4>
-                                    <div class="flex items-center gap-1.5 mt-1 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
-                                        <i class="fas fa-map-marker-alt text-[10px] text-slate-300"></i>
-                                        <span class="truncate">{{ $item['contingent']?->name }}</span>
-                                    </div>
-                                </div>
-                            </div>
+    {{-- ====== REKAP PERINGKAT ====== --}}
+    @php
+        $ranked = $registrations->filter(fn($i) => ($i['score']?->nilai_akhir > 0) || ($currentRound === 'Final' && $i['accumulated_score'] > 0))
+            ->sortBy(function($i) use ($currentRound) {
+                if ($currentRound === 'Penyisihan') {
+                    return -$i['score']->nilai_akhir; // Highest is best
+                } else {
+                    return -$i['accumulated_score']; // Highest accumulated is best
+                }
+            })
+            ->values();
+    @endphp
 
-                            <div class="flex items-center gap-1.5 flex-shrink-0">
-                                @if($isActive)
-                                    <button wire:click="callParticipant({{ $item['id'] }})"
-                                        class="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="Panggil Ulang">
-                                        <i class="fas fa-redo text-sm"></i>
-                                    </button>
-                                    <button wire:click="dismissParticipant()" 
-                                        class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="Tutup / Lepas dari Wasit">
-                                        <i class="fas fa-times text-sm"></i>
-                                    </button>
-                                @endif
-                                <button wire:click="openScoringModal({{ $item['id'] }})"
-                                    class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-900 shadow-sm transition-all" title="Input Skor Admin">
-                                    <i class="fas fa-edit text-sm"></i>
-                                </button>
-                            </div>
-                        </div>
 
-                        @if(!$isActive)
-                            <button wire:click="callParticipant({{ $item['id'] }})"
-                                class="w-full py-3.5 rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] transition-all bg-white border border-slate-200 text-slate-800 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-200">
-                                <i class="fas fa-bullhorn mr-2"></i> Panggil
-                            </button>
-                        @endif
-
-                        {{-- Timer Controls --}}
-                        @if($isActive)
-                            <div wire:ignore x-data="{
-                                    time: 0,
-                                    running: false,
-                                    countdown: 0,
-                                    lastTickSecond: -1,
-                                    interpolInterval: null,
-                                    syncInterval: null,
-                                    registrationId: {{ $item['id'] }},
-                                    formatTime() {
-                                        let t = Math.max(0, this.time);
-                                        let m = Math.floor(t / 60000);
-                                        let s = Math.floor((t % 60000) / 1000);
-                                        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                                    },
-                                    formatCountdown() {
-                                        if (this.countdown === 5) return 'Siap';
-                                        if (this.countdown === 4) return '3';
-                                        if (this.countdown === 3) return '2';
-                                        if (this.countdown === 2) return '1';
-                                        if (this.countdown === 1) return 'Mulai';
-                                        return '';
-                                    },
-                                    async sync() {
-                                        let state = await $wire.getTimerState();
-                                        if (!state) return;
-                                        
-                                        let oldCountdown = this.countdown;
-
-                                        if (state.status === 'running') {
-                                            this.running = true;
-                                            this.countdown = 0;
-                                            this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
-                                        } else if (state.status === 'countdown') {
-                                            this.running = false;
-                                            let remaining = state.countdown_end_ms - Date.now();
-                                            this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
-                                            this.time = state.elapsed_ms || 0;
-                                            if (remaining <= 0) { $wire.startTimer(); }
-                                        } else {
-                                            this.running = false;
-                                            this.countdown = 0;
-                                            this.time = state.elapsed_ms || 0;
-                                        }
-
-                                        // Trigger Countdown Voice
-                                        if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                                            window.speakCountdown(this.formatCountdown());
-                                        }
-                                    },
-                                    init() {
-                                        this.sync();
-                                        this.interpolInterval = setInterval(() => { 
-                                            if (this.running) {
-                                                this.time += 30; 
-                                                let currentSecond = Math.floor(this.time / 1000);
-                                                
-                                                // Play tick only if second has actually changed
-                                                if (currentSecond > this.lastTickSecond) {
-                                                    window.playTimerTick(1000, 0.05);
-                                                    this.lastTickSecond = currentSecond;
-                                                }
-                                            } else {
-                                                this.lastTickSecond = Math.floor(this.time / 1000);
-                                            }
-                                        }, 30);
-                                        this.syncInterval = setInterval(() => { this.sync(); }, 1000);
-                                    },
-                                    start() {
-                                        if (!this.running && this.countdown === 0) {
-                                            $wire.startCountdown();
-                                        }
-                                    },
-                                    pause() { $wire.pauseTimer(); },
-                                    stop() { $wire.stopTimer(); },
-                                    finish() {
-                                        let capturedTime = this.time;
-                                        $wire.pauseTimer();
-                                        Swal.fire({
-                                            title: 'Apakah anda yakin?',
-                                            html: '<p>Pertandingan akan ditandai <b>Selesai</b>.<br>Denda waktu akan dihitung otomatis & nilai wasit diakumulasikan.</p>',
-                                            icon: 'warning',
-                                            showCancelButton: true,
-                                            confirmButtonText: 'Ya, Selesai!',
-                                            cancelButtonText: 'Batal',
-                                            confirmButtonColor: '#2563eb',
-                                            customClass: {
-                                                popup: 'rounded-[2rem]',
-                                                confirmButton: 'rounded-2xl font-black uppercase tracking-widest px-6 py-3',
-                                                cancelButton: 'rounded-2xl font-black uppercase tracking-widest px-6 py-3'
-                                            }
-                                        }).then((result) => {
-                                            if (result.isConfirmed) {
-                                                $wire.finishMatch(this.registrationId, capturedTime);
-                                            } else {
-                                                $wire.startTimer();
-                                            }
-                                        });
-                                    }
-                                }" class="bg-indigo-600 rounded-3xl p-5 shadow-inner">
-                                <div class="flex items-center justify-between mb-4">
-                                    <div class="flex flex-col">
-                                        <span class="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] mb-1">Live Match Timer</span>
-                                        <div class="text-3xl font-black font-mono tracking-widest text-white drop-shadow-sm">
-                                            <span x-show="countdown > 0" x-text="formatCountdown()" class="text-amber-400"></span>
-                                            <span x-show="countdown === 0" x-text="formatTime()">00:00</span>
-                                        </div>
-                                    </div>
-                                    <button @click="window.playTimerTick(1200, 0.1)" class="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-2xl backdrop-blur-md transition-all" title="Test Suara">
-                                        <i class="fas fa-volume-up text-sm"></i>
-                                    </button>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button x-show="!running && countdown === 0" @click="start()" class="flex-1 h-12 flex items-center justify-center bg-emerald-400 hover:bg-emerald-500 text-white rounded-2xl transition-all shadow-lg shadow-emerald-900/20" title="Start Timer">
-                                        <i class="fas fa-play text-sm mr-2"></i> <span class="text-[13px] font-black uppercase tracking-widest">Mulai</span>
-                                    </button>
-                                    <button x-show="running" @click="pause()" class="flex-1 h-12 flex items-center justify-center bg-amber-400 hover:bg-amber-500 text-white rounded-2xl transition-all shadow-lg shadow-amber-900/20" title="Pause Timer">
-                                        <i class="fas fa-pause text-sm mr-2"></i> <span class="text-[13px] font-black uppercase tracking-widest">Jeda</span>
-                                    </button>
-                                    <button @click="stop()" class="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-rose-500 text-white rounded-2xl transition-all backdrop-blur-md" title="Stop & Reset Timer">
-                                        <i class="fas fa-redo-alt text-sm"></i>
-                                    </button>
-                                    <button @click="finish()" class="flex-[1.5] h-12 flex items-center justify-center bg-white text-indigo-700 hover:bg-indigo-50 rounded-2xl transition-all shadow-lg" title="Selesai & Tutup">
-                                        <i class="fas fa-flag-checkered text-sm mr-2"></i> <span class="text-[13px] font-black uppercase tracking-widest">Selesai</span>
-                                    </button>
-                                </div>
-                                <div class="mt-3 text-center">
-                                    <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">
-                                        Target Waktu: {{ $item['is_group'] ? '1:30 - 2:00' : '1:00 - 1:30' }}
-                                    </span>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- ====== REKAP PERINGKAT ====== --}}
-        @php
-            $ranked = $registrations->filter(fn($i) => ($i['score']?->nilai_akhir > 0) || ($currentRound === 'Final' && $i['accumulated_score'] > 0))
-                ->sortBy(function($i) use ($currentRound) {
-                    if ($currentRound === 'Penyisihan') {
-                        return -$i['score']->nilai_akhir; // Highest is best
-                    } else {
-                        return -$i['accumulated_score']; // Highest accumulated is best
-                    }
-                })
-                ->values();
-        @endphp
-        @if($ranked->count() > 0)
+     @if($ranked->count() > 0)
         <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 overflow-hidden mt-12">
             <div class="px-8 py-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -646,31 +447,239 @@
         </div>
         @endif
 
-        {{-- ====== FOOTER INFO ====== --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div class="flex items-center gap-2 mb-3">
-                    <i class="fas fa-user-tie text-slate-800"></i>
-                    <span class="text-[15px] font-black text-slate-900 uppercase tracking-widest">Koordinator Pertandingan</span>
+     {{-- ====== ACTION BUTTONS ====== --}}
+    <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
+        <div class="px-8 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                    <i class="fas fa-bullhorn text-sm"></i>
                 </div>
-                <div class="text-[15px] font-black text-slate-800">-</div>
-                <div class="text-[15px] text-slate-800 font-bold mt-1">NIP. -</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <div class="flex items-center gap-2 mb-3">
-                    <i class="fas fa-users text-slate-800"></i>
-                    <span class="text-[15px] font-black text-slate-900 uppercase tracking-widest">Para Panitera</span>
+                <div>
+                    <h3 class="text-lg font-black text-slate-800 uppercase tracking-tight">Antrian Panggilan Peserta</h3>
+                    <p class="text-[13px] text-slate-500 font-bold uppercase tracking-wider">Klik Panggil untuk menampilkan di Monitor Court</p>
                 </div>
-                <div class="text-[15px] text-slate-900 italic">-</div>
             </div>
         </div>
+        <div class="p-6 grid grid-cols-4 gap-5">
+            @foreach($registrations as $no => $item)
+                @php $isActive = $matchNumber->active_registration_id == $item['id']; @endphp
+                <div class="group relative flex flex-col gap-4 p-5 rounded-[2rem] border transition-all duration-500 
+                    {{ $isActive 
+                        ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-2xl scale-[1.02] z-10' 
+                        : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-300 hover:shadow-xl' }}">
+                    
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg transition-transform duration-500 group-hover:scale-110 flex-shrink-0
+                                {{ $isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-slate-400 border border-slate-100 shadow-sm' }}">
+                                {{ $item['sequence_number'] ?? ($no + 1) }}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-[15px] font-black text-slate-800 uppercase leading-tight truncate" title="@foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach">
+                                    @foreach($item['athletes'] as $athlete){{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}@endforeach
+                                </h4>
+                                <div class="flex items-center gap-1.5 mt-1 text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+                                    <i class="fas fa-map-marker-alt text-[10px] text-slate-300"></i>
+                                    <span class="truncate">{{ $item['contingent']?->name }}</span>
+                                </div>
+                            </div>
+                        </div>
 
-        {{-- ====== FOOTER NOTE ====== --}}
-        <div class="text-[15px] text-slate-800 text-right pb-4">
-            <span class="text-red-400">* Coret yang tidak perlu</span> &nbsp;|&nbsp;
-            <span>** Nilai tertinggi dan terendah dicoret, 3 nilai tengah dijumlahkan</span>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            @if($isActive)
+                                <button wire:click="callParticipant({{ $item['id'] }})"
+                                    class="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="Panggil Ulang">
+                                    <i class="fas fa-redo text-sm"></i>
+                                </button>
+                                <button wire:click="dismissParticipant()" 
+                                    class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100" title="Tutup / Lepas dari Wasit">
+                                    <i class="fas fa-times text-sm"></i>
+                                </button>
+                            @endif
+                            <button wire:click="openScoringModal({{ $item['id'] }})"
+                                class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-slate-900 hover:border-slate-900 shadow-sm transition-all" title="Input Skor Admin">
+                                <i class="fas fa-edit text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    @if(!$isActive)
+                        <button wire:click="callParticipant({{ $item['id'] }})"
+                            class="w-full py-3.5 rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] transition-all bg-white border border-slate-200 text-slate-800 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-200">
+                            <i class="fas fa-bullhorn mr-2"></i> Panggil
+                        </button>
+                    @endif
+
+                    {{-- Timer Controls --}}
+                    @if($isActive)
+                        <div wire:ignore x-data="{
+                                time: 0,
+                                running: false,
+                                countdown: 0,
+                                lastTickSecond: -1,
+                                playedIntervals: new Set(),
+                                interpolInterval: null,
+                                syncInterval: null,
+                                registrationId: {{ $item['id'] }},
+                                formatTime() {
+                                    let t = Math.max(0, this.time);
+                                    let m = Math.floor(t / 60000);
+                                    let s = Math.floor((t % 60000) / 1000);
+                                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                                },
+                                formatCountdown() {
+                                    if (this.countdown === 2) return 'Siap';
+                                    return '';
+                                },
+                                async sync() {
+                                    let state = await $wire.getTimerState();
+                                    if (!state) return;
+                                    
+                                    let oldCountdown = this.countdown;
+
+                                    if (state.status === 'running') {
+                                        this.running = true;
+                                        this.countdown = 0;
+                                        this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+                                    } else if (state.status === 'countdown') {
+                                        this.running = false;
+                                        let remaining = state.countdown_end_ms - Date.now();
+                                        this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                        this.time = state.elapsed_ms || 0;
+                                        if (remaining <= 0) { $wire.startTimer(); }
+                                    } else {
+                                        this.running = false;
+                                        this.countdown = 0;
+                                        this.time = state.elapsed_ms || 0;
+                                    }
+
+                                    // Trigger Countdown Voice
+                                    if (this.countdown > 0 && this.countdown !== oldCountdown) {
+                                        if (this.countdown === 2) {
+                                            window.speakCountdown('Siap');
+                                        }
+                                        
+                                        // Play start buzzer at countdown 1
+                                        if (this.countdown === 1) {
+                                            window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                                        }
+                                    }
+                                },
+                                init() {
+                                    this.sync();
+                                    this.interpolInterval = setInterval(() => { 
+                                        if (this.running) {
+                                            this.time += 30; 
+                                            let currentSecond = Math.floor(this.time / 1000);
+                                            
+                                            // Interval buzzers: 90s and 120s
+                                            if (currentSecond === 90 && !this.playedIntervals.has(90)) {
+                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
+                                                this.playedIntervals.add(90);
+                                            }
+                                            if (currentSecond === 120 && !this.playedIntervals.has(120)) {
+                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
+                                                this.playedIntervals.add(120);
+                                            }
+
+                                            // Play tick only if second has actually changed
+                                            if (currentSecond > this.lastTickSecond) {
+                                                window.playTimerTick(1000, 0.05);
+                                                this.lastTickSecond = currentSecond;
+                                            }
+                                        } else {
+                                            this.lastTickSecond = Math.floor(this.time / 1000);
+                                        }
+                                    }, 30);
+                                    this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                                },
+                                start() {
+                                    if (!this.running && this.countdown === 0) {
+                                        $wire.startCountdown();
+                                    }
+                                },
+                                pause() { $wire.pauseTimer(); },
+                                stop() { $wire.stopTimer(); },
+                                finish() {
+                                    let capturedTime = this.time;
+                                    $wire.pauseTimer();
+                                    Swal.fire({
+                                        title: 'Apakah anda yakin?',
+                                        html: '<p>Pertandingan akan ditandai <b>Selesai</b>.<br>Denda waktu akan dihitung otomatis & nilai wasit diakumulasikan.</p>',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Ya, Selesai!',
+                                        cancelButtonText: 'Batal',
+                                        confirmButtonColor: '#2563eb',
+                                        customClass: {
+                                            popup: 'rounded-[2rem]',
+                                            confirmButton: 'rounded-2xl font-black uppercase tracking-widest px-6 py-3',
+                                            cancelButton: 'rounded-2xl font-black uppercase tracking-widest px-6 py-3'
+                                        }
+                                    }).then((result) => {
+                                        if (result.isConfirmed) {
+                                            $wire.finishMatch(this.registrationId, capturedTime);
+                                        } else {
+                                            $wire.startTimer();
+                                        }
+                                    });
+                                }
+                            }" class="bg-indigo-600 rounded-3xl p-5 shadow-inner">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em] mb-1">Live Match Timer</span>
+                                    <div class="text-3xl font-black font-mono tracking-widest text-white drop-shadow-sm">
+                                        <span x-show="countdown > 0" x-text="formatCountdown()" class="text-amber-400"></span>
+                                        <span x-show="countdown === 0" x-text="formatTime()">00:00</span>
+                                    </div>
+                                </div>
+                                <button @click="window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3')" class="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-2xl backdrop-blur-md transition-all" title="Test Suara">
+                                    <i class="fas fa-volume-up text-sm"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button x-show="!running && countdown === 0" @click="start()" class="flex-1 h-12 flex items-center justify-center bg-emerald-400 hover:bg-emerald-500 text-white rounded-2xl transition-all shadow-lg shadow-emerald-900/20" title="Start Timer">
+                                    <i class="fas fa-play text-sm mr-2"></i> <span class="text-[13px] font-black uppercase tracking-widest">Mulai</span>
+                                </button>
+                                <button x-show="running" @click="pause()" class="flex-1 h-12 flex items-center justify-center bg-amber-400 hover:bg-amber-500 text-white rounded-2xl transition-all shadow-lg shadow-amber-900/20" title="Pause Timer">
+                                    <i class="fas fa-pause text-sm mr-2"></i> <span class="text-[13px] font-black uppercase tracking-widest">Jeda</span>
+                                </button>
+                                <button @click="stop()" class="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-rose-500 text-white rounded-2xl transition-all backdrop-blur-md" title="Stop & Reset Timer">
+                                    <i class="fas fa-redo-alt text-sm"></i>
+                                </button>
+                                <button @click="finish()" class="flex-[1.5] h-12 flex items-center justify-center bg-white text-indigo-700 hover:bg-indigo-50 rounded-2xl transition-all shadow-lg" title="Selesai & Tutup">
+                                    <i class="fas fa-flag-checkered text-sm mr-2"></i> <span class="text-[13px] font-black uppercase tracking-widest">Selesai</span>
+                                </button>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">
+                                    Target Waktu: {{ $item['is_group'] ? '1:30 - 2:00' : '1:00 - 1:30' }}
+                                </span>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endforeach
         </div>
-
+    </div>
+    
+    {{-- ====== FOOTER INFO ====== --}}
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-user-tie text-slate-800"></i>
+                <span class="text-[15px] font-black text-slate-900 uppercase tracking-widest">Koordinator Pertandingan</span>
+            </div>
+            <div class="text-[15px] font-black text-slate-800">-</div>
+            <div class="text-[15px] text-slate-800 font-bold mt-1">NIP. -</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-users text-slate-800"></i>
+                <span class="text-[15px] font-black text-slate-900 uppercase tracking-widest">Para Panitera</span>
+            </div>
+            <div class="text-[15px] text-slate-900 italic">-</div>
+        </div>
     </div>
 
     {{-- ====== SCORING MODAL ====== --}}

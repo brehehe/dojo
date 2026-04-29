@@ -194,6 +194,12 @@
                 <a href="{{ route('admin.arbitrase.laporan-skor') }}"
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.laporan-skor') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
                     Skor Menyeluruh</a>
+                <a href="{{ route('admin.arbitrase.rekapitulasi-randori') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-randori') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
+                    Randori</a>
+                <a href="{{ route('admin.arbitrase.rekapitulasi-embu') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-embu') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
+                    Embu</a>
             </div>
         </div>
         @endrole
@@ -235,6 +241,39 @@
                     <span
                         class="text-[10px] font-black bg-indigo-900/50 text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-tighter">VOICE</span>
                 </a>
+            </div>
+        </div>
+        @endrole
+
+        @role('Super Admin|Admin')
+        <div class="pt-4 pb-1 text-center" :class="collapsed ? '' : 'text-left'">
+            <span class="px-3 text-xs font-black tracking-wider text-slate-500 uppercase" x-show="!collapsed">Smart
+                Wasit</span>
+            <hr class="border-white/5 mt-2 mb-1" x-show="collapsed">
+        </div>
+        <div x-data="{ open: {{ request()->routeIs('admin.smart-wasit.*') ? 'true' : 'false' }} }">
+            <button @click="open = !open"
+                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.smart-wasit.*') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
+                :class="collapsed ? 'justify-center px-0' : 'justify-between px-3'">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-balance-scale w-5 text-center text-[15px] opacity-70 group-hover:opacity-100"></i>
+                    <span class="text-[15px] font-bold tracking-tight" x-show="!collapsed">Smart Wasit</span>
+                </div>
+                <i class="fas fa-chevron-down text-xs transition-transform" :class="open ? 'rotate-180' : ''"
+                    x-show="!collapsed"></i>
+            </button>
+            <div x-show="open && !collapsed" x-collapse class="pl-9 pr-2 py-1 space-y-1">
+                <a href="{{ route('admin.smart-wasit.summary') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.summary') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
+                    Komprehensif</a>
+                <a href="{{ route('admin.smart-wasit.ranking-skw') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-skw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking SKW</a>
+                <a href="{{ route('admin.smart-wasit.ranking-iaw') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iaw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IAW</a>
+                <a href="{{ route('admin.smart-wasit.ranking-ik') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-ik') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IK</a>
+                <a href="{{ route('admin.smart-wasit.perbabak') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.perbabak') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Perbabak</a>
             </div>
         </div>
         @endrole

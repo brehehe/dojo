@@ -50,4 +50,9 @@ class Registration extends Model
             ->withPivot(['role'])
             ->withTimestamps();
     }
+
+    public function embuScores()
+    {
+        return $this->hasMany(EmbuScore::class);
+    }
 }

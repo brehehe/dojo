@@ -157,6 +157,7 @@
                                 running: false,
                                 countdown: 0,
                                 lastTickSecond: -1,
+                                playedIntervals: new Set(),
                                 interpolInterval: null,
                                 syncInterval: null,
                                 formatTime() {
@@ -166,11 +167,7 @@
                                     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                                 },
                                 formatCountdown() {
-                                    if (this.countdown === 5) return 'Siap';
-                                    if (this.countdown === 4) return '3';
-                                    if (this.countdown === 3) return '2';
-                                    if (this.countdown === 2) return '1';
-                                    if (this.countdown === 1) return 'Mulai';
+                                    if (this.countdown === 2) return 'Siap';
                                     return '';
                                 },
                                 async sync() {
@@ -197,7 +194,14 @@
 
                                     // Trigger Countdown Voice
                                     if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                                        window.speakCountdown(this.formatCountdown());
+                                        if (this.countdown === 2) {
+                                            window.speakCountdown('Siap');
+                                        }
+                                        
+                                        // Play start buzzer at countdown 1
+                                        if (this.countdown === 1) {
+                                            window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                                        }
                                     }
                                 },
                                 init() {
@@ -206,6 +210,17 @@
                                         if (this.running) {
                                             this.time += 30; 
                                             let currentSecond = Math.floor(this.time / 1000);
+                                            
+                                            // Interval buzzers: 90s and 120s
+                                            if (currentSecond === 90 && !this.playedIntervals.has(90)) {
+                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
+                                                this.playedIntervals.add(90);
+                                            }
+                                            if (currentSecond === 120 && !this.playedIntervals.has(120)) {
+                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
+                                                this.playedIntervals.add(120);
+                                            }
+
                                             if (currentSecond > this.lastTickSecond) {
                                                 window.playTimerTick(1000, 0.05);
                                                 this.lastTickSecond = currentSecond;
@@ -244,7 +259,7 @@
                                 }
                             }" class="flex items-center justify-between border-t border-orange-200/60 pt-2">
                             <div class="flex items-center gap-1.5">
-                                <button @click="window.playTimerTick(1200, 0.1)" class="w-5 h-5 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-full transition-colors mr-1" title="Test Suara">
+                                <button @click="window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3')" class="w-5 h-5 flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-full transition-colors mr-1" title="Test Suara">
                                     <i class="fas fa-volume-up text-[10px]"></i>
                                 </button>
                                 <i class="fas fa-stopwatch text-orange-500"></i>
