@@ -57,6 +57,23 @@
     <a class="nav-item {{ request()->routeIs('admin.new-generate-referee') ? 'active' : '' }}"
         href="{{ route('admin.new-generate-referee') }}" wire:navigate><i class="fa-solid fa-users-gear"></i> Penugasan
         Wasit</a>
+    <div class="nav-section">Sistem Panitera</div>
+    <a class="nav-item {{ request()->routeIs('admin.new-scoring-*') ? 'active' : '' }}"
+        href="{{ route('admin.new-scoring-index') }}" wire:navigate><i class="fa-solid fa-star"></i> Penilaian
+        (Scoring)</a>
+    <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'active' : '' }}"
+        href="{{ route('admin.panitera.scoring.embu.result') }}" wire:navigate><i class="fa-solid fa-trophy"></i> Hasil
+        Embu</a>
+
+    <div class="nav-section">Laporan</div>
+    <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-hasil') ? 'active' : '' }}"
+        href="{{ route('admin.arbitrase.new-laporan-hasil') }}" wire:navigate><i class="fa-solid fa-medal"></i> Hasil Juara</a>
+    <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-skor') ? 'active' : '' }}"
+        href="{{ route('admin.arbitrase.new-laporan-skor') }}" wire:navigate><i class="fa-solid fa-file-invoice"></i> Skor Menyeluruh</a>
+    <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-embu') ? 'active' : '' }}"
+        href="{{ route('admin.arbitrase.new-rekapitulasi-embu') }}" wire:navigate><i class="fa-solid fa-chart-bar"></i> Rekap Embu</a>
+    <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-randori') ? 'active' : '' }}"
+        href="{{ route('admin.arbitrase.new-rekapitulasi-randori') }}" wire:navigate><i class="fa-solid fa-fist-raised"></i> Rekap Randori</a>
 
     <div class="nav-section">Sistem</div>
     <a class="nav-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"

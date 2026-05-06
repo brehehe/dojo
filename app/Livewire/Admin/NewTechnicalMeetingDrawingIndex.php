@@ -9,9 +9,12 @@ use App\Models\MatchNumber\MatchNumber;
 use App\Models\Pool\Pool;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.premium', ['title' => 'Drawing Technical Meeting'])]
 class NewTechnicalMeetingDrawingIndex extends Component
@@ -148,7 +151,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 'draft_type' => 'randori',
                 'metadata' => [
                     'athlete_id' => $athlete['id'],
-                    'officials' => $officials
+                    'officials' => $officials,
                 ],
             ]);
         }
@@ -266,7 +269,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $pool = $poolRecords[$poolIdx];
             $poolLabel = $pool->name;
 
-            if (!isset($poolOfficialsCache[$poolLabel])) {
+            if (! isset($poolOfficialsCache[$poolLabel])) {
                 $poolOfficialsCache[$poolLabel] = $this->getAvailableOfficials($rundown?->id, $sessionTime?->id, $localBusyKoor, $localBusyPanitera);
             }
             $officials = $poolOfficialsCache[$poolLabel];
@@ -295,7 +298,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 'draft_type' => 'embu',
                 'metadata' => [
                     'pool_label' => $poolLabel,
-                    'officials' => $officials
+                    'officials' => $officials,
                 ],
             ]);
         }
@@ -344,17 +347,17 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $busyKoordinatorNames = array_unique(array_merge($dbKoordinatorNames, $localBusyKoor));
         $busyPaniteraNames = array_unique(array_merge($dbPaniteraNames, $localBusyPanitera));
 
-        $koordinator = \App\Models\User::role('Koordinator Lapangan')
+        $koordinator = User::role('Koordinator Lapangan')
             ->whereNotIn('name', $busyKoordinatorNames)
             ->inRandomOrder()
             ->first();
 
-        if (!$koordinator) {
+        if (! $koordinator) {
             // Fallback if all are busy
-            $koordinator = \App\Models\User::role('Koordinator Lapangan')->inRandomOrder()->first();
+            $koordinator = User::role('Koordinator Lapangan')->inRandomOrder()->first();
         }
 
-        $paniteras = \App\Models\User::role('Panitera')
+        $paniteras = User::role('Panitera')
             ->whereNotIn('name', $busyPaniteraNames)
             ->inRandomOrder()
             ->take(4)
@@ -363,7 +366,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         if (count($paniteras) < 4) {
             // Fallback to fill missing
-            $extra = \App\Models\User::role('Panitera')
+            $extra = User::role('Panitera')
                 ->whereNotIn('name', $paniteras)
                 ->inRandomOrder()
                 ->take(4 - count($paniteras))
@@ -379,7 +382,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         return [
             'koordinator_lapangan' => $koordinator->name ?? 'Dummy Koordinator',
-            'panitera' => $paniteras
+            'panitera' => $paniteras,
         ];
     }
 
@@ -388,27 +391,27 @@ class NewTechnicalMeetingDrawingIndex extends Component
         // Ensure roles exist
         $roles = ['Koordinator Lapangan', 'Panitera'];
         foreach ($roles as $roleName) {
-            \Spatie\Permission\Models\Role::firstOrCreate(['name' => $roleName]);
+            Role::firstOrCreate(['name' => $roleName]);
         }
 
         // Ensure at least 1 Koordinator Lapangan
-        if (\App\Models\User::role('Koordinator Lapangan')->count() < 1) {
-            $koor = \App\Models\User::factory()->create([
+        if (User::role('Koordinator Lapangan')->count() < 1) {
+            $koor = User::factory()->create([
                 'name' => 'Koor. Lapangan Dummy',
                 'email' => 'koor_lapangan_'.uniqid().'@example.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'password' => Hash::make('password'),
             ]);
             $koor->assignRole('Koordinator Lapangan');
         }
 
         // Ensure at least 4 Panitera
-        $currentPanitera = \App\Models\User::role('Panitera')->count();
+        $currentPanitera = User::role('Panitera')->count();
         if ($currentPanitera < 4) {
             for ($i = 0; $i < (4 - $currentPanitera); $i++) {
-                $panitera = \App\Models\User::factory()->create([
+                $panitera = User::factory()->create([
                     'name' => 'Panitera Dummy '.($currentPanitera + $i + 1),
                     'email' => 'panitera_'.uniqid().'@example.com',
-                    'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                    'password' => Hash::make('password'),
                 ]);
                 $panitera->assignRole('Panitera');
             }
@@ -440,7 +443,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->groupBy('athlete_match_number.match_number_id')
             ->pluck('count', 'match_number_id');
 
-        $filterMatchNumbers->each(function($mn) use ($contingentCounts) {
+        $filterMatchNumbers->each(function ($mn) use ($contingentCounts) {
             $mn->contingent_count = $contingentCounts[$mn->id] ?? 0;
         });
 
@@ -463,8 +466,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $drawingEntries = DrawingMatchNumber::where('match_number_id', $this->filterMatchNumberId)
                     ->with('registration.contingent')->orderBy('sequence_number')->get()
                     ->groupBy(function ($item) {
-                        return $this->draftType === 'embu' && isset($item->metadata['pool_label']) 
-                            ? $item->metadata['pool_label'] 
+                        return $this->draftType === 'embu' && isset($item->metadata['pool_label'])
+                            ? $item->metadata['pool_label']
                             : $item->round;
                     });
             }

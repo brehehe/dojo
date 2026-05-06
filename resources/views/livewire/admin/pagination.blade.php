@@ -84,33 +84,6 @@
             }
         </style>
 
-        @php
-            $current = $paginator->currentPage();
-            $last = $paginator->lastPage();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Bagian awal
-            |--------------------------------------------------------------------------
-            */
-            $firstPages = [1, 2];
-
-            /*
-            |--------------------------------------------------------------------------
-            | Bagian tengah
-            |--------------------------------------------------------------------------
-            */
-            $middleStart = max(1, $current - 1);
-            $middleEnd = min($last, $current + 1);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Bagian akhir
-            |--------------------------------------------------------------------------
-            */
-            $lastPages = [$last - 2, $last - 1];
-        @endphp
-
         <div class="pagination-prem">
 
             {{-- INFO --}}
@@ -128,81 +101,42 @@
             <div class="pagination-wrapper-prem">
 
                 {{-- PREVIOUS --}}
-                @unless($paginator->onFirstPage())
-                    <button class="page-btn-prem" wire:click="previousPage" wire:loading.attr="disabled">
-
+                @if ($paginator->onFirstPage())
+                    <button class="page-btn-prem" disabled>
                         <i class="fa-solid fa-chevron-left" style="font-size:10px;"></i>
                     </button>
-                @endunless
-
-                {{-- FIRST PAGES --}}
-                @foreach($firstPages as $page)
-                    @if($page <= $last)
-
-                        <button class="page-btn-prem {{ $page == $current ? 'active' : '' }}" wire:click="gotoPage({{ $page }})">
-
-                            {{ $page }}
-
-                        </button>
-
-                    @endif
-                @endforeach
-
-                {{-- DOT BEFORE MIDDLE --}}
-                @if($middleStart > 4)
-                    <button class="page-btn-prem ellipsis" disabled>
-
-                        ...
-
+                @else
+                    <button class="page-btn-prem" wire:click="previousPage" wire:loading.attr="disabled">
+                        <i class="fa-solid fa-chevron-left" style="font-size:10px;"></i>
                     </button>
                 @endif
 
-                {{-- MIDDLE PAGES --}}
-                @for($i = $middleStart; $i <= $middleEnd; $i++)
-
-                    @if(
-                            !in_array($i, $firstPages) &&
-                            !in_array($i, $lastPages)
-                        )
-
-                        <button class="page-btn-prem {{ $i == $current ? 'active' : '' }}" wire:click="gotoPage({{ $i }})">
-
-                            {{ $i }}
-
-                        </button>
-
+                {{-- PAGES --}}
+                @foreach ($elements as $element)
+                    {{-- "Three Dots" Separator --}}
+                    @if (is_string($element))
+                        <button class="page-btn-prem ellipsis" disabled>{{ $element }}</button>
                     @endif
 
-                @endfor
-
-                {{-- DOT BEFORE LAST --}}
-                @if($middleEnd < $last - 3)
-                    <button class="page-btn-prem ellipsis" disabled>
-
-                        ...
-
-                    </button>
-                @endif
-
-                {{-- LAST PAGES --}}
-                @foreach($lastPages as $page)
-
-                    @if($page > 3 && $page <= $last)
-
-                        <button class="page-btn-prem {{ $page == $current ? 'active' : '' }}" wire:click="gotoPage({{ $page }})">
-
-                            {{ $page }}
-
-                        </button>
-
+                    {{-- Array Of Links --}}
+                    @if (is_array($element))
+                        @foreach ($element as $page => $url)
+                            <button class="page-btn-prem {{ $page == $paginator->currentPage() ? 'active' : '' }}" 
+                                wire:click="gotoPage({{ $page }})"
+                                wire:loading.attr="disabled">
+                                {{ $page }}
+                            </button>
+                        @endforeach
                     @endif
-
                 @endforeach
 
                 {{-- NEXT --}}
-                @if($paginator->hasMorePages())
+                @if ($paginator->hasMorePages())
                     <button class="page-btn-prem" wire:click="nextPage" wire:loading.attr="disabled">
-
+                        <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+                    </button>
+                @else
+                    <button class="page-btn-prem" disabled>
                         <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
                     </button>
                 @endif

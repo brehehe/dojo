@@ -46,7 +46,7 @@ class NewLoginIndex extends Component
                 return redirect()->intended(route('contingent.dashboard'));
             }
 
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->intended(route('admin.new-dashboard'));
         }
 
         throw ValidationException::withMessages([

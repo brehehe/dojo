@@ -10,7 +10,6 @@ use App\Livewire\Admin\Arbitrase\Laporan\AdminLaporanSkorIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringEmbuDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
-use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuResultIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
@@ -51,9 +50,13 @@ use App\Livewire\Admin\NewContingentForm;
 use App\Livewire\Admin\NewContingentIndex;
 use App\Livewire\Admin\NewCourtIndex;
 use App\Livewire\Admin\NewDashboardIndex;
+use App\Livewire\Admin\NewEmbuResultIndex;
 use App\Livewire\Admin\NewGenerateRefereeIndex;
-use App\Livewire\Admin\NewTechnicalMeetingDrawingIndex;
 use App\Livewire\Admin\NewKyuLevelIndex;
+use App\Livewire\Admin\NewLaporanHasilIndex;
+use App\Livewire\Admin\NewLaporanRekapitulasiEmbu;
+use App\Livewire\Admin\NewLaporanRekapitulasiRandori;
+use App\Livewire\Admin\NewLaporanSkorIndex;
 use App\Livewire\Admin\NewMatchNumberIndex;
 use App\Livewire\Admin\NewOfficialForm;
 use App\Livewire\Admin\NewOfficialIndex;
@@ -65,7 +68,11 @@ use App\Livewire\Admin\NewRegistrationShow;
 use App\Livewire\Admin\NewRoleForm;
 use App\Livewire\Admin\NewRoleIndex;
 use App\Livewire\Admin\NewRundownIndex;
+use App\Livewire\Admin\NewScoringEmbuIndex;
+use App\Livewire\Admin\NewScoringIndex;
+use App\Livewire\Admin\NewScoringRandoriIndex;
 use App\Livewire\Admin\NewSessionTimeIndex;
+use App\Livewire\Admin\NewTechnicalMeetingDrawingIndex;
 use App\Livewire\Admin\NewTechniqueIndex;
 use App\Livewire\Admin\NewUserIndex;
 use App\Livewire\Admin\NewWeightGroupIndex;
@@ -160,6 +167,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/arbitrase/new-referees', NewRefereeIndex::class)->name('arbitrase.new-referees');
         Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
 
+        Route::get('/new-scoring', NewScoringIndex::class)->name('new-scoring-index');
+        Route::get('/new-scoring/embu/{matchNumber}', NewScoringEmbuIndex::class)->name('new-scoring-embu-index');
+        Route::get('/new-scoring/randori/{matchNumber}', NewScoringRandoriIndex::class)->name('new-scoring-randori-index');
+
         Route::get('/new-roles', NewRoleIndex::class)->name('new-roles');
         Route::get('/new-roles/create', NewRoleForm::class)->name('new-roles.create');
         Route::get('/new-roles/{id}/edit', NewRoleForm::class)->name('new-roles.edit');
@@ -243,6 +254,12 @@ Route::middleware('auth')->group(function () {
             Route::get('/rekapitulasi-randori', AdminLaporanRekapitulasiRandori::class)->name('rekapitulasi-randori');
             Route::get('/rekapitulasi-embu', AdminLaporanRekapitulasiEmbu::class)->name('rekapitulasi-embu');
 
+            // New Premium Laporan Views
+            Route::get('/new-laporan-hasil', NewLaporanHasilIndex::class)->name('new-laporan-hasil');
+            Route::get('/new-laporan-skor', NewLaporanSkorIndex::class)->name('new-laporan-skor');
+            Route::get('/new-rekapitulasi-randori', NewLaporanRekapitulasiRandori::class)->name('new-rekapitulasi-randori');
+            Route::get('/new-rekapitulasi-embu', NewLaporanRekapitulasiEmbu::class)->name('new-rekapitulasi-embu');
+
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
                 Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
@@ -272,7 +289,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
                 Route::get('/embu-testbench', AdminEmbuScoringTestbench::class)->name('embu.testbench');
-                Route::get('/embu-result', AdminEmbuResultIndex::class)->name('embu.result');
+                Route::get('/embu-result', NewEmbuResultIndex::class)->name('embu.result');
             });
             Route::get('/announcer', AnnouncerIndex::class)->name('announcer');
         });

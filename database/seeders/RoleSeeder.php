@@ -39,7 +39,7 @@ class RoleSeeder extends Seeder
 
         foreach ($roles as $roleName) {
             $user = User::firstOrCreate(
-                ['email' => Str::slug($roleName) . '@smart-perkemi.id'],
+                ['email' => Str::slug($roleName).'@smart-perkemi.id'],
                 [
                     'name' => $roleName,
                     'password' => Hash::make('password'),

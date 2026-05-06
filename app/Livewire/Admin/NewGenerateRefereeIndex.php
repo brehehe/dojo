@@ -10,15 +10,19 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Layout('layouts.premium', ['title' => 'Penugasan Wasit (Referee Assignment)'] )]
+#[Layout('layouts.premium', ['title' => 'Penugasan Wasit (Referee Assignment)'])]
 class NewGenerateRefereeIndex extends Component
 {
     use WithPagination;
 
     public $searchShift = '';
+
     public $searchReferee = '';
+
     public $assigningBlock = null;
+
     public $selectedReferees = [];
+
     public $isDewanArbitraseMode = false;
 
     public function paginationView(): string
@@ -58,7 +62,9 @@ class NewGenerateRefereeIndex extends Component
 
     public function saveReferees()
     {
-        if (!$this->assigningBlock) return;
+        if (! $this->assigningBlock) {
+            return;
+        }
 
         $rId = $this->assigningBlock['rundown_id'];
         $sId = $this->assigningBlock['session_time_id'];
@@ -104,7 +110,8 @@ class NewGenerateRefereeIndex extends Component
                 $this->dispatch('swal', ['title' => 'Berhasil!', 'text' => 'Panel wasit lapangan telah diperbarui.', 'icon' => 'success']);
             } catch (\Exception $e) {
                 DB::rollBack();
-                $this->addError('referees', 'Gagal: ' . $e->getMessage());
+                $this->addError('referees', 'Gagal: '.$e->getMessage());
+
                 return;
             }
         }
@@ -131,14 +138,14 @@ class NewGenerateRefereeIndex extends Component
                 ->where('judge_index', 0)
                 ->exists();
 
-            if (!$existingDewan) {
+            if (! $existingDewan) {
                 $randomDewanId = collect($allRefereeIds)->random();
                 ScheduleReferee::create([
                     'rundown_id' => $shift->rundown_id,
                     'session_time_id' => $shift->session_time_id,
                     'court_id' => null,
                     'referee_id' => $randomDewanId,
-                    'judge_index' => 0
+                    'judge_index' => 0,
                 ]);
             }
 
@@ -164,14 +171,13 @@ class NewGenerateRefereeIndex extends Component
                         ->where('court_id', $courtId)
                         ->where('judge_index', '>', 0)
                         ->delete();
-                        
                     foreach ($randomIds as $index => $refereeId) {
                         ScheduleReferee::create([
                             'rundown_id' => $shift->rundown_id,
                             'session_time_id' => $shift->session_time_id,
                             'court_id' => $courtId,
                             'referee_id' => $refereeId,
-                            'judge_index' => $index + 1
+                            'judge_index' => $index + 1,
                         ]);
                     }
                     $countGenerated++;
@@ -199,10 +205,10 @@ class NewGenerateRefereeIndex extends Component
         });
 
         $refereesQuery = Referee::with('user');
-        if (!empty($this->searchReferee)) {
+        if (! empty($this->searchReferee)) {
             $refereesQuery->whereHas('user', function ($q) {
-                $q->where('name', 'like', '%' . $this->searchReferee . '%');
-            })->orWhere('license_number', 'like', '%' . $this->searchReferee . '%');
+                $q->where('name', 'like', '%'.$this->searchReferee.'%');
+            })->orWhere('license_number', 'like', '%'.$this->searchReferee.'%');
         }
         $referees = $refereesQuery->get()->sortBy([['certification_level', 'asc']]);
 
