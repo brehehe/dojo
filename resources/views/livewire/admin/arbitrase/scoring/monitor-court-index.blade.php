@@ -39,43 +39,43 @@
         @endphp
 
         <!-- Header -->
-        <div class="bg-gradient-to-r {{ $isRandori ? 'from-rose-600 to-rose-900' : 'from-emerald-600 to-emerald-900' }} px-16 py-10 shadow-2xl relative overflow-hidden flex-shrink-0">
+        <div class="bg-gradient-to-r {{ $isRandori ? 'from-rose-600 to-rose-900' : 'from-emerald-600 to-emerald-900' }} px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-9 xl:px-16 xl:py-10 shadow-2xl relative overflow-hidden flex-shrink-0">
             <div class="absolute inset-0 bg-black/20"></div>
             <!-- Decorative icon -->
-            <i class="fas {{ $isRandori ? 'fa-fire-alt' : 'fa-layer-group' }} absolute -right-12 -top-12 text-[200px] text-white opacity-10 blur-sm pointer-events-none"></i>
+            <i class="fas {{ $isRandori ? 'fa-fire-alt' : 'fa-layer-group' }} absolute -right-8 -top-8 text-[110px] sm:text-[140px] md:text-[180px] xl:text-[200px] text-white opacity-10 blur-sm pointer-events-none"></i>
 
             <div class="relative z-10 flex flex-col items-center justify-center text-center gap-4">
-                <div class="inline-flex items-center gap-2 md:gap-4 bg-white/20 backdrop-blur-md px-4 py-1.5 md:px-6 md:py-2 rounded-full border border-white/20">
+                <div class="inline-flex items-center gap-2 md:gap-4 bg-white/20 backdrop-blur-md px-3 py-1.5 sm:px-4 md:px-6 md:py-2 rounded-full border border-white/20">
                     <span class="w-2 h-2 md:w-3 md:h-3 bg-white rounded-full animate-pulse"></span>
-                    <h2 class="text-sm md:text-xl font-black text-white uppercase tracking-widest">{{ $court->name }} MENGUNDANG</h2>
+                    <h2 class="text-[11px] sm:text-sm md:text-xl font-black text-white uppercase tracking-[0.2em] md:tracking-widest">{{ $court->name }} MENGUNDANG</h2>
                 </div>
-                <h1 class="text-4xl md:text-6xl xl:text-[5.5rem] leading-none font-black text-white uppercase tracking-tighter drop-shadow-lg px-4">
+                <h1 class="text-3xl sm:text-4xl md:text-6xl xl:text-[5.5rem] leading-[0.95] font-black text-white uppercase tracking-tight md:tracking-tighter drop-shadow-lg px-2 sm:px-4">
                     {{ $match->name }}
                 </h1>
-                <p class="text-lg md:text-2xl xl:text-3xl text-white/80 font-black uppercase tracking-[0.2em] md:tracking-[0.3em] px-4">
+                <p class="text-sm sm:text-lg md:text-2xl xl:text-3xl text-white/80 font-black uppercase tracking-[0.16em] sm:tracking-[0.2em] md:tracking-[0.3em] px-2 sm:px-4">
                     Kategori {{ ucfirst($match->draft_type) }} &bull; {{ $match->ageGroup?->name ?? 'Dewasa' }}
                 </p>
 
                 {{-- Konteks meta: Pool · Babak · Sesi · Rundown · Kontingen --}}
-                <div class="flex flex-wrap items-center justify-center gap-3 mt-2">
+                <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-2">
                     @if($dPool)
-                        <span class="inline-flex items-center gap-2 bg-white/20 px-5 py-2 rounded-full text-white text-lg font-black uppercase tracking-wider border border-white/20">
-                            <i class="fas fa-th text-white/60 text-[15px]"></i>Pool {{ $dPool->name }}
+                        <span class="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-white text-xs sm:text-sm md:text-lg font-black uppercase tracking-[0.16em] md:tracking-wider border border-white/20">
+                            <i class="fas fa-th text-white/60 text-[12px] sm:text-[15px]"></i>Pool {{ $dPool->name }}
                         </span>
                     @endif
                     @if($dRound)
-                        <span class="inline-flex items-center gap-2 bg-amber-400/30 px-5 py-2 rounded-full text-amber-100 text-lg font-black uppercase tracking-wider border border-amber-300/30">
-                            <i class="fas fa-flag text-amber-300 text-[15px]"></i>{{ $dRound }}
+                        <span class="inline-flex items-center gap-2 bg-amber-400/30 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-amber-100 text-xs sm:text-sm md:text-lg font-black uppercase tracking-[0.16em] md:tracking-wider border border-amber-300/30">
+                            <i class="fas fa-flag text-amber-300 text-[12px] sm:text-[15px]"></i>{{ $dRound }}
                         </span>
                     @endif
                     @if($dSession)
-                        <span class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-white/80 text-base font-bold uppercase tracking-wider border border-white/10">
-                            <i class="fas fa-clock text-white/50 text-[15px]"></i>{{ $dSession->name }}
+                        <span class="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-white/80 text-[11px] sm:text-sm md:text-base font-bold uppercase tracking-[0.14em] md:tracking-wider border border-white/10">
+                            <i class="fas fa-clock text-white/50 text-[12px] sm:text-[15px]"></i>{{ $dSession->name }}
                         </span>
                     @endif
                     @if($dRundown)
-                        <span class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-white/80 text-base font-bold uppercase tracking-wider border border-white/10">
-                            <i class="fas fa-calendar text-white/50 text-[15px]"></i>{{ $dRundown->name ?? $dRundown->date }}
+                        <span class="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-white/80 text-[11px] sm:text-sm md:text-base font-bold uppercase tracking-[0.14em] md:tracking-wider border border-white/10">
+                            <i class="fas fa-calendar text-white/50 text-[12px] sm:text-[15px]"></i>{{ $dRundown->name ?? $dRundown->date }}
                         </span>
                     @endif
                 </div>
@@ -83,7 +83,7 @@
         </div>
 
         <!-- Body / Kontingen Display -->
-        <div class="flex-1 px-4 md:px-8 xl:px-16 py-8 flex flex-col items-center justify-center w-full">
+        <div class="flex-1 px-3 py-5 sm:px-4 sm:py-6 md:px-8 md:py-8 xl:px-16 flex flex-col items-center justify-center w-full">
 
             @if($isRandori)
                 <!-- RANDORI LAYOUT (Versus Style) -->
@@ -164,58 +164,70 @@
                 <div class="w-full max-w-7xl mx-auto">
                     {{-- Header info kontingen & pool --}}
                     @if($dContingent || $dPool)
-                        <div class="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 md:mb-10">
+                        <div class="flex w-full flex-col items-stretch justify-center gap-3 sm:items-center md:flex-row md:flex-wrap md:gap-6 mb-6 sm:mb-8 md:mb-10">
                             @if($dContingent)
-                                <div class="inline-flex items-center gap-2 md:gap-3 bg-emerald-50 border border-emerald-200 px-6 py-3 md:px-8 md:py-4 rounded-2xl md:rounded-3xl shadow-sm">
-                                    <i class="fas fa-shield-alt text-2xl md:text-3xl text-emerald-500"></i>
-                                    <span class="text-xl md:text-3xl font-black text-emerald-700 uppercase tracking-wider">{{ $dContingent->name }}</span>
+                                <div class="inline-flex w-full items-center justify-center gap-2 bg-emerald-50 px-4 py-3 sm:w-auto sm:gap-3 sm:px-6 md:px-8 md:py-4 rounded-2xl md:rounded-3xl border border-emerald-200 shadow-sm">
+                                    <i class="fas fa-shield-alt text-xl sm:text-2xl md:text-3xl text-emerald-500"></i>
+                                    <span class="text-center text-base sm:text-xl md:text-3xl font-black text-emerald-700 uppercase tracking-[0.12em] sm:tracking-wider break-words">{{ $dContingent->name }}</span>
                                 </div>
                             @endif
                             @if($dPool)
-                                <div class="inline-flex items-center gap-2 md:gap-3 bg-indigo-50 border border-indigo-200 px-6 py-3 md:px-8 md:py-4 rounded-2xl md:rounded-3xl shadow-sm">
-                                    <i class="fas fa-th text-2xl md:text-3xl text-indigo-500"></i>
-                                    <span class="text-xl md:text-3xl font-black text-indigo-700 uppercase tracking-wider">Pool {{ $dPool->name }}</span>
+                                <div class="inline-flex w-full items-center justify-center gap-2 bg-indigo-50 px-4 py-3 sm:w-auto sm:gap-3 sm:px-6 md:px-8 md:py-4 rounded-2xl md:rounded-3xl border border-indigo-200 shadow-sm">
+                                    <i class="fas fa-th text-xl sm:text-2xl md:text-3xl text-indigo-500"></i>
+                                    <span class="text-center text-base sm:text-xl md:text-3xl font-black text-indigo-700 uppercase tracking-[0.12em] sm:tracking-wider break-words">Pool {{ $dPool->name }}</span>
                                 </div>
                             @endif
                         </div>
                     @endif
 
-                    <h3 class="text-center text-2xl md:text-4xl lg:text-5xl font-black text-slate-800 uppercase tracking-widest mb-8 md:mb-16 relative">
-                        <span class="bg-slate-50 px-6 relative z-10">Daftar Penampil</span>
+                    <h3 class="relative mb-6 text-center text-xl sm:text-2xl md:mb-10 md:text-4xl lg:mb-14 lg:text-5xl font-black text-slate-800 uppercase tracking-[0.18em] sm:tracking-[0.24em] md:tracking-widest">
+                        <span class="relative z-10 bg-slate-50 px-4 sm:px-6">Daftar Penampil</span>
                         <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200 z-0"></div>
                     </h3>
                     
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
+                    <div class="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 xl:grid-cols-2 xl:gap-8">
                         @foreach($athletes as $index => $ath)
-                            <div class="bg-white border-2 border-slate-100 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 lg:p-8 shadow-md flex flex-col sm:flex-row gap-4 md:gap-6 lg:gap-8 items-center transform hover:scale-[1.02] transition-transform">
-                                {{-- Nomor urut --}}
-                                <div class="w-12 h-12 md:w-16 md:h-16 bg-slate-100 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 border border-slate-200 shadow-inner">
-                                    <span class="text-2xl md:text-4xl font-black text-slate-400">{{ $index + 1 }}</span>
-                                </div>
+                            <div class="group relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white p-4 shadow-[0_14px_36px_-20px_rgba(15,23,42,0.28)] transition duration-300 sm:p-5 md:p-6 xl:p-7">
+                                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500 opacity-70"></div>
 
-                                {{-- Foto Atlet --}}
-                                <div class="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-2xl md:rounded-[1.5rem] shrink-0 overflow-hidden border-4 border-slate-100 shadow-lg bg-slate-100">
-                                    @if($ath->photo_path)
-                                        <img src="{{ asset('storage/' . $ath->photo_path) }}"
-                                             alt="{{ $ath->name }}"
-                                             class="w-full h-full object-cover object-center">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-700">
-                                            <span class="text-5xl md:text-7xl lg:text-[90px] font-black text-white uppercase">
-                                                {{ substr($ath->name, 0, 1) }}
-                                            </span>
+                                <div class="flex flex-col gap-4 sm:gap-5 md:flex-row md:items-center md:gap-6">
+                                    {{-- Nomor urut --}}
+                                    <div class="flex items-center justify-between gap-3 md:flex-col md:justify-center">
+                                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 shadow-inner sm:h-14 sm:w-14 md:h-16 md:w-16">
+                                            <span class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-400">{{ $index + 1 }}</span>
                                         </div>
-                                    @endif
-                                </div>
+                                        <span class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400 md:hidden">Urutan Tampil</span>
+                                    </div>
 
-                                {{-- Info Atlet --}}
-                                <div class="flex-1 min-w-0 text-center sm:text-left w-full">
-                                    <h4 class="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 uppercase mb-3 leading-tight line-clamp-2">{{ $ath->name }}</h4>
-                                    <div class="inline-flex flex-wrap justify-center sm:justify-start items-center gap-2 md:gap-3 bg-emerald-50 px-4 py-2 md:px-5 md:py-3 rounded-xl md:rounded-2xl border border-emerald-100">
-                                        <i class="fas fa-shield-alt text-lg md:text-2xl text-emerald-500 shrink-0"></i>
-                                        <span class="text-base md:text-xl lg:text-2xl font-bold text-emerald-700 uppercase tracking-wider truncate">
-                                            {{ $ath->registrations->first()?->contingent?->name ?? '-' }}
-                                        </span>
+                                    {{-- Foto Atlet --}}
+                                    <div class="mx-auto h-28 w-28 overflow-hidden rounded-[1.5rem] border-4 border-slate-100 bg-slate-100 shadow-lg sm:h-36 sm:w-36 md:mx-0 md:h-40 md:w-40 lg:h-44 lg:w-44 shrink-0">
+                                        @if($ath->photo_path)
+                                            <img src="{{ asset('storage/' . $ath->photo_path) }}"
+                                                 alt="{{ $ath->name }}"
+                                                 class="h-full w-full object-cover object-center">
+                                        @else
+                                            <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-700">
+                                                <span class="text-4xl sm:text-5xl md:text-6xl lg:text-[78px] font-black text-white uppercase">
+                                                    {{ substr($ath->name, 0, 1) }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- Info Atlet --}}
+                                    <div class="min-w-0 flex-1 text-center md:text-left">
+                                        <div class="flex flex-col gap-3">
+                                            <h4 class="text-xl sm:text-2xl md:text-3xl lg:text-[2.2rem] font-black text-slate-800 uppercase leading-[1.05] break-words">
+                                                {{ $ath->name }}
+                                            </h4>
+
+                                            <div class="inline-flex max-w-full items-center justify-center gap-2 self-center rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 sm:gap-3 sm:px-4 md:self-start md:px-5 md:py-3">
+                                                <i class="fas fa-shield-alt shrink-0 text-base sm:text-lg md:text-2xl text-emerald-500"></i>
+                                                <span class="min-w-0 break-words text-center text-sm sm:text-base md:text-lg lg:text-xl font-bold text-emerald-700 uppercase tracking-[0.12em] sm:tracking-[0.16em]">
+                                                    {{ $ath->registrations->first()?->contingent?->name ?? '-' }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
