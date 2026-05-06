@@ -73,7 +73,6 @@ class NewGenerateRefereeIndex extends Component
         if ($this->isDewanArbitraseMode) {
             if (count($this->selectedReferees) > 1) {
                 $this->addError('referees', 'Pilih maksimal 1 Wasit untuk Dewan Arbitrase.');
-
                 return;
             }
             if (count($this->selectedReferees) === 0) {
@@ -92,7 +91,6 @@ class NewGenerateRefereeIndex extends Component
         } else {
             if (count($this->selectedReferees) < 5) {
                 $this->addError('referees', 'Minimal 5 Wasit harus dipilih.');
-
                 return;
             }
 
@@ -125,7 +123,6 @@ class NewGenerateRefereeIndex extends Component
         $allRefereeIds = Referee::pluck('id')->toArray();
         if (count($allRefereeIds) < 6) {
             $this->dispatch('swal', ['title' => 'Gagal!', 'text' => 'Master Wasit minimal harus ada 6 orang (1 Dewan + 5 Wasit Lapangan).', 'icon' => 'error']);
-
             return;
         }
 
@@ -174,7 +171,6 @@ class NewGenerateRefereeIndex extends Component
                         ->where('court_id', $courtId)
                         ->where('judge_index', '>', 0)
                         ->delete();
-
                     foreach ($randomIds as $index => $refereeId) {
                         ScheduleReferee::create([
                             'rundown_id' => $shift->rundown_id,
@@ -205,7 +201,6 @@ class NewGenerateRefereeIndex extends Component
                 ->distinct()->with('court')->orderBy('court_id')->get();
             $shift->assigned_referees = ScheduleReferee::with('referee.user')
                 ->where('rundown_id', $shift->rundown_id)->where('session_time_id', $shift->session_time_id)->get();
-
             return $shift;
         });
 
