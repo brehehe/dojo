@@ -1,380 +1,521 @@
 <div>
-    <!-- Page Title Start -->
-    <div class="flex items-center md:justify-between flex-wrap gap-2 mb-4 print:hidden px-6 pt-6">
-        <h4 class="text-default-900 text-lg font-semibold">Admin Dashboard</h4>
+    @push('styles')
+    <style>
+    /* ══════════════════════════════════════════════════════
+       OVERRIDE & CONTENT STYLES
+    ══════════════════════════════════════════════════════ */
+    .premium-dashboard {
+      background: var(--paper);
+      color: var(--ink);
+      padding: 28px;
+    }
 
-        <div class="md:flex hidden items-center gap-2 text-sm font-semibold">
-            <a href="#" class="text-sm font-medium text-default-700">Smart Perkemi</a>
+    .cinzel { font-family: 'Cinzel', serif; }
 
-            <i class="iconify tabler--chevron-right text-sm flex-shrink-0 text-default-500 rtl:rotate-180"></i>
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #fff; border-radius: 16px;
+      padding: 20px 22px;
+      border: 1px solid var(--paper2);
+      position: relative; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.09); }
+    .stat-card::after {
+      content: ''; position: absolute;
+      bottom: 0; right: 0; width: 80px; height: 80px;
+      border-radius: 50%; opacity: .07;
+      transform: translate(25px, 25px);
+    }
+    .stat-card.red::after   { background: var(--red); }
+    .stat-card.gold::after  { background: var(--gold); }
+    .stat-card.blue::after  { background: #3498db; }
+    .stat-card.green::after { background: #27ae60; }
 
-            <a href="#" class="text-sm font-medium text-default-700" aria-current="page">Admin Dashboard</a>
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; margin-bottom: 12px;
+    }
+    .stat-card.red  .stat-icon { background: rgba(192,57,43,.1); color: var(--red); }
+    .stat-card.gold .stat-icon { background: rgba(212,168,67,.12); color: #b8860b; }
+    .stat-card.blue .stat-icon { background: rgba(52,152,219,.1); color: #2980b9; }
+    .stat-card.green .stat-icon { background: rgba(39,174,96,.1); color: #27ae60; }
+
+    .stat-label { font-size: 11px; color: var(--smoke); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 5px; }
+    .stat-value { font-family: 'Cinzel', serif; font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 7px; }
+    .stat-delta { font-size: 11.5px; display: flex; align-items: center; gap: 5px; color: #27ae60; font-weight: 500; }
+    .stat-delta.down { color: var(--red); }
+    .stat-delta i { font-size: 9px; }
+
+    /* ── 2-COL ── */
+    .two-col { display: grid; grid-template-columns: 1fr 360px; gap: 20px; margin-bottom: 22px; }
+
+    /* ── CARD ── */
+    .card-premium { background: #fff; border-radius: 16px; border: 1px solid var(--paper2); overflow: hidden; }
+    .card-head-premium { padding: 20px 22px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; gap: 8px; }
+    .card-head-premium h3 { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; flex: 1; min-width: 120px; }
+    .card-sub-premium { font-size: 11px; color: var(--smoke); }
+
+    .tab-group-premium { display: flex; gap: 3px; }
+    .tab-btn-premium {
+      padding: 5px 12px; border-radius: 7px; border: none; background: none;
+      font-size: 12px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; color: #888; font-weight: 500; transition: all .15s;
+    }
+    .tab-btn-premium.active { background: var(--ink); color: #fff; }
+    .chart-wrap-premium { padding: 14px 22px 18px; }
+
+    /* ── LEADERBOARD ── */
+    .leader-list { padding: 6px 0 14px; }
+    .leader-item { display: flex; align-items: center; gap: 12px; padding: 11px 22px; transition: background .15s; }
+    .leader-item:hover { background: var(--paper); }
+    .rank-premium { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; width: 24px; text-align: center; flex-shrink: 0; }
+    .rank-premium.gold { color: #d4a843; }
+    .rank-premium.silver { color: #95a5a6; }
+    .rank-premium.bronze { color: #a0522d; }
+    .leader-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .leader-info { flex: 1; min-width: 0; }
+    .leader-info h4 { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .leader-info p  { font-size: 11px; color: var(--smoke); margin-top: 1px; }
+    .leader-score { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; min-width: 26px; text-align: right; }
+
+    /* ── TABLE SECTION ── */
+    .table-section-premium { background: #fff; border-radius: 16px; border: 1px solid var(--paper2); margin-bottom: 24px; overflow: hidden; }
+    .table-head-premium { padding: 18px 22px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--paper2); flex-wrap: wrap; }
+    .table-head-premium h3 { font-family: 'Cinzel', serif; font-size: 13.5px; font-weight: 700; flex: 1; min-width: 120px; }
+    .filter-group-premium { display: flex; gap: 5px; flex-wrap: wrap; }
+    .filter-btn-premium {
+      padding: 5px 12px; border-radius: 7px;
+      border: 1px solid var(--paper2); background: none;
+      font-size: 11.5px; color: #666; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all .15s;
+    }
+    .filter-btn-premium.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .export-btn-premium {
+      padding: 7px 13px; background: var(--red); color: #fff;
+      border: none; border-radius: 9px; font-size: 12px;
+      font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'DM Sans', sans-serif; transition: background .15s; white-space: nowrap;
+    }
+    .export-btn-premium:hover { background: var(--kempo-red-deep); }
+
+    .table-scroll-premium { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .premium-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    .premium-table thead th {
+      padding: 10px 14px; font-size: 10px; color: var(--smoke);
+      font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      text-align: left; background: var(--paper);
+      border-bottom: 1px solid var(--paper2); white-space: nowrap;
+    }
+    .premium-table thead th:first-child { padding-left: 22px; }
+    .premium-table thead th:last-child { padding-right: 22px; text-align: center; }
+    .premium-table tbody tr { transition: background .12s; }
+    .premium-table tbody tr:hover { background: rgba(247,244,239,.6); }
+    .premium-table tbody td { padding: 12px 14px; font-size: 12.5px; border-bottom: 1px solid var(--paper2); color: var(--ink); }
+    .premium-table tbody tr:last-child td { border-bottom: none; }
+    .premium-table td:first-child { padding-left: 22px; }
+    .premium-table td:last-child { padding-right: 22px; text-align: center; }
+
+    .badge-premium { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .badge-premium.gold   { background: rgba(212,168,67,.15); color: #9a6e00; }
+    .badge-premium.silver { background: rgba(149,165,166,.15); color: #607d8b; }
+    .badge-premium.green  { background: rgba(39,174,96,.12); color: #1e8449; }
+    .badge-premium.blue   { background: rgba(52,152,219,.12); color: #1a6ea3; }
+    .badge-premium.red    { background: rgba(192,57,43,.12); color: var(--kempo-red-deep); }
+
+    .action-btn-premium {
+      width: 28px; height: 28px; border-radius: 7px;
+      border: 1px solid var(--paper2); background: none;
+      cursor: pointer; font-size: 11px; color: #888;
+      transition: all .15s; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .action-btn-premium:hover { background: var(--paper2); color: var(--ink); }
+
+    /* ── SCHEDULE ── */
+    .sched-item { display: flex; gap: 12px; padding: 12px 22px; border-bottom: 1px solid var(--paper2); align-items: flex-start; }
+    .sched-item:last-child { border-bottom: none; }
+    .sched-time { font-family: 'Cinzel', serif; font-size: 11.5px; color: var(--smoke); min-width: 52px; padding-top: 2px; }
+    .sched-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .sched-info h4 { font-size: 13px; font-weight: 600; }
+    .sched-info p  { font-size: 11px; color: var(--kempo-smoke); margin-top: 2px; }
+
+    /* ── ACTIVITY ── */
+    .activity-item { display: flex; gap: 11px; padding: 11px 22px; align-items: flex-start; }
+    .act-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+    .activity-item h4 { font-size: 12.5px; font-weight: 500; line-height: 1.4; }
+    .activity-item p  { font-size: 11px; color: var(--smoke); margin-top: 2px; }
+
+    /* ── PROGRESS ── */
+    .prog-item { padding: 10px 22px; }
+    .prog-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .prog-label { font-size: 12.5px; font-weight: 500; flex: 1; }
+    .prog-val { font-size: 13px; font-weight: 700; font-family: 'Cinzel', serif; }
+    .prog-track { height: 5px; background: var(--paper2); border-radius: 10px; overflow: hidden; }
+    .prog-bar { height: 100%; border-radius: 10px; }
+
+    /* PAGINATION */
+    .pagination-premium { display: flex; align-items: center; gap: 5px; padding: 14px 22px; justify-content: flex-end; border-top: 1px solid var(--paper2); flex-wrap: wrap; }
+    .page-info-premium { font-size: 12px; color: var(--smoke); margin-right: auto; }
+    .page-btn-premium {
+      width: 32px; height: 32px; border-radius: 7px;
+      border: 1px solid var(--paper2); background: none; cursor: pointer;
+      font-size: 12px; color: #666; font-family: 'DM Sans', sans-serif;
+      font-weight: 500; transition: all .15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn-premium:hover { background: var(--paper2); }
+    .page-btn-premium.active { background: #0f0d0b; color: #fff; border-color: #0f0d0b; font-weight: 600; pointer-events: none; cursor: default; }
+    .page-btn-premium:disabled,
+    .page-btn-premium[aria-disabled="true"] { 
+      opacity: .25; cursor: default; pointer-events: none; 
+    }
+    .page-btn-premium.ellipsis {
+      pointer-events: none; border: none; opacity: .4;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col    { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .stat-value { font-size: 22px; }
+      .premium-dashboard { padding: 14px; }
+    }
+    @media (max-width: 400px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+    </style>
+    @endpush
+
+    <div class="premium-dashboard">
+        <!-- ── STAT CARDS ── -->
+        <div class="stats-grid">
+            <div class="stat-card red">
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-label">Total Atlet</div>
+                <div class="stat-value" style="color:var(--red)">{{ number_format($stats['total_athletes']) }}</div>
+                <div class="stat-delta"><i class="fa-solid fa-arrow-trend-up"></i> +12% dari bulan lalu</div>
+            </div>
+            <div class="stat-card gold">
+                <div class="stat-icon"><i class="fa-solid fa-flag"></i></div>
+                <div class="stat-label">Kontingen</div>
+                <div class="stat-value" style="color:#b8860b">{{ number_format($stats['total_contingents']) }}</div>
+                <div class="stat-delta"><i class="fa-solid fa-arrow-trend-up"></i> Terdaftar aktif</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="stat-label">Pending Verifikasi</div>
+                <div class="stat-value" style="color:#2980b9">{{ number_format($stats['pending_count']) }}</div>
+                <div class="stat-delta"><i class="fa-solid fa-check"></i> Menunggu review</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon"><i class="fa-solid fa-medal"></i></div>
+                <div class="stat-label">Medali Diberikan</div>
+                <div class="stat-value" style="color:#27ae60">{{ $medalStats['gold'] + $medalStats['silver'] + $medalStats['bronze'] }}</div>
+                <div class="stat-delta"><i class="fa-solid fa-arrow-trend-up"></i> Update real-time</div>
+            </div>
+        </div>
+
+        <!-- ── CHARTS ROW ── -->
+        <div class="two-col">
+            <div class="card-premium">
+                <div class="card-head-premium" style="padding-bottom:14px;">
+                    <h3>Distribusi Medali per Kontingen</h3>
+                    <div class="tab-group-premium">
+                        <button class="tab-btn-premium active">Bar Chart</button>
+                    </div>
+                </div>
+                <div class="chart-wrap-premium" style="height:250px;">
+                    <canvas id="medalChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card-premium">
+                <div class="card-head-premium">
+                    <div>
+                        <h3>Status Registrasi</h3>
+                        <div class="card-sub-premium">Berdasarkan verifikasi</div>
+                    </div>
+                </div>
+                <div class="chart-wrap-premium" style="height:150px;display:flex;justify-content:center;">
+                    <canvas id="statusDonutChart"></canvas>
+                </div>
+                <div style="padding:0 22px 16px;display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+                    <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--smoke);">
+                        <span style="width:9px;height:9px;border-radius:3px;background:#27ae60;flex-shrink:0;"></span>Verified ({{ $stats['verification_rate'] }}%)
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--smoke);">
+                        <span style="width:9px;height:9px;border-radius:3px;background:#f59e0b;flex-shrink:0;"></span>Pending
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TABLE ── -->
+        <div class="table-section-premium">
+            <div class="table-head-premium">
+                <h3>Registrasi Terbaru</h3>
+                <div class="filter-group-premium">
+                    <input type="text" wire:model.live.debounce.300ms="search"
+                        class="px-3 py-1.5 border border-slate-200 rounded-md text-sm outline-none focus:border-red"
+                        placeholder="Cari kontingen...">
+                </div>
+                <a href="{{ route('admin.registrations.index') }}" class="export-btn-premium">
+                    <i class="fa-solid fa-eye"></i> <span>Lihat Semua</span>
+                </a>
+            </div>
+
+            <div class="table-scroll-premium">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Kontingen</th>
+                            <th>Wilayah</th>
+                            <th>Tanggal</th>
+                            <th>Total Tagihan</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($latestRegistrations as $reg)
+                        <tr>
+                            <td style="color:var(--smoke);font-size:11px;">{{ $loop->iteration + $latestRegistrations->firstItem() - 1 }}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:9px;">
+                                    <div class="leader-avatar" style="width:28px;height:28px;font-size:10px;border-radius:7px;background:linear-gradient(135deg,var(--red),#e67e22);">{{ substr($reg->contingent->name ?? 'K', 0, 2) }}</div>
+                                    <div class="font-semibold">{{ $reg->contingent->name ?? '-' }}</div>
+                                </div>
+                            </td>
+                            <td>{{ $reg->contingent->kab_kota ?? '-' }}</td>
+                            <td>{{ $reg->created_at->format('d M Y') }}</td>
+                            <td class="font-bold">Rp {{ number_format($reg->final_amount, 0, ',', '.') }}</td>
+                            <td>
+                                @php
+                                    $badgeClass = match($reg->status) {
+                                        'verified' => 'green',
+                                        'pending' => 'gold',
+                                        default => 'red'
+                                    };
+                                @endphp
+                                <span class="badge-premium {{ $badgeClass }}">{{ strtoupper($reg->status) }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ route('admin.registrations.show', $reg) }}" class="action-btn-premium"><i class="fa-solid fa-eye"></i></a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-premium">
+                <span class="page-info-premium">
+                    Menampilkan {{ $latestRegistrations->firstItem() }}–{{ $latestRegistrations->lastItem() }} dari {{ number_format($latestRegistrations->total()) }} registrasi
+                </span>
+
+                {{-- Prev: hidden on first page --}}
+                @unless($latestRegistrations->onFirstPage())
+                <button class="page-btn-premium" wire:click="previousPage" wire:loading.attr="disabled">
+                    <i class="fa-solid fa-chevron-left" style="font-size:10px;"></i>
+                </button>
+                @endunless
+
+                @php
+                    $start = max(1, $latestRegistrations->currentPage() - 1);
+                    $end = min($latestRegistrations->lastPage(), $latestRegistrations->currentPage() + 1);
+                @endphp
+
+                @if($start > 1)
+                    <button class="page-btn-premium" wire:click="gotoPage(1)" wire:loading.attr="disabled">1</button>
+                    @if($start > 2)
+                        <button class="page-btn-premium ellipsis" disabled>…</button>
+                    @endif
+                @endif
+
+                @for($i = $start; $i <= $end; $i++)
+                    <button
+                        class="page-btn-premium {{ $i == $latestRegistrations->currentPage() ? 'active' : '' }}"
+                        wire:click="gotoPage({{ $i }})"
+                        wire:loading.attr="disabled">
+                        {{ $i }}
+                    </button>
+                @endfor
+
+                @if($end < $latestRegistrations->lastPage())
+                    @if($end < $latestRegistrations->lastPage() - 1)
+                        <button class="page-btn-premium ellipsis" disabled>…</button>
+                    @endif
+                    <button class="page-btn-premium" wire:click="gotoPage({{ $latestRegistrations->lastPage() }})" wire:loading.attr="disabled">
+                        {{ $latestRegistrations->lastPage() }}
+                    </button>
+                @endif
+
+                {{-- Next: hidden on last page --}}
+                @if($latestRegistrations->hasMorePages())
+                <button class="page-btn-premium" wire:click="nextPage" wire:loading.attr="disabled">
+                    <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+                </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- ── LEADERBOARD + JADWAL ── -->
+        <div class="two-col">
+            <div class="card-premium">
+                <div class="card-head-premium"><h3>Top Kontingen</h3><div class="card-sub-premium">Berdasarkan Medali</div></div>
+                <div style="padding:12px 22px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+                    <div style="text-align:center;padding:10px 6px;background:rgba(212,168,67,.08);border-radius:10px;">
+                        <div style="font-size:18px;">🥇</div>
+                        <div style="font-size:10px;color:var(--smoke);margin-top:3px;">Emas</div>
+                        <div class="cinzel" style="font-size:20px;font-weight:700;color:#b8860b;">{{ $medalStats['gold'] }}</div>
+                    </div>
+                    <div style="text-align:center;padding:10px 6px;background:rgba(149,165,166,.08);border-radius:10px;">
+                        <div style="font-size:18px;">🥈</div>
+                        <div style="font-size:10px;color:var(--smoke);margin-top:3px;">Perak</div>
+                        <div class="cinzel" style="font-size:20px;font-weight:700;color:#607d8b;">{{ $medalStats['silver'] }}</div>
+                    </div>
+                    <div style="text-align:center;padding:10px 6px;background:rgba(160,82,45,.08);border-radius:10px;">
+                        <div style="font-size:18px;">🥉</div>
+                        <div style="font-size:10px;color:var(--smoke);margin-top:3px;">Perunggu</div>
+                        <div class="cinzel" style="font-size:20px;font-weight:700;color:#8b4513;">{{ $medalStats['bronze'] }}</div>
+                    </div>
+                </div>
+                <div class="leader-list">
+                    @foreach($medalDistribution['contingents'] as $con)
+                    <div class="leader-item">
+                        <div class="rank-premium @if($loop->iteration == 1) gold @elseif($loop->iteration == 2) silver @elseif($loop->iteration == 3) bronze @endif">
+                            @if($loop->iteration == 1) 🥇 @elseif($loop->iteration == 2) 🥈 @elseif($loop->iteration == 3) 🥉 @else {{ $loop->iteration }} @endif
+                        </div>
+                        <div class="leader-avatar" style="background:var(--ink);">{{ substr($con->name, 0, 2) }}</div>
+                        <div class="leader-info">
+                            <h4>{{ $con->name }}</h4>
+                            <p>{{ $con->gold_count }} Emas · {{ $con->silver_count }} Perak · {{ $con->bronze_count }} Perunggu</p>
+                        </div>
+                        <div class="leader-score">{{ $con->gold_count + $con->silver_count + $con->bronze_count }}</div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="card-premium">
+                <div class="card-head-premium">
+                    <h3>Jadwal Hari Ini</h3>
+                    <span style="font-size:11px;color:var(--smoke);background:var(--paper);padding:4px 10px;border-radius:20px;">{{ now()->format('l, d M Y') }}</span>
+                </div>
+                <div style="margin-top:10px;">
+                    @forelse($todaySchedules as $sched)
+                    <div class="sched-item">
+                        <div class="sched-time">{{ $sched->date->format('H.i') }}</div>
+                        <div class="sched-dot" style="background:var(--red);"></div>
+                        <div class="sched-info">
+                            <h4>{{ $sched->name }}</h4>
+                            <p>{{ $sched->type }} — {{ $sched->description }}</p>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-8 text-center text-slate-400 italic text-sm">
+                        Belum ada jadwal hari ini.
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <!-- ── BOTTOM ROW ── -->
+        <div class="two-col" style="grid-template-columns: 1fr 1fr;">
+            <!-- Progress -->
+            <div class="card-premium">
+                <div class="card-head-premium"><h3>Progress Kontingen</h3></div>
+                <div style="padding:14px 0 6px;">
+                    @foreach($latestContingents as $con)
+                    <div class="prog-item">
+                        <div class="prog-header">
+                            <span class="prog-label">{{ $con->name }}</span>
+                            <span class="prog-val">{{ $con->athletes_count ?? 0 }} Atlet</span>
+                        </div>
+                        <div class="prog-track">
+                            <div class="prog-bar" style="width:{{ min(100, ($con->athletes_count ?? 0) * 2) }}%;background:linear-gradient(90deg,var(--red),var(--red-glow));"></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Aktivitas -->
+            <div class="card-premium">
+                <div class="card-head-premium"><h3>Aktivitas Terbaru</h3></div>
+                <div style="padding:10px 0;">
+                    @foreach($latestActivities as $act)
+                    <div class="activity-item">
+                        <div class="act-icon" style="background:{{ $act['bg'] }};color:{{ $act['color'] }};">
+                            <i class="fa-solid {{ $act['icon'] }}"></i>
+                        </div>
+                        <div>
+                            <h4>{{ $act['title'] }}</h4>
+                            <p>{{ $act['desc'] }}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
         </div>
     </div>
-    <!-- Page Title End -->
 
-    <div class="px-6 pb-6">
-        <!-- Widgets Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+    @push('scripts')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+    document.addEventListener('livewire:initialized', () => {
+        // Medal Chart
+        new Chart(document.getElementById('medalChart'), {
+            type: 'bar',
+            data: {
+                labels: @json($medalDistribution['labels']),
+                datasets: [
+                    { label: 'Emas', data: @json($medalDistribution['gold']), backgroundColor: 'rgba(212,168,67,.85)', borderRadius: 4 },
+                    { label: 'Perak', data: @json($medalDistribution['silver']), backgroundColor: 'rgba(149,165,166,.7)', borderRadius: 4 },
+                    { label: 'Perunggu', data: @json($medalDistribution['bronze']), backgroundColor: 'rgba(160,82,45,.6)', borderRadius: 4 },
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 10 }, boxWidth: 9, padding: 14 } } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 10 } } },
+                    y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { font: { family: 'DM Sans', size: 10 }, stepSize: 1 } }
+                }
+            }
+        });
 
-            <!-- Total Atlet -->
-            <div class="card bg-blue-500 border-none rounded-xl p-5 shadow-lg relative overflow-hidden group">
-                <div
-                    class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all">
-                </div>
-                <div class="absolute right-10 bottom-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
-                <div class="flex justify-between items-center z-10 relative">
-                    <div>
-                        <p class="text-sm text-white/80 font-medium mb-1">Total Atlet</p>
-                        <h3 class="text-3xl font-bold text-white tracking-tight">
-                            {{ number_format($stats['total_athletes']) }}
-                        </h3>
-                    </div>
-                    <div
-                        class="w-14 h-14 bg-white/20 text-white rounded-xl flex items-center justify-center text-3xl ring-1 ring-white/30 group-hover:scale-110 transition-transform shadow-inner">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-                <div class="mt-5 flex items-center gap-2 z-10 relative border-t border-white/20 pt-3 text-white">
-                    <span class="inline-flex items-center gap-1 text-xs font-bold bg-white/20 px-2 py-1 rounded-md">
-                        <i class="fas fa-chart-line"></i> +12%
-                    </span>
-                    <span class="text-xs text-white/80">vs bulan lalu</span>
-                </div>
-            </div>
-
-            <!-- Total Kontingen -->
-            <div class="card bg-emerald-500 border-none rounded-xl p-5 shadow-lg relative overflow-hidden group">
-                <div
-                    class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all">
-                </div>
-                <div class="absolute right-10 bottom-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
-                <div class="flex justify-between items-center z-10 relative">
-                    <div>
-                        <p class="text-sm text-white/80 font-medium mb-1">Total Kontingen</p>
-                        <h3 class="text-3xl font-bold text-white tracking-tight">
-                            {{ number_format($stats['total_contingents']) }}
-                        </h3>
-                    </div>
-                    <div
-                        class="w-14 h-14 bg-white/20 text-white rounded-xl flex items-center justify-center text-3xl ring-1 ring-white/30 group-hover:scale-110 transition-transform shadow-inner">
-                        <i class="fas fa-building"></i>
-                    </div>
-                </div>
-                <div class="mt-5 flex items-center gap-2 z-10 relative border-t border-white/20 pt-3">
-                    <span
-                        class="inline-flex items-center gap-1 text-xs font-bold text-white bg-white/20 px-2 py-1 rounded-md">
-                        <i class="fas fa-database"></i> Master Data
-                    </span>
-                </div>
-            </div>
-
-            <!-- Pending Verifikasi -->
-            <div class="card bg-amber-500 border-none rounded-xl p-5 shadow-lg relative overflow-hidden group">
-                <div
-                    class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all">
-                </div>
-                <div class="absolute right-10 bottom-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
-                <div class="flex justify-between items-center z-10 relative">
-                    <div>
-                        <p class="text-sm text-white/80 font-medium mb-1">Pending Verifikasi</p>
-                        <h3 class="text-3xl font-bold text-white tracking-tight">
-                            {{ number_format($stats['pending_count']) }}
-                        </h3>
-                    </div>
-                    <div
-                        class="w-14 h-14 bg-white/20 text-white rounded-xl flex items-center justify-center text-3xl ring-1 ring-white/30 group-hover:scale-110 transition-transform shadow-inner">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                </div>
-                <div class="mt-5 flex items-center gap-2 z-10 relative border-t border-white/20 pt-3">
-                    <a href="{{ route('admin.registrations.index') }}"
-                        class="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-white/80 transition-colors">
-                        Tinjau Sekarang <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Verification Rate -->
-            <div class="card bg-purple-500 border-none rounded-xl p-5 shadow-lg relative overflow-hidden group">
-                <div
-                    class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all">
-                </div>
-                <div class="absolute right-10 bottom-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
-                <div class="flex justify-between items-center z-10 relative">
-                    <div>
-                        <p class="text-sm text-white/80 font-medium mb-1">Verifikasi Registrasi</p>
-                        <h3 class="text-3xl font-bold text-white tracking-tight">{{ $stats['verification_rate'] }}%</h3>
-                    </div>
-                    <div
-                        class="w-14 h-14 bg-white/20 text-white rounded-xl flex items-center justify-center text-3xl ring-1 ring-white/30 group-hover:scale-110 transition-transform shadow-inner">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                </div>
-                <div class="mt-5 z-10 relative border-t border-white/20 pt-3">
-                    <div class="flex justify-between text-xs text-white/80 mb-1.5 font-medium">
-                        <span>Progress</span>
-                        <span>{{ number_format($stats['verified_count']) }} /
-                            {{ number_format($stats['total_registrations']) }}</span>
-                    </div>
-                    <div class="w-full bg-black/20 h-1.5 rounded-full overflow-hidden shadow-inner">
-                        <div class="bg-white h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                            style="width: {{ $stats['verification_rate'] }}%"></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-
-            <!-- Growth Chart -->
-            <div
-                class="lg:col-span-2 card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h4 class="text-base font-bold text-slate-800 dark:text-slate-100">Pertumbuhan Atlet</h4>
-                        <p class="text-xs text-slate-500 mt-1">Tren pendaftaran atlet baru dalam 6 bulan terakhir.</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button
-                            class="px-3 py-1.5 text-xs font-semibold bg-custom-500/10 text-custom-500 rounded-md transition-all">6
-                            Bulan</button>
-                        <button
-                            class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-100 transition-all">1
-                            Tahun</button>
-                    </div>
-                </div>
-                <div class="h-72" id="athleteGrowthChart">
-                    <!-- Chart will be rendered here -->
-                </div>
-            </div>
-
-            <!-- Status Breakdown -->
-            <div
-                class="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-base font-bold text-slate-800 dark:text-slate-100">Status Registrasi</h4>
-                    <i data-lucide="pie-chart" class="size-4 text-slate-400"></i>
-                </div>
-                <div class="h-64 flex flex-col items-center justify-center relative" id="registrationStatusChart">
-                    <!-- Donut Chart will be rendered here -->
-                </div>
-                <div class="mt-2 space-y-2">
-                    <div
-                        class="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                            <span class="text-slate-600 dark:text-slate-300 font-medium">Terverifikasi</span>
-                        </div>
-                        <span
-                            class="font-bold text-slate-800 dark:text-slate-100">{{ $statusBreakdown['verified'] }}</span>
-                    </div>
-                    <div
-                        class="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                            <span class="text-slate-600 dark:text-slate-300 font-medium">Pending</span>
-                        </div>
-                        <span
-                            class="font-bold text-slate-800 dark:text-slate-100">{{ $statusBreakdown['pending'] }}</span>
-                    </div>
-                    <div
-                        class="flex items-center justify-between text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span>
-                            <span class="text-slate-600 dark:text-slate-300 font-medium">Ditolak</span>
-                        </div>
-                        <span
-                            class="font-bold text-slate-800 dark:text-slate-100">{{ $statusBreakdown['rejected'] }}</span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Tables Grid -->
-        <div class="grid grid-cols-1 gap-5 mb-5">
-            <div
-                class="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden shadow-sm">
-                <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                    <h6 class="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Data
-                        Registrasi</h6>
-
-                    <div class="flex gap-3 items-center">
-                        <div class="relative">
-                            <input type="text" wire:model.live.debounce.300ms="search"
-                                class="form-input text-sm ps-9 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md dark:bg-slate-800 dark:text-slate-200"
-                                placeholder="Search for....">
-                            <div class="absolute inset-y-0 start-0 flex items-center ps-3">
-                                <i data-lucide="search" class="size-3.5 text-slate-400"></i>
-                            </div>
-                        </div>
-
-                        <a href="{{ route('admin.registrations.index') }}"
-                            class="btn px-3 py-1.5 text-sm bg-custom-500 text-white rounded-md hover:bg-custom-600 transition-colors flex items-center">
-                            <i data-lucide="eye" class="size-3.5 me-1"></i>Lihat Semua
-                        </a>
-                    </div>
-                </div>
-
-                <div class="flex flex-col">
-                    <div class="overflow-x-auto">
-                        <div class="min-w-full inline-block align-middle">
-                            <div class="overflow-hidden">
-                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                                    <thead class="bg-slate-50 dark:bg-slate-800/50">
-                                        <tr
-                                            class="text-sm font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                                            <th scope="col" class="px-5 py-3 text-start">#</th>
-                                            <th scope="col" class="px-5 py-3 text-start">Kontingen</th>
-                                            <th scope="col" class="px-5 py-3 text-start">Tipe</th>
-                                            <th scope="col" class="px-5 py-3 text-start">Tanggal</th>
-                                            <th scope="col" class="px-5 py-3 text-start">Total Tagihan</th>
-                                            <th scope="col" class="px-5 py-3 text-start">Status</th>
-                                            <th scope="col" class="px-5 py-3 text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                                        @forelse($latestRegistrations as $reg)
-                                            <tr
-                                                class="text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td class="px-5 py-3 whitespace-nowrap text-sm">
-                                                    {{ $loop->iteration + $latestRegistrations->firstItem() - 1 }}
-                                                </td>
-                                                <td class="px-5 py-3 whitespace-nowrap text-sm">
-                                                    {{ $reg->contingent->name ?? '—' }}
-                                                </td>
-                                                <td class="px-5 py-3 whitespace-nowrap text-sm">
-                                                    <span
-                                                        class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-500 uppercase">{{ $reg->contingent->kab_kota ?? '-' }}</span>
-                                                </td>
-                                                <td class="px-5 py-3 whitespace-nowrap text-sm text-slate-500">
-                                                    {{ $reg->created_at->format('d M, Y') }}
-                                                </td>
-                                                <td class="px-5 py-3 whitespace-nowrap text-sm font-medium">
-                                                    Rp {{ number_format($reg->final_amount, 0, ',', '.') }}
-                                                </td>
-                                                <td class="px-5 py-3 whitespace-nowrap">
-                                                    @php
-                                                        $sc = match ($reg->status) {
-                                                            'verified' => 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30',
-                                                            'pending' => 'bg-amber-500/10 text-amber-500 border-amber-500/30',
-                                                            default => 'bg-rose-500/10 text-rose-500 border-rose-500/30',
-                                                        };
-                                                    @endphp
-                                                    <span
-                                                        class="inline-flex items-center gap-x-1.5 py-0.5 px-2.5 rounded text-xs font-bold border {{ $sc }} uppercase">
-                                                        {{ $reg->status }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-5 py-3 whitespace-nowrap text-center">
-                                                    <a href="{{ route('admin.registrations.show', $reg) }}"
-                                                        class="btn btn-sm text-blue-500 hover:text-blue-600 p-1">
-                                                        <i class="fas fa-eye text-sm"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8"
-                                                    class="px-5 py-8 text-center text-slate-500 dark:text-slate-400">
-                                                    Tidak ada data registrasi ditemukan.
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-5 border-t border-slate-200 dark:border-slate-800">
-                    {{ $latestRegistrations->links('vendor.livewire.tailwick') }}
-                </div>
-            </div>
-        </div>
-
-        @push('scripts')
-            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-            <script>
-                document.addEventListener('livewire:initialized', () => {
-
-                    // Athlete Growth Chart
-                    const athleteOptions = {
-                        series: [{
-                            name: 'Atlet Baru',
-                            data: @json($monthlyAthletes['data'])
-                        }],
-                        chart: {
-                            type: 'area',
-                            height: 280,
-                            toolbar: { show: false },
-                            sparkline: { enabled: false },
-                        },
-                        dataLabels: { enabled: false },
-                        stroke: { curve: 'smooth', width: 3 },
-                        colors: ['#0ea5e9'],
-                        fill: {
-                            type: 'gradient',
-                            gradient: {
-                                shadeIntensity: 1,
-                                opacityFrom: 0.45,
-                                opacityTo: 0.05,
-                                stops: [20, 100, 100, 100]
-                            }
-                        },
-                        xaxis: {
-                            categories: @json($monthlyAthletes['labels']),
-                            axisBorder: { show: false },
-                            axisTicks: { show: false },
-                        },
-                        grid: { borderColor: 'rgba(0,0,0,0.05)', strokeDashArray: 4 },
-                        tooltip: { theme: 'dark' }
-                    };
-
-                    const athleteChart = new ApexCharts(document.querySelector("#athleteGrowthChart"), athleteOptions);
-                    athleteChart.render();
-
-                    // Registration Status Chart
-                    const statusOptions = {
-                        series: [{{ $statusBreakdown['verified'] }}, {{ $statusBreakdown['pending'] }}, {{ $statusBreakdown['rejected'] }}],
-                        chart: {
-                            type: 'donut',
-                            height: 240,
-                        },
-                        labels: ['Verified', 'Pending', 'Ditolak'],
-                        colors: ['#10b981', '#f59e0b', '#ef4444'],
-                        legend: { show: false },
-                        dataLabels: { enabled: false },
-                        plotOptions: {
-                            pie: {
-                                donut: {
-                                    size: '75%',
-                                    labels: {
-                                        show: true,
-                                        total: {
-                                            show: true,
-                                            label: 'Total',
-                                            formatter: () => '{{ $stats['total_registrations'] }}'
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        tooltip: { theme: 'dark' }
-                    };
-
-                    const statusChart = new ApexCharts(document.querySelector("#registrationStatusChart"), statusOptions);
-                    statusChart.render();
-                });
-            </script>
-        @endpush
-    </div>
+        // Donut Chart
+        new Chart(document.getElementById('statusDonutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Verified', 'Pending', 'Rejected'],
+                datasets: [{ 
+                    data: [{{ $statusBreakdown['verified'] }}, {{ $statusBreakdown['pending'] }}, {{ $statusBreakdown['rejected'] }}], 
+                    backgroundColor: ['#27ae60', '#f59e0b', '#e74c3c'], 
+                    borderWidth: 0, 
+                    hoverOffset: 8 
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '68%'
+            }
+        });
+    });
+    </script>
+    @endpush
 </div>

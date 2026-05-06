@@ -72,6 +72,16 @@ class RefereeAnalysisExport implements FromCollection, ShouldAutoSize, WithHeadi
             ];
         }
 
+        if ($this->type === 'IV') {
+            return [
+                'Wasit',
+                'Jumlah',
+                'Skor IV',
+                'Interpretasi',
+                'Kategori',
+            ];
+        }
+
         return [];
     }
 
@@ -115,6 +125,16 @@ class RefereeAnalysisExport implements FromCollection, ShouldAutoSize, WithHeadi
                 number_format($row['std_dev'], 3),
                 number_format($row['ik'], 3),
                 $row['ik_category'],
+            ];
+        }
+
+        if ($this->type === 'IV') {
+            return [
+                $row['name'],
+                $row['count'],
+                number_format($row['iv'], 3),
+                $row['iv_interpretation'],
+                $row['iv_category'],
             ];
         }
 

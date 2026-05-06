@@ -137,12 +137,12 @@
             <div class="flex items-center gap-3 sm:gap-4">
                 <div class="hidden sm:flex items-center gap-4">
                     @auth
-                        <a href="{{ route('dashboard') }}"
+                        <a href="{{ route('admin.new-dashboard') }}"
                            class="bg-white/10 hover:bg-white text-white hover:text-black text-[11px] font-bold px-5 py-2.5 rounded-full uppercase tracking-widest transition-all duration-300 border border-white/20">
                             Dashboard
                         </a>
                     @else
-                        <a href="{{ route('login') }}"
+                        <a href="{{ route('new-login') }}"
                            class="text-white/70 hover:text-white text-[11px] font-bold uppercase tracking-widest transition-colors duration-300">
                             Login
                         </a>
@@ -178,9 +178,9 @@
             <a href="#info" @click="mobileMenu = false" class="text-white/60 hover:text-orange-500 text-sm font-bold uppercase tracking-widest transition-colors">Kontak</a>
             <div class="w-full h-px bg-white/5 my-2"></div>
             @auth
-                <a href="{{ route('dashboard') }}" class="w-full bg-orange-600 text-white py-4 rounded-xl font-black uppercase tracking-widest">Dashboard</a>
+                <a href="{{ route('admin.new-dashboard') }}" class="w-full bg-orange-600 text-white py-4 rounded-xl font-black uppercase tracking-widest">Dashboard</a>
             @else
-                <a href="{{ route('login') }}" class="text-white/60 font-bold uppercase tracking-widest">Login</a>
+                <a href="{{ route('new-login') }}" class="text-white/60 font-bold uppercase tracking-widest">Login</a>
                 <a href="{{ route('register') }}" class="w-full bg-orange-600 text-white py-4 rounded-xl font-black uppercase tracking-widest">Daftar Sekarang</a>
             @endauth
         </div>
@@ -277,7 +277,7 @@
                     
                     <div class="hero-cta mt-5 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden">
+                            <a href="{{ route('admin.new-dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden">
                                 <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative flex items-center gap-2">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
@@ -288,7 +288,7 @@
                                 <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-500 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative">Daftar Kontingen</span>
                             </a>
-                            <a href="{{ route('login') }}" class="group inline-flex items-center justify-center gap-3 font-bold text-xs sm:text-sm text-white/70 hover:text-white uppercase tracking-widest px-8 py-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                            <a href="{{ route('new-login') }}" class="group inline-flex items-center justify-center gap-3 font-bold text-xs sm:text-sm text-white/70 hover:text-white uppercase tracking-widest px-8 py-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
                                 <i class="fas fa-sign-in-alt"></i> Login
                             </a>
                         @endauth
@@ -336,7 +336,7 @@
                     
                     <div class="hero-cta mt-5 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         @auth
-                            <a href="{{ route('dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden">
+                            <a href="{{ route('admin.new-dashboard') }}" class="group relative inline-flex items-center justify-center gap-3 font-black text-xs sm:text-sm uppercase tracking-widest text-white px-8 py-3 rounded-full transition-all duration-500 overflow-hidden">
                                 <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-600 group-hover:scale-105 transition-transform duration-500"></div>
                                 <span class="relative flex items-center gap-2">
                                     <i class="fas fa-tachometer-alt"></i> Dashboard
@@ -703,14 +703,14 @@
             </p>
             <div class="flex flex-wrap justify-center gap-4">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
+                    <a href="{{ route('admin.new-dashboard') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
                         <i class="fas fa-tachometer-alt"></i> Masuk Dashboard
                     </a>
                 @else
                     <a href="{{ route('register') }}" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3 shadow-2xl shadow-orange-500/30">
                         <i class="fas fa-file-signature"></i> Daftar Akun Kontingen
                     </a>
-                    <a href="{{ route('login') }}" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3">
+                    <a href="{{ route('new-login') }}" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold px-8 py-3 rounded-2xl uppercase tracking-wide text-sm transition hover:-translate-y-1 flex items-center gap-3">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </a>
                 @endauth

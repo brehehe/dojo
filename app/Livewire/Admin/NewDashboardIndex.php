@@ -5,6 +5,8 @@ namespace App\Livewire\Admin;
 use App\Models\Athlete;
 use App\Models\Contingent;
 use App\Models\Registration;
+use App\Models\Rundown\Rundown;
+use App\Models\TournamentResult;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -19,6 +21,7 @@ class NewDashboardIndex extends Component
     {
         $this->resetPage();
     }
+
     public function getStats(): array
     {
         $totalAthletes = Athlete::count();
@@ -79,20 +82,93 @@ class NewDashboardIndex extends Component
 
     public function getLatestContingents(): Collection
     {
-        return Contingent::latest()->take(8)->get();
+        return Contingent::withCount('athletes')->latest()->take(8)->get();
     }
 
     public function getLatestRegistrations()
     {
         return Registration::with('contingent')
-            ->when($this->search, function($query) {
-                $query->where('registration_number', 'ilike', '%' . $this->search . '%')
-                      ->orWhereHas('contingent', function($q) {
-                          $q->where('name', 'ilike', '%' . $this->search . '%');
-                      });
+            ->when($this->search, function ($query) {
+                $query->where('registration_number', 'ilike', '%'.$this->search.'%')
+                    ->orWhereHas('contingent', function ($q) {
+                        $q->where('name', 'ilike', '%'.$this->search.'%');
+                    });
             })
             ->latest()
             ->paginate(5);
+    }
+
+    public function getMedalStats(): array
+    {
+        return [
+            'gold' => TournamentResult::where('rank', 1)->count(),
+            'silver' => TournamentResult::where('rank', 2)->count(),
+            'bronze' => TournamentResult::whereIn('rank', [3, 4])->count(),
+        ];
+    }
+
+    public function getMedalDistribution(): array
+    {
+        $contingents = Contingent::withCount(['tournamentResults as gold_count' => function ($query) {
+            $query->where('rank', 1);
+        }])
+            ->withCount(['tournamentResults as silver_count' => function ($query) {
+                $query->where('rank', 2);
+            }])
+            ->withCount(['tournamentResults as bronze_count' => function ($query) {
+                $query->whereIn('rank', [3, 4]);
+            }])
+            ->orderByRaw('gold_count DESC, silver_count DESC, bronze_count DESC')
+            ->take(7)
+            ->get();
+
+        $labels = $contingents->pluck('name')->toArray();
+        $goldData = $contingents->pluck('gold_count')->toArray();
+        $silverData = $contingents->pluck('silver_count')->toArray();
+        $bronzeData = $contingents->pluck('bronze_count')->toArray();
+
+        return [
+            'labels' => $labels,
+            'gold' => $goldData,
+            'silver' => $silverData,
+            'bronze' => $bronzeData,
+            'contingents' => $contingents,
+        ];
+    }
+
+    public function getTodaySchedules(): Collection
+    {
+        return Rundown::whereDate('date', now())->orderBy('order')->take(6)->get();
+    }
+
+    public function getLatestActivities(): array
+    {
+        // Simple mock of recent activities based on registrations and results
+        $activities = [];
+
+        $registrations = Registration::with('contingent')->latest()->take(3)->get();
+        foreach ($registrations as $reg) {
+            $activities[] = [
+                'icon' => 'fa-user-plus',
+                'color' => '#27ae60',
+                'bg' => 'rgba(39,174,96,.12)',
+                'title' => 'Registrasi Baru — '.($reg->contingent->name ?? 'Kontingen'),
+                'desc' => ($reg->contingent->kab_kota ?? '-').' · '.$reg->created_at->diffForHumans(),
+            ];
+        }
+
+        $results = TournamentResult::latest()->take(3)->get();
+        foreach ($results as $res) {
+            $activities[] = [
+                'icon' => 'fa-medal',
+                'color' => '#b8860b',
+                'bg' => 'rgba(212,168,67,.12)',
+                'title' => 'Hasil Pertandingan — Rank '.$res->rank,
+                'desc' => $res->contingent_name.' · '.$res->created_at->diffForHumans(),
+            ];
+        }
+
+        return $activities;
     }
 
     public function render()
@@ -103,6 +179,10 @@ class NewDashboardIndex extends Component
             'statusBreakdown' => $this->getRegistrationStatusBreakdown(),
             'latestContingents' => $this->getLatestContingents(),
             'latestRegistrations' => $this->getLatestRegistrations(),
-        ])->layout('layouts.tailwick.app', ['title' => 'Admin Dashboard']);
+            'medalStats' => $this->getMedalStats(),
+            'medalDistribution' => $this->getMedalDistribution(),
+            'todaySchedules' => $this->getTodaySchedules(),
+            'latestActivities' => $this->getLatestActivities(),
+        ])->layout('layouts.premium', ['title' => 'Admin Dashboard']);
     }
 }

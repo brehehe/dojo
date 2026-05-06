@@ -48,7 +48,7 @@ $maxWidth = [
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
     x-cloak
-    class="fixed inset-0 overflow-y-auto px-4 z-[300] flex items-center justify-center min-h-screen"
+    class="fixed inset-0 overflow-y-auto px-4 z-[300] flex items-start justify-center min-h-screen py-6 sm:py-10"
 >
     <div
         x-show="show"
@@ -66,7 +66,7 @@ $maxWidth = [
 
     <div
         x-show="show"
-        class="bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all sm:w-full {{ $maxWidth }} sm:mx-auto relative z-[301] border border-white/20"
+        class="bg-white rounded-2xl shadow-2xl transform transition-all sm:w-full {{ $maxWidth }} sm:mx-auto relative z-[301] border border-white/20 max-h-[90vh] flex flex-col"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -75,7 +75,7 @@ $maxWidth = [
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
     >
         @if($title)
-            <div class="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-white">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                 <div class="space-y-0.5">
                     <h3 class="text-xl font-black text-slate-800 tracking-tight">
                         {{ $title }}
@@ -87,12 +87,12 @@ $maxWidth = [
             </div>
         @endif
 
-        <div class="p-4">
+        <div class="p-0 flex-1 overflow-y-auto">
             {{ $slot }}
         </div>
 
         @if(isset($footer))
-            <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3">
+            <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
                 {{ $footer }}
             </div>
         @endif

@@ -1,76 +1,146 @@
 <div>
     @if ($paginator->hasPages())
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
-            <!-- Information Section -->
-             <div class="flex items-center gap-3">
-                <div class="text-[16px] font-black text-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    Menampilkan
-                    <span class="text-black">{{ $paginator->firstItem() }}</span>
-                    sampai
-                    <span class="text-black">{{ $paginator->lastItem() }}</span>
-                    dari
-                    <span class="text-orange-600">{{ $paginator->total() }}</span>
-                    Hasil
-                </div>
-            </div>
+        <style>
+            .pagination-prem {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
 
-            <!-- Navigation Controls -->
-            <div class="flex items-center gap-1.5">
-                {{-- Previous Page Link --}}
+            .page-info-prem {
+                font-size: 12px;
+                color: var(--smoke);
+                font-family: 'DM Sans', sans-serif;
+                font-weight: 500;
+            }
+
+            .pagination-wrapper-prem {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+
+            .page-btn-prem {
+                min-width: 32px;
+                height: 32px;
+                padding: 0 10px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--paper2);
+                border-radius: 8px;
+                background: #fff;
+                color: var(--ink);
+                font-size: 12px;
+                font-weight: 700;
+                font-family: 'DM Sans', sans-serif;
+                cursor: pointer;
+                transition: all .2s;
+                text-decoration: none;
+            }
+
+            .page-btn-prem:hover:not(:disabled) {
+                border-color: var(--ink);
+                background: var(--paper);
+            }
+
+            .page-btn-prem.active {
+                background: var(--red);
+                color: #fff;
+                border-color: var(--red);
+                box-shadow: 0 2px 8px rgba(192, 57, 43, 0.2);
+            }
+
+            .page-btn-prem:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .page-btn-prem.ellipsis {
+                border: none;
+                background: transparent;
+                cursor: default;
+                min-width: auto;
+                padding: 0 2px;
+            }
+
+            .page-btn-prem.ellipsis:hover {
+                background: transparent;
+                border: none;
+            }
+
+            @media (max-width: 640px) {
+                .pagination-prem {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+
+                .pagination-wrapper-prem {
+                    width: 100%;
+                }
+            }
+        </style>
+
+        <div class="pagination-prem">
+
+            {{-- INFO --}}
+            <span class="page-info-prem">
+                Menampilkan
+                {{ $paginator->firstItem() }}
+                –
+                {{ $paginator->lastItem() }}
+                dari
+                {{ number_format($paginator->total()) }}
+                data
+            </span>
+
+            {{-- PAGINATION --}}
+            <div class="pagination-wrapper-prem">
+
+                {{-- PREVIOUS --}}
                 @if ($paginator->onFirstPage())
-                    <span
-                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100">
-                        <i class="fas fa-chevron-left text-[16px]"></i>
-                    </span>
+                    <button class="page-btn-prem" disabled>
+                        <i class="fa-solid fa-chevron-left" style="font-size:10px;"></i>
+                    </button>
                 @else
-                    <button wire:click="previousPage" wire:loading.attr="disabled" rel="prev"
-                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-black hover:text-orange-600 hover:border-orange-500 hover:shadow-md transition-all border border-slate-100 active:scale-95 group">
-                        <i class="fas fa-chevron-left text-[16px] group-hover:-translate-x-0.5 transition-transform"></i>
+                    <button class="page-btn-prem" wire:click="previousPage" wire:loading.attr="disabled">
+                        <i class="fa-solid fa-chevron-left" style="font-size:10px;"></i>
                     </button>
                 @endif
 
-                {{-- Pagination Elements --}}
-                <div class="flex items-center gap-2 hidden sm:flex">
-                    @foreach ($elements as $element)
-                        {{-- "Three Dots" Separator --}}
-                        @if (is_string($element))
-                            <span class="w-10 h-10 flex items-center justify-center text-black font-black">
-                                {{ $element }}
-                            </span>
-                        @endif
+                {{-- PAGES --}}
+                @foreach ($elements as $element)
+                    {{-- "Three Dots" Separator --}}
+                    @if (is_string($element))
+                        <button class="page-btn-prem ellipsis" disabled>{{ $element }}</button>
+                    @endif
 
-                        {{-- Array Of Links --}}
-                        @if (is_array($element))
-                            @foreach ($element as $page => $url)
-                                @if ($page == $paginator->currentPage())
-                                    <span
-                                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-orange-600 text-white font-black shadow-lg shadow-orange-600/30 text-[16px] border border-orange-600 relative overflow-hidden">
-                                        <div class="absolute inset-0 bg-gradient-to-tr from-white/0 to-white/20"></div>
-                                        {{ $page }}
-                                    </span>
-                                @else
-                                    <button wire:click="gotoPage({{ $page }})"
-                                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-black font-bold hover:text-orange-600 hover:border-orange-500 hover:bg-orange-50 transition-all border border-slate-100 active:scale-95 text-[16px]">
-                                        {{ $page }}
-                                    </button>
-                                @endif
-                            @endforeach
-                        @endif  
-                    @endforeach
-                </div>
+                    {{-- Array Of Links --}}
+                    @if (is_array($element))
+                        @foreach ($element as $page => $url)
+                            <button class="page-btn-prem {{ $page == $paginator->currentPage() ? 'active' : '' }}" 
+                                wire:click="gotoPage({{ $page }})"
+                                wire:loading.attr="disabled">
+                                {{ $page }}
+                            </button>
+                        @endforeach
+                    @endif
+                @endforeach
 
-                {{-- Next Page Link --}}
+                {{-- NEXT --}}
                 @if ($paginator->hasMorePages())
-                    <button wire:click="nextPage" wire:loading.attr="disabled" rel="next"
-                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-black hover:text-orange-600 hover:border-orange-500 hover:shadow-md transition-all border border-slate-100 active:scale-95 group">
-                        <i class="fas fa-chevron-right text-[16px] group-hover:translate-x-0.5 transition-transform"></i>
+                    <button class="page-btn-prem" wire:click="nextPage" wire:loading.attr="disabled">
+                        <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
                     </button>
                 @else
-                    <span
-                        class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-100">
-                        <i class="fas fa-chevron-right text-[16px]"></i>
-                    </span>
+                    <button class="page-btn-prem" disabled>
+                        <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+                    </button>
                 @endif
+
             </div>
         </div>
     @endif

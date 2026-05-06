@@ -275,14 +275,24 @@ class RefereeScoringDashboard extends Component
             return;
         }
 
-        // Verify judge index from assignment just before saving to ensure accuracy
-        $schedule = ScheduleReferee::where('referee_id', $this->referee->id)
+        // 1. Check Manual Assignment Override
+        $activeAssignment = ActiveCourtReferee::where('referee_id', $this->referee->id)
             ->where('court_id', $this->assignedCourt?->id)
-            ->where('session_time_id', $this->assignedSession?->id)
-            ->where('rundown_id', $this->assignedRundown?->id)
             ->first();
 
-        if (! $schedule) {
+        $validAssignment = null;
+        if ($activeAssignment) {
+            $validAssignment = $activeAssignment;
+        } else {
+            // 2. Fallback to Schedule
+            $validAssignment = ScheduleReferee::where('referee_id', $this->referee->id)
+                ->where('court_id', $this->assignedCourt?->id)
+                ->where('session_time_id', $this->assignedSession?->id)
+                ->where('rundown_id', $this->assignedRundown?->id)
+                ->first();
+        }
+
+        if (! $validAssignment) {
             $this->dispatch('swal', [
                 'icon' => 'error',
                 'title' => 'Gagal Menyimpan',
@@ -292,7 +302,7 @@ class RefereeScoringDashboard extends Component
             return;
         }
 
-        $this->judgeIndex = $schedule->judge_index;
+        $this->judgeIndex = $validAssignment->judge_index;
 
         if (! $this->judgeIndex) {
             $this->dispatch('swal', [
