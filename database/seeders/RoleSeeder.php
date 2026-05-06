@@ -34,18 +34,48 @@ class RoleSeeder extends Seeder
             'Perwasitan',
             'Arbitrase',
             'Contingent',
+            'Koordinator Lapangan',
         ];
 
         foreach ($roles as $roleName) {
-            $user = User::create([
-                'name' => $roleName,
-                'email' => Str::slug($roleName).'@smart-perkemi.id',
-                'password' => Hash::make('password'),
-            ]);
+            $user = User::firstOrCreate(
+                ['email' => Str::slug($roleName) . '@smart-perkemi.id'],
+                [
+                    'name' => $roleName,
+                    'password' => Hash::make('password'),
+                ]
+            );
 
-            Role::create(['name' => $roleName]);
+            Role::firstOrCreate(['name' => $roleName]);
 
             $user->assignRole($roleName);
+
+            // Generate additional dummy users for Panitera and Koordinator Lapangan
+            if ($roleName === 'Panitera') {
+                for ($i = 1; $i <= 100; $i++) {
+                    $panitera = User::firstOrCreate(
+                        ['email' => "panitera{$i}@smart-perkemi.id"],
+                        [
+                            'name' => "Panitera Dummy {$i}",
+                            'password' => Hash::make('password'),
+                        ]
+                    );
+                    $panitera->assignRole($roleName);
+                }
+            }
+
+            if ($roleName === 'Koordinator Lapangan') {
+                for ($i = 1; $i <= 50; $i++) {
+                    $koor = User::firstOrCreate(
+                        ['email' => "koordinator{$i}@smart-perkemi.id"],
+                        [
+                            'name' => "Koor Lapangan Dummy {$i}",
+                            'password' => Hash::make('password'),
+                        ]
+                    );
+                    $koor->assignRole($roleName);
+                }
+            }
         }
 
         // Re-create Initial Super Admin User if doesn't exist

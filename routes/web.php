@@ -41,7 +41,34 @@ use App\Livewire\Admin\Master\Technique\AdminMasterTechniqueIndex;
 use App\Livewire\Admin\Master\User\AdminMasterUserIndex;
 use App\Livewire\Admin\Master\WeightGroup\AdminMasterWeightGroupIndex;
 use App\Livewire\Admin\MatchNumber\AdminMatchNumberVerifiedIndex;
+use App\Livewire\Admin\NewAgeGroupIndex;
+use App\Livewire\Admin\NewAthleteCreate;
+use App\Livewire\Admin\NewAthleteEdit;
+use App\Livewire\Admin\NewAthleteIndex;
+use App\Livewire\Admin\NewAthleteShow;
+use App\Livewire\Admin\NewContingentDetail;
+use App\Livewire\Admin\NewContingentForm;
+use App\Livewire\Admin\NewContingentIndex;
+use App\Livewire\Admin\NewCourtIndex;
 use App\Livewire\Admin\NewDashboardIndex;
+use App\Livewire\Admin\NewGenerateRefereeIndex;
+use App\Livewire\Admin\NewTechnicalMeetingDrawingIndex;
+use App\Livewire\Admin\NewKyuLevelIndex;
+use App\Livewire\Admin\NewMatchNumberIndex;
+use App\Livewire\Admin\NewOfficialForm;
+use App\Livewire\Admin\NewOfficialIndex;
+use App\Livewire\Admin\NewPaymentMethodIndex;
+use App\Livewire\Admin\NewPoolIndex;
+use App\Livewire\Admin\NewRefereeIndex;
+use App\Livewire\Admin\NewRegistrationIndex;
+use App\Livewire\Admin\NewRegistrationShow;
+use App\Livewire\Admin\NewRoleForm;
+use App\Livewire\Admin\NewRoleIndex;
+use App\Livewire\Admin\NewRundownIndex;
+use App\Livewire\Admin\NewSessionTimeIndex;
+use App\Livewire\Admin\NewTechniqueIndex;
+use App\Livewire\Admin\NewUserIndex;
+use App\Livewire\Admin\NewWeightGroupIndex;
 use App\Livewire\Admin\Profile\AdminProfileIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationShow;
@@ -52,11 +79,13 @@ use App\Livewire\Admin\Reports\AdminRegistrationByNumberReport;
 use App\Livewire\Admin\SmartWasit\AdminLaporanPerbabakIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIawIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIkIndex;
+use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIvIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanRankingSkwIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanSmartWasitSummaryIndex;
 use App\Livewire\Admin\TechnicalMeeting\Embu\AdminTechnicalMeetingEmbuIndex;
 use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriIndex;
 use App\Livewire\Auth\Login;
+use App\Livewire\Auth\NewLoginIndex;
 use App\Livewire\Auth\Register;
 use App\Livewire\Contingent\Dashboard;
 use App\Livewire\Contingent\Results;
@@ -81,6 +110,7 @@ Route::view('/piala_walikotasby2026', 'register')->name('register');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', Login::class)->name('login');
+    Route::get('new-login', NewLoginIndex::class)->name('new-login');
     Route::get('register', Register::class)->name('register');
 });
 
@@ -108,6 +138,40 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', AdminDashboard::class)->name('dashboard');
         Route::get('/home-dashboard', HomeDashboardIndex::class)->name('home-dashboard');
         Route::get('/new-dashboard', NewDashboardIndex::class)->name('new-dashboard');
+        Route::get('/new-registrations', NewRegistrationIndex::class)->name('new-registrations');
+        Route::get('/new-registrations/{registration}', NewRegistrationShow::class)->name('new-registrations.show');
+        Route::get('/new-athletes', NewAthleteIndex::class)->name('new-athletes');
+        Route::get('/new-athletes/create', NewAthleteCreate::class)->name('new-athletes.create');
+        Route::get('/new-athletes/{athlete}', NewAthleteShow::class)->name('new-athletes.show');
+        Route::get('/new-athletes/{athlete}/edit', NewAthleteEdit::class)->name('new-athletes.edit');
+        Route::get('/new-age-groups', NewAgeGroupIndex::class)->name('new-age-groups');
+        Route::get('/new-kyu-levels', NewKyuLevelIndex::class)->name('new-kyu-levels');
+        Route::get('/new-weight-groups', NewWeightGroupIndex::class)->name('new-weight-groups');
+        Route::get('/new-techniques', NewTechniqueIndex::class)->name('new-techniques');
+        Route::get('/new-match-numbers', NewMatchNumberIndex::class)->name('new-match-numbers');
+        Route::get('/new-payment-methods', NewPaymentMethodIndex::class)->name('new-payment-methods');
+        Route::get('/new-courts', NewCourtIndex::class)->name('new-courts');
+        Route::get('/new-pools', NewPoolIndex::class)->name('new-pools');
+        Route::get('/new-session-times', NewSessionTimeIndex::class)->name('new-session-times');
+        Route::get('/new-rundowns', NewRundownIndex::class)->name('new-rundowns');
+        Route::get('/new-tm-drawing', NewTechnicalMeetingDrawingIndex::class)->name('new-tm-drawing');
+        Route::get('/new-users', NewUserIndex::class)->name('new-users');
+        Route::get('/master/new-referees', NewRefereeIndex::class)->name('master.new-referees');
+        Route::get('/arbitrase/new-referees', NewRefereeIndex::class)->name('arbitrase.new-referees');
+        Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
+
+        Route::get('/new-roles', NewRoleIndex::class)->name('new-roles');
+        Route::get('/new-roles/create', NewRoleForm::class)->name('new-roles.create');
+        Route::get('/new-roles/{id}/edit', NewRoleForm::class)->name('new-roles.edit');
+
+        Route::get('/new-contingents', NewContingentIndex::class)->name('new-contingents');
+        Route::get('/new-contingents/create', NewContingentForm::class)->name('new-contingents.create');
+        Route::get('/new-contingents/{id}/edit', NewContingentForm::class)->name('new-contingents.edit');
+        Route::get('/new-contingents/{contingent}/detail', NewContingentDetail::class)->name('new-contingents.detail');
+
+        Route::get('/new-officials', NewOfficialIndex::class)->name('new-officials');
+        Route::get('/new-officials/create', NewOfficialForm::class)->name('new-officials.create');
+        Route::get('/new-officials/{id}/edit', NewOfficialForm::class)->name('new-officials.edit');
         Route::get('/profile', AdminProfileIndex::class)->name('profile');
 
         Route::prefix('master')->name('master.')->group(function () {
@@ -196,6 +260,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/ranking-skw', AdminLaporanRankingSkwIndex::class)->name('ranking-skw');
             Route::get('/ranking-iaw', AdminLaporanRankingIawIndex::class)->name('ranking-iaw');
             Route::get('/ranking-ik', AdminLaporanRankingIkIndex::class)->name('ranking-ik');
+            Route::get('/ranking-iv', AdminLaporanRankingIvIndex::class)->name('ranking-iv');
             Route::get('/perbabak', AdminLaporanPerbabakIndex::class)->name('perbabak');
         });
 

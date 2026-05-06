@@ -272,6 +272,8 @@
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iaw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IAW</a>
                 <a href="{{ route('admin.smart-wasit.ranking-ik') }}"
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-ik') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IK</a>
+                <a href="{{ route('admin.smart-wasit.ranking-iv') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iv') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IV</a>
                 <a href="{{ route('admin.smart-wasit.perbabak') }}"
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.perbabak') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Perbabak</a>
             </div>

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Contingent extends Model
 {
@@ -47,5 +48,10 @@ class Contingent extends Model
     public function officials()
     {
         return $this->hasMany(Official::class);
+    }
+
+    public function tournamentResults(): HasManyThrough
+    {
+        return $this->hasManyThrough(TournamentResult::class, Registration::class);
     }
 }
