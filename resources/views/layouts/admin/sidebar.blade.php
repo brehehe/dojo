@@ -16,8 +16,8 @@
 
     <!-- Sidebar Scrollable Menu -->
     <div class="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 space-y-1 custom-scrollbar">
-        <a href="{{ route('admin.dashboard') }}"
-            class="flex items-center gap-3 py-3 rounded-xl transition-all group {{ request()->routeIs('admin.dashboard') ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
+        <a href="{{ route('admin.new-dashboard') }}"
+            class="flex items-center gap-3 py-3 rounded-xl transition-all group {{ request()->routeIs('admin.new-dashboard') ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
             :class="collapsed ? 'justify-center px-0' : 'px-3'">
             <i class="fas fa-th-large w-5 text-center text-[15px] opacity-70 group-hover:opacity-100"></i>
             <span class="text-[15px] font-bold tracking-tight" x-show="!collapsed">Dashboard</span>

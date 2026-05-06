@@ -2,28 +2,34 @@
 
 namespace App\Livewire\Admin\Profile;
 
-use App\Models\User;
+use App\Models\Contingent;
+use App\Models\Referee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.admin')]
+#[Layout('layouts.premium')]
 class AdminProfileIndex extends Component
 {
     public string $name = '';
+
     public string $email = '';
-    
+
     public string $current_password = '';
+
     public string $new_password = '';
+
     public string $new_password_confirmation = '';
 
     // Role Specific Data
     public bool $is_referee = false;
+
     public array $referee_data = [];
-    
+
     public bool $is_contingent = false;
+
     public array $contingent_data = [];
 
     public function mount()
@@ -33,14 +39,14 @@ class AdminProfileIndex extends Component
         $this->email = $user->email;
 
         // Check Referee
-        $referee = \App\Models\Referee::where('user_id', $user->id)->first();
+        $referee = Referee::where('user_id', $user->id)->first();
         if ($referee) {
             $this->is_referee = true;
             $this->referee_data = $referee->toArray();
         }
 
         // Check Contingent
-        $contingent = \App\Models\Contingent::where('user_id', $user->id)->first();
+        $contingent = Contingent::where('user_id', $user->id)->first();
         if ($contingent) {
             $this->is_contingent = true;
             $this->contingent_data = $contingent->toArray();
@@ -51,7 +57,7 @@ class AdminProfileIndex extends Component
     {
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . Auth::id()],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.Auth::id()],
         ]);
 
         $user = Auth::user();
@@ -62,7 +68,7 @@ class AdminProfileIndex extends Component
 
         // Update Referee Data
         if ($this->is_referee) {
-            \App\Models\Referee::where('user_id', $user->id)->update([
+            Referee::where('user_id', $user->id)->update([
                 'nik' => $this->referee_data['nik'] ?? null,
                 'phone' => $this->referee_data['phone'] ?? null,
                 'province' => $this->referee_data['province'] ?? null,
@@ -73,7 +79,7 @@ class AdminProfileIndex extends Component
 
         // Update Contingent Data
         if ($this->is_contingent) {
-            \App\Models\Contingent::where('user_id', $user->id)->update([
+            Contingent::where('user_id', $user->id)->update([
                 'leader_name' => $this->contingent_data['leader_name'] ?? null,
                 'leader_phone' => $this->contingent_data['leader_phone'] ?? null,
                 'kab_kota' => $this->contingent_data['kab_kota'] ?? null,
@@ -84,7 +90,7 @@ class AdminProfileIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Profil Berhasil Diperbarui',
-            'text' => 'Perubahan nama dan email telah disimpan.'
+            'text' => 'Perubahan nama dan email telah disimpan.',
         ]);
     }
 
@@ -105,7 +111,7 @@ class AdminProfileIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Password Berhasil Diubah',
-            'text' => 'Gunakan password baru Anda untuk login berikutnya.'
+            'text' => 'Gunakan password baru Anda untuk login berikutnya.',
         ]);
     }
 

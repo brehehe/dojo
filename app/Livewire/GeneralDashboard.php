@@ -12,14 +12,15 @@ class GeneralDashboard extends Component
 
         // If user has admin roles, they should probably go to the Admin Dashboard
         if ($user->hasAnyRole(['Super Admin', 'Admin'])) {
-            return redirect()->route('admin.dashboard');
+            return redirect()->route('admin.new-dashboard');
         }
 
         // Handle Contingent role
         if ($user->hasRole('Contingent')) {
-            if (!$user->contingent()->exists()) {
+            if (! $user->contingent()->exists()) {
                 return redirect()->route('contingent.setup');
             }
+
             return redirect()->route('contingent.dashboard');
         }
     }
@@ -27,6 +28,6 @@ class GeneralDashboard extends Component
     public function render()
     {
         return view('livewire.general-dashboard')
-            ->layout('layouts.admin'); // Reusing the premium admin layout
+            ->layout('layouts.premium');
     }
 }

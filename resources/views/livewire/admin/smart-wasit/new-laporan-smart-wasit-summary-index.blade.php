@@ -265,11 +265,11 @@
 
         {{-- TABS --}}
         <div class="tm-tabs no-scrollbar">
-            <button wire:click=\"$set('tab', 'skw')\" class="tm-tab-btn {{ $tab === 'skw' ? 'active' : '' }}">Ranking Kompetensi</button>
-            <button wire:click=\"$set('tab', 'iaw')\" class="tm-tab-btn {{ $tab === 'iaw' ? 'active' : '' }}">Analisis Akurasi</button>
-            <button wire:click=\"$set('tab', 'ik')\" class="tm-tab-btn {{ $tab === 'ik' ? 'active' : '' }}">Analisis Konsistensi</button>
-            <button wire:click=\"$set('tab', 'iv')\" class="tm-tab-btn {{ $tab === 'iv' ? 'active' : '' }}">Analisis Validitas</button>
-            <button wire:click=\"$set('tab', 'detail')\" class="tm-tab-btn {{ $tab === 'detail' ? 'active' : '' }}">Detail Penilaian</button>
+            <button wire:click="$set('tab', 'skw')" class="tm-tab-btn {{ $tab === 'skw' ? 'active' : '' }}">Ranking Kompetensi</button>
+            <button wire:click="$set('tab', 'iaw')" class="tm-tab-btn {{ $tab === 'iaw' ? 'active' : '' }}">Analisis Akurasi</button>
+            <button wire:click="$set('tab', 'ik')" class="tm-tab-btn {{ $tab === 'ik' ? 'active' : '' }}">Analisis Konsistensi</button>
+            <button wire:click="$set('tab', 'iv')" class="tm-tab-btn {{ $tab === 'iv' ? 'active' : '' }}">Analisis Validitas</button>
+            <button wire:click="$set('tab', 'detail')" class="tm-tab-btn {{ $tab === 'detail' ? 'active' : '' }}">Detail Penilaian</button>
         </div>
 
         {{-- CONTENT SECTIONS --}}

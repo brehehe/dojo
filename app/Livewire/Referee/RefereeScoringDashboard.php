@@ -9,12 +9,13 @@ use App\Models\Referee;
 use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
 use App\Models\ScheduleReferee;
+use App\Models\Technique\Technique;
 use App\Services\RandoriScoringService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.guest')] // Use guest for full screen clean tablet view
+#[Layout('layouts.premium')]
 class RefereeScoringDashboard extends Component
 {
     public $referee;
@@ -28,6 +29,14 @@ class RefereeScoringDashboard extends Component
     public $assignedRundown = null;
 
     public $judgeIndex = null;
+
+    public $activeContingentName = '-';
+
+    public $activeRoundLabel = '-';
+
+    public $activeTechniqueLabel = '-';
+
+    public array $activeTechniqueList = [];
 
     // Embu Itemized Scores
     public $embuItems = [
@@ -136,6 +145,7 @@ class RefereeScoringDashboard extends Component
             $this->assignedSession = $newAssignedSession;
             $this->assignedRundown = $newAssignedRundown;
             $this->judgeIndex = $newJudgeIndex;
+            $this->syncActiveMatchMeta();
 
             if ($this->activeMatch) {
                 $this->loadExistingDetails();
@@ -155,6 +165,66 @@ class RefereeScoringDashboard extends Component
             5 => 'Wasit Pembantu 2',
             default => 'Juri '.$this->judgeIndex
         };
+    }
+
+    private function syncActiveMatchMeta(): void
+    {
+        $this->activeContingentName = '-';
+        $this->activeRoundLabel = $this->activeMatch?->round ?? ($this->assignedRundown?->name ?? '-');
+        $this->activeTechniqueLabel = '-';
+        $this->activeTechniqueList = [];
+
+        if (! $this->activeMatch?->active_registration_id) {
+            return;
+        }
+
+        $registration = Registration::with([
+            'contingent',
+            'athletes.matchNumbers' => fn ($query) => $query
+                ->whereKey($this->activeMatch->id)
+                ->wherePivot('registration_id', $this->activeMatch->active_registration_id),
+        ])->find($this->activeMatch->active_registration_id);
+
+        if (! $registration) {
+            return;
+        }
+
+        $this->activeContingentName = $registration->contingent?->name ?? '-';
+
+        $selectedTechniqueIds = $registration->athletes
+            ->flatMap(fn ($athlete) => $athlete->matchNumbers->pluck('pivot.technique_ids'))
+            ->filter()
+            ->first();
+
+        if (! $selectedTechniqueIds) {
+            return;
+        }
+
+        $decodedTechniqueIds = json_decode($selectedTechniqueIds, true);
+
+        $techniqueIds = collect(is_array($decodedTechniqueIds) ? $decodedTechniqueIds : explode(',', (string) $selectedTechniqueIds))
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        if ($techniqueIds->isEmpty()) {
+            return;
+        }
+
+        $techniqueNames = Technique::whereIn('id', $techniqueIds)
+            ->get()
+            ->keyBy('id');
+
+        $selectedTechniqueNames = $techniqueIds
+            ->map(fn ($id) => $techniqueNames->get($id)?->name)
+            ->filter()
+            ->values()
+            ->all();
+
+        if ($selectedTechniqueNames !== []) {
+            $this->activeTechniqueLabel = implode(', ', $selectedTechniqueNames);
+            $this->activeTechniqueList = $selectedTechniqueNames;
+        }
     }
 
     public function loadExistingDetails()
@@ -238,12 +308,13 @@ class RefereeScoringDashboard extends Component
     {
         if ($this->activeMatch && $this->activeMatch->draft_type === 'embu') {
             $this->totalScore = 0;
-            // Limit Embu score fields to maximum 10 mathematically
+            // Embu score range: 8.0 – 10.0
             foreach ($this->embuItems as $key => $val) {
                 $numericVal = is_numeric($val) ? (float) $val : 0;
-                if ($numericVal > 10) {
-                    $numericVal = 10;
-                    $this->embuItems[$key] = 10;
+                if ($numericVal !== 0.0) {
+                    // Only clamp non-zero values (zero = not yet filled)
+                    $numericVal = max(8.0, min(10.0, $numericVal));
+                    $this->embuItems[$key] = $numericVal;
                 }
                 $this->totalScore += $numericVal;
             }

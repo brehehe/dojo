@@ -37,8 +37,8 @@
             <span class="text-sm truncate" x-show="sidebarOpen">Home Dashboard</span>
         </a>
 
-        @php $isActive = request()->routeIs('admin.dashboard'); @endphp
-        <a href="{{ route('admin.dashboard') }}"
+        @php $isActive = request()->routeIs('admin.new-dashboard'); @endphp
+        <a href="{{ route('admin.new-dashboard') }}"
            class="group flex items-center gap-3 py-2.5 rounded-2xl transition-all duration-300"
            :class="{
                'px-4': sidebarOpen, 'px-0 justify-center': !sidebarOpen,

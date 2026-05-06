@@ -148,8 +148,8 @@
         <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
             <nav class="flex items-center gap-2 h-14">
                 @if(auth()->user()->hasRole('Super Admin|Admin'))
-                    <a href="{{ route('admin.dashboard') }}"
-                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600' }}">
+                    <a href="{{ route('admin.new-dashboard') }}"
+                        class="flex items-center gap-2.5 px-4 h-full transition-all group border-b-2 {{ request()->routeIs('admin.new-dashboard') ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-900 hover:text-orange-600' }}">
                         <i class="fas fa-th-large text-[15px] opacity-50 group-hover:opacity-100"></i>
                         <span class="text-[15px] font-bold tracking-tight">Dashboard</span>
                     </a>
@@ -578,8 +578,8 @@
         x-cloak>
 
         <div class="space-y-2">
-            <a href="{{ route('admin.dashboard') }}"
-                class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.dashboard') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
+            <a href="{{ route('admin.new-dashboard') }}"
+                class="flex items-center gap-4 p-5 rounded-[2rem] {{ request()->routeIs('admin.new-dashboard') ? 'bg-orange-600 text-white shadow-xl shadow-orange-600/20' : 'text-slate-300 hover:bg-white/5 shadow-sm' }} transition-all">
                 <i class="fas fa-th-large text-lg"></i>
                 <span class="font-black uppercase tracking-wider text-[15px]">Dashboard</span>
             </a>

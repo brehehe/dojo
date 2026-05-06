@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="id">
+@php
+  $user = Auth::user();
+  $isMobileRole = $user && $user->hasAnyRole(['Contingent', 'Perwasitan','Wasit']);
+  $isReferee    = $user && $user->hasRole(['Perwasitan','Wasit']);
+@endphp
 
 <head>
   <meta charset="UTF-8">
@@ -658,14 +663,107 @@
         display: none;
       }
     }
+
+    /* ══════════════════════════════════════════════════════
+   MOBILE ROLE — Bottom Nav (Contingent & Referee)
+══════════════════════════════════════════════════════ */
+    .mob-body-role aside,
+    .mob-body-role #overlay {
+      display: none !important;
+    }
+
+    .mob-body-role main.premium-main {
+      margin-left: 0;
+      padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .mob-body-role header.premium-header .hamburger,
+    .mob-body-role header.premium-header .search-wrap-premium,
+    .mob-body-role header.premium-header .top-btn {
+      display: none !important;
+    }
+
+    .mob-body-role .page-title-premium {
+      font-size: 13px;
+    }
+
+    /* ── TOPBAR role badge (mobile roles) ── */
+    .mob-role-badge {
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      flex-shrink: 0;
+    }
+    .mob-role-badge.contingent { background: rgba(52,152,219,.15); color: #5dade2; }
+    .mob-role-badge.referee    { background: rgba(192,57,43,.15);  color: #e74c3c; }
+
+    /* ── BOTTOM NAV ── */
+    .mob-bottomnav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 66px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: var(--ink);
+      border-top: 1px solid rgba(255,255,255,.06);
+      align-items: stretch;
+      z-index: 200;
+    }
+
+    .mob-body-role .mob-bottomnav { display: flex; }
+
+    .mob-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      text-decoration: none;
+      color: rgba(255,255,255,.38);
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      transition: color .15s;
+      padding: 8px 4px 6px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: 'DM Sans', sans-serif;
+      position: relative;
+    }
+
+    .mob-nav-btn i { font-size: 18px; line-height: 1; }
+    .mob-nav-btn:hover { color: rgba(255,255,255,.65); }
+
+    .mob-nav-btn.active {
+      color: var(--gold-lt);
+    }
+    .mob-nav-btn.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 28px; height: 2px;
+      background: var(--red-glow);
+      border-radius: 0 0 4px 4px;
+    }
+    .mob-nav-btn.danger { color: rgba(231,76,60,.45); }
+    .mob-nav-btn.danger:hover { color: var(--red-glow); }
   </style>
   @stack('styles')
 </head>
 
-<body>
+<body class="{{ $isMobileRole ? 'mob-body-role' : '' }}">
 
   <div id="overlay" onclick="closeSidebar()"></div>
 
+  {{-- ── Sidebar: only rendered for Admin roles ── --}}
+  @if(!$isMobileRole)
   <aside id="sidebar">
     <div class="brand">
       <div class="brand-top">
@@ -688,18 +786,37 @@
       </div>
     </div>
   </aside>
+  @endif
 
   <main class="premium-main">
     <header class="premium-header">
+      {{-- Hamburger: only for admin sidebar --}}
+      @if(!$isMobileRole)
       <button class="hamburger" onclick="openSidebar()">
         <i class="fa-solid fa-bars"></i>
       </button>
-      <span class="page-title-premium">{{ $title ?? 'Dashboard' }} <span>/ Overview</span></span>
+      @endif
+
+      <span class="page-title-premium">{{ $title ?? 'Dashboard' }}
+        @if(!$isMobileRole)<span>/ Overview</span>@endif
+      </span>
+
+      {{-- Mobile Role Badge (visible only for non-admin) --}}
+      @if($isMobileRole)
+        @if($isReferee)
+          <span class="mob-role-badge referee"><i class="fa-solid fa-gavel" style="margin-right:4px;"></i>Wasit</span>
+        @else
+          <span class="mob-role-badge contingent"><i class="fa-solid fa-flag" style="margin-right:4px;"></i>Kontingen</span>
+        @endif
+      @endif
+
+      @if(!$isMobileRole)
       <div class="search-wrap-premium">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" placeholder="Cari peserta, kontingen…">
       </div>
       <button class="top-btn"><i class="fa-solid fa-bell"></i></button>
+      @endif
 
       <!-- Profile Dropdown -->
       <div class="profile-wrap" x-data="{ open: false }" @click.outside="open = false">
@@ -709,7 +826,7 @@
           </div>
           <div class="profile-trigger-info" style="display:none;" id="profileTriggerInfo">
             <span>{{ Str::limit(Auth::user()->name, 16) }}</span>
-            <span>Administrator</span>
+            <span>{{ $isMobileRole ? ($isReferee ? 'Wasit Juri' : 'Kontingen') : 'Administrator' }}</span>
           </div>
           <i class="fa-solid fa-chevron-down profile-trigger-chevron" id="profileChevron" style="display:none;"
             :class="{ 'rotate-180': open }" style="transition: transform .2s;"></i>
@@ -727,11 +844,8 @@
             </div>
           </div>
           <div class="profile-dropdown-menu">
-            <a href="#" class="dd-item">
+            <a href="/admin/profile" class="dd-item">
               <i class="fa-solid fa-user"></i> Profil Saya
-            </a>
-            <a href="#" class="dd-item">
-              <i class="fa-solid fa-key"></i> Ganti Password
             </a>
             <div class="dd-divider"></div>
             <form method="POST" action="{{ route('logout') }}">
@@ -747,6 +861,66 @@
 
     {{ $slot }}
   </main>
+
+  {{-- ── Mobile Bottom Nav (Contingent & Referee only) ── --}}
+  @if($isMobileRole)
+  <nav class="mob-bottomnav">
+    @if($isReferee)
+      {{-- Referee Nav --}}
+      <a class="mob-nav-btn {{ request()->routeIs('admin.referee.scoring') ? 'active' : '' }}"
+         href="{{ route('admin.referee.scoring') }}" wire:navigate>
+        <i class="fa-solid fa-gavel"></i>
+        <span>Scoring</span>
+      </a>
+      <a class="mob-nav-btn {{ request()->routeIs('admin.profile') ? 'active' : '' }}"
+         href="{{ route('admin.profile') }}" wire:navigate>
+        <i class="fa-solid fa-circle-user"></i>
+        <span>Profil</span>
+      </a>
+      <form method="POST" action="{{ route('logout') }}" style="flex:1;display:contents;">
+        @csrf
+        <button type="submit" class="mob-nav-btn danger">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar</span>
+        </button>
+      </form>
+    @else
+      {{-- Contingent Nav --}}
+      <a class="mob-nav-btn {{ request()->routeIs('contingent.dashboard') ? 'active' : '' }}"
+         href="{{ route('contingent.dashboard') }}" wire:navigate>
+        <i class="fa-solid fa-gauge-high"></i>
+        <span>Dashboard</span>
+      </a>
+      <a class="mob-nav-btn {{ request()->routeIs('contingent.schedule') ? 'active' : '' }}"
+         href="{{ route('contingent.schedule') }}" wire:navigate>
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Jadwal</span>
+      </a>
+      <a class="mob-nav-btn {{ request()->routeIs('contingent.results') ? 'active' : '' }}"
+         href="{{ route('contingent.results') }}" wire:navigate>
+        <i class="fa-solid fa-trophy"></i>
+        <span>Hasil</span>
+      </a>
+      <a class="mob-nav-btn {{ request()->routeIs('contingent.standings') ? 'active' : '' }}"
+         href="{{ route('contingent.standings') }}" wire:navigate>
+        <i class="fa-solid fa-ranking-star"></i>
+        <span>Klasemen</span>
+      </a>
+      <a class="mob-nav-btn {{ request()->routeIs('admin.profile') ? 'active' : '' }}"
+         href="{{ route('admin.profile') }}" wire:navigate>
+        <i class="fa-solid fa-circle-user"></i>
+        <span>Profil</span>
+      </a>
+      <form method="POST" action="{{ route('logout') }}" style="flex:1;display:contents;">
+        @csrf
+        <button type="submit" class="mob-nav-btn danger">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar</span>
+        </button>
+      </form>
+    @endif
+  </nav>
+  @endif
 
   <script>
     function openSidebar() {
