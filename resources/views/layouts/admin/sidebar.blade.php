@@ -170,7 +170,8 @@
                 & Arbitrase</span>
             <hr class="border-white/5 mt-2 mb-1" x-show="collapsed">
         </div>
-        <div x-data="{ open: {{ request()->routeIs('admin.arbitrase.referees', 'admin.arbitrase.generate-referee') ? 'true' : 'false' }} }">
+        <div
+            x-data="{ open: {{ request()->routeIs('admin.arbitrase.referees', 'admin.arbitrase.generate-referee') ? 'true' : 'false' }} }">
             <button @click="open = !open"
                 class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.arbitrase.referees', 'admin.arbitrase.generate-referee') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
                 :class="collapsed ? 'justify-center px-0' : 'justify-between px-3'">
@@ -198,7 +199,8 @@
                 x-show="!collapsed">Panitera</span>
             <hr class="border-white/5 mt-2 mb-1" x-show="collapsed">
         </div>
-        <div x-data="{ open: {{ request()->routeIs('admin.panitera.*', 'admin.arbitrase.laporan-hasil', 'admin.arbitrase.laporan-skor', 'admin.arbitrase.rekapitulasi-randori', 'admin.arbitrase.rekapitulasi-embu') ? 'true' : 'false' }} }">
+        <div
+            x-data="{ open: {{ request()->routeIs('admin.panitera.*', 'admin.arbitrase.laporan-hasil', 'admin.arbitrase.laporan-skor', 'admin.arbitrase.rekapitulasi-randori', 'admin.arbitrase.rekapitulasi-embu') ? 'true' : 'false' }} }">
             <button @click="open = !open"
                 class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.panitera.*', 'admin.arbitrase.laporan-hasil', 'admin.arbitrase.laporan-skor', 'admin.arbitrase.rekapitulasi-randori', 'admin.arbitrase.rekapitulasi-embu') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
                 :class="collapsed ? 'justify-center px-0' : 'justify-between px-3'">
@@ -267,15 +269,20 @@
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.summary') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
                     Komprehensif</a>
                 <a href="{{ route('admin.smart-wasit.ranking-skw') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-skw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking SKW</a>
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-skw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking
+                    SKW</a>
                 <a href="{{ route('admin.smart-wasit.ranking-iaw') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iaw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IAW</a>
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iaw') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking
+                    IAW</a>
                 <a href="{{ route('admin.smart-wasit.ranking-ik') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-ik') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IK</a>
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-ik') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking
+                    IK</a>
                 <a href="{{ route('admin.smart-wasit.ranking-iv') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iv') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking IV</a>
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.ranking-iv') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Ranking
+                    IV</a>
                 <a href="{{ route('admin.smart-wasit.perbabak') }}"
-                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.perbabak') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan Perbabak</a>
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.smart-wasit.perbabak') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Laporan
+                    Perbabak</a>
             </div>
         </div>
         @endrole

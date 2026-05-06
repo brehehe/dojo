@@ -89,6 +89,12 @@ use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIkIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIvIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanRankingSkwIndex;
 use App\Livewire\Admin\SmartWasit\AdminLaporanSmartWasitSummaryIndex;
+use App\Livewire\Admin\SmartWasit\NewLaporanPerbabakIndex;
+use App\Livewire\Admin\SmartWasit\NewLaporanRankingIawIndex;
+use App\Livewire\Admin\SmartWasit\NewLaporanRankingIkIndex;
+use App\Livewire\Admin\SmartWasit\NewLaporanRankingIvIndex;
+use App\Livewire\Admin\SmartWasit\NewLaporanRankingSkwIndex;
+use App\Livewire\Admin\SmartWasit\NewLaporanSmartWasitSummaryIndex;
 use App\Livewire\Admin\TechnicalMeeting\Embu\AdminTechnicalMeetingEmbuIndex;
 use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriIndex;
 use App\Livewire\Auth\Login;
@@ -273,12 +279,20 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('smart-wasit')->name('smart-wasit.')->group(function () {
-            Route::get('/summary', AdminLaporanSmartWasitSummaryIndex::class)->name('summary');
-            Route::get('/ranking-skw', AdminLaporanRankingSkwIndex::class)->name('ranking-skw');
-            Route::get('/ranking-iaw', AdminLaporanRankingIawIndex::class)->name('ranking-iaw');
-            Route::get('/ranking-ik', AdminLaporanRankingIkIndex::class)->name('ranking-ik');
-            Route::get('/ranking-iv', AdminLaporanRankingIvIndex::class)->name('ranking-iv');
-            Route::get('/perbabak', AdminLaporanPerbabakIndex::class)->name('perbabak');
+            Route::get('/summary', NewLaporanSmartWasitSummaryIndex::class)->name('summary');
+            Route::get('/ranking-skw', NewLaporanRankingSkwIndex::class)->name('ranking-skw');
+            Route::get('/ranking-iaw', NewLaporanRankingIawIndex::class)->name('ranking-iaw');
+            Route::get('/ranking-ik', NewLaporanRankingIkIndex::class)->name('ranking-ik');
+            Route::get('/ranking-iv', NewLaporanRankingIvIndex::class)->name('ranking-iv');
+            Route::get('/perbabak', NewLaporanPerbabakIndex::class)->name('perbabak');
+
+            // Legacy Views (Old UI)
+            Route::get('/old-summary', AdminLaporanSmartWasitSummaryIndex::class)->name('old-summary');
+            Route::get('/old-ranking-skw', AdminLaporanRankingSkwIndex::class)->name('old-ranking-skw');
+            Route::get('/old-ranking-iaw', AdminLaporanRankingIawIndex::class)->name('old-ranking-iaw');
+            Route::get('/old-ranking-ik', AdminLaporanRankingIkIndex::class)->name('old-ranking-ik');
+            Route::get('/old-ranking-iv', AdminLaporanRankingIvIndex::class)->name('old-ranking-iv');
+            Route::get('/old-perbabak', AdminLaporanPerbabakIndex::class)->name('old-perbabak');
         });
 
         Route::prefix('panitera')->name('panitera.')->group(function () {

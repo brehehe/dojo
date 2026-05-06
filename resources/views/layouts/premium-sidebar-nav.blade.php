@@ -75,6 +75,20 @@
     <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-randori') ? 'active' : '' }}"
         href="{{ route('admin.arbitrase.new-rekapitulasi-randori') }}" wire:navigate><i class="fa-solid fa-fist-raised"></i> Rekap Randori</a>
 
+    <div class="nav-section">Smart Wasit</div>
+    <a class="nav-item {{ request()->routeIs('admin.smart-wasit.summary') ? 'active' : '' }}"
+        href="{{ route('admin.smart-wasit.summary') }}" wire:navigate><i class="fa-solid fa-square-poll-vertical"></i> Summary</a>
+    <a class="nav-item {{ request()->routeIs('admin.smart-wasit.ranking-skw') ? 'active' : '' }}"
+        href="{{ route('admin.smart-wasit.ranking-skw') }}" wire:navigate><i class="fa-solid fa-ranking-star"></i> Ranking SKW</a>
+    <a class="nav-item {{ request()->routeIs('admin.smart-wasit.ranking-iaw') ? 'active' : '' }}"
+        href="{{ route('admin.smart-wasit.ranking-iaw') }}" wire:navigate><i class="fa-solid fa-bullseye"></i> Ranking IAW</a>
+    <a class="nav-item {{ request()->routeIs('admin.smart-wasit.ranking-ik') ? 'active' : '' }}"
+        href="{{ route('admin.smart-wasit.ranking-ik') }}" wire:navigate><i class="fa-solid fa-arrows-rotate"></i> Ranking IK</a>
+    <a class="nav-item {{ request()->routeIs('admin.smart-wasit.ranking-iv') ? 'active' : '' }}"
+        href="{{ route('admin.smart-wasit.ranking-iv') }}" wire:navigate><i class="fa-solid fa-check-double"></i> Ranking IV</a>
+    <a class="nav-item {{ request()->routeIs('admin.smart-wasit.perbabak') ? 'active' : '' }}"
+        href="{{ route('admin.smart-wasit.perbabak') }}" wire:navigate><i class="fa-solid fa-list-check"></i> Per Babak</a>
+
     <div class="nav-section">Sistem</div>
     <a class="nav-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"
         href="{{ route('admin.reports.athlete-biodata') }}" wire:navigate><i class="fa-solid fa-file-lines"></i>
