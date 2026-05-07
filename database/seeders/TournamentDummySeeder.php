@@ -274,7 +274,7 @@ class TournamentDummySeeder extends Seeder
                     ['match_id' => 'RB3', 'name' => 'embu pasangan kyu kenshi eksebisi', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Surabaya A (bisma + Alree)', 'Kab Jombang', 'Surabaya A (Gio+Desta)', 'Surabaya B (reinhard + delon)']],
                     ['match_id' => 'RB4', 'name' => 'Randori 45Kg', 'contingents' => ['Bangkalan A', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Surabaya A (nando)']],
                     ['match_id' => 'RB5', 'name' => 'Randori 50Kg', 'contingents' => ['Kab Jember', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'sidoarjo']],
-                    ['match_id' => 'RB6', 'name' => 'Randori 55Kg', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Surabaya A (Gio)', 'sidoarjo']],
+                    ['match_id' => 'RB6', 'name' => 'Randori 55Kg', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Surabaya A (Gio)', 'sidoarjo','Lumajang']],
                     ['match_id' => 'RB7', 'name' => 'Randori 60Kg', 'contingents' => ['Bangkalan B', 'Bangkalan A', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kab Gresik', 'Kota Kediri', 'Surabaya A (Bisma)', 'Sidoarjo', 'Kab Tuban']],
                     ['match_id' => 'RB8', 'name' => 'Randori 65Kg', 'contingents' => ['Kota Malang', 'Kab Jombang', 'Kab Gresik', 'Kota Kediri', 'Surabaya A (desta)']],
                     ['match_id' => 'RB9', 'name' => 'Randori 70Kg', 'contingents' => ['Surabaya A (troy)', 'Surabaya B (Reindhard)', 'Surabaya C (Ibrahim)', 'Surabaya D (Aaron)']],
