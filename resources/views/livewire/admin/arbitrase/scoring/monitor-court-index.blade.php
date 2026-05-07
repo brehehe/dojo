@@ -89,8 +89,8 @@
             </div>
         </div>
 
-        <!-- Body / Kontingen Display -->
-        <div class="flex-1 px-3 py-5 sm:px-4 sm:py-6 md:px-8 md:py-8 xl:px-16 flex flex-col items-center justify-center w-full">
+        <!-- Body / Kontinggiten Display -->
+            <div class="flex-1 px-3 py-5 sm:px-4 sm:py-6 md:px-8 md:py-8 xl:px-16 flex flex-col items-center justify-center w-full">
 
             @if($isRandori)
                 <!-- RANDORI LAYOUT (Versus Style) -->
