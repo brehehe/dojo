@@ -1,4 +1,4 @@
-<div wire:poll.2s
+<div
      x-data="{
          resize() {
              let wrapper = $refs.wrapper;
