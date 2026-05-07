@@ -60,6 +60,16 @@ class NewGenerateRefereeIndex extends Component
         $this->searchReferee = '';
     }
 
+    public function toggleReferee($id)
+    {
+        $id = (string) $id;
+        if (in_array($id, $this->selectedReferees)) {
+            $this->selectedReferees = array_values(array_diff($this->selectedReferees, [$id]));
+        } else {
+            $this->selectedReferees[] = $id;
+        }
+    }
+
     public function saveReferees()
     {
         if (! $this->assigningBlock) {

@@ -449,7 +449,7 @@
 
                 <div class="referee-grid-a custom-scrollbar">
                     @forelse($allReferees as $ref)
-                        <div wire:click="$toggle('selectedReferees', '{{ $ref->id }}')"
+                        <div wire:click="toggleReferee('{{ $ref->id }}')"
                             class="referee-item-a {{ in_array($ref->id, $selectedReferees) ? 'selected' : '' }}">
                             <div
                                 style="width:24px; height:24px; border-radius:6px; border:2px solid {{ in_array($ref->id, $selectedReferees) ? 'var(--red)' : 'var(--paper2)' }}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
