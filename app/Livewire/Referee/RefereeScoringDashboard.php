@@ -22,6 +22,8 @@ class RefereeScoringDashboard extends Component
 
     public $activeMatch;
 
+    public ?string $currentActiveIdentifier = null;
+
     public $assignedCourt = null;
 
     public $assignedSession = null;
@@ -140,10 +142,10 @@ class RefereeScoringDashboard extends Component
             }
         }
 
-        $currentId = $this->getActiveIdentifier($this->activeMatch);
         $newId = $this->getActiveIdentifier($newActiveMatch);
 
-        if ($currentId !== $newId) {
+        if ($this->currentActiveIdentifier !== $newId) {
+            $this->currentActiveIdentifier = $newId;
             $this->activeMatch = $newActiveMatch;
             $this->assignedCourt = $newAssignedCourt;
             $this->assignedSession = $newAssignedSession;
