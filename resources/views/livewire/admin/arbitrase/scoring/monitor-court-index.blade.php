@@ -1,5 +1,12 @@
-<div wire:poll.2s class="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-x-hidden select-none">
-
+<div wire:poll.2s class="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-hidden select-none">
+    <style>
+        /* Automatically scale all rem units to fit the viewport perfectly on landscape monitors/laptops */
+        @media (min-aspect-ratio: 4/3) {
+            html {
+                font-size: min(100vw / 1920 * 16, 100vh / 1080 * 16) !important;
+            }
+        }
+    </style>
     @if(!$court->active_match_id || !$court->activeMatch)
         <!-- IDLE STATE -->
         <div class="flex-1 flex flex-col items-center justify-center h-full p-6 text-center">
@@ -42,7 +49,7 @@
         <div class="bg-gradient-to-r {{ $isRandori ? 'from-rose-600 to-rose-900' : 'from-emerald-600 to-emerald-900' }} px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-9 xl:px-16 xl:py-10 shadow-2xl relative overflow-hidden flex-shrink-0">
             <div class="absolute inset-0 bg-black/20"></div>
             <!-- Decorative icon -->
-            <i class="fas {{ $isRandori ? 'fa-fire-alt' : 'fa-layer-group' }} absolute -right-8 -top-8 text-[110px] sm:text-[140px] md:text-[180px] xl:text-[200px] text-white opacity-10 blur-sm pointer-events-none"></i>
+            <i class="fas {{ $isRandori ? 'fa-fire-alt' : 'fa-layer-group' }} absolute -right-8 -top-8 text-[6.875rem] sm:text-[8.75rem] md:text-[11.25rem] xl:text-[12.5rem] text-white opacity-10 blur-sm pointer-events-none"></i>
 
             <div class="relative z-10 flex flex-col items-center justify-center text-center gap-4">
                 <div class="inline-flex items-center gap-2 md:gap-4 bg-white/20 backdrop-blur-md px-3 py-1.5 sm:px-4 md:px-6 md:py-2 rounded-full border border-white/20">
@@ -60,7 +67,7 @@
                 <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-2">
                     @if($dPool)
                         <span class="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-white text-xs sm:text-sm md:text-lg font-black uppercase tracking-[0.16em] md:tracking-wider border border-white/20">
-                            <i class="fas fa-th text-white/60 text-[12px] sm:text-[15px]"></i>Pool {{ $dPool->name }}
+                            <i class="fas fa-th text-white/60 text-[12px] sm:text-[15px]"></i>{{ $dPool->name }}
                         </span>
                     @endif
                     @if($dRound)
@@ -104,7 +111,7 @@
                                          class="w-full h-full object-cover object-center">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center">
-                                        <span class="text-5xl md:text-7xl xl:text-[90px] font-black text-rose-300 uppercase">
+                                        <span class="text-5xl md:text-7xl xl:text-[5.625rem] font-black text-rose-300 uppercase">
                                             {{ substr($athletes[0]->name, 0, 1) }}
                                         </span>
                                     </div>
@@ -121,7 +128,7 @@
 
                         <!-- VS -->
                         <div class="flex flex-col items-center justify-center py-4 md:py-6 relative">
-                            <span class="text-4xl md:text-6xl lg:text-[80px] font-black text-slate-300 italic block relative z-10 drop-shadow-sm">VS</span>
+                            <span class="text-4xl md:text-6xl lg:text-[5rem] font-black text-slate-300 italic block relative z-10 drop-shadow-sm">VS</span>
                             <div class="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-1 bg-slate-200 z-0"></div>
                         </div>
 
@@ -139,7 +146,7 @@
                                          class="w-full h-full object-cover object-center">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center">
-                                        <span class="text-5xl md:text-7xl xl:text-[90px] font-black text-blue-300 uppercase">
+                                        <span class="text-5xl md:text-7xl xl:text-[5.625rem] font-black text-blue-300 uppercase">
                                             {{ substr($athletes[1]->name, 0, 1) }}
                                         </span>
                                     </div>
@@ -207,7 +214,7 @@
                                                  class="h-full w-full object-cover object-center">
                                         @else
                                             <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-700">
-                                                <span class="text-4xl sm:text-5xl md:text-6xl lg:text-[78px] font-black text-white uppercase">
+                                                <span class="text-4xl sm:text-5xl md:text-6xl lg:text-[4.875rem] font-black text-white uppercase">
                                                     {{ substr($ath->name, 0, 1) }}
                                                 </span>
                                             </div>
