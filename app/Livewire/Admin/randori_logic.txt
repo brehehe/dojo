@@ -1,0 +1,79 @@
+        $matchIdCode = $this->getMatchIdCode($match);
+
+        // 4. Schedule based on bracket matches (Round 1)
+        $firstRoundMatches = $drawingData['upper_bracket']['rounds'][0] ?? [];
+        $scheduledMatchesCount = 0;
+        foreach ($firstRoundMatches as $m) {
+            if (($m['athlete1']['id'] ?? 'BYE') !== 'BYE' && ($m['athlete2']['id'] ?? 'BYE') !== 'BYE') {
+                $scheduledMatchesCount++;
+            }
+        }
+
+        $durationPerMatch = 10;
+        // We need at least one slot even if it's mostly BYEs
+        $slotData = $this->findBestAvailableSlot(max(1, $scheduledMatchesCount), $durationPerMatch);
+        $court = $slotData['court'];
+        $sessionTime = $slotData['session'];
+        $rundown = $slotData['rundown'];
+        $startTime = $slotData['startTime'];
+
+        $localBusyKoor = [];
+        $localBusyPanitera = [];
+        $officials = $this->getAvailableOfficials($rundown?->id, $sessionTime?->id, $localBusyKoor, $localBusyPanitera);
+
+        $matchSeq = 1;
+        $mIdx = 0;
+        foreach ($firstRoundMatches as $m) {
+            $a1 = $m['athlete1'] ?? null;
+            $a2 = $m['athlete2'] ?? null;
+
+            if (($a1['id'] ?? 'BYE') !== 'BYE' && ($a2['id'] ?? 'BYE') !== 'BYE') {
+                $matchStart = $startTime->copy()->addMinutes($mIdx * $durationPerMatch);
+                $matchEnd = $matchStart->copy()->addMinutes($durationPerMatch);
+
+                // Record for Athlete 1
+                DrawingMatchNumber::create([
+                    'match_number_id' => $matchId,
+                    'registration_id' => $a1['registration_id'],
+                    'court_id' => $court?->id,
+                    'session_time_id' => $sessionTime?->id,
+                    'rundown_id' => $rundown?->id,
+                    'round' => 'Penyisihan',
+                    'sequence_number' => $matchSeq,
+                    'draft_type' => 'randori',
+                    'metadata' => [
+                        'athlete_id' => $a1['id'],
+                        'officials' => $officials,
+                        'match_id_code' => $matchIdCode,
+                        'start_time' => $matchStart->format('H:i'),
+                        'end_time' => $matchEnd->format('H:i'),
+                        'duration' => $durationPerMatch,
+                        'side' => 'RED',
+                    ],
+                ]);
+
+                // Record for Athlete 2
+                DrawingMatchNumber::create([
+                    'match_number_id' => $matchId,
+                    'registration_id' => $a2['registration_id'],
+                    'court_id' => $court?->id,
+                    'session_time_id' => $sessionTime?->id,
+                    'rundown_id' => $rundown?->id,
+                    'round' => 'Penyisihan',
+                    'sequence_number' => $matchSeq,
+                    'draft_type' => 'randori',
+                    'metadata' => [
+                        'athlete_id' => $a2['id'],
+                        'officials' => $officials,
+                        'match_id_code' => $matchIdCode,
+                        'start_time' => $matchStart->format('H:i'),
+                        'end_time' => $matchEnd->format('H:i'),
+                        'duration' => $durationPerMatch,
+                        'side' => 'BLUE',
+                    ],
+                ]);
+
+                $matchSeq++;
+                $mIdx++;
+            }
+        }

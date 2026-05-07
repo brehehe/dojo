@@ -318,6 +318,8 @@
         color: var(--ink);
         line-height: 1.35;
         background: rgba(247,244,239,.65);
+        writing-mode: vertical-rl;
+        white-space: nowrap;
     }
     .ref-score-label {
         font-size: 18px;

@@ -52,7 +52,7 @@ class RoleSeeder extends Seeder
 
             // Generate additional dummy users for Panitera and Koordinator Lapangan
             if ($roleName === 'Panitera') {
-                for ($i = 1; $i <= 100; $i++) {
+                for ($i = 1; $i <= 20; $i++) {
                     $panitera = User::firstOrCreate(
                         ['email' => "panitera{$i}@smart-perkemi.id"],
                         [
@@ -65,7 +65,7 @@ class RoleSeeder extends Seeder
             }
 
             if ($roleName === 'Koordinator Lapangan') {
-                for ($i = 1; $i <= 50; $i++) {
+                for ($i = 1; $i <= 10; $i++) {
                     $koor = User::firstOrCreate(
                         ['email' => "koordinator{$i}@smart-perkemi.id"],
                         [

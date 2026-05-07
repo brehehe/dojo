@@ -1,0 +1,190 @@
+    public function repairBracket(): void
+    {
+        $data = $this->matchNumber->fresh()->drawing_data ?? [];
+
+        if (empty($data['upper_bracket']['rounds'])) {
+            return;
+        }
+
+        $ubRounds = $data['upper_bracket']['rounds'] ?? [];
+        $lbRounds = $data['lower_bracket']['rounds'] ?? [];
+        $totalUB = count($ubRounds);
+        $totalLB = count($lbRounds);
+        $lbFinalIdx = $totalLB - 1;
+
+        // ── 1. Fix UB round routing ───────────────────────────
+        foreach ($ubRounds as $r => $matches) {
+            $isUBFinal = ($r === $totalUB - 1);
+            $countInRound = count($matches);
+
+            foreach ($matches as $m => $match) {
+                // Skip if already has winner_next
+                if (! empty($match['winner_next'])) {
+                    continue;
+                }
+
+                if ($isUBFinal) {
+                    $ubRounds[$r][$m]['winner_next'] = ['bracket' => 'gf', 'slot' => 'athlete1'];
+                    $ubRounds[$r][$m]['loser_next'] = ['bracket' => 'lb', 'round' => $lbFinalIdx, 'match' => 0, 'slot' => 'athlete2'];
+                } else {
+                    $ubRounds[$r][$m]['winner_next'] = [
+                        'bracket' => 'ub',
+                        'round' => $r + 1,
+                        'match' => (int) ($m / 2),
+                        'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2',
+                    ];
+
+                    if ($r === 0) {
+                        // Round 0 losers pair up in LB Round 0
+                        $ubRounds[$r][$m]['loser_next'] = [
+                            'bracket' => 'lb',
+                            'round' => 0,
+                            'match' => (int) ($m / 2),
+                            'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2',
+                        ];
+                    } else {
+                        // Subsequent UB losers drop into LB odd rounds (1, 3, 5...)
+                        $ubRounds[$r][$m]['loser_next'] = [
+                            'bracket' => 'lb',
+                            'round' => 2 * $r - 1,
+                            'match' => $m,
+                            'slot' => 'athlete2',
+                        ];
+                    }
+                }
+
+                // Ensure winner/winner_data keys exist
+                $ubRounds[$r][$m]['winner'] = $ubRounds[$r][$m]['winner'] ?? null;
+                $ubRounds[$r][$m]['winner_data'] = $ubRounds[$r][$m]['winner_data'] ?? null;
+            }
+        }
+
+        // ── 2. Fix LB round routing ───────────────────────────
+        foreach ($lbRounds as $lr => $matches) {
+            $isLBFinal = ($lr === $lbFinalIdx);
+            $isLBSemi = ($lr === $lbFinalIdx - 1);
+
+            foreach ($matches as $m => $match) {
+                // Ensure keys exist
+                $lbRounds[$lr][$m]['winner'] = $lbRounds[$lr][$m]['winner'] ?? null;
+                $lbRounds[$lr][$m]['winner_data'] = $lbRounds[$lr][$m]['winner_data'] ?? null;
+
+                if ($isLBFinal) {
+                    $lbRounds[$lr][$m]['winner_next'] = ['bracket' => 'gf', 'slot' => 'athlete2'];
+                    $lbRounds[$lr][$m]['loser_next'] = ['bracket' => 'ranked', 'rank' => 3];
+                } elseif ($isLBSemi) {
+                    $lbRounds[$lr][$m]['winner_next'] = ['bracket' => 'lb', 'round' => $lbFinalIdx, 'match' => 0, 'slot' => 'athlete2'];
+                    $lbRounds[$lr][$m]['loser_next'] = ['bracket' => 'ranked', 'rank' => 4];
+                } elseif ($lr % 2 === 1) {
+                    // Odd LB rounds: Winner advances to even round, pairs up
+                    $lbRounds[$lr][$m]['winner_next'] = [
+                        'bracket' => 'lb',
+                        'round' => $lr + 1,
+                        'match' => (int) ($m / 2),
+                        'slot' => $m % 2 === 0 ? 'athlete1' : 'athlete2',
+                    ];
+                    $lbRounds[$lr][$m]['loser_next'] = ['bracket' => 'eliminated'];
+                } else {
+                    // Even LB rounds: Winner advances to odd round, meets UB loser
+                    $lbRounds[$lr][$m]['winner_next'] = [
+                        'bracket' => 'lb',
+                        'round' => $lr + 1,
+                        'match' => $m,
+                        'slot' => 'athlete1',
+                    ];
+                    $lbRounds[$lr][$m]['loser_next'] = ['bracket' => 'eliminated'];
+                }
+            }
+        }
+
+        $data['upper_bracket']['rounds'] = $ubRounds;
+        $data['lower_bracket']['rounds'] = $lbRounds;
+
+        // ── 3. Replay semua hasil dari RandoriMatchResult ─────
+        // Reset semua posisi atlet di bracket (kecuali R0 yang sudah punya atlet)
+        // lalu re-apply setiap result yang tersimpan secara berurutan.
+        $results = RandoriMatchResult::where('match_number_id', $this->matchNumber->id)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($results as $result) {
+            $parts = explode('_', $result->bracket_node);
+            // nodes: ub_0_0, lb_1_2, gf_0_0
+            if (count($parts) < 3) {
+                continue;
+            }
+
+            $bracket = $parts[0];
+            $roundIdx = (int) $parts[1];
+            $matchIdx = (int) $parts[2];
+
+            // Get match from repaired data
+            if ($bracket === 'ub') {
+                $match = $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+            } elseif ($bracket === 'lb') {
+                $match = $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+            } elseif ($bracket === 'gf') {
+                $match = $data['grand_final'] ?? null;
+            } else {
+                continue;
+            }
+
+            if (! $match) {
+                continue;
+            }
+
+            $winnerSlot = $result->winner_color; // 'athlete1' | 'athlete2'
+            $loserSlot = $winnerSlot === 'athlete1' ? 'athlete2' : 'athlete1';
+
+            $winnerData = $match[$winnerSlot] ?? null;
+            $loserData = $match[$loserSlot] ?? null;
+
+            if (! $winnerData) {
+                continue;
+            }
+
+            $match['winner'] = $winnerSlot;
+            $match['winner_data'] = $winnerData;
+
+            if ($bracket === 'ub') {
+                $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
+            } elseif ($bracket === 'lb') {
+                $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
+            } elseif ($bracket === 'gf') {
+                $data['grand_final'] = $match;
+            }
+
+            // Propagate winner
+            $winnerNext = $match['winner_next'] ?? null;
+            if ($winnerNext) {
+                $data = $this->placeAthlete($data, $winnerNext, $winnerData);
+            }
+
+            // Propagate loser
+            $loserNext = $match['loser_next'] ?? null;
+            if ($loserData && $loserNext) {
+                $lb = $loserNext['bracket'] ?? 'eliminated';
+                if ($lb === 'lb') {
+                    $data = $this->placeAthlete($data, $loserNext, $loserData);
+                } elseif ($lb === 'ranked') {
+                    $data['juara'][$loserNext['rank']] = $loserData;
+                }
+            }
+
+            // Grand Final
+            if ($bracket === 'gf') {
+                $data['juara'][1] = $winnerData;
+                $data['juara'][2] = $loserData;
+            }
+        }
+
+        $this->matchNumber->update(['drawing_data' => $data]);
+        $this->drawingData = $data;
+
+        $fixed = count($results);
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Bracket Diperbaiki',
+            'text' => 'Routing diperbaiki & ' . $fixed . ' hasil di-replay ulang. Lanjutkan input skor.',
+        ]);
+    }

@@ -1,0 +1,143 @@
+
+  Dropping all tables ........................................... 75.66ms DONE
+
+   INFO  Preparing database.  
+
+  Creating migration table ....................................... 7.08ms DONE
+
+   INFO  Running migrations.  
+
+  0001_01_01_000000_create_users_table .......................... 14.19ms DONE
+  0001_01_01_000001_create_cache_table ........................... 4.98ms DONE
+  0001_01_01_000002_create_jobs_table ............................ 8.72ms DONE
+  2026_04_01_042410_create_categories_table ..................... 26.54ms DONE
+  2026_04_01_042411_create_contingents_table ..................... 2.53ms DONE
+  2026_04_01_042412_create_athletes_table ....................... 14.33ms DONE
+  2026_04_01_042421_create_athlete_category_table ................ 2.20ms DONE
+  2026_04_01_044622_add_achievement_history_to_athletes_table .... 0.83ms DONE
+  2026_04_01_045145_create_galleries_table ....................... 3.41ms DONE
+  2026_04_01_045145_create_posts_table ........................... 2.73ms DONE
+  2026_04_01_060858_add_nik_to_athletes_table .................... 1.12ms DONE
+  2026_04_01_065143_add_advanced_fields_to_athletes_table ........ 3.42ms DONE
+  2026_04_01_065143_add_payment_fields_to_contingents_table ...... 1.57ms DONE
+  2026_04_01_065143_create_officials_table ....................... 2.96ms DONE
+  2026_04_01_065633_add_match_type_to_athletes_table ............. 0.85ms DONE
+  2026_04_01_070338_add_match_type_to_categories_table ........... 0.55ms DONE
+  2026_04_01_070338_create_kyu_levels_table ...................... 2.11ms DONE
+  2026_04_01_085512_update_tables_for_kempo_2026 ................. 0.30ms DONE
+  2026_04_02_022218_add_missing_fields_to_contingents_table ...... 1.82ms DONE
+  2026_04_02_022656_adjust_athletes_table_fields ................. 4.06ms DONE
+  2026_04_02_024855_create_permission_tables .................... 18.44ms DONE
+  2026_04_02_025714_add_verification_fields_to_contingents_table . 1.40ms DONE
+  2026_04_09_000000_create_referees_table ........................ 2.48ms DONE
+  2026_04_09_141602_create_age_groups_table ...................... 1.35ms DONE
+  2026_04_09_141714_create_weight_groups_table ................... 1.25ms DONE
+  2026_04_09_225628_create_techniques_table ...................... 1.36ms DONE
+  2026_04_09_225820_create_match_numbers_table ................... 3.21ms DONE
+  2026_04_11_160439_add_user_id_to_contingents_table ............. 1.91ms DONE
+  2026_04_11_160943_create_registrations_table ................... 3.18ms DONE
+  2026_04_11_161004_update_athletes_and_officials_to_registrations  4.64ms DONE
+  2026_04_11_161021_cleanup_contingents_table .................... 1.15ms DONE
+  2026_04_11_161913_create_registration_participation_tables .... 11.03ms DONE
+  2026_04_11_215100_create_athlete_contingent_histories_table .... 2.39ms DONE
+  2026_04_12_192500_create_athlete_contingent_table .............. 3.64ms DONE
+  2026_04_12_200000_add_weight_group_id_to_registration_athlete_table  3.75ms DONE
+  2026_04_12_212400_add_gender_to_match_numbers_table ............ 0.72ms DONE
+  2026_04_12_212500_create_athlete_match_number_table ............ 2.94ms DONE
+  2026_04_12_221000_add_technique_ids_to_athlete_match_number_table  1.06ms DONE
+  2026_04_13_035301_create_rundowns_table ........................ 2.34ms DONE
+  2026_04_13_043347_create_courts_table .......................... 3.10ms DONE
+  2026_04_13_160130_add_biodata_fields_to_athletes_table ......... 2.24ms DONE
+  2026_04_13_170458_create_pools_table ........................... 1.57ms DONE
+  2026_04_14_062113_add_drawing_data_to_match_numbers_table ...... 0.76ms DONE
+  2026_04_14_090130_create_match_number_referee_table ............ 2.26ms DONE
+  2026_04_14_094806_create_embu_scores_table ..................... 2.70ms DONE
+  2026_04_14_094806_create_randori_match_results_table ........... 4.00ms DONE
+  2026_04_14_102546_add_active_match_fields_to_match_numbers_and_pivot  1.31ms DONE
+  2026_04_14_104123_create_referee_score_details_table ........... 3.20ms DONE
+  2026_04_14_104833_add_active_registration_id_to_match_numbers .. 1.52ms DONE
+  2026_04_15_163000_create_drawing_match_numbers_table ........... 4.83ms DONE
+  2026_04_17_105000_create_session_times_table ................... 1.72ms DONE
+  2026_04_17_110000_add_schedule_fields_to_drawing_match_numbers_table  2.29ms DONE
+  2026_04_18_122600_create_schedule_referees_table ............... 5.38ms DONE
+  2026_04_19_001204_add_active_state_to_courts_table ............. 2.98ms DONE
+  2026_04_19_020300_add_tiebreak_fields_to_embu_scores_table ..... 1.94ms DONE
+  2026_04_19_021500_add_bracket_node_to_randori_match_results .... 1.43ms DONE
+  2026_04_19_100146_add_active_drawing_id_to_courts_table ........ 0.85ms DONE
+  2026_04_20_040041_create_embu_champions_table .................. 3.19ms DONE
+  2026_04_20_080908_create_randori_judge_scores_table ............ 3.76ms DONE
+  2026_04_25_075725_add_kyu_level_id_to_techniques_table ......... 2.03ms DONE
+  2026_04_26_154248_add_metadata_to_randori_match_results ........ 0.67ms DONE
+  2026_04_27_092330_create_tournament_results_table ............. 16.05ms DONE
+  2026_04_27_092814_alter_tournament_results_text_columns ........ 2.61ms DONE
+  2026_04_28_140220_create_payment_methds_table .................. 2.18ms DONE
+  2026_04_29_131511_create_active_court_referees_table ........... 3.67ms DONE
+
+
+   INFO  Seeding database.  
+
+  Database\Seeders\KyuLevelSeeder .................................... RUNNING  
+  Database\Seeders\KyuLevelSeeder .................................. 9 ms DONE  
+
+  Database\Seeders\CategorySeeder .................................... RUNNING  
+  Database\Seeders\CategorySeeder ................................. 49 ms DONE  
+
+  Database\Seeders\PostSeeder ........................................ RUNNING  
+  Database\Seeders\PostSeeder ..................................... 17 ms DONE  
+
+  Database\Seeders\GallerySeeder ..................................... RUNNING  
+  Database\Seeders\GallerySeeder ................................... 4 ms DONE  
+
+  Database\Seeders\RoleSeeder ........................................ RUNNING  
+  Database\Seeders\RoleSeeder ................................. 24,152 ms DONE  
+
+  Database\Seeders\ContingentSeeder .................................. RUNNING  
+  Database\Seeders\ContingentSeeder .............................. 755 ms DONE  
+
+  Database\Seeders\CourtAndPoolSeeder ................................ RUNNING  
+  Database\Seeders\CourtAndPoolSeeder ............................. 43 ms DONE  
+
+  Database\Seeders\RefereeSeeder ..................................... RUNNING  
+  Database\Seeders\RefereeSeeder ................................. 645 ms DONE  
+
+  Database\Seeders\MatchNumberSeeder ................................. RUNNING  
+  Database\Seeders\MatchNumberSeeder ............................. 111 ms DONE  
+
+  Database\Seeders\SessionRundownSeeder .............................. RUNNING  
+  Database\Seeders\SessionRundownSeeder ............................ 6 ms DONE  
+
+  Database\Seeders\TechniqueSeeder ................................... RUNNING  
+  Database\Seeders\TechniqueSeeder ................................ 52 ms DONE  
+
+  Database\Seeders\TournamentDummySeeder ............................. RUNNING  
+Seeding specific tournament data...
+Error creating athlete Atlet 1 Kab Jombang for contingent Kab Jombang: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "registration_id" of relation "athletes" does not exist
+LINE 1: insert into "athletes" ("registration_id", "nik", "name", "g...
+                                ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: dojo, SQL: insert into "athletes" ("registration_id", "nik", "name", "gender", "birth_place", "birth_date", "phone", "updated_at", "created_at") values (1, 4286747341047678, Atlet 1 Kab Jombang, Male, Kota Kab Jombang, 2013-05-07 00:00:00, 087518435063, 2026-05-07 16:03:29, 2026-05-07 16:03:29) returning "id")
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42703]: Undefined column: 7 ERROR:  column "registration_id" of relation "athletes" does not exist
+LINE 1: insert into "athletes" ("registration_id", "nik", "name", "g...
+                                ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: dojo, SQL: insert into "athletes" ("registration_id", "nik", "name", "gender", "birth_place", "birth_date", "phone", "updated_at", "created_at") values (1, 4286747341047678, Atlet 1 Kab Jombang, Male, Kota Kab Jombang, 2013-05-07 00:00:00, 087518435063, 2026-05-07 16:03:29, 2026-05-07 16:03:29) returning "id")
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:841
+    837▕             $exceptionType = ($isUniqueConstraintError = $this->isUniqueConstraintError($e))
+    838▕                 ? UniqueConstraintViolationException::class
+    839▕                 : QueryException::class;
+    840▕ 
+  ➜ 841▕             $exception = new $exceptionType(
+    842▕                 $this->getNameWithReadWriteType(),
+    843▕                 $query,
+    844▕                 $this->prepareBindings($bindings),
+    845▕                 $e,
+
+      [2m+18 vendor frames [22m
+
+  19  database/seeders/TournamentDummySeeder.php:198
+      Illuminate\Database\Eloquent\Model::__callStatic("create")
+      [2m+8 vendor frames [22m
+
+  28  database/seeders/DatabaseSeeder.php:16
+      Illuminate\Database\Seeder::call("Database\Seeders\TournamentDummySeeder")
+

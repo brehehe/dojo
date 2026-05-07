@@ -97,7 +97,6 @@ use App\Livewire\Admin\SmartWasit\NewLaporanRankingSkwIndex;
 use App\Livewire\Admin\SmartWasit\NewLaporanSmartWasitSummaryIndex;
 use App\Livewire\Admin\TechnicalMeeting\Embu\AdminTechnicalMeetingEmbuIndex;
 use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriIndex;
-use App\Livewire\Auth\Login;
 use App\Livewire\Auth\NewLoginIndex;
 use App\Livewire\Auth\Register;
 use App\Livewire\Contingent\Dashboard;
@@ -122,7 +121,7 @@ Route::get('/welcome/5', [WelcomeController::class, 'template5'])->name('welcome
 Route::view('/piala_walikotasby2026', 'register')->name('register');
 
 Route::middleware('guest')->group(function () {
-    Route::get('login', Login::class)->name('login');
+    Route::get('login', NewLoginIndex::class)->name('login');
     Route::get('new-login', NewLoginIndex::class)->name('new-login');
     Route::get('register', Register::class)->name('register');
 });

@@ -22,7 +22,7 @@ class CourtAndPoolSeeder extends Seeder
         DB::statement('SET session_replication_role = \'origin\';');
 
         // Create 5 Courts
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 2; $i++) {
             Court::create([
                 'name' => 'Court '.$i,
                 'order' => $i,

@@ -7,498 +7,317 @@ use App\Models\Contingent;
 use App\Models\Group\AgeGroup;
 use App\Models\Group\WeightGroup;
 use App\Models\MatchNumber\MatchNumber;
-use App\Models\Official;
 use App\Models\Registration;
-use App\Models\Technique\Technique;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class TournamentDummySeeder extends Seeder
 {
-    /**
-     * Total contingents to seed.
-     */
-    private int $totalContingents = 40;
-
-    private ?int $target4MatchId = null;
-
-    private ?int $target9EmbuMatchId = null;
-
-    private array $globalMatchCount = [];
-
-    /**
-     * Indonesian regency names for realistic data.
-     */
-    private array $kabKota = [
-        'Kota Bandung',
-        'Kota Surabaya',
-        'Kota Medan',
-        'Kota Makassar',
-        'Kota Semarang',
-        'Kota Yogyakarta',
-        'Kota Jakarta Pusat',
-        'Kota Palembang',
-        'Kota Balikpapan',
-        'Kota Manado',
-        'Kab. Bogor',
-        'Kab. Bekasi',
-        'Kab. Tangerang',
-        'Kab. Sidoarjo',
-        'Kab. Malang',
-        'Kab. Gresik',
-        'Kab. Kediri',
-        'Kab. Jember',
-        'Kab. Banyuwangi',
-        'Kab. Banyumas',
-        'Kota Depok',
-        'Kota Bekasi',
-        'Kota Tangerang',
-        'Kota Pekanbaru',
-        'Kota Padang',
-        'Kota Batam',
-        'Kota Pontianak',
-        'Kota Banjarmasin',
-        'Kota Samarinda',
-        'Kota Jayapura',
-        'Kab. Cianjur',
-        'Kab. Garut',
-        'Kab. Tasikmalaya',
-        'Kab. Cirebon',
-        'Kab. Kuningan',
-        'Kab. Karawang',
-        'Kab. Purwakarta',
-        'Kab. Subang',
-        'Kab. Sukabumi',
-        'Kab. Bandung',
-    ];
-
-    private array $dojoNames = [
-        'Dojo Sakura',
-        'Dojo Garuda',
-        'Dojo Nusantara',
-        'Dojo Matahari',
-        'Dojo Harimau',
-        'Dojo Rajawali',
-        'Dojo Singa',
-        'Dojo Gajah',
-        'Dojo Banteng',
-        'Dojo Kencana',
-    ];
-
-    private array $officialRoles = ['Pelatih', 'Manajer', 'Asisten Pelatih', 'Fisioterapis'];
-
-    private array $bloodTypes = ['A', 'B', 'AB', 'O'];
-
-    private array $kyuLevels = ['Kyu 6', 'Kyu 5', 'Kyu 4', 'Kyu 3', 'Kyu 2', 'Kyu 1'];
-
-    private array $yudansaLevels = ['Dan 1', 'Dan 2'];
-
     public function run(): void
     {
-        // Load master data
-        $ageGroups = AgeGroup::orderBy('order')->get()->keyBy('id');
-        $weightGroups = WeightGroup::orderBy('order')->get();
-        $techniques = Technique::orderBy('order')->get();
-        $techniqueIds = $techniques->pluck('id')->toArray();
+        // 1. Clear existing dynamic data to start fresh
+        DB::statement('SET session_replication_role = \'replica\';');
+        DB::table('athlete_match_number')->truncate();
+        DB::table('registration_athlete')->truncate();
+        DB::table('registration_official')->truncate();
+        DB::table('athlete_contingent')->truncate();
+        Registration::truncate();
+        Athlete::truncate();
+        Contingent::truncate();
+        User::role('Contingent')->delete();
+        DB::statement('SET session_replication_role = \'origin\';');
 
-        // Load all match numbers grouped for smart assignment
-        $matchNumbers = MatchNumber::with('ageGroup')->get();
+        // 2. Load basic master data
+        $weightGroups = WeightGroup::all();
+        $ageGroups = AgeGroup::all()->keyBy('name');
 
-        // Group match numbers by [age_group_id][gender][draft_type]
-        $matchMap = [];
-        foreach ($matchNumbers as $mn) {
-            $ag = $mn->age_group_id;
-            $g = $mn->gender;
-            $t = $mn->draft_type;
-            $matchMap[$ag][$g][$t][] = $mn;
+        // Ensure "Dewasa" is mapped to "Dewasa A" if necessary
+        if ($ageGroups->has('Dewasa A') && ! $ageGroups->has('Dewasa')) {
+            $ageGroups->put('Dewasa', $ageGroups->get('Dewasa A'));
         }
 
-        // Track how many seats taken per match_number (per contingent: max_athletes is per-contingent limit)
-        // We'll use a per-contingent tracker per match_number
-        $contingentMatchCount = []; // [$contingentId][$matchNumberId] = count
+        // 3. Define the Tournament Data from User Request
+        $tournamentData = $this->getTournamentData();
 
-        $this->command->info("Seeding {$this->totalContingents} contingents with full registrations...");
-        $bar = $this->command->getOutput()->createProgressBar($this->totalContingents);
-        $bar->start();
+        $this->command->info('Seeding specific tournament data...');
 
-        DB::transaction(function () use ($ageGroups, $weightGroups, $techniqueIds, $matchMap, &$contingentMatchCount, $bar) {
-            for ($c = 1; $c <= $this->totalContingents; $c++) {
-                $kabKota = $this->kabKota[($c - 1) % count($this->kabKota)];
-                $shortCity = Str::of($kabKota)->after('. ')->before(' ')->toString() ?: "Kota{$c}";
-                $contingentName = "Kontingen {$shortCity} ".chr(64 + (($c - 1) % 26 + 1));
-
-                // 1. Create User
-                $email = "kontingen{$c}@dummy.test";
-                $user = User::firstOrCreate(
-                    ['email' => $email],
-                    [
-                        'name' => $contingentName,
-                        'password' => Hash::make('password'),
-                    ]
-                );
-                $user->assignRole('Contingent');
-
-                // 2. Create Contingent
-                $contingent = Contingent::create([
-                    'user_id' => $user->id,
-                    'name' => $contingentName,
-                    'kab_kota' => $kabKota,
-                    'leader_name' => fake()->name(),
-                    'leader_phone' => '08'.fake()->numerify('##########'),
-                    'email' => $email,
-                    'address' => fake()->address(),
-                ]);
-
-                // 3. Create Registration
-                $uniqueCode = rand(100, 999);
-                $totalCost = 2500000; // contingent fee base
-                $registration = Registration::create([
-                    'contingent_id' => $contingent->id,
-                    'total_cost' => $totalCost,
-                    'final_amount' => $totalCost + $uniqueCode,
-                    'unique_code' => $uniqueCode,
-                    'payment_method' => 'BCA',
-                    'referral_code' => 'KEMPO-'.strtoupper(Str::random(5)),
-                    // 'status'             => rand(0,1) == 1 ? 'verified' : 'pending',
-                    'status' => 'verified',
-                    'sim_perkemi_confirm' => 'Ya',
-                ]);
-
-                // 4. Create Officials (1-2 per contingent)
-                $officialCount = rand(1, 2);
-                for ($o = 0; $o < $officialCount; $o++) {
-                    $official = Official::create([
-                        'contingent_id' => $contingent->id,
-                        'name' => fake()->name(),
-                        'role' => $this->officialRoles[$o % count($this->officialRoles)],
-                        'phone' => '08'.fake()->numerify('##########'),
-                    ]);
-                    $registration->officials()->attach($official->id, [
-                        'role' => $official->role,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-
-                // 5. Assign athletes to match numbers
-                // Strategy: tiap kontingen mendaftar di beberapa age group
-                // Pilih 2-3 age group secara bergiliran
-                $ageGroupPool = $ageGroups->values()->toArray();
-                // Rotate which age groups this contingent focuses on
-                $startAg = ($c - 1) % count($ageGroupPool);
-                $selectedAgIds = [
-                    $ageGroupPool[$startAg]['id'],
-                    $ageGroupPool[($startAg + 1) % count($ageGroupPool)]['id'],
-                ];
-
-                $contingentMatchCount[$contingent->id] = [];
-
-                foreach ($selectedAgIds as $agId) {
-                    $ageGroup = $ageGroups[$agId];
-
-                    // Male and Female athletes
-                    foreach (['Male', 'Female'] as $gender) {
-                        $embuMatches = $matchMap[$agId][$gender]['embu'] ?? [];
-                        $mixEmbu = $matchMap[$agId]['Mix']['embu'] ?? [];
-                        $randoriMatches = $matchMap[$agId][$gender]['randori'] ?? [];
-                        $allEmbu = array_merge($embuMatches, $mixEmbu);
-
-                        // ─── EMBU ATHLETES ────────────────────────────────────────
-
-                        // Tandoku embu (1 athlete per match)
-                        $tandokuEmbu = array_filter($allEmbu, fn ($m) => $m->max_athletes === 1);
-                        // Pick up to 3 tandoku slots
-                        $tandokuSlice = array_slice(array_values($tandokuEmbu), 0, 3);
-
-                        foreach ($tandokuSlice as $mn) {
-                            if (! isset($this->target9EmbuMatchId) && count($tandokuSlice) > 0) {
-                                $this->target9EmbuMatchId = $tandokuSlice[0]->id;
-                            }
-
-                            if (isset($this->target9EmbuMatchId) && $mn->id === $this->target9EmbuMatchId) {
-                                $globalTaken = $this->globalMatchCount[$mn->id] ?? 0;
-                                if ($globalTaken >= 9) {
-                                    continue;
-                                }
-                                $this->globalMatchCount[$mn->id] = $globalTaken + 1;
-                            }
-
-                            $taken = $contingentMatchCount[$contingent->id][$mn->id] ?? 0;
-                            if ($taken >= $mn->max_athletes) {
-                                continue;
-                            }
-                            $athlete = $this->createAthlete($gender, $ageGroup, $weightGroups);
-                            $this->attachAthleteToRegistration($registration, $contingent, $athlete, $ageGroup, $weightGroups, $mn, $techniqueIds, $contingentMatchCount);
-                        }
-
-                        // Pasangan embu (2 athletes per match, need 2 athletes)
-                        $pasanganEmbu = array_filter($allEmbu, fn ($m) => $m->max_athletes === 2);
-                        $pasanganSlice = array_slice(array_values($pasanganEmbu), 0, 2);
-
-                        foreach ($pasanganSlice as $mn) {
-                            $taken = $contingentMatchCount[$contingent->id][$mn->id] ?? 0;
-                            $slotsLeft = $mn->max_athletes - $taken;
-                            if ($slotsLeft <= 0) {
-                                continue;
-                            }
-                            $toCreate = min($slotsLeft, $mn->max_athletes); // should be 2
-                            for ($a = 0; $a < $toCreate; $a++) {
-                                $athlete = $this->createAthlete($gender, $ageGroup, $weightGroups);
-                                $this->attachAthleteToRegistration($registration, $contingent, $athlete, $ageGroup, $weightGroups, $mn, $techniqueIds, $contingentMatchCount);
-                            }
-                        }
-
-                        // Beregu embu (4 athletes per match)
-                        $beriguEmbu = array_filter($allEmbu, fn ($m) => $m->max_athletes === 4);
-                        $beregSlice = array_slice(array_values($beriguEmbu), 0, 1);
-
-                        foreach ($beregSlice as $mn) {
-                            $taken = $contingentMatchCount[$contingent->id][$mn->id] ?? 0;
-                            $slotsLeft = $mn->max_athletes - $taken;
-                            if ($slotsLeft <= 0) {
-                                continue;
-                            }
-                            for ($a = 0; $a < $slotsLeft; $a++) {
-                                $athlete = $this->createAthlete($gender, $ageGroup, $weightGroups);
-                                $this->attachAthleteToRegistration($registration, $contingent, $athlete, $ageGroup, $weightGroups, $mn, $techniqueIds, $contingentMatchCount);
-                            }
-                        }
-
-                        // ─── RANDORI ATHLETES ─────────────────────────────────────
-                        // Each randori match = 1 athlete per contingent
-                        // Register in 2-4 randori matches (different weight classes)
-                        $randoriSlice = array_slice($randoriMatches, 0, rand(2, 4));
-                        foreach ($randoriSlice as $mn) {
-                            // Apply global limit of 4 for the very first Randori match to test Double Elimination (<=4)
-                            if (! isset($this->target4MatchId) && count($randoriMatches) > 0) {
-                                $this->target4MatchId = $randoriMatches[0]->id;
-                                $this->globalMatchCount = [];
-                            }
-
-                            if (isset($this->target4MatchId) && $mn->id === $this->target4MatchId) {
-                                $globalTaken = $this->globalMatchCount[$mn->id] ?? 0;
-                                if ($globalTaken >= 4) {
-                                    continue;
-                                }
-                                $this->globalMatchCount[$mn->id] = $globalTaken + 1;
-                            }
-
-                            $taken = $contingentMatchCount[$contingent->id][$mn->id] ?? 0;
-                            if ($taken >= $mn->max_athletes) {
-                                continue;
-                            }
-                            // Derive weight from match name
-                            $weight = $this->deriveWeightFromMatch($mn->name);
-                            $athlete = $this->createAthlete($gender, $ageGroup, $weightGroups, $weight);
-                            $this->attachAthleteToRegistration($registration, $contingent, $athlete, $ageGroup, $weightGroups, $mn, [], $contingentMatchCount);
+        // 4. Create unique contingents
+        $allContingentNames = [];
+        foreach ($tournamentData as $ageName => $sections) {
+            foreach ($sections as $genderKey => $matches) {
+                foreach ($matches as $match) {
+                    foreach ($match['contingents'] as $cName) {
+                        $cleanName = preg_replace('/\s*\(.*?\)/', '', $cName);
+                        $cleanName = preg_replace('/\s*\[.*?\]/', '', $cleanName);
+                        $cleanName = trim($cleanName);
+                        if (! empty($cleanName)) {
+                            $allContingentNames[strtolower($cleanName)] = $cleanName;
                         }
                     }
                 }
+            }
+        }
 
-                // Update total cost properly
-                $athleteCount = DB::table('registration_athlete')
-                    ->where('registration_id', $registration->id)
-                    ->count();
-                $totalAthleteFee = $athleteCount * ($ageGroups->has($selectedAgIds[0]) ? (int) $ageGroups[$selectedAgIds[0]]->price : 400000);
-                $total = 2500000 + $totalAthleteFee;
-                $registration->update([
-                    'total_cost' => $total,
-                    'final_amount' => $total + $uniqueCode,
+        $contingentModels = [];
+
+        foreach ($allContingentNames as $slug => $cName) {
+            $email = str_replace(' ', '', $slug).'@dummy.test';
+            $user = User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $cName,
+                    'password' => Hash::make('password'),
+                ]
+            );
+
+            if (! $user->hasRole('Contingent')) {
+                $user->assignRole('Contingent');
+            }
+
+            $contingentModels[$cName] = Contingent::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'name' => $cName,
+                    'kab_kota' => $cName,
+                    'leader_name' => 'Leader '.$cName,
+                    'leader_phone' => '08'.rand(1000000000, 9999999999),
+                    'email' => $email,
+                    'address' => 'Alamat '.$cName,
+                ]
+            );
+
+            if (! $contingentModels[$cName]->registrations()->exists()) {
+                Registration::create([
+                    'contingent_id' => $contingentModels[$cName]->id,
+                    'total_cost' => 2500000,
+                    'final_amount' => 2500000 + rand(100, 999),
+                    'unique_code' => rand(100, 999),
+                    'payment_method' => 'Transfer',
+                    'status' => 'verified',
+                    'sim_perkemi_confirm' => 'Ya',
                 ]);
-
-                $bar->advance();
-            }
-        });
-
-        $bar->finish();
-        $this->command->newLine();
-        $this->command->info('✅ Done! Seeded '.$this->totalContingents.' contingents with athletes and registrations.');
-    }
-
-    // ─── HELPERS ────────────────────────────────────────────────────────────
-
-    /**
-     * Create a new Athlete record with randomized data.
-     */
-    private function createAthlete(
-        string $gender,
-        mixed $ageGroup,
-        mixed $weightGroups,
-        ?int $fixedWeight = null
-    ): Athlete {
-        $ageName = is_array($ageGroup) ? $ageGroup['name'] : $ageGroup->name;
-
-        // Birth date range by age group
-        $birthDateRange = match (true) {
-            str_contains($ageName, 'Pemula') => [14, 17],
-            str_contains($ageName, 'Remaja A') => [15, 18],
-            str_contains($ageName, 'Remaja B') => [17, 21],
-            str_contains($ageName, 'Dewasa A') => [19, 28],
-            default => [25, 40],
-        };
-
-        $birthYear = now()->year - rand(...$birthDateRange);
-        $birthDate = now()->setYear($birthYear)->setMonth(rand(1, 12))->setDay(rand(1, 28));
-
-        // Rank by age group
-        $pemula_kyu = ['Kyu 6', 'Kyu 5', 'Kyu 4'];
-        $rank = match (true) {
-            str_contains($ageName, 'Pemula') => $pemula_kyu[array_rand($pemula_kyu)],
-            str_contains($ageName, 'Remaja') => $this->kyuLevels[rand(1, 4)],
-            str_contains($ageName, 'Dewasa A') => $this->kyuLevels[rand(2, 5)],
-            default => $this->yudansaLevels[array_rand($this->yudansaLevels)],
-        };
-
-        $weight = $fixedWeight ?? rand(40, 80);
-
-        // Pick weight group
-        $wg = $weightGroups->first() ?? null;
-        foreach ($weightGroups as $wgItem) {
-            if ($wgItem->min_weight && $weight >= $wgItem->min_weight && $weight <= ($wgItem->max_weight ?? 999)) {
-                $wg = $wgItem;
-                break;
-            }
-        }
-        $wgId = $wg?->id ?? $weightGroups->first()?->id;
-
-        $nik = $this->generateUniqueNik();
-
-        return Athlete::create([
-            'nik' => $nik,
-            'name' => fake('id_ID')->name($gender === 'Male' ? 'male' : 'female'),
-            'gender' => $gender,
-            'birth_place' => fake('id_ID')->city(),
-            'blood_type' => $this->bloodTypes[array_rand($this->bloodTypes)],
-            'birth_date' => $birthDate->format('Y-m-d'),
-            'address' => fake('id_ID')->address(),
-            'phone' => '08'.fake()->numerify('##########'),
-            'bpjs_number' => fake()->numerify('##############'),
-            'bpjs_status' => 'Aktif',
-        ]);
-    }
-
-    /**
-     * Attach athlete to registration with all pivot data, and link to match number.
-     */
-    private function attachAthleteToRegistration(
-        Registration $registration,
-        Contingent $contingent,
-        Athlete $athlete,
-        mixed $ageGroup,
-        mixed $weightGroups,
-        MatchNumber $matchNumber,
-        array $techniqueIds,
-        array &$contingentMatchCount
-    ): void {
-        $ageName = is_array($ageGroup) ? $ageGroup['name'] : $ageGroup->name;
-        $ageGroupId = is_array($ageGroup) ? $ageGroup['id'] : $ageGroup->id;
-
-        $weight = rand(40, 80);
-        $wg = $weightGroups->first();
-        foreach ($weightGroups as $wgItem) {
-            if ($wgItem->min_weight && $weight >= $wgItem->min_weight && $weight <= ($wgItem->max_weight ?? 999)) {
-                $wg = $wgItem;
-                break;
             }
         }
 
-        // Attach to athlete_contingent (primary membership)
-        $currentPrimary = $athlete->contingents()->wherePivot('is_primary', true)->first();
-        if (! $currentPrimary || $currentPrimary->id !== $contingent->id) {
-            if ($currentPrimary) {
-                $athlete->contingents()->updateExistingPivot($currentPrimary->id, ['is_primary' => false]);
+        // 5. Create Match Numbers and Assign Athletes
+        foreach ($tournamentData as $ageName => $sections) {
+            $ageGroup = $ageGroups->get($ageName);
+            if (! $ageGroup) {
+                $ageGroup = AgeGroup::create(['name' => $ageName, 'price' => 500000, 'order' => 99]);
+                $ageGroups->put($ageName, $ageGroup);
             }
-            $athlete->contingents()->syncWithoutDetaching([
-                $contingent->id => [
-                    'is_primary' => true,
-                    'joined_at' => now(),
+
+            foreach ($sections as $genderKey => $matches) {
+                $gender = match ($genderKey) {
+                    'Putra' => 'Male',
+                    'Putri' => 'Female',
+                    default => 'Mix',
+                };
+
+                foreach ($matches as $matchInfo) {
+                    $matchName = $matchInfo['name'];
+                    $draftType = str_contains(strtolower($matchName), 'randori') ? 'randori' : 'embu';
+                    $maxAthletes = 1;
+                    if (str_contains(strtolower($matchName), 'pasangan')) {
+                        $maxAthletes = 2;
+                    }
+                    if (str_contains(strtolower($matchName), 'beregu')) {
+                        $maxAthletes = 4;
+                    }
+
+                    $matchNumber = MatchNumber::firstOrCreate(
+                        [
+                            'name' => $matchName,
+                            'age_group_id' => $ageGroup->id,
+                            'gender' => $gender,
+                        ],
+                        [
+                            'match_id' => $matchInfo['match_id'] ?? null,
+                            'draft_type' => $draftType,
+                            'max_athletes' => $maxAthletes,
+                            'order' => 1,
+                        ]
+                    );
+
+                    foreach ($matchInfo['contingents'] as $cString) {
+                        $cClean = trim(preg_replace('/\s*\(.*?\)/', '', $cString));
+                        $cClean = trim(preg_replace('/\s*\[.*?\]/', '', $cClean));
+
+                        $contingent = null;
+                        foreach ($contingentModels as $name => $model) {
+                            if (strtolower($name) === strtolower($cClean)) {
+                                $contingent = $model;
+                                break;
+                            }
+                        }
+
+                        if (! $contingent) {
+                            continue;
+                        }
+
+                        $entryGender = $gender;
+                        if (str_contains($cString, '[putra]')) {
+                            $entryGender = 'Male';
+                        }
+                        if (str_contains($cString, '[putri]')) {
+                            $entryGender = 'Female';
+                        }
+                        if (str_contains($cString, '[campuran]')) {
+                            $entryGender = 'Mix';
+                        }
+
+                        $registration = $contingent->registrations()->latest()->first();
+
+                        preg_match('/\((.*?)\)/', $cString, $matches_ath);
+                        $athNames = isset($matches_ath[1]) ? explode('+', $matches_ath[1]) : [];
+                        if (count($athNames) === 0) {
+                            preg_match('/\((.*?)\)/', $cString, $matches_ath2);
+                            if (isset($matches_ath2[1])) {
+                                $athNames = explode('/', $matches_ath2[1]);
+                            }
+                        }
+
+                        if (empty($athNames)) {
+                            for ($i = 0; $i < $maxAthletes; $i++) {
+                                $athNames[] = 'Atlet '.($i + 1).' '.$cClean;
+                            }
+                        }
+
+                        foreach ($athNames as $aName) {
+                            $aName = trim($aName);
+                            if (empty($aName)) {
+                                continue;
+                            }
+
+                            // Ensure unique NIK
+                            do {
+                                $nik = fake()->numerify('################');
+                            } while (Athlete::where('nik', $nik)->exists());
+
+                            $athlete = Athlete::create([
+                                'nik' => $nik,
+                                'name' => $aName,
+                                'gender' => $entryGender === 'Mix' ? (rand(0, 1) ? 'Male' : 'Female') : $entryGender,
+                                'birth_place' => 'Kota '.$cClean,
+                                'birth_date' => now()->subYears(rand(10, 25))->format('Y-m-d'),
+                                'phone' => '08'.fake()->numerify('##########'),
+                                'bpjs_status' => 'Aktif',
+                            ]);
+
+                            // Link to contingent (primary)
+                            $athlete->contingents()->attach($contingent->id, [
+                                'is_primary' => true,
+                                'joined_at' => now(),
+                            ]);
+
+                            // Link to registration via pivot
+                            $registration->athletes()->attach($athlete->id, [
+                                'kyu' => 'Kyu 3',
+                                'age_group' => $ageName,
+                                'rank' => 'Kyu 3',
+                                'match_type' => ucfirst($draftType),
+                                'city' => $cClean,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                            // Link to match number
+                            DB::table('athlete_match_number')->insert([
+                                'athlete_id' => $athlete->id,
+                                'match_number_id' => $matchNumber->id,
+                                'registration_id' => $registration->id,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->command->info('✅ Tournament dummy data seeded successfully!');
+    }
+
+    private function getTournamentData(): array
+    {
+        return [
+            'Pemula' => [
+                'Putra' => [
+                    ['match_id' => 'P1', 'name' => 'Embu Tandoku kyu kenshi eksebisi', 'contingents' => ['Kab Jombang', 'Kab Gresik', 'Surabaya A (fakhry)', 'Surabaya B (Kael)', 'Surabaya C (Tegar)', 'Kota malang 3 (Stiba GSE)', 'Kab tuban', 'Kab tuban']],
                 ],
-            ]);
-        }
-
-        // Attach to registration (athlete_registration pivot)
-        // Check if already attached
-        $alreadyInRegistration = DB::table('registration_athlete')
-            ->where('registration_id', $registration->id)
-            ->where('athlete_id', $athlete->id)
-            ->exists();
-
-        if (! $alreadyInRegistration) {
-            $registration->athletes()->attach($athlete->id, [
-                'weight' => $weight,
-                'weight_group_id' => $wg?->id,
-                'kyu' => 'Kyu 3',
-                'age_group' => $ageName,
-                'rank' => 'Kyu 3',
-                'dojo_origin' => $this->dojoNames[array_rand($this->dojoNames)],
-                'city' => fake('id_ID')->city(),
-                'match_type' => $matchNumber->draft_type === 'randori' ? 'Randori' : 'Embu',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        // Select techniques (only for embu; pick 2-5 random techniques)
-        $selectedTechniqueIds = [];
-        if ($matchNumber->draft_type === 'embu' && ! empty($techniqueIds)) {
-            $count = min(6, count($techniqueIds));
-            $shuffled = $techniqueIds;
-            shuffle($shuffled);
-            $selectedTechniqueIds = array_slice($shuffled, 0, $count);
-        }
-
-        // Attach to athlete_match_number (only once per athlete+match+registration)
-        $alreadyInMatch = DB::table('athlete_match_number')
-            ->where('athlete_id', $athlete->id)
-            ->where('match_number_id', $matchNumber->id)
-            ->where('registration_id', $registration->id)
-            ->exists();
-
-        if (! $alreadyInMatch) {
-            DB::table('athlete_match_number')->insert([
-                'athlete_id' => $athlete->id,
-                'match_number_id' => $matchNumber->id,
-                'registration_id' => $registration->id,
-                'technique_ids' => json_encode($selectedTechniqueIds),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Update tracker
-            $contingentMatchCount[$contingent->id][$matchNumber->id] =
-                ($contingentMatchCount[$contingent->id][$matchNumber->id] ?? 0) + 1;
-        }
-    }
-
-    /**
-     * Derive a weight value (in kg) from a randori match name.
-     */
-    private function deriveWeightFromMatch(string $name): int
-    {
-        if (str_contains($name, '>70') || str_contains($name, '+70')) {
-            return rand(72, 90);
-        }
-        if (preg_match('/(\d+)Kg/i', $name, $m)) {
-            $kg = (int) $m[1];
-
-            return rand(max(40, $kg - 4), $kg);
-        }
-
-        return rand(50, 70);
-    }
-
-    /**
-     * Generate a unique 16-digit NIK that doesn't exist yet in the athletes table.
-     */
-    private function generateUniqueNik(): string
-    {
-        do {
-            $nik = fake()->numerify('################');
-        } while (Athlete::where('nik', $nik)->exists());
-
-        return $nik;
+                'Putri' => [
+                    ['match_id' => 'P2', 'name' => 'Embu Tandoku kyu kenshi', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Kab Jombang', 'Kab Gresik', 'Surabaya A ( izzati)', 'Surabaya B (kekei)', 'Surabaya C ( Beby)', 'Kota malang 3 (Stiba GSE)', 'Kab tuban']],
+                ],
+                'Campuran' => [
+                    ['match_id' => 'P3', 'name' => 'Embu Pasangan campuran Kyu kenshi', 'contingents' => ['Kab Jombang', 'Surabaya D (lucky+maribeth)', 'Surabaya C ( Beby + Rafa )', 'Surabaya A (ilham+izzati)', 'Surabaya B (Kael + Kekei)', 'Kota malang 3 (Stiba GSE)', 'Kab Tuban']],
+                    ['match_id' => 'P4', 'name' => 'Embu Pasangan putra/putri Kyu kenshi eksebisi', 'contingents' => ['Kab Jombang', 'Kab Gresik', 'Surabaya B (arvie+aldan)', 'Surabaya C ( Tegar + Hanif)', 'Kab Gresik', 'Surabaya A (fakhry+ilham)', 'Kab Gresik [putri]', 'Surabaya A (alyssa+aisyah) [putri]']],
+                ],
+            ],
+            'Remaja A' => [
+                'Putra' => [
+                    ['match_id' => 'RA1', 'name' => 'embu tandoku kyu kenshi eksebisi', 'contingents' => ['Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kab Gresik', 'Surabaya A (yahya)', 'Surabaya B (Javier)', 'Kota Malang', 'Sidoarjo', 'Kab Tuban', 'Kab Tuban']],
+                ],
+                'Putri' => [
+                    ['match_id' => 'RA2', 'name' => 'Embu Tandoku Kyu kenshi eksebisi', 'contingents' => ['Kab Jombang', 'Kab Gresik', 'Surabaya A (kirana/sarah)', 'Surabaya B (Athalia/Aura/Intan)', 'Kota Malang', 'Kota malang 3 (Stiba GSE)', 'Kab Tuban', 'Kab Tuban']],
+                ],
+                'Campuran' => [
+                    ['match_id' => 'RA3', 'name' => 'Embu Pasangan Kyu kenshi Putra/Putri/Campuran eksebisi', 'contingents' => ['Kab Gresik [campuran]', 'Surabaya A (raung+kirana/sarah) [campuran]', 'Surabaya B (jojo + Intan) [campuran]', 'Kota Malang [campuran]', 'sidoarjo [campuran]', 'Surabaya A (Kirana + Sarah) [putri]', 'Surabaya B (Aura + Athalia) [putri]', 'Kota malang 3 (Stiba GSE) [putri]', 'Surabaya A (raung + yahya) [putra]', 'sidoarjo [putra]', 'Kab Tuban', 'Kab Tuban']],
+                    ['match_id' => 'RA4', 'name' => 'Embu Beregu putra/putri/campuran eksebisi', 'contingents' => ['Surabaya A (Yahya + Raung + Kirana + Sarah)', 'Surabaya A (farzha+kaysha+naisya+dinda)', 'Sidoarjo', 'Kab tuban', 'Kab Tuban']],
+                ],
+            ],
+            'Remaja B' => [
+                'Putra' => [
+                    ['match_id' => 'RB1', 'name' => 'embu tandoku kyu 4/3', 'contingents' => ['Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Surabaya A (Fais)', 'Surabaya C (Ibrahim)']],
+                    ['match_id' => 'RB2', 'name' => 'embu tandoku kyu 2/1', 'contingents' => ['Kab Jember', 'Kota Malang', 'Kab Jombang', 'Surabaya A (Gio/Desta)', 'Kab Tuban']],
+                    ['match_id' => 'RB3', 'name' => 'embu pasangan kyu kenshi eksebisi', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Surabaya A (bisma + Alree)', 'Kab Jombang', 'Surabaya A (Gio+Desta)', 'Surabaya B (reinhard + delon)']],
+                    ['match_id' => 'RB4', 'name' => 'Randori 45Kg', 'contingents' => ['Bangkalan A', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Surabaya A (nando)']],
+                    ['match_id' => 'RB5', 'name' => 'Randori 50Kg', 'contingents' => ['Kab Jember', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'sidoarjo']],
+                    ['match_id' => 'RB6', 'name' => 'Randori 55Kg', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Surabaya A (Gio)', 'sidoarjo']],
+                    ['match_id' => 'RB7', 'name' => 'Randori 60Kg', 'contingents' => ['Bangkalan B', 'Bangkalan A', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kab Gresik', 'Kota Kediri', 'Surabaya A (Bisma)', 'Sidoarjo', 'Kab Tuban']],
+                    ['match_id' => 'RB8', 'name' => 'Randori 65Kg', 'contingents' => ['Kota Malang', 'Kab Jombang', 'Kab Gresik', 'Kota Kediri', 'Surabaya A (desta)']],
+                    ['match_id' => 'RB9', 'name' => 'Randori 70Kg', 'contingents' => ['Surabaya A (troy)', 'Surabaya B (Reindhard)', 'Surabaya C (Ibrahim)', 'Surabaya D (Aaron)']],
+                    ['match_id' => 'RB10', 'name' => 'Randori >70Kg', 'contingents' => ['Kota Malang', 'Surabaya B ( delon)', 'Surabaya D (Jadon)', 'Surabaya A (Fais)']],
+                ],
+                'Putri' => [
+                    ['match_id' => 'RB11', 'name' => 'embu tandoku kyu 4/3', 'contingents' => ['Bangkalan A', 'Kab Jember', 'Kab Banyuwangi', 'Kab Jombang']],
+                    ['match_id' => 'RB12', 'name' => 'embu tandoku kyu 2/1', 'contingents' => ['Kab Jember', 'Kota Malang', 'Kab Jombang', 'Surabaya A (Aqila)', 'Kota malang 3 (Stiba GSE)']],
+                    ['match_id' => 'RB13', 'name' => 'embu pasangan kyu Kenshi eksebisi', 'contingents' => ['Bangkalan B', 'Kab Banyuwangi', 'Kab Jombang', 'Kab Pasuruan', 'surabaya B (jasmine + gendhis)', 'Kab Jombang', 'Kota malang 3 (Stiba GSE)']],
+                    ['match_id' => 'RB14', 'name' => 'Randori 45Kg', 'contingents' => ['Bangkalan A', 'Kab Banyuwangi', 'Kab Jombang', 'Kota Kediri', 'Kab Pasuruan', 'Surabaya A (anisa )', 'Surabaya B ( Abygel)']],
+                    ['match_id' => 'RB15', 'name' => 'Randori 50Kg', 'contingents' => ['Bangkalan B', 'Kab Jember', 'Kab Banyuwangi', 'Kab Jombang', 'Kab Pasuruan', 'Surabaya A ( Lucita )']],
+                    ['match_id' => 'RB16', 'name' => 'Randori 55Kg', 'contingents' => ['Kab Jember', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Kab Pasuruan', 'Surabaya B (gendhis)']],
+                    ['match_id' => 'RB17', 'name' => 'Randori 70Kg eksebisi', 'contingents' => ['Bangkalan B', 'Surabaya B (jasmine)', 'Surabaya A (farah)']],
+                ],
+                'Campuran' => [
+                    ['match_id' => 'RB18', 'name' => 'Embu Pasangan Kyu kenshi eksebisi', 'contingents' => ['Surabaya A (annisa+bisma)', 'Kota Malang', 'Kab Jombang', 'Surabaya A (aqila+nando)']],
+                    ['match_id' => 'RB19', 'name' => 'Embu Beregu putra/putri/campuran eksebisi', 'contingents' => ['Kota Malang [campuran]', 'Kab Jombang [campuran]', 'kab jombang [putri]', 'Kota Malang [putra]', 'Kab Jombang [putra]']],
+                ],
+            ],
+            'Dewasa' => [
+                'Putra' => [
+                    ['match_id' => 'D1', 'name' => 'embu tandoku kyu 3/2 eksebisi', 'contingents' => ['Bangkalan A', 'Kab Jember', 'Kota Malang', 'Kab Jember']],
+                    ['match_id' => 'D2', 'name' => 'embu tandoku kyu 1', 'contingents' => ['Bangkalan A', 'Kab Jember', 'Kab Jombang', 'Surabaya A (dani)']],
+                    ['match_id' => 'D3', 'name' => 'Randori 50Kg eksebisi', 'contingents' => ['Bangkalan A', 'Kab Jember', 'Kota Kediri']],
+                    ['match_id' => 'D4', 'name' => 'Randori 55Kg eksebisi', 'contingents' => ['Kota Kediri', 'Kab Pasuruan', 'kota malang']],
+                    ['match_id' => 'D5', 'name' => 'Randori 60Kg eksebisi', 'contingents' => ['Bangkalan A', 'Kab Jember', 'Kota Malang', 'Kab Jombang', 'Kota Kediri', 'Kab Pasuruan', 'Kota malang 3 (Stiba GSE)', 'kota kediri']],
+                    ['match_id' => 'D6', 'name' => 'Randori 65Kg', 'contingents' => ['Kota Malang', 'Kab Jombang', 'Surabaya A (dani)', 'kota kediri']],
+                    ['match_id' => 'D7', 'name' => 'Randori 70Kg eksebisi', 'contingents' => ['Kota Kediri', 'kota kediri', 'Bangkalan A', 'Kab Jember']],
+                ],
+                'Putri' => [
+                    ['match_id' => 'D8', 'name' => 'embu tandoku kyu 3/2 eksebisi', 'contingents' => ['Kab Banyuwangi', 'Kab Jember', 'Kab Banyuwangi', 'Kab Pasuruan']],
+                    ['match_id' => 'D9', 'name' => 'embu tandoku kyu 1', 'contingents' => ['Kab Jember', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Surabaya A (bilqis)']],
+                    ['match_id' => 'D10', 'name' => 'Randori 45Kg', 'contingents' => ['Bangkalan A', 'Kab Banyuwangi', 'Kab Jombang', 'Kota Kediri', 'Kab Pasuruan']],
+                    ['match_id' => 'D11', 'name' => 'Randori 50Kg', 'contingents' => ['Bangkalan B', 'Kab Jember', 'Kab Banyuwangi', 'Kab Jombang', 'Kab Pasuruan', 'Surabaya A ( Lucita )']],
+                    ['match_id' => 'D12', 'name' => 'Randori 55Kg', 'contingents' => ['Kab Jember', 'Kab Banyuwangi', 'Kota Malang', 'Kab Jombang', 'Kab Pasuruan', 'surabaya A (cindy)']],
+                    ['match_id' => 'D13', 'name' => 'Randori 60Kg', 'contingents' => ['Kab Jember', 'Kab Banyuwangi', 'Kota Malang', 'surabaya A (stephanie)']],
+                    ['match_id' => 'D14', 'name' => 'Randori 65Kg', 'contingents' => ['Kab Banyuwangi', 'surabaya b (erra)', 'surabaya c (laverda)', 'surabaya A (ocha)']],
+                ],
+                'Campuran' => [
+                    ['match_id' => 'D15', 'name' => 'Embu Pasangan Kyu kenshi putra/putri/campuran', 'contingents' => ['Bangkalan A [campuran]', 'Surabaya A (dani + ocha) [campuran]', 'kab banyuwangi [putri]', 'kota malang [putri]', 'surabaya B (bilqis + erra) [putri]', 'kab jombang [putra]']],
+                    ['match_id' => 'D16', 'name' => 'Embu tandoku yudansha putra/putri eksebisi', 'contingents' => ['kota malang [putra]', 'kota malang [putri]', 'surabaya A (cindy) [putri]', 'kota malang [putra]', 'surabaya B (rafi) [putra]', 'surabaya C (noval) [putra]']],
+                ],
+            ],
+        ];
     }
 }

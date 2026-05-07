@@ -773,7 +773,7 @@
       <div class="brand-top">
         <div class="brand-emblem">拳</div>
         <div class="brand-text">
-          <h1>Shorinji Kempo<br>Indonesia</h1>
+          <h1>Smart Perkemi</h1>
           <p>Admin Panel · 2026</p>
         </div>
         <button class="sidebar-close" onclick="closeSidebar()"><i class="fa-solid fa-xmark"></i></button>

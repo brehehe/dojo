@@ -294,11 +294,9 @@
             <p>Double Elimination — kalah 1x masih bisa juara via Loser Bracket</p>
         </div>
         <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            @if($drawingData['grand_final']['winner'] ?? false)
             <button wire:click="confirmChampion" wire:confirm="Sistem akan men-generate Juara 1 & 2 dari hasil Grand Final. Lanjutkan?" class="btn-gen primary" style="background:#27ae60; box-shadow:0 4px 12px rgba(39,174,96,0.2);">
-                <i class="fas fa-medal"></i> Generate Juara
+                <i class="fas fa-medal"></i> Simpan Juara
             </button>
-            @endif
             <button wire:click="callOfficials" class="btn-gen primary" style="background:var(--red); box-shadow:0 4px 12px rgba(192,57,43,0.2);">
                 <i class="fas fa-bullhorn"></i> Panggil Official
             </button>
