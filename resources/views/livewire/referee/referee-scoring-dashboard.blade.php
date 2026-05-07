@@ -1,36 +1,84 @@
-<div wire:poll.2s="loadActiveMatch">
+<div wire:poll.2s="loadActiveMatch" class="ref-scoring-shell">
     @push('styles')
     <style>
     /* ══════════════════════════════════════════════════════
        REFEREE SCORING DASHBOARD — Mobile Premium
     ══════════════════════════════════════════════════════ */
 
+    body.referee-scoring-immersive {
+        overflow: auto;
+    }
+    body.referee-scoring-immersive .premium-header,
+    body.referee-scoring-immersive .mob-bottomnav {
+        display: none !important;
+    }
+    body.referee-scoring-immersive main.premium-main {
+        height: 100dvh;
+        min-height: 100dvh;
+        padding-bottom: 0 !important;
+        overflow: hidden;
+    }
+    body.referee-scoring-immersive .ref-scoring-shell {
+        height: 100dvh;
+        min-height: 100dvh;
+        padding-bottom: 32px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        touch-action: pan-y;
+    }
+    .ref-scoring-shell {
+        position: relative;
+    }
+    .ref-fullscreen-btn {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 80;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        border-radius: 999px;
+        background: rgba(15, 13, 11, .92);
+        color: #fff;
+        padding: 12px 16px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+        cursor: pointer;
+    }
+    .ref-fullscreen-btn i {
+        font-size: 14px;
+    }
     /* ── STATUS BAR ── */
     .ref-statusbar {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 12px 16px 8px; gap: 10px; flex-wrap: wrap;
+        padding: 16px 18px 10px; gap: 10px; flex-wrap: wrap;
     }
     .ref-judge-info { display: flex; align-items: center; gap: 10px; }
     .ref-judge-icon {
-        width: 38px; height: 38px; border-radius: 11px;
+        width: 42px; height: 42px; border-radius: 12px;
         background: rgba(192,57,43,.1); color: var(--red);
-        display: flex; align-items: center; justify-content: center; font-size: 16px;
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
         flex-shrink: 0;
     }
-    .ref-judge-name { font-size: 13px; font-weight: 700; color: var(--ink); margin: 0 0 1px; }
-    .ref-judge-sub  { font-size: 10.5px; color: var(--smoke); margin: 0; }
+    .ref-judge-name { font-size: 19px; font-weight: 700; color: var(--ink); margin: 0 0 1px; }
+    .ref-judge-sub  { font-size: 14px; color: var(--smoke); margin: 0; }
 
     .ref-judge-badge {
-        padding: 5px 12px; background: var(--ink); color: var(--gold-lt);
-        border-radius: 20px; font-size: 10.5px; font-weight: 700;
+        padding: 6px 13px; background: var(--ink); color: var(--gold-lt);
+        border-radius: 20px; font-size: 14px; font-weight: 700;
         font-family: 'Cinzel', serif; letter-spacing: .05em; white-space: nowrap;
     }
 
     /* ── SYNC INDICATOR ── */
     .ref-sync {
         display: flex; align-items: center; justify-content: center;
-        gap: 6px; padding: 6px 0 10px;
-        font-size: 10px; color: var(--smoke); text-transform: uppercase; letter-spacing: .1em;
+        gap: 6px; padding: 8px 0 12px;
+        font-size: 13px; color: var(--smoke); text-transform: uppercase; letter-spacing: .1em;
     }
     .ref-sync i { color: #27ae60; }
 
@@ -41,8 +89,8 @@
         border-radius: 12px; display: flex; gap: 12px; align-items: flex-start;
     }
     .ref-warning i { color: #d97706; font-size: 16px; margin-top: 2px; flex-shrink: 0; }
-    .ref-warning-title { font-size: 12px; font-weight: 700; color: #92400e; margin: 0 0 2px; }
-    .ref-warning-text  { font-size: 11px; color: #78350f; margin: 0; line-height: 1.5; }
+    .ref-warning-title { font-size: 18px; font-weight: 700; color: #92400e; margin: 0 0 2px; }
+    .ref-warning-text  { font-size: 15px; color: #78350f; margin: 0; line-height: 1.5; }
 
     /* ── MATCH HEADER ── */
     .ref-match-hdr {
@@ -58,7 +106,7 @@
     .ref-live-badge {
         display: inline-flex; align-items: center; gap: 5px;
         padding: 3px 10px; background: var(--red); color: #fff;
-        border-radius: 6px; font-size: 9.5px; font-weight: 700;
+        border-radius: 6px; font-size: 12px; font-weight: 700;
         letter-spacing: .1em; margin-bottom: 8px;
     }
     .ref-live-dot {
@@ -67,14 +115,14 @@
     }
     @keyframes blink { from { opacity: 1; } to { opacity: .3; } }
     .ref-match-type {
-        font-size: 9.5px; color: var(--smoke); text-transform: uppercase;
+        font-size: 12.5px; color: var(--smoke); text-transform: uppercase;
         letter-spacing: .15em; margin-bottom: 4px;
     }
     .ref-match-name {
-        font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
+        font-family: 'Cinzel', serif; font-size: 27px; font-weight: 700;
         color: #fff; margin: 0 0 2px;
     }
-    .ref-match-sub { font-size: 11px; color: rgba(255,255,255,.4); margin: 0; }
+    .ref-match-sub { font-size: 15px; color: rgba(255,255,255,.4); margin: 0; }
 
     /* ── MATCH INFO CHIPS (kontingen, court, pool, teknik) ── */
     .ref-info-chips {
@@ -96,11 +144,11 @@
     .ref-info-chip-icon.gold  { background: rgba(212,168,67,.12); color: #b8860b; }
     .ref-info-chip-body { min-width: 0; }
     .ref-info-chip-label {
-        font-size: 9px; font-weight: 700; text-transform: uppercase;
+        font-size: 12px; font-weight: 700; text-transform: uppercase;
         letter-spacing: .1em; color: var(--smoke); margin: 0 0 2px;
     }
     .ref-info-chip-value {
-        font-size: 12px; font-weight: 700; color: var(--ink);
+        font-size: 18px; font-weight: 700; color: var(--ink);
         margin: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word;
         font-family: 'DM Sans', sans-serif;
     }
@@ -124,14 +172,14 @@
         font-size: 13px; flex-shrink: 0;
     }
     .ref-technique-label {
-        font-size: 9px; font-weight: 700; text-transform: uppercase;
+        font-size: 12px; font-weight: 700; text-transform: uppercase;
         letter-spacing: .12em; color: var(--smoke); margin: 0 0 2px;
     }
     .ref-technique-title {
-        font-size: 13px; font-weight: 700; color: var(--ink); margin: 0;
+        font-size: 19px; font-weight: 700; color: var(--ink); margin: 0;
     }
     .ref-technique-text {
-        font-size: 12px; line-height: 1.7; color: var(--ink);
+        font-size: 18px; line-height: 1.7; color: var(--ink);
         margin: 0;
     }
     .ref-technique-list {
@@ -142,7 +190,7 @@
         list-style-position: outside;
     }
     .ref-technique-list li {
-        font-size: 12px;
+        font-size: 18px;
         line-height: 1.7;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -161,8 +209,8 @@
         animation: pulse-slow 2.5s ease-in-out infinite;
     }
     @keyframes pulse-slow { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
-    .ref-wait h3 { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
-    .ref-wait p  { font-size: 12px; color: var(--smoke); margin: 0; line-height: 1.6; max-width: 220px; margin-inline: auto; }
+    .ref-wait h3 { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
+    .ref-wait p  { font-size: 15px; color: var(--smoke); margin: 0; line-height: 1.6; max-width: 260px; margin-inline: auto; }
 
     /* ── SCORE FORM PANEL ── */
     .ref-form-panel { padding: 0 16px 16px; }
@@ -174,21 +222,21 @@
     .ref-score-group-hdr {
         padding: 10px 14px; background: var(--paper);
         border-bottom: 1px solid var(--paper2);
-        font-size: 10px; font-weight: 700; color: var(--smoke);
+        font-size: 13px; font-weight: 700; color: var(--smoke);
         text-transform: uppercase; letter-spacing: .12em;
         display: flex; align-items: center; gap: 7px;
     }
     .ref-score-group-hdr i { font-size: 11px; }
     .ref-score-items { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
     .ref-score-row { display: flex; align-items: center; gap: 10px; }
-    .ref-score-label { flex: 1; font-size: 12.5px; font-weight: 600; color: var(--ink); }
-    .ref-score-desc  { font-size: 10.5px; color: var(--smoke); margin-top: 1px; }
+    .ref-score-label { flex: 1; font-size: 23px; font-weight: 700; color: var(--ink); }
+    .ref-score-desc  { font-size: 18px; color: var(--smoke); margin-top: 4px; line-height: 1.45; }
 
     /* ── SCORE INPUT (range 8–10) ── */
-    .ref-score-input-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .ref-score-input-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: 0 0 148px; }
     .ref-score-input {
-        width: 76px; padding: 9px 8px; border: 1.5px solid var(--paper2);
-        border-radius: 10px; font-family: 'Cinzel', serif; font-size: 16px;
+        width: 148px; padding: 16px 10px; border: 1.5px solid var(--paper2);
+        border-radius: 10px; font-family: 'Cinzel', serif; font-size: 38px;
         font-weight: 700; text-align: center; color: var(--ink);
         background: var(--paper); outline: none; transition: border .15s, box-shadow .15s;
         -moz-appearance: textfield;
@@ -198,7 +246,7 @@
     .ref-score-input:focus { border-color: var(--red); background: #fff; box-shadow: 0 0 0 3px rgba(192,57,43,.1); }
     .ref-score-input.is-valid   { border-color: #27ae60; }
     .ref-score-input.is-invalid { border-color: var(--red); }
-    .ref-score-range-hint { font-size: 9px; color: var(--smoke); letter-spacing: .05em; }
+    .ref-score-range-hint { font-size: 13px; color: var(--smoke); letter-spacing: .05em; }
 
     /* ── TOTAL BANNER ── */
     .ref-total-banner {
@@ -206,14 +254,14 @@
         padding: 16px 18px; display: flex; align-items: center; justify-content: space-between;
     }
     .ref-total-left {}
-    .ref-total-label { font-size: 11px; color: var(--smoke); text-transform: uppercase; letter-spacing: .1em; }
-    .ref-total-sub   { font-size: 10px; color: rgba(255,255,255,.3); font-style: italic; margin-top: 2px; }
+    .ref-total-label { font-size: 14px; color: var(--smoke); text-transform: uppercase; letter-spacing: .1em; }
+    .ref-total-sub   { font-size: 13px; color: rgba(255,255,255,.3); font-style: italic; margin-top: 2px; }
     .ref-total-val {
-        font-family: 'Cinzel', serif; font-size: 38px; font-weight: 700;
+        font-family: 'Cinzel', serif; font-size: 54px; font-weight: 700;
         color: var(--gold-lt); line-height: 1;
     }
     .ref-avg-val {
-        font-size: 12px; color: var(--smoke); text-align: right; margin-top: 4px;
+        font-size: 15px; color: var(--smoke); text-align: right; margin-top: 4px;
         font-family: 'DM Sans', sans-serif;
     }
 
@@ -224,13 +272,13 @@
     }
     .ref-notes-hdr {
         padding: 10px 14px; border-bottom: 1px solid var(--paper2);
-        font-size: 10px; font-weight: 700; color: var(--smoke);
+        font-size: 13px; font-weight: 700; color: var(--smoke);
         text-transform: uppercase; letter-spacing: .12em; background: var(--paper);
         display: flex; align-items: center; gap: 6px;
     }
     .ref-notes-textarea {
         width: 100%; border: none; outline: none; padding: 12px 14px;
-        font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink);
+        font-family: 'DM Sans', sans-serif; font-size: 18px; color: var(--ink);
         background: transparent; resize: none; min-height: 80px; box-sizing: border-box;
     }
 
@@ -238,7 +286,7 @@
     .ref-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
     .ref-btn-reset {
         padding: 14px; background: var(--paper); border: 1px solid var(--paper2);
-        border-radius: 12px; font-size: 12.5px; font-weight: 700; color: var(--ink);
+        border-radius: 12px; font-size: 16px; font-weight: 700; color: var(--ink);
         cursor: pointer; font-family: 'DM Sans', sans-serif;
         display: flex; align-items: center; justify-content: center; gap: 7px;
         transition: all .15s;
@@ -246,7 +294,7 @@
     .ref-btn-reset:hover { background: var(--paper2); }
     .ref-btn-submit {
         padding: 14px; background: var(--red); border: none;
-        border-radius: 12px; font-size: 13px; font-weight: 700; color: #fff;
+        border-radius: 12px; font-size: 16px; font-weight: 700; color: #fff;
         cursor: pointer; font-family: 'DM Sans', sans-serif;
         display: flex; align-items: center; justify-content: center; gap: 8px;
         box-shadow: 0 4px 16px rgba(192,57,43,.35); transition: all .2s;
@@ -260,12 +308,18 @@
         background: #fff; border-radius: 14px; border: 1px solid var(--paper2);
     }
     .ref-randori-info i { font-size: 28px; color: #2980b9; margin-bottom: 12px; display: block; }
-    .ref-randori-info h3 { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
-    .ref-randori-info p  { font-size: 12px; color: var(--smoke); margin: 0; line-height: 1.6; max-width: 280px; margin-inline: auto; }
+    .ref-randori-info h3 { font-family: 'Cinzel', serif; font-size: 19px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
+    .ref-randori-info p  { font-size: 15px; color: var(--smoke); margin: 0; line-height: 1.6; max-width: 280px; margin-inline: auto; }
 
     @media (max-width: 640px) {
         .ref-statusbar {
-            padding-inline: 12px;
+            padding: 18px 14px 10px;
+        }
+        .ref-fullscreen-btn {
+            top: 10px;
+            right: 10px;
+            padding: 11px 14px;
+            font-size: 13px;
         }
         .ref-warning,
         .ref-match-hdr,
@@ -286,7 +340,7 @@
             padding: 14px 14px 12px;
         }
         .ref-match-name {
-            font-size: 15px;
+            font-size: 23px;
             line-height: 1.35;
             max-width: calc(100% - 28px);
         }
@@ -301,17 +355,19 @@
             line-height: 1.4;
         }
         .ref-score-row {
-            align-items: stretch;
-            flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            flex-direction: row;
+            gap: 12px;
         }
         .ref-score-input-wrap {
-            width: 100%;
-            align-items: stretch;
+            width: 128px;
+            flex-basis: 128px;
+            align-items: flex-end;
         }
         .ref-score-input {
-            width: 100%;
-            min-height: 44px;
+            width: 128px;
+            min-height: 62px;
+            font-size: 32px;
         }
         .ref-score-range-hint {
             text-align: right;
@@ -325,9 +381,6 @@
         .ref-total-val,
         .ref-avg-val {
             text-align: left;
-        }
-        .ref-total-val {
-            font-size: 32px;
         }
         .ref-actions {
             grid-template-columns: 1fr;
@@ -343,18 +396,152 @@
     }
 
     @media (min-width: 641px) and (max-width: 960px) {
-        .ref-info-chip-value {
-            font-size: 11.5px;
-        }
         .ref-technique-panel {
             padding: 14px 15px;
         }
         .ref-score-input {
-            width: 84px;
+            width: 136px;
         }
     }
     </style>
     @endpush
+    @push('scripts')
+    <script>
+    (() => {
+        const bodyClass = 'referee-scoring-immersive';
+
+        const applyImmersiveMode = () => {
+            document.body.classList.add(bodyClass);
+        };
+
+        const cleanupImmersiveMode = () => {
+            document.body.classList.remove(bodyClass);
+        };
+
+        const clearZeroOnFocus = (input) => {
+            if (!input) {
+                return;
+            }
+
+            if (input.value === '0' || input.value === '0.0') {
+                input.value = '';
+            }
+
+            input.select?.();
+        };
+
+        const restoreZeroOnBlur = (input) => {
+            if (!input) {
+                return;
+            }
+
+            if (input.value !== '') {
+                return;
+            }
+
+            input.value = '0';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        const syncFullscreenButton = () => {
+            document.querySelectorAll('[data-ref-fullscreen-btn]').forEach((button) => {
+                const icon = button.querySelector('i');
+                const label = button.querySelector('[data-ref-fullscreen-label]');
+                const isFullscreen = !!document.fullscreenElement;
+
+                if (icon) {
+                    icon.className = isFullscreen
+                        ? 'fa-solid fa-compress'
+                        : 'fa-solid fa-expand';
+                }
+
+                if (label) {
+                    label.textContent = isFullscreen ? 'Keluar Fullscreen' : 'Fullscreen';
+                }
+            });
+        };
+
+        const attemptFullscreen = async () => {
+            const element = document.documentElement;
+
+            if (document.fullscreenElement || !element?.requestFullscreen) {
+                syncFullscreenButton();
+                return;
+            }
+
+            try {
+                await element.requestFullscreen();
+            } catch (_error) {
+                // Ignored: most browsers block fullscreen without a user gesture.
+            }
+
+            syncFullscreenButton();
+        };
+
+        const exitFullscreen = async () => {
+            if (!document.fullscreenElement || !document.exitFullscreen) {
+                syncFullscreenButton();
+                return;
+            }
+
+            try {
+                await document.exitFullscreen();
+            } catch (_error) {
+                // Ignore browser exit failures and keep UI state synced.
+            }
+
+            syncFullscreenButton();
+        };
+
+        const toggleFullscreen = async () => {
+            if (document.fullscreenElement) {
+                await exitFullscreen();
+
+                return;
+            }
+
+            await attemptFullscreen();
+        };
+
+        const initRefereeScoringView = () => {
+            applyImmersiveMode();
+            attemptFullscreen();
+            syncFullscreenButton();
+        };
+
+        window.refereeScoringFullscreen = toggleFullscreen;
+        window.refereeScoreInputFocus = clearZeroOnFocus;
+        window.refereeScoreInputBlur = restoreZeroOnBlur;
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initRefereeScoringView, { once: true });
+        } else {
+            initRefereeScoringView();
+        }
+
+        document.addEventListener('livewire:navigated', initRefereeScoringView);
+        document.addEventListener('livewire:navigating', cleanupImmersiveMode);
+        document.addEventListener('fullscreenchange', syncFullscreenButton);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                applyImmersiveMode();
+            }
+        });
+
+        window.addEventListener('pagehide', cleanupImmersiveMode);
+        window.addEventListener('beforeunload', cleanupImmersiveMode);
+
+        // Retry after first user interaction for browsers that require a gesture.
+        window.addEventListener('pointerdown', attemptFullscreen, { once: true });
+    })();
+    </script>
+    @endpush
+
+    <button type="button" class="ref-fullscreen-btn" data-ref-fullscreen-btn onclick="window.refereeScoringFullscreen?.()">
+        <i class="fa-solid fa-expand"></i>
+        <span data-ref-fullscreen-label>Fullscreen</span>
+    </button>
 
     {{-- ── STATUS BAR ── --}}
     <div class="ref-statusbar">
@@ -481,9 +668,11 @@
                                 <input type="number"
                                     wire:model.lazy="embuItems.{{ $key }}"
                                     class="ref-score-input"
-                                    min="8" max="10" step="0.1"
-                                    placeholder="8.0">
-                                <span class="ref-score-range-hint">8.0 – 10.0</span>
+                                    onfocus="window.refereeScoreInputFocus?.(this)"
+                                    onblur="window.refereeScoreInputBlur?.(this)"
+                                    min="0" max="10" step="0.1"
+                                    placeholder="0.0">
+                                <span class="ref-score-range-hint">Isi nilai 8.0 – 10.0</span>
                             </div>
                         </div>
                         @endforeach
@@ -514,9 +703,11 @@
                                 <input type="number"
                                     wire:model.lazy="embuItems.{{ $key }}"
                                     class="ref-score-input"
-                                    min="8" max="10" step="0.1"
-                                    placeholder="8.0">
-                                <span class="ref-score-range-hint">8.0 – 10.0</span>
+                                    onfocus="window.refereeScoreInputFocus?.(this)"
+                                    onblur="window.refereeScoreInputBlur?.(this)"
+                                    min="0" max="10" step="0.1"
+                                    placeholder="0.0">
+                                <span class="ref-score-range-hint">Isi nilai 8.0 – 10.0</span>
                             </div>
                         </div>
                         @endforeach
@@ -548,9 +739,11 @@
                                 <input type="number"
                                     wire:model.lazy="embuItems.{{ $key }}"
                                     class="ref-score-input"
-                                    min="8" max="10" step="0.1"
-                                    placeholder="8.0">
-                                <span class="ref-score-range-hint">8.0 – 10.0</span>
+                                    onfocus="window.refereeScoreInputFocus?.(this)"
+                                    onblur="window.refereeScoreInputBlur?.(this)"
+                                    min="0" max="10" step="0.1"
+                                    placeholder="0.0">
+                                <span class="ref-score-range-hint">Isi nilai 8.0 – 10.0</span>
                             </div>
                         </div>
                         @endforeach

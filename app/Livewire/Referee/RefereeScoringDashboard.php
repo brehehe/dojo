@@ -40,9 +40,9 @@ class RefereeScoringDashboard extends Component
 
     // Embu Itemized Scores
     public $embuItems = [
-        'goho_1' => '', 'goho_2' => '', 'goho_3' => '',
-        'juho_1' => '', 'juho_2' => '', 'juho_3' => '',
-        'ekspresi_1' => '', 'ekspresi_2' => '', 'ekspresi_3' => '', 'ekspresi_4' => '',
+        'goho_1' => 0, 'goho_2' => 0, 'goho_3' => 0,
+        'juho_1' => 0, 'juho_2' => 0, 'juho_3' => 0,
+        'ekspresi_1' => 0, 'ekspresi_2' => 0, 'ekspresi_3' => 0, 'ekspresi_4' => 0,
     ];
 
     // Randori Itemized Scores
@@ -273,9 +273,9 @@ class RefereeScoringDashboard extends Component
     public function resetForm()
     {
         $this->embuItems = [
-            'goho_1' => '', 'goho_2' => '', 'goho_3' => '',
-            'juho_1' => '', 'juho_2' => '', 'juho_3' => '',
-            'ekspresi_1' => '', 'ekspresi_2' => '', 'ekspresi_3' => '', 'ekspresi_4' => '',
+            'goho_1' => 0, 'goho_2' => 0, 'goho_3' => 0,
+            'juho_1' => 0, 'juho_2' => 0, 'juho_3' => 0,
+            'ekspresi_1' => 0, 'ekspresi_2' => 0, 'ekspresi_3' => 0, 'ekspresi_4' => 0,
         ];
         $this->randoriItems = [
             'aka' => ['mujoken' => '', 'ippon' => '', 'wazaari' => '', 'batsu5' => '', 'batsu10' => '', 'yusei' => ''],
