@@ -858,6 +858,7 @@
                                             </td>
                                         @endif
                                         @if($index === 0)
+                                            <td class="ref-score-cell ref-score-weight" rowspan="{{ count($techniqueRows) }}">
                                                 <div>
                                                     60
                                                     <span class="ref-score-weight-note">(Masing² 10)</span>
