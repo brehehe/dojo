@@ -1,35 +1,12 @@
-<div wire:poll.2s
-     x-data="{
-         resize() {
-             let wrapper = $refs.wrapper;
-             let content = $refs.content;
-             if (!wrapper || !content) return;
-             
-             content.style.transform = 'none';
-             content.style.width = '100%';
-             
-             let wHeight = wrapper.clientHeight;
-             let cHeight = content.scrollHeight;
-             
-             if (cHeight > wHeight) {
-                 let scale = wHeight / cHeight;
-                 content.style.transform = `scale(${scale})`;
-                 content.style.width = (100 / scale) + '%';
-             } else {
-                 content.style.transform = 'none';
-                 content.style.width = '100%';
-             }
-         }
-     }"
-     x-init="
-         $nextTick(() => resize());
-         setInterval(() => resize(), 500);
-     "
-     @resize.window="resize()"
-     x-ref="wrapper"
-     class="h-screen w-full bg-slate-50 overflow-hidden font-sans select-none flex flex-col items-center">
-    
-    <div x-ref="content" class="w-full min-h-screen flex flex-col justify-between origin-top transition-transform duration-300">
+<div wire:poll.2s class="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-hidden select-none">
+    <style>
+        /* Automatically scale all rem units to fit the viewport perfectly on landscape monitors/laptops */
+        @media (min-aspect-ratio: 4/3) {
+            html {
+                font-size: min(100vw / 1920 * 16, 100vh / 1250 * 16) !important;
+            }
+        }
+    </style>
     @if(!$court->active_match_id || !$court->activeMatch)
         <!-- IDLE STATE -->
         <div class="flex-1 flex flex-col items-center justify-center h-full p-6 text-center">
@@ -284,6 +261,5 @@
             @endif
             <span class="text-sm md:text-[15px] font-black text-slate-400 uppercase tracking-widest">LIVE ARBITRASE</span>
         </div>
-    </div>
     </div>
 </div>
