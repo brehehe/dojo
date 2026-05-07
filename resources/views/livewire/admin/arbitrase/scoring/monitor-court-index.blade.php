@@ -1,4 +1,4 @@
-<div wire:poll.2s class="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-hidden select-none">
+<div wire:poll.2s class="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-x-hidden select-none">
 
     @if(!$court->active_match_id || !$court->activeMatch)
         <!-- IDLE STATE -->
