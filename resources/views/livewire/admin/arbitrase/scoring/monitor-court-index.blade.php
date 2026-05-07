@@ -168,7 +168,7 @@
 
             @else
                 <!-- EMBU LAYOUT (Grid / List Style) -->
-                <div class="w-full max-w-7xl mx-auto">
+                <div class="w-full max-w-full mx-auto">
                     {{-- Header info kontingen & pool --}}
                     @if($dContingent || $dPool)
                         <div class="flex w-full flex-col items-stretch justify-center gap-3 sm:items-center md:flex-row md:flex-wrap md:gap-6 mb-6 sm:mb-8 md:mb-10">
