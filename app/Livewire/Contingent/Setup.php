@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.auth')] // Using auth layout for onboarding
+#[Layout('layouts.premium')] // Using premium layout for better experience
 class Setup extends Component
 {
     public string $contingent_name = '';

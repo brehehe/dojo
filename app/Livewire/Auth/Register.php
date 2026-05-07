@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.auth')]
+#[Layout('layouts.new-login')]
 class Register extends Component
 {
     public string $name = '';

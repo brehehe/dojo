@@ -1,92 +1,140 @@
-<div
-    class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[3rem] p-10 shadow-2xl shadow-black/50 max-w-full mx-auto">
-    <style>
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active,
-        textarea:-webkit-autofill {
-            -webkit-box-shadow: 0 0 0 30px #1a3a4f inset !important;
-            -webkit-text-fill-color: white !important;
-            transition: background-color 5000s ease-in-out 0s;
-        }
-    </style>
-    <div class="flex flex-col items-center mb-12 text-center">
-        <div class="relative mb-6">
-            <div class="absolute inset-0 bg-blue-600 rounded-3xl blur-2xl opacity-40 animate-pulse"></div>
-            <div
-                class="relative w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl rotate-3 transition-transform hover:rotate-0 duration-500">
-                <i class="fas fa-id-card text-white text-4xl"></i>
+<div class="max-w-3xl mx-auto py-10 px-4 animate-fade-up">
+
+    <!-- card surface -->
+    <div class="bg-white rounded-2xl border border-[var(--paper2)] shadow-xl overflow-hidden">
+        
+        <!-- header section -->
+        <div class="px-6 md:px-10 pt-12 pb-8 text-center border-b border-[var(--paper2)] relative overflow-hidden">
+            <!-- decorative background -->
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-[radial-gradient(circle,rgba(212,168,67,0.1)_0%,transparent_70%)] pointer-events-none"></div>
+            
+            <div class="relative inline-block mb-6">
+                <div class="absolute inset-0 bg-red-600 rounded-3xl blur-2xl opacity-20 animate-pulse"></div>
+                <div class="relative w-20 h-20 bg-gradient-to-br from-[var(--red)] to-[var(--red-deep)] rounded-2xl flex items-center justify-center shadow-xl rotate-3">
+                    <i class="fa-solid fa-id-card-clip text-[var(--gold)] text-3xl"></i>
+                </div>
+            </div>
+
+            <h2 class="font-cinzel text-3xl font-bold text-[var(--ink)] tracking-wide">Lengkapi Profil</h2>
+            <p class="text-[var(--red)] text-xs font-bold uppercase tracking-[0.3em] mt-3">Identitas Kontingen & Organisasi</p>
+            
+            <div class="mt-6 flex items-center justify-center gap-3">
+                <div class="h-px w-8 bg-gradient-to-r from-transparent to-[var(--gold)]"></div>
+                <p class="text-[10px] font-medium text-[var(--smoke)] uppercase tracking-widest">
+                    Sesi Pendaftaran: {{ now()->translatedFormat('d F Y') }}
+                </p>
+                <div class="h-px w-8 bg-gradient-to-l from-transparent to-[var(--gold)]"></div>
             </div>
         </div>
-        <h2 class="text-4xl font-black text-white tracking-tighter uppercase leading-none drop-shadow-sm">Lengkapi
-            Profil</h2>
-        <p class="text-blue-400 text-[15px] font-black uppercase tracking-[0.4em] mt-3 opacity-80">Identitas Kontingen &
-            Organisasi</p>
-        <div class="mt-4 px-6 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
-            <p class="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">
-                Sesi Pendaftaran: {{ now()->translatedFormat('d F Y') }}
+
+        <!-- form section -->
+        <form wire:submit.prevent="saveProfile" class="px-6 md:px-10 py-10 space-y-8">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- contingent name -->
+                <div class="space-y-2.5 md:col-span-2">
+                    <label class="block text-[11px] font-bold text-[var(--ink)] uppercase tracking-widest px-1">
+                        Nama Kontingen
+                    </label>
+                    <div class="relative group">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--smoke)] group-focus-within:text-[var(--red)] transition-colors">
+                            <i class="fa-solid fa-shield-halved text-sm"></i>
+                        </span>
+                        <input type="text" wire:model.defer="contingent_name" placeholder="Contoh: PERKEMI KOTA SURABAYA"
+                            class="w-full pl-11 pr-4 py-4 bg-[var(--paper)] border border-[var(--paper2)] rounded-xl focus:border-[var(--red)] focus:ring-4 focus:ring-red-600/5 outline-none transition-all text-[var(--ink)] font-medium placeholder:text-[var(--smoke)]">
+                    </div>
+                    @error('contingent_name') <p class="text-red-600 text-[10px] font-bold mt-1.5 px-1 tracking-wide">{{ $message }}</p> @enderror
+                </div>
+
+                <!-- city -->
+                <div class="space-y-2.5">
+                    <label class="block text-[11px] font-bold text-[var(--ink)] uppercase tracking-widest px-1">
+                        Kabupaten / Kota
+                    </label>
+                    <div class="relative group">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--smoke)] group-focus-within:text-[var(--red)] transition-colors">
+                            <i class="fa-solid fa-map-location-dot text-sm"></i>
+                        </span>
+                        <input type="text" wire:model.defer="contingent_city" placeholder="Nama Kota"
+                            class="w-full pl-11 pr-4 py-4 bg-[var(--paper)] border border-[var(--paper2)] rounded-xl focus:border-[var(--red)] focus:ring-4 focus:ring-red-600/5 outline-none transition-all text-[var(--ink)] font-medium placeholder:text-[var(--smoke)]">
+                    </div>
+                    @error('contingent_city') <p class="text-red-600 text-[10px] font-bold mt-1.5 px-1 tracking-wide">{{ $message }}</p> @enderror
+                </div>
+
+                <!-- leader name -->
+                <div class="space-y-2.5">
+                    <label class="block text-[11px] font-bold text-[var(--ink)] uppercase tracking-widest px-1">
+                        Manager / Ketua
+                    </label>
+                    <div class="relative group">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--smoke)] group-focus-within:text-[var(--red)] transition-colors">
+                            <i class="fa-solid fa-user-tie text-sm"></i>
+                        </span>
+                        <input type="text" wire:model.defer="leader_name" placeholder="Nama Lengkap"
+                            class="w-full pl-11 pr-4 py-4 bg-[var(--paper)] border border-[var(--paper2)] rounded-xl focus:border-[var(--red)] focus:ring-4 focus:ring-red-600/5 outline-none transition-all text-[var(--ink)] font-medium placeholder:text-[var(--smoke)]">
+                    </div>
+                    @error('leader_name') <p class="text-red-600 text-[10px] font-bold mt-1.5 px-1 tracking-wide">{{ $message }}</p> @enderror
+                </div>
+
+                <!-- phone -->
+                <div class="space-y-2.5">
+                    <label class="block text-[11px] font-bold text-[var(--ink)] uppercase tracking-widest px-1">
+                        Nomor HP / WA
+                    </label>
+                    <div class="relative group">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--smoke)] group-focus-within:text-[var(--red)] transition-colors">
+                            <i class="fa-solid fa-phone-volume text-sm"></i>
+                        </span>
+                        <input type="tel" wire:model.defer="leader_phone" placeholder="08xxxx"
+                            class="w-full pl-11 pr-4 py-4 bg-[var(--paper)] border border-[var(--paper2)] rounded-xl focus:border-[var(--red)] focus:ring-4 focus:ring-red-600/5 outline-none transition-all text-[var(--ink)] font-medium placeholder:text-[var(--smoke)]">
+                    </div>
+                    @error('leader_phone') <p class="text-red-600 text-[10px] font-bold mt-1.5 px-1 tracking-wide">{{ $message }}</p> @enderror
+                </div>
+
+                <!-- address -->
+                <div class="space-y-2.5 md:col-span-2">
+                    <label class="block text-[11px] font-bold text-[var(--ink)] uppercase tracking-widest px-1">
+                        Alamat Sekretariat
+                    </label>
+                    <div class="relative group">
+                        <span class="absolute left-4 top-4 text-[var(--smoke)] group-focus-within:text-[var(--red)] transition-colors">
+                            <i class="fa-solid fa-house-chimney text-sm"></i>
+                        </span>
+                        <textarea wire:model.defer="address" placeholder="Alamat Lengkap Kantor/Sekretariat" rows="3"
+                            class="w-full pl-11 pr-4 py-4 bg-[var(--paper)] border border-[var(--paper2)] rounded-xl focus:border-[var(--red)] focus:ring-4 focus:ring-red-600/5 outline-none transition-all text-[var(--ink)] font-medium placeholder:text-[var(--smoke)] resize-none"></textarea>
+                    </div>
+                    @error('address') <p class="text-red-600 text-[10px] font-bold mt-1.5 px-1 tracking-wide">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
+            <!-- submit action -->
+            <div class="pt-6">
+                <button type="submit" wire:loading.attr="disabled"
+                    class="group w-full relative py-4 rounded-xl text-white font-bold text-sm tracking-widest uppercase overflow-hidden shadow-xl transition-all active:scale-[0.98]"
+                    style="background:linear-gradient(135deg,#c0392b,#96281b);box-shadow:0 8px 25px rgba(192,57,43,.3);">
+                    
+                    <span wire:loading.remove class="flex items-center justify-center gap-3">
+                        Selesaikan Profil & Masuk
+                        <i class="fa-solid fa-arrow-right-long group-hover:translate-x-1.5 transition-transform"></i>
+                    </span>
+                    
+                    <span wire:loading class="flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-circle-notch animate-spin"></i>
+                        Menyimpan Data...
+                    </span>
+
+                    <!-- shimmer effect -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                </button>
+            </div>
+        </form>
+
+        <!-- card footer -->
+        <div class="px-6 md:px-10 py-6 bg-[var(--paper)] border-t border-[var(--paper2)] flex items-center justify-center">
+            <p class="text-[10px] font-medium text-[var(--smoke)] uppercase tracking-widest text-center leading-relaxed">
+                <i class="fa-solid fa-circle-info mr-1 text-[var(--gold)]"></i>
+                Pastikan data yang Anda masukkan sudah benar untuk keperluan verifikasi.
             </p>
         </div>
     </div>
-
-    <form wire:submit.prevent="saveProfile" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
-            <div>
-                <label class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Nama
-                    Kontingen</label>
-               <input type="text" wire:model.defer="contingent_name" placeholder="Contoh: PERKEMI KOTA SURABAYA"
-                        class="w-full pl-4 pr-8 py-5 bg-slate-950/40 border-2 border-white/10 rounded-full focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-100 font-semibold placeholder:text-white/30 shadow-inner">
-                @error('contingent_name') <span
-                class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Kabupaten
-                    / Kota</label>
-<input type="text" wire:model.defer="contingent_city" placeholder="Pilih Kota"
-                        class="w-full pl-4 pr-8 py-5 bg-slate-950/40 border-2 border-white/10 rounded-full focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-100 font-semibold placeholder:text-white/30 shadow-inner">
-                @error('contingent_city') <span
-                class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Nama
-                    Manager / Ketua</label>
-                <input type="text" wire:model.defer="leader_name" placeholder="Nama Lengkap"
-                        class="w-full pl-4 pr-8 py-5 bg-slate-950/40 border-2 border-white/10 rounded-full focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-100 font-semibold placeholder:text-white/30 shadow-inner">
-                @error('leader_name') <span
-                class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Nomor HP /
-                    WA</label>
-                <input type="tel" wire:model.defer="leader_phone" placeholder="08xxxx"
-                        class="w-full pl-4 pr-8 py-5 bg-slate-950/40 border-2 border-white/10 rounded-full focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-100 font-semibold placeholder:text-white/30 shadow-inner">
-                @error('leader_phone') <span
-                class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label class="block text-[15px] font-black text-white/50 uppercase tracking-widest mb-2 px-6">Alamat
-                    Sekretariat</label>
-                <textarea wire:model.defer="address" placeholder="Alamat Lengkap Kantor/Sekretariat" rows="3"
-                        class="w-full pl-4 pr-8 py-5 bg-slate-950/40 border-2 border-white/10 rounded-[2.5rem] focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-100 font-semibold placeholder:text-white/40 resize-none shadow-inner"></textarea>
-                @error('address') <span class="text-red-400 text-[15px] font-bold mt-2 block px-6">{{ $message }}</span>
-                @enderror
-            </div>
-        </div>
-
-        <div class="pt-8">
-            <button type="submit"
-                class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white py-6 rounded-full font-black text-[15px] uppercase tracking-widest shadow-2xl shadow-blue-600/40 transition-all active:scale-95 flex items-center justify-center gap-3 group">
-                <span wire:loading.remove class="flex items-center gap-3">
-                    Selesaikan Profil & Masuk Dashboard
-                    <i class="fas fa-arrow-right text-[15px] group-hover:translate-x-1 transition-transform"></i>
-                </span>
-                <span wire:loading><i class="fas fa-spinner fa-spin"></i> Menyimpan...</span>
-            </button>
-        </div>
-    </form>
 </div>
