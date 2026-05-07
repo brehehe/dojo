@@ -1,4 +1,4 @@
-<div wire:poll.5s
+<div wire:poll`
     class="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center font-sans overflow-hidden select-none relative">
 
     {{-- Background Accents --}}
@@ -38,7 +38,16 @@
              async sync() {
                  let state = await $wire.getTimerState();
                  if (!state) return;
+                 let wasRunning = this.running;
                  this.running = (state.status === 'running');
+
+                 // Play buzzer when timer newly starts
+                 if (this.running && !wasRunning && (!state.elapsed_ms || state.elapsed_ms < 1000)) {
+                     try {
+                         let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                         audio.play().catch(e => console.warn(e));
+                     } catch(e) {}
+                 }
                  
                  if (state.status === 'countdown') {
                      let now = Date.now();
@@ -52,7 +61,16 @@
                  } else if (state.status === 'running') {
                      this.countdown = 0;
                      let now = Date.now();
-                     this.time = state.elapsed_ms + (now - state.started_at_ms);
+                     let serverElapsed = state.elapsed_ms || 0;
+                     let runningDiff = now - state.started_at_ms;
+                     
+                     // Calculate expected time based on server start point
+                     let expected = serverElapsed + (runningDiff > 0 ? runningDiff : 0);
+                     
+                     // If we are significantly out of sync, or just started, snap to it
+                     if (!wasRunning || Math.abs(this.time - expected) > 1000) {
+                         this.time = expected;
+                     }
                  } else {
                      this.countdown = 0;
                      this.time = state.elapsed_ms || 0;
@@ -81,11 +99,6 @@
                  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
              },
              formatCountdown() {
-                 if (this.countdown === 5) return 'Siap';
-                 if (this.countdown === 4) return '3';
-                 if (this.countdown === 3) return '2';
-                 if (this.countdown === 2) return '1';
-                 if (this.countdown === 1) return 'Mulai';
                  return '';
              }
          }">

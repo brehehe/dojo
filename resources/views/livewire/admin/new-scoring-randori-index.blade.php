@@ -5,6 +5,13 @@
             padding-bottom: 100px;
             background: var(--paper, #F7F4EF);
             min-height: 100vh;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .tm-page { padding: 14px; padding-bottom: 100px; }
         }
 
         /* HEADER */
@@ -13,6 +20,8 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .tm-hdr h2 {
@@ -21,6 +30,12 @@
             font-weight: 700;
             margin: 0 0 8px;
             color: var(--ink, #2c3e50);
+        }
+
+        @media (max-width: 768px) {
+            .tm-hdr h2 { font-size: 18px; }
+            .tm-hdr > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+            .tm-hdr > div:last-child > * { flex: 1; min-width: 120px; justify-content: center; }
         }
 
         .tm-badge-title {
@@ -68,7 +83,13 @@
             gap: 32px;
             align-items: flex-start;
             scrollbar-width: thin;
+            scrollbar-color: var(--paper2, #e0dcd3) transparent;
+            -webkit-overflow-scrolling: touch;
         }
+
+        .bracket-scroll::-webkit-scrollbar { height: 4px; }
+        .bracket-scroll::-webkit-scrollbar-thumb { background: var(--paper2, #e0dcd3); border-radius: 4px; }
+        .bracket-scroll::-webkit-scrollbar-track { background: transparent; }
 
         .bracket-round-col {
             display: flex;
@@ -76,6 +97,17 @@
             gap: 16px;
             width: 260px;
             flex-shrink: 0;
+        }
+
+        @media (max-width: 1200px) {
+            .bracket-round-col { width: 230px; }
+            .bracket-scroll { gap: 24px; }
+            .tm-page { padding: 20px; padding-bottom: 100px; }
+        }
+
+        @media (max-width: 768px) {
+            .bracket-round-col { width: 200px !important; }
+            .bracket-scroll { gap: 20px; padding: 14px; }
         }
 
         .bracket-round-title {
@@ -115,8 +147,9 @@
         .b-slot.winner { background: rgba(39, 174, 96, .06); }
 
         .b-slot-color {
-            height: 18px;
-            border-radius: 2px;
+            width: 4px;
+            height: 16px;
+            border-radius: 4px;
             flex-shrink: 0;
         }
 
@@ -176,8 +209,9 @@
 
         @media (max-width: 1024px) {
             .b-slot-color {
-                height: 18px;
-                border-radius: 2px;
+                width: 4px;
+                height: 16px;
+                border-radius: 4px;
                 flex-shrink: 0;
             }
         }
@@ -259,16 +293,19 @@
             <h2>{{ $matchNumber->name }}</h2>
             <p>Double Elimination — kalah 1x masih bisa juara via Loser Bracket</p>
         </div>
-        <div style="display:flex; gap:12px; align-items:center;">
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             @if($drawingData['grand_final']['winner'] ?? false)
             <button wire:click="confirmChampion" wire:confirm="Sistem akan men-generate Juara 1 & 2 dari hasil Grand Final. Lanjutkan?" class="btn-gen primary" style="background:#27ae60; box-shadow:0 4px 12px rgba(39,174,96,0.2);">
                 <i class="fas fa-medal"></i> Generate Juara
             </button>
             @endif
             <button wire:click="callOfficials" class="btn-gen primary" style="background:var(--red); box-shadow:0 4px 12px rgba(192,57,43,0.2);">
-                <i class="fas fa-bullhorn"></i> Panggil Official & Kontingen
+                <i class="fas fa-bullhorn"></i> Panggil Official
             </button>
-            <a href="{{ route('admin.arbitrase.scoring.index') }}" class="btn-gen ghost">
+            <button onclick="window.stopAnnouncer && window.stopAnnouncer()" class="btn-gen ghost" style="color:var(--red); border-color:var(--red);">
+                <i class="fas fa-volume-xmark"></i> Stop Suara
+            </button>
+            <a href="{{ route('admin.arbitrase.scoring.index') }}" class="btn-gen ghost" style="text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -328,14 +365,20 @@
                         let s = Math.floor((t % 60000) / 1000);
                         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                     },
-                    formatCountdown() { return this.countdown === 2 ? 'Siap' : ''; },
+                    formatCountdown() { return ''; },
                     async sync() {
                         let state = await $wire.getTimerState();
                         if (!state) return;
                         let oldCountdown = this.countdown;
                         if (state.status === 'running') {
-                            this.running = true; this.countdown = 0;
-                            this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+                            let wasRunning = this.running;
+                            this.running = true; 
+                            this.countdown = 0;
+                            let now = Date.now();
+                            let expected = (state.elapsed_ms || 0) + Math.max(0, now - state.started_at_ms);
+                            if (!wasRunning || Math.abs(this.time - expected) > 1000) {
+                                this.time = expected;
+                            }
                         } else if (state.status === 'countdown') {
                             this.running = false;
                             let remaining = state.countdown_end_ms - Date.now();
@@ -347,8 +390,7 @@
                             this.time = state.elapsed_ms || 0;
                         }
                         if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                            if (this.countdown === 2) { window.speakCountdown ? window.speakCountdown('Siap') : null; }
-                            if (this.countdown === 1) { window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null; }
+                            // Siap and countdown removed
                         }
                     },
                     init() {
@@ -364,7 +406,12 @@
                         }, 30);
                         this.syncInterval = setInterval(() => { this.sync(); }, 1000);
                     },
-                    start() { if (!this.running && this.countdown === 0) { $wire.startCountdown(); } },
+                    start() { 
+                        if (!this.running && this.countdown === 0) { 
+                            window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
+                            $wire.startTimer(); 
+                        } 
+                    },
                     pause() { $wire.pauseTimer(); },
                     stop() { $wire.stopTimer(); },
                     finish() {
@@ -564,6 +611,7 @@
     <div class="bracket-wrapper">
         <div class="bracket-hdr ub">
             <i class="fas fa-arrow-up" style="color:#2980b9;"></i> UPPER BRACKET — WINNER PATH
+            <span style="margin-left:auto; font-size:10px; opacity:0.6;"><i class="fas fa-arrows-left-right"></i> geser</span>
         </div>
         <div class="bracket-scroll">
             @foreach($ubRounds as $roundIdx => $matches)
@@ -629,6 +677,7 @@
     <div class="bracket-wrapper">
         <div class="bracket-hdr lb">
             <i class="fas fa-arrow-down" style="color:#d35400;"></i> LOWER BRACKET — SECOND CHANCE PATH
+            <span style="margin-left:auto; font-size:10px; opacity:0.6;"><i class="fas fa-arrows-left-right"></i> geser</span>
         </div>
         <div class="bracket-scroll">
             @foreach($lbRounds as $lbRoundIdx => $matches)

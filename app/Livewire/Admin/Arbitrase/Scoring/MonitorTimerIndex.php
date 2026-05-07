@@ -27,6 +27,7 @@ class MonitorTimerIndex extends Component
     #[Layout('layouts.guest')]
     public function render()
     {
+        $this->court->refresh();
         $this->court->load(['activeMatch.ageGroup', 'activeDrawing.registration.contingent']);
         return view('livewire.admin.arbitrase.scoring.monitor-timer-index');
     }

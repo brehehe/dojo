@@ -432,7 +432,10 @@
             </div>
             <div style="display:flex; gap:12px;">
                 <button wire:click="callOfficials" class="btn-gen primary" style="background:var(--red); box-shadow:0 4px 12px rgba(192,57,43,0.2);">
-                    <i class="fas fa-bullhorn"></i> Panggil Official & Kontingen
+                    <i class="fas fa-bullhorn"></i> Panggil Official
+                </button>
+                <button onclick="window.stopAnnouncer && window.stopAnnouncer()" class="btn-gen ghost" style="color:var(--red); border-color:var(--red);">
+                    <i class="fas fa-volume-xmark"></i> Stop Suara
                 </button>
                 <a href="{{ route('admin.arbitrase.scoring.index') }}" class="btn-gen ghost">
                     <i class="fas fa-arrow-left"></i> Kembali
@@ -632,10 +635,7 @@
                     let s = Math.floor((t % 60000) / 1000);
                     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                 },
-                formatCountdown() {
-                    if (this.countdown === 2) return 'Siap';
-                    return '';
-                },
+                formatCountdown() { return ''; },
                 async sync() {
                     let state = await $wire.getTimerState();
                     if (!state) return;
@@ -643,9 +643,14 @@
                     let oldCountdown = this.countdown;
 
                     if (state.status === 'running') {
+                        let wasRunning = this.running;
                         this.running = true;
                         this.countdown = 0;
-                        this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+                        let now = Date.now();
+                        let expected = (state.elapsed_ms || 0) + Math.max(0, now - state.started_at_ms);
+                        if (!wasRunning || Math.abs(this.time - expected) > 1000) {
+                            this.time = expected;
+                        }
                     } else if (state.status === 'countdown') {
                         this.running = false;
                         let remaining = state.countdown_end_ms - Date.now();
@@ -659,12 +664,7 @@
                     }
 
                     if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                        if (this.countdown === 2) {
-                            window.speakCountdown ? window.speakCountdown('Siap') : null;
-                        }
-                        if (this.countdown === 1) {
-                            window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
-                        }
+                        // Siap and countdown removed
                     }
                 },
                 init() {
@@ -695,7 +695,8 @@
                 },
                 start() {
                     if (!this.running && this.countdown === 0) {
-                        $wire.startCountdown();
+                        window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
+                        $wire.startTimer();
                     }
                 },
                 pause() { $wire.pauseTimer(); },

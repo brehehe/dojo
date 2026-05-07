@@ -68,9 +68,8 @@
                 background: #fff;
                 border: 1px solid var(--paper2);
                 border-radius: 16px;
-                overflow: hidden;
-                position: sticky;
-                top: 16px;
+                overflow: visible;
+                align-self: start;
             }
 
             .tm-panel-title {
@@ -129,7 +128,7 @@
 
             .tm-search-box input {
                 width: 100%;
-                padding: 10px 12px 10px 40px;
+                padding: 10px 12px 10px 10px;
                 border: 1px solid var(--paper2);
                 border-radius: 10px;
                 font-size: 12px;
@@ -709,18 +708,144 @@
                 flex-shrink: 0;
             }
 
-            @media(max-width:900px) {
+            @media (max-width: 1100px) {
+                .tm-layout {
+                    grid-template-columns: 220px 1fr;
+                }
+            }
+
+            @media (max-width: 900px) {
+                .tm-page {
+                    padding: 16px;
+                }
+
                 .tm-layout {
                     grid-template-columns: 1fr;
+                    gap: 12px;
                 }
 
                 .tm-left {
                     position: static;
+                    max-height: none;
+                }
+
+                .tm-left-panel-body {
+                    overflow: hidden;
+                    transition: max-height 0.35s ease;
+                }
+
+                .tm-left-panel-body.collapsed {
+                    max-height: 0 !important;
                 }
 
                 .tm-match-list {
-                    max-height: 240px;
+                    max-height: 280px;
                 }
+
+                .tm-stats {
+                    gap: 6px;
+                }
+
+                .tm-stat-pill {
+                    padding: 8px 10px;
+                }
+
+                .tm-stat-pill .val {
+                    font-size: 16px;
+                }
+
+                .bracket-round-col {
+                    width: 200px;
+                }
+
+                .tm-mobile-toggle {
+                    display: flex !important;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .tm-tabs {
+                    width: 100%;
+                }
+
+                .tm-tab {
+                    flex: 1;
+                    text-align: center;
+                    padding: 8px 12px;
+                }
+
+                .tm-hdr h2 {
+                    font-size: 16px;
+                }
+            }
+
+            /* Desktop sticky left panel with scroll */
+            @media (min-width: 901px) {
+                .tm-left {
+                    position: sticky;
+                    top: 16px;
+                    max-height: calc(100vh - 100px);
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    scrollbar-width: thin;
+                    scrollbar-color: var(--paper2) transparent;
+                    border-radius: 16px;
+                }
+
+                .tm-left::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                .tm-left::-webkit-scrollbar-thumb {
+                    background: var(--paper2);
+                    border-radius: 4px;
+                }
+
+                .tm-match-list {
+                    max-height: 340px;
+                }
+
+                .tm-mobile-toggle-wrapper {
+                    display: none;
+                }
+            }
+
+            .tm-mobile-toggle {
+                display: none;
+                align-items: center;
+                gap: 8px;
+                width: 100%;
+                padding: 12px 16px;
+                background: var(--ink);
+                color: #fff;
+                border: none;
+                font-family: 'DM Sans', sans-serif;
+                font-size: 12.5px;
+                font-weight: 700;
+                cursor: pointer;
+                justify-content: space-between;
+            }
+
+            /* Right panel: scrollable bracket area */
+            .tm-right {
+                min-width: 0;
+                overflow-x: hidden;
+            }
+
+            .bracket-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                scrollbar-color: var(--paper2) transparent;
+            }
+
+            .bracket-scroll::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .bracket-scroll::-webkit-scrollbar-thumb {
+                background: var(--paper2);
+                border-radius: 4px;
             }
         </style>
     @endpush
@@ -765,11 +890,15 @@
         <div class="tm-layout">
 
             {{-- LEFT: FILTER PANEL --}}
-            <div class="tm-left">
-                <div class="tm-panel-title">
+            <div class="tm-left" x-data="{ openPanel: true }">
+                <div class="tm-panel-title" style="cursor:pointer; user-select:none;" @click.stop="openPanel = !openPanel">
                     <i class="fa-solid fa-filter"></i> Filter
+                    <span style="margin-left:auto; font-size:10px; display:inline-block; transition:transform 0.3s;" :style="openPanel ? '' : 'transform:rotate(-90deg)'">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </span>
                 </div>
 
+                <div x-show="openPanel" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
                 {{-- Filter Age Group --}}
                 <div class="tm-filter-group">
                     <div class="tm-filter-label">Kelompok Umur</div>
@@ -783,8 +912,9 @@
 
                 {{-- Search Match Number --}}
                 <div class="tm-search-box">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" wire:model.live.debounce.300ms="searchMatchNumber" placeholder="Cari nomor pertandingan...">
+                    <input type="text" wire:model.live.debounce.300ms="searchMatchNumber" placeholder="Cari nomor pertandingan..." style="width:100%; padding:10px 12px 10px 15px; border:1px solid var(--paper2); border-radius:10px; font-size:12.5px; outline:none; transition:all 0.2s; background:#fff;"
+                            onfocus="this.style.borderColor='var(--red)'; this.style.boxShadow='0 0 0 4px rgba(192,57,43,0.08)';"
+                            onblur="this.style.borderColor='var(--paper2)'; this.style.boxShadow='none';">
                 </div>
 
                 {{-- Match Number List --}}
@@ -816,6 +946,7 @@
                         </div>
                     @endforelse
                 </div>
+                </div>{{-- end x-collapse --}}
             </div>
 
             {{-- RIGHT: CONTENT --}}
@@ -1343,9 +1474,8 @@
                     <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Panitera (Pilih 4)</label>
                     
                     <div style="position:relative; margin-bottom:8px;">
-                        <i class="fa-solid fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--smoke); pointer-events:none; opacity:0.7;"></i>
                         <input type="text" wire:model.live.debounce.300ms="searchPanitera" placeholder="Cari nama panitera..." 
-                            style="width:100%; padding:10px 12px 10px 42px; border:1px solid var(--paper2); border-radius:10px; font-size:12.5px; outline:none; transition:all 0.2s; background:#fff;"
+                            style="width:100%; padding:10px 12px 10px 15px; border:1px solid var(--paper2); border-radius:10px; font-size:12.5px; outline:none; transition:all 0.2s; background:#fff;"
                             onfocus="this.style.borderColor='var(--red)'; this.style.boxShadow='0 0 0 4px rgba(192,57,43,0.08)';"
                             onblur="this.style.borderColor='var(--paper2)'; this.style.boxShadow='none';">
                     </div>

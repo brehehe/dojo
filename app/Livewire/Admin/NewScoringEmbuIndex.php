@@ -95,7 +95,7 @@ class NewScoringEmbuIndex extends Component
             $poolName = $firstDrawing->pool ? ' Pool '.$firstDrawing->pool->name : '';
             $sessionTime = $firstDrawing->sessionTime ? $firstDrawing->sessionTime->name : '';
 
-            $intro = "Perhatian. Panggilan untuk pertandingan kategori {$matchName}{$poolName}, di {$courtName}, Sesi {$sessionTime}. ";
+            $intro = "Persiapan untuk pertandingan kategori {$matchName}{$poolName}, di {$courtName}, {$sessionTime}. ";
 
             // 1. Panggilan Kontingen
             $contingentNames = $drawings->pluck('registration.contingent.name')->unique()->filter()->values();

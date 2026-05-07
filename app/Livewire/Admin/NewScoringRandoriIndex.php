@@ -330,7 +330,7 @@ class NewScoringRandoriIndex extends Component
             $courtName = $firstDrawing->court->name ?? 'Lapangan';
             $sessionTime = $firstDrawing->sessionTime ? $firstDrawing->sessionTime->name : '';
 
-            $intro = "Perhatian. Panggilan untuk pertandingan kategori {$matchName}, di {$courtName}, Sesi {$sessionTime}. ";
+            $intro = "Persiapan untuk pertandingan kategori {$matchName}, di {$courtName}, {$sessionTime}. ";
 
             // 1. Panggilan Kontingen
             $contingentNames = $drawings->pluck('registration.contingent.name')->unique()->filter()->values();

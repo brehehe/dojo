@@ -377,6 +377,8 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      min-width: 0; /* fixes flex item blowout */
+      overflow-x: hidden;
       transition: margin-left .28s cubic-bezier(.4, 0, .2, 1);
     }
 
@@ -649,6 +651,8 @@
 
       main.premium-main {
         margin-left: 0;
+        overflow-x: hidden;
+        max-width: 100vw;
       }
 
       .hamburger {
