@@ -38,6 +38,10 @@ class RefereeScoringDashboard extends Component
 
     public array $activeTechniqueList = [];
 
+    public array $activeAthleteNames = [];
+
+    public bool $activeIsTeamCategory = false;
+
     // Embu Itemized Scores
     public $embuItems = [
         'goho_1' => 0, 'goho_2' => 0, 'goho_3' => 0,
@@ -173,6 +177,8 @@ class RefereeScoringDashboard extends Component
         $this->activeRoundLabel = $this->activeMatch?->round ?? ($this->assignedRundown?->name ?? '-');
         $this->activeTechniqueLabel = '-';
         $this->activeTechniqueList = [];
+        $this->activeAthleteNames = [];
+        $this->activeIsTeamCategory = false;
 
         if (! $this->activeMatch?->active_registration_id) {
             return;
@@ -190,8 +196,18 @@ class RefereeScoringDashboard extends Component
         }
 
         $this->activeContingentName = $registration->contingent?->name ?? '-';
+        $activeAthletes = $registration->athletes
+            ->filter(fn ($athlete) => $athlete->matchNumbers->isNotEmpty())
+            ->values();
 
-        $selectedTechniqueIds = $registration->athletes
+        $this->activeAthleteNames = $activeAthletes
+            ->pluck('name')
+            ->filter()
+            ->values()
+            ->all();
+        $this->activeIsTeamCategory = count($this->activeAthleteNames) > 2;
+
+        $selectedTechniqueIds = $activeAthletes
             ->flatMap(fn ($athlete) => $athlete->matchNumbers->pluck('pivot.technique_ids'))
             ->filter()
             ->first();
@@ -225,6 +241,23 @@ class RefereeScoringDashboard extends Component
             $this->activeTechniqueLabel = implode(', ', $selectedTechniqueNames);
             $this->activeTechniqueList = $selectedTechniqueNames;
         }
+    }
+
+    public function getActiveContestantLabelProperty(): string
+    {
+        if ($this->activeContingentName === '-' && $this->activeAthleteNames === []) {
+            return '-';
+        }
+
+        if ($this->activeIsTeamCategory || $this->activeAthleteNames === []) {
+            return $this->activeContingentName;
+        }
+
+        return sprintf(
+            '%s (%s)',
+            $this->activeContingentName,
+            implode(' & ', $this->activeAthleteNames)
+        );
     }
 
     public function loadExistingDetails()

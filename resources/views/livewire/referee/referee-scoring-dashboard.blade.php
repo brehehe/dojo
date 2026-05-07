@@ -8,6 +8,37 @@
     body.referee-scoring-immersive {
         overflow: auto;
     }
+
+    /* ── MATCH INFO CHIPS (kontingen, court, pool, teknik) ── */
+    .ref-info-chips {
+        padding: 0 16px 12px;
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 8px;
+    }
+    .ref-info-chip {
+        background: #fff; border: 1px solid var(--paper2);
+        border-radius: 12px; padding: 10px 12px;
+        display: flex; align-items: flex-start; gap: 9px;
+    }
+    .ref-info-chip-icon {
+        width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 12px;
+    }
+    .ref-info-chip-icon.red   { background: rgba(192,57,43,.1);  color: var(--red); }
+    .ref-info-chip-icon.blue  { background: rgba(52,152,219,.1); color: #2980b9; }
+    .ref-info-chip-icon.green { background: rgba(39,174,96,.1);  color: #27ae60; }
+    .ref-info-chip-icon.gold  { background: rgba(212,168,67,.12); color: #b8860b; }
+    .ref-info-chip-body { min-width: 0; }
+    .ref-info-chip-label {
+        font-size: 12px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .1em; color: var(--smoke); margin: 0 0 2px;
+    }
+    .ref-info-chip-value {
+        font-size: 18px; font-weight: 700; color: var(--ink);
+        margin: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word;
+        font-family: 'DM Sans', sans-serif;
+    }
     body.referee-scoring-immersive .premium-header,
     body.referee-scoring-immersive .mob-bottomnav {
         display: none !important;
@@ -124,35 +155,6 @@
     }
     .ref-match-sub { font-size: 15px; color: rgba(255,255,255,.4); margin: 0; }
 
-    /* ── MATCH INFO CHIPS (kontingen, court, pool, teknik) ── */
-    .ref-info-chips {
-        padding: 0 16px 12px;
-        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-    }
-    .ref-info-chip {
-        background: #fff; border: 1px solid var(--paper2);
-        border-radius: 12px; padding: 10px 12px;
-        display: flex; align-items: flex-start; gap: 9px;
-    }
-    .ref-info-chip-icon {
-        width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center; font-size: 12px;
-    }
-    .ref-info-chip-icon.red   { background: rgba(192,57,43,.1);  color: var(--red); }
-    .ref-info-chip-icon.blue  { background: rgba(52,152,219,.1); color: #2980b9; }
-    .ref-info-chip-icon.green { background: rgba(39,174,96,.1);  color: #27ae60; }
-    .ref-info-chip-icon.gold  { background: rgba(212,168,67,.12); color: #b8860b; }
-    .ref-info-chip-body { min-width: 0; }
-    .ref-info-chip-label {
-        font-size: 12px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: .1em; color: var(--smoke); margin: 0 0 2px;
-    }
-    .ref-info-chip-value {
-        font-size: 18px; font-weight: 700; color: var(--ink);
-        margin: 0; white-space: normal; overflow-wrap: anywhere; word-break: break-word;
-        font-family: 'DM Sans', sans-serif;
-    }
-
     /* ── TECHNIQUE PANEL ── */
     .ref-technique-panel {
         margin: 0 16px 12px;
@@ -160,6 +162,62 @@
         border: 1px solid var(--paper2);
         border-radius: 14px;
         padding: 14px 16px;
+    }
+    .ref-detail-panel {
+        margin: 0 16px 12px;
+        background: #fff;
+        border: 1px solid var(--paper2);
+        border-radius: 14px;
+        padding: 14px 16px;
+    }
+    .ref-detail-grid {
+        display: grid;
+        gap: 12px;
+    }
+    .ref-detail-row {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        align-items: center;
+        gap: 14px;
+    }
+    .ref-detail-label {
+        font-size: 19px;
+        font-weight: 800;
+        color: #24364b;
+        text-transform: uppercase;
+    }
+    .ref-detail-value {
+        min-width: 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--ink);
+        line-height: 1.35;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #b8c9dd;
+        word-break: break-word;
+    }
+    .ref-detail-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .ref-detail-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 62px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1.5px solid #b8d0ec;
+        background: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+    }
+    .ref-detail-badge-label {
+        font-size: 16px;
+        font-weight: 800;
+        color: #24364b;
     }
     .ref-technique-hdr {
         display: flex; align-items: center; gap: 10px;
@@ -214,29 +272,89 @@
 
     /* ── SCORE FORM PANEL ── */
     .ref-form-panel { padding: 0 16px 16px; }
-
-    .ref-score-group {
+    .ref-score-table {
         background: #fff; border-radius: 14px; border: 1px solid var(--paper2);
         margin-bottom: 12px; overflow: hidden;
     }
-    .ref-score-group-hdr {
-        padding: 10px 14px; background: var(--paper);
-        border-bottom: 1px solid var(--paper2);
-        font-size: 13px; font-weight: 700; color: var(--smoke);
-        text-transform: uppercase; letter-spacing: .12em;
-        display: flex; align-items: center; gap: 7px;
+    .ref-score-table-wrap {
+        overflow-x: auto;
     }
-    .ref-score-group-hdr i { font-size: 11px; }
-    .ref-score-items { padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; }
-    .ref-score-row { display: flex; align-items: center; gap: 10px; }
-    .ref-score-label { flex: 1; font-size: 23px; font-weight: 700; color: var(--ink); }
-    .ref-score-desc  { font-size: 18px; color: var(--smoke); margin-top: 4px; line-height: 1.45; }
+    .ref-score-table-grid {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+    .ref-score-table-grid th,
+    .ref-score-table-grid td {
+        border-right: 1px solid var(--paper2);
+        border-bottom: 1px solid var(--paper2);
+        vertical-align: middle;
+    }
+    .ref-score-table-grid tr > *:last-child {
+        border-right: none;
+    }
+    .ref-score-table-grid thead th {
+        background: var(--paper);
+        padding: 12px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        color: #24364b;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        text-align: center;
+    }
+    .ref-score-table-grid thead th:nth-child(2) {
+        text-align: left;
+    }
+    .ref-score-cell {
+        padding: 12px 10px;
+        min-width: 0;
+    }
+    .ref-score-aspect {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--ink);
+        line-height: 1.35;
+        background: rgba(247,244,239,.65);
+    }
+    .ref-score-label {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--ink);
+        line-height: 1.35;
+    }
+    .ref-score-desc  {
+        font-size: 15px;
+        color: var(--smoke);
+        margin-top: 4px;
+        line-height: 1.45;
+    }
+    .ref-score-weight,
+    .ref-score-no,
+    .ref-score-standard {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--ink);
+        text-align: center;
+    }
+    .ref-score-weight-note {
+        display: block;
+        margin-top: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--smoke);
+    }
+    .ref-score-input-cell {
+        text-align: center;
+    }
 
     /* ── SCORE INPUT (range 8–10) ── */
-    .ref-score-input-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: 0 0 148px; }
+    .ref-score-input-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
     .ref-score-input {
-        width: 148px; padding: 16px 10px; border: 1.5px solid var(--paper2);
-        border-radius: 10px; font-family: 'Cinzel', serif; font-size: 38px;
+        width: 100%; max-width: 124px; padding: 12px 8px; border: 1.5px solid var(--paper2);
+        border-radius: 10px; font-family: 'Cinzel', serif; font-size: 30px;
         font-weight: 700; text-align: center; color: var(--ink);
         background: var(--paper); outline: none; transition: border .15s, box-shadow .15s;
         -moz-appearance: textfield;
@@ -247,6 +365,22 @@
     .ref-score-input.is-valid   { border-color: #27ae60; }
     .ref-score-input.is-invalid { border-color: var(--red); }
     .ref-score-range-hint { font-size: 13px; color: var(--smoke); letter-spacing: .05em; }
+    .ref-score-table-subtotal {
+        background: rgba(247,244,239,.55);
+    }
+    .ref-score-subtotal-label {
+        text-align: right;
+        font-size: 17px;
+        font-weight: 800;
+        color: #24364b;
+    }
+    .ref-score-subtotal-value {
+        font-family: 'Cinzel', serif;
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--ink);
+        text-align: center;
+    }
 
     /* ── TOTAL BANNER ── */
     .ref-total-banner {
@@ -323,18 +457,31 @@
         }
         .ref-warning,
         .ref-match-hdr,
+        .ref-detail-panel,
         .ref-technique-panel,
         .ref-randori-info,
         .ref-wait {
             margin-inline: 12px;
         }
-        .ref-info-chips,
         .ref-form-panel {
             padding-inline: 12px;
         }
-        .ref-info-chips {
+        .ref-detail-row {
             grid-template-columns: 1fr;
-            gap: 10px;
+            gap: 8px;
+        }
+        .ref-detail-label {
+            font-size: 17px;
+        }
+        .ref-detail-value {
+            font-size: 20px;
+        }
+        .ref-detail-badge {
+            min-height: 56px;
+            font-size: 17px;
+        }
+        .ref-detail-badge-label {
+            font-size: 15px;
         }
         .ref-match-hdr {
             padding: 14px 14px 12px;
@@ -350,27 +497,20 @@
         .ref-technique-list {
             padding-left: 20px;
         }
-        .ref-score-group-hdr,
         .ref-notes-hdr {
             line-height: 1.4;
         }
-        .ref-score-row {
-            align-items: center;
-            flex-direction: row;
-            gap: 12px;
-        }
         .ref-score-input-wrap {
-            width: 128px;
-            flex-basis: 128px;
-            align-items: flex-end;
+            align-items: center;
+            max-width: 128px;
+            margin-inline: auto;
         }
         .ref-score-input {
-            width: 128px;
-            min-height: 62px;
-            font-size: 32px;
+            min-height: 58px;
+            font-size: 28px;
         }
         .ref-score-range-hint {
-            text-align: right;
+            text-align: center;
         }
         .ref-total-banner {
             flex-direction: column;
@@ -396,11 +536,11 @@
     }
 
     @media (min-width: 641px) and (max-width: 960px) {
+        .ref-score-table-grid {
+            min-width: 820px;
+        }
         .ref-technique-panel {
             padding: 14px 15px;
-        }
-        .ref-score-input {
-            width: 136px;
         }
     }
     </style>
@@ -585,17 +725,17 @@
             <p class="ref-match-sub">Berikan penilaian terbaik Anda secara objektif.</p>
         </div>
 
-        {{-- ── INFO CHIPS: Kontingen, Court, Pool, Teknik ── --}}
         @php
             $courtName   = $assignedCourt?->name ?? '-';
             $poolName    = $activeMatch->ageGroup?->name ?? ($activeMatch->pool?->name ?? '-');
         @endphp
+
         <div class="ref-info-chips">
             <div class="ref-info-chip">
                 <div class="ref-info-chip-icon red"><i class="fa-solid fa-flag"></i></div>
                 <div class="ref-info-chip-body">
                     <p class="ref-info-chip-label">Kontingen</p>
-                    <p class="ref-info-chip-value" title="{{ $activeContingentName }}">{{ $activeContingentName }}</p>
+                    <p class="ref-info-chip-value" title="{{ $this->activeContestantLabel }}">{{ $activeContingentName }}</p>
                 </div>
             </div>
             <div class="ref-info-chip">
@@ -643,110 +783,122 @@
         @if($activeMatch->draft_type === 'embu')
             {{-- ── EMBU FORM ── --}}
             <div class="ref-form-panel">
+                @php
+                    $techniqueRows = [
+                        ['key' => 'goho_1', 'aspect' => 'GOHO', 'desc' => 'Serangan, bertahan, balasan', 'no' => 1],
+                        ['key' => 'goho_2', 'aspect' => 'GOHO', 'desc' => 'Lima unsur serangan', 'no' => 2],
+                        ['key' => 'goho_3', 'aspect' => 'GOHO', 'desc' => 'Kombinasi & timing', 'no' => 3],
+                        ['key' => 'juho_1', 'aspect' => 'JUHO', 'desc' => 'Shuha, nukiwaza, gyaku waza', 'no' => 4],
+                        ['key' => 'juho_2', 'aspect' => 'JUHO', 'desc' => 'Nage waza, katame waza, dll', 'no' => 5],
+                        ['key' => 'juho_3', 'aspect' => 'JUHO', 'desc' => 'Kelancaran & kontrol', 'no' => 6],
+                    ];
+                    $expressionRows = [
+                        ['key' => 'ekspresi_1', 'aspect' => 'Ekspresi', 'desc' => 'Rangkaian, Irama, Harmoni', 'no' => 1],
+                        ['key' => 'ekspresi_2', 'aspect' => 'Ekspresi', 'desc' => 'Tai gamae, Kuda-kuda, Keindahan', 'no' => 2],
+                        ['key' => 'ekspresi_3', 'aspect' => 'Ekspresi', 'desc' => 'Semangat, Disiplin', 'no' => 3],
+                        ['key' => 'ekspresi_4', 'aspect' => 'Ekspresi', 'desc' => 'Nafas, Pandangan mata, Zanshin', 'no' => 4],
+                    ];
+                    $techniqueSubtotal = collect($techniqueRows)->sum(fn ($row) => is_numeric($embuItems[$row['key']] ?? null) ? (float) $embuItems[$row['key']] : 0);
+                    $expressionSubtotal = collect($expressionRows)->sum(fn ($row) => is_numeric($embuItems[$row['key']] ?? null) ? (float) $embuItems[$row['key']] : 0);
+                @endphp
 
-                {{-- Goho --}}
-                <div class="ref-score-group">
-                    <div class="ref-score-group-hdr">
-                        <i class="fa-solid fa-diamond" style="color:var(--red);"></i>
-                        Goho — Teknik Keras
-                    </div>
-                    <div class="ref-score-items">
-                        @php
-                            $gohoItems = [
-                                'goho_1' => ['label' => 'Goho 1', 'desc' => 'Serangan, bertahan, balasan'],
-                                'goho_2' => ['label' => 'Goho 2', 'desc' => 'Lima unsur serangan'],
-                                'goho_3' => ['label' => 'Goho 3', 'desc' => 'Kombinasi & timing'],
-                            ];
-                        @endphp
-                        @foreach($gohoItems as $key => $item)
-                        <div class="ref-score-row">
-                            <div style="flex:1;min-width:0;">
-                                <span class="ref-score-label">{{ $item['label'] }}</span>
-                                <div class="ref-score-desc">{{ $item['desc'] }}</div>
-                            </div>
-                            <div class="ref-score-input-wrap">
-                                <input type="number"
-                                    wire:model.lazy="embuItems.{{ $key }}"
-                                    class="ref-score-input"
-                                    onfocus="window.refereeScoreInputFocus?.(this)"
-                                    onblur="window.refereeScoreInputBlur?.(this)"
-                                    min="0" max="10" step="0.1"
-                                    placeholder="0.0">
-                                <span class="ref-score-range-hint">Isi nilai 8.0 – 10.0</span>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
+                <div class="ref-score-table">
+                    <div class="ref-score-table-wrap">
+                        <table class="ref-score-table-grid">
+                            <thead>
+                                <tr>
+                                    <th>Aspek</th>
+                                    <th>Deskripsi</th>
+                                    <th>Bobot</th>
+                                    <th>No</th>
+                                    <th>Nilai</th>
+                                    <th>Standar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($techniqueRows as $index => $row)
+                                    <tr>
+                                        @if($index === 0)
+                                            <td class="ref-score-cell ref-score-aspect" rowspan="{{ count($techniqueRows) }}">
+                                                Penguasaan Teknik (60)
+                                            </td>
+                                        @endif
+                                        <td class="ref-score-cell ref-score-desc-cell">
+                                            <div class="ref-score-label">{{ $row['aspect'] }}</div>
+                                            <div class="ref-score-desc">{{ $row['desc'] }}</div>
+                                        </td>
+                                        @if($index === 0)
+                                            <td class="ref-score-cell ref-score-weight" rowspan="{{ count($techniqueRows) }}">
+                                                <div>
+                                                    60
+                                                    <span class="ref-score-weight-note">(Masing² 10)</span>
+                                                </div>
+                                            </td>
+                                        @endif
+                                        <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
+                                        <td class="ref-score-cell ref-score-input-cell">
+                                            <div class="ref-score-input-wrap">
+                                                <input type="number"
+                                                    wire:model.lazy="embuItems.{{ $row['key'] }}"
+                                                    class="ref-score-input"
+                                                    onfocus="window.refereeScoreInputFocus?.(this)"
+                                                    onblur="window.refereeScoreInputBlur?.(this)"
+                                                    min="0" max="10" step="0.1"
+                                                    placeholder="0.0">
+                                                <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
+                                            </div>
+                                        </td>
+                                        <td class="ref-score-cell ref-score-standard">8</td>
+                                    </tr>
+                                @endforeach
 
-                {{-- Juho --}}
-                <div class="ref-score-group">
-                    <div class="ref-score-group-hdr">
-                        <i class="fa-solid fa-diamond" style="color:#2980b9;"></i>
-                        Juho — Teknik Lunak
-                    </div>
-                    <div class="ref-score-items">
-                        @php
-                            $juhoItems = [
-                                'juho_1' => ['label' => 'Juho 1', 'desc' => 'Shuha, nukiwaza, gyaku waza'],
-                                'juho_2' => ['label' => 'Juho 2', 'desc' => 'Nage waza, katame waza'],
-                                'juho_3' => ['label' => 'Juho 3', 'desc' => 'Kelancaran & kontrol'],
-                            ];
-                        @endphp
-                        @foreach($juhoItems as $key => $item)
-                        <div class="ref-score-row">
-                            <div style="flex:1;min-width:0;">
-                                <span class="ref-score-label">{{ $item['label'] }}</span>
-                                <div class="ref-score-desc">{{ $item['desc'] }}</div>
-                            </div>
-                            <div class="ref-score-input-wrap">
-                                <input type="number"
-                                    wire:model.lazy="embuItems.{{ $key }}"
-                                    class="ref-score-input"
-                                    onfocus="window.refereeScoreInputFocus?.(this)"
-                                    onblur="window.refereeScoreInputBlur?.(this)"
-                                    min="0" max="10" step="0.1"
-                                    placeholder="0.0">
-                                <span class="ref-score-range-hint">Isi nilai 8.0 – 10.0</span>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
+                                <tr class="ref-score-table-subtotal">
+                                    <td class="ref-score-cell ref-score-subtotal-label" colspan="5">Sub Total-1</td>
+                                    <td class="ref-score-cell ref-score-subtotal-value">{{ number_format($techniqueSubtotal, 1) }}</td>
+                                </tr>
 
-                {{-- Ekspresi --}}
-                <div class="ref-score-group">
-                    <div class="ref-score-group-hdr">
-                        <i class="fa-solid fa-star" style="color:#b8860b;"></i>
-                        Ekspresi — Irama & Penampilan
-                    </div>
-                    <div class="ref-score-items">
-                        @php
-                            $ekspresiItems = [
-                                'ekspresi_1' => ['label' => 'Ekspresi 1', 'desc' => 'Rangkaian, Irama, Harmoni'],
-                                'ekspresi_2' => ['label' => 'Ekspresi 2', 'desc' => 'Tai gamae, Kuda-kuda, Keindahan'],
-                                'ekspresi_3' => ['label' => 'Ekspresi 3', 'desc' => 'Semangat, Disiplin'],
-                                'ekspresi_4' => ['label' => 'Ekspresi 4', 'desc' => 'Nafas, Pandangan mata, Zanshin'],
-                            ];
-                        @endphp
-                        @foreach($ekspresiItems as $key => $item)
-                        <div class="ref-score-row">
-                            <div style="flex:1;min-width:0;">
-                                <span class="ref-score-label">{{ $item['label'] }}</span>
-                                <div class="ref-score-desc">{{ $item['desc'] }}</div>
-                            </div>
-                            <div class="ref-score-input-wrap">
-                                <input type="number"
-                                    wire:model.lazy="embuItems.{{ $key }}"
-                                    class="ref-score-input"
-                                    onfocus="window.refereeScoreInputFocus?.(this)"
-                                    onblur="window.refereeScoreInputBlur?.(this)"
-                                    min="0" max="10" step="0.1"
-                                    placeholder="0.0">
-                                <span class="ref-score-range-hint">Isi nilai 8.0 – 10.0</span>
-                            </div>
-                        </div>
-                        @endforeach
+                                @foreach($expressionRows as $index => $row)
+                                    <tr>
+                                        @if($index === 0)
+                                            <td class="ref-score-cell ref-score-aspect" rowspan="{{ count($expressionRows) }}">
+                                                Ekspresi (40)
+                                            </td>
+                                        @endif
+                                        <td class="ref-score-cell ref-score-desc-cell">
+                                            <div class="ref-score-label">{{ $row['aspect'] }} {{ $row['no'] }}</div>
+                                            <div class="ref-score-desc">{{ $row['desc'] }}</div>
+                                        </td>
+                                        @if($index === 0)
+                                            <td class="ref-score-cell ref-score-weight" rowspan="{{ count($expressionRows) }}">
+                                                <div>
+                                                    40
+                                                    <span class="ref-score-weight-note">(Masing² 10)</span>
+                                                </div>
+                                            </td>
+                                        @endif
+                                        <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
+                                        <td class="ref-score-cell ref-score-input-cell">
+                                            <div class="ref-score-input-wrap">
+                                                <input type="number"
+                                                    wire:model.lazy="embuItems.{{ $row['key'] }}"
+                                                    class="ref-score-input"
+                                                    onfocus="window.refereeScoreInputFocus?.(this)"
+                                                    onblur="window.refereeScoreInputBlur?.(this)"
+                                                    min="0" max="10" step="0.1"
+                                                    placeholder="0.0">
+                                                <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
+                                            </div>
+                                        </td>
+                                        <td class="ref-score-cell ref-score-standard">8</td>
+                                    </tr>
+                                @endforeach
+
+                                <tr class="ref-score-table-subtotal">
+                                    <td class="ref-score-cell ref-score-subtotal-label" colspan="5">Sub Total-2</td>
+                                    <td class="ref-score-cell ref-score-subtotal-value">{{ number_format($expressionSubtotal, 1) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -754,7 +906,7 @@
                 <div class="ref-total-banner">
                     <div class="ref-total-left">
                         <div class="ref-total-label">Total Skor</div>
-                        <div class="ref-total-sub">Dihitung otomatis (10 aspek)</div>
+                        <div class="ref-total-sub">Sub Total-1 + Sub Total-2 (10 aspek)</div>
                     </div>
                     <div style="text-align:right;">
                         <div class="ref-total-val">{{ number_format($totalScore, 1) }}</div>
