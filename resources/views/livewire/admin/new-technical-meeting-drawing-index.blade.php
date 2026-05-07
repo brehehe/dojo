@@ -143,6 +143,7 @@
                 border-color: var(--red);
                 box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.08);
                 background: #fff;
+                padding-left: 100px;
             }
 
             .tm-search-box input::placeholder {
