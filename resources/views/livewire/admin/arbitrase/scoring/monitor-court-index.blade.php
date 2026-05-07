@@ -1,4 +1,4 @@
-<div
+<div wire:poll.2s
      x-data="{
          resize() {
              let wrapper = $refs.wrapper;
@@ -6,12 +6,18 @@
              if (!wrapper || !content) return;
              
              content.style.transform = 'none';
+             content.style.width = '100%';
+             
              let wHeight = wrapper.clientHeight;
              let cHeight = content.scrollHeight;
              
              if (cHeight > wHeight) {
                  let scale = wHeight / cHeight;
                  content.style.transform = `scale(${scale})`;
+                 content.style.width = (100 / scale) + '%';
+             } else {
+                 content.style.transform = 'none';
+                 content.style.width = '100%';
              }
          }
      }"
