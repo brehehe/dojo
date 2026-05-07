@@ -95,7 +95,7 @@
             @if($isRandori)
                 <!-- RANDORI LAYOUT (Versus Style) -->
                 @if($athletes->count() >= 2)
-                    <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] w-full max-w-7xl gap-6 md:gap-8 items-center">
+                    <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] w-full max-w-full gap-6 md:gap-8 items-center">
 
                         <!-- SUDUT MERAH (AKA) -->
                         <div class="bg-rose-600 rounded-[2rem] p-6 md:p-8 shadow-xl shadow-rose-600/20 flex flex-col items-center text-center transform hover:scale-[1.02] transition-transform w-full">
@@ -181,7 +181,7 @@
                             @if($dPool)
                                 <div class="inline-flex w-full items-center justify-center gap-2 bg-indigo-50 px-4 py-3 sm:w-auto sm:gap-3 sm:px-6 md:px-8 md:py-4 rounded-2xl md:rounded-3xl border border-indigo-200 shadow-sm">
                                     <i class="fas fa-th text-xl sm:text-2xl md:text-3xl text-indigo-500"></i>
-                                    <span class="text-center text-base sm:text-xl md:text-3xl font-black text-indigo-700 uppercase tracking-[0.12em] sm:tracking-wider break-words">Pool {{ $dPool->name }}</span>
+                                    <span class="text-center text-base sm:text-xl md:text-3xl font-black text-indigo-700 uppercase tracking-[0.12em] sm:tracking-wider break-words">{{ $dPool->name }}</span>
                                 </div>
                             @endif
                         </div>
