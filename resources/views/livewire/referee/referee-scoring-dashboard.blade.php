@@ -843,15 +843,21 @@
                                             <td class="ref-score-cell ref-score-aspect" rowspan="{{ count($techniqueRows) }}">
                                                 Penguasaan Teknik (60)
                                             </td>
-                                            <td class="ref-score-cell ref-score-desc-cell" rowspan="{{ count($techniqueRows) }}">
-                                                <div style="margin-bottom: 24px; line-height: 1.6;">
-                                                    <strong style="color: var(--ink); font-size: 14px;">GOHO</strong><span style="color: var(--ink); font-size: 14px;"> : Serangan, bertahan, serangan balasan, lima unsur serangan dan lain-lain</span>
-                                                </div>
-                                                <div style="line-height: 1.6;">
-                                                    <strong style="color: var(--ink); font-size: 14px;">JUHO</strong><span style="color: var(--ink); font-size: 14px;"> : Shuha, nukiwaza, gyaku waza, nage waza, katame waza dan lain-lain</span>
-                                                </div>
+                                        @endif
+                                        @if($index === 0 || $index === 3)
+                                            <td class="ref-score-cell ref-score-desc-cell" rowspan="3">
+                                                @if($index === 0)
+                                                    <div style="line-height: 1.6;">
+                                                        <strong style="color: var(--ink); font-size: 14px;">GOHO</strong><span style="color: var(--ink); font-size: 14px;"> : Serangan, bertahan, serangan balasan, lima unsur serangan dan lain-lain</span>
+                                                    </div>
+                                                @else
+                                                    <div style="line-height: 1.6;">
+                                                        <strong style="color: var(--ink); font-size: 14px;">JUHO</strong><span style="color: var(--ink); font-size: 14px;"> : Shuha, nukiwaza, gyaku waza, nage waza, katame waza dan lain-lain</span>
+                                                    </div>
+                                                @endif
                                             </td>
-                                            <td class="ref-score-cell ref-score-weight" rowspan="{{ count($techniqueRows) }}">
+                                        @endif
+                                        @if($index === 0)
                                                 <div>
                                                     60
                                                     <span class="ref-score-weight-note">(Masing² 10)</span>
