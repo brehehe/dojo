@@ -162,6 +162,10 @@
         border: 1px solid var(--paper2);
         border-radius: 14px;
         padding: 14px 16px;
+        position: sticky;
+        top: 12px;
+        z-index: 50;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
     }
     .ref-detail-panel {
         margin: 0 16px 12px;
@@ -169,6 +173,10 @@
         border: 1px solid var(--paper2);
         border-radius: 14px;
         padding: 14px 16px;
+        position: sticky;
+        top: 12px;
+        z-index: 50;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
     }
     .ref-detail-grid {
         display: grid;
@@ -385,7 +393,8 @@
         .ref-score-weight, .ref-score-no, .ref-score-standard { font-size: 16px; }
         .ref-score-input { font-size: 22px; max-width: 100px; padding: 10px 6px; }
         .ref-score-range-hint { font-size: 11px; }
-    }
+    }   
+    
     .ref-score-table-subtotal {
         background: rgba(247,244,239,.55);
     }
