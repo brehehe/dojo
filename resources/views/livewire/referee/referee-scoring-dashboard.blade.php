@@ -843,12 +843,14 @@
                                             <td class="ref-score-cell ref-score-aspect" rowspan="{{ count($techniqueRows) }}">
                                                 Penguasaan Teknik (60)
                                             </td>
-                                        @endif
-                                        <td class="ref-score-cell ref-score-desc-cell">
-                                            <div class="ref-score-label">{{ $row['aspect'] }}</div>
-                                            <div class="ref-score-desc">{{ $row['desc'] }}</div>
-                                        </td>
-                                        @if($index === 0)
+                                            <td class="ref-score-cell ref-score-desc-cell" rowspan="{{ count($techniqueRows) }}">
+                                                <div style="margin-bottom: 24px; line-height: 1.6;">
+                                                    <strong style="color: var(--ink); font-size: 14px;">GOHO</strong><span style="color: var(--ink); font-size: 14px;"> : Serangan, bertahan, serangan balasan, lima unsur serangan dan lain-lain</span>
+                                                </div>
+                                                <div style="line-height: 1.6;">
+                                                    <strong style="color: var(--ink); font-size: 14px;">JUHO</strong><span style="color: var(--ink); font-size: 14px;"> : Shuha, nukiwaza, gyaku waza, nage waza, katame waza dan lain-lain</span>
+                                                </div>
+                                            </td>
                                             <td class="ref-score-cell ref-score-weight" rowspan="{{ count($techniqueRows) }}">
                                                 <div>
                                                     60
@@ -886,8 +888,9 @@
                                             </td>
                                         @endif
                                         <td class="ref-score-cell ref-score-desc-cell">
-                                            <div class="ref-score-label">{{ $row['aspect'] }} {{ $row['no'] }}</div>
-                                            <div class="ref-score-desc">{{ $row['desc'] }}</div>
+                                            <div class="ref-score-desc" style="color: var(--ink); font-weight: 500; font-size: 14px; margin-top: 0;">
+                                                {{ $row['no'] }}. {{ $row['desc'] }}
+                                            </div>
                                         </td>
                                         @if($index === 0)
                                             <td class="ref-score-cell ref-score-weight" rowspan="{{ count($expressionRows) }}">
