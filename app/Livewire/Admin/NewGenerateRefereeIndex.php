@@ -66,7 +66,11 @@ class NewGenerateRefereeIndex extends Component
         if (in_array($id, $this->selectedReferees)) {
             $this->selectedReferees = array_values(array_diff($this->selectedReferees, [$id]));
         } else {
-            $this->selectedReferees[] = $id;
+            if ($this->isDewanArbitraseMode) {
+                $this->selectedReferees = [$id];
+            } else {
+                $this->selectedReferees[] = $id;
+            }
         }
     }
 
