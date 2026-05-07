@@ -281,10 +281,17 @@
     }
     .ref-score-table-grid {
         width: 100%;
-        min-width: 900px;
+        min-width: 100%;
         border-collapse: collapse;
         table-layout: fixed;
     }
+    .ref-score-table-grid th:nth-child(1) { width: 8%; }
+    .ref-score-table-grid th:nth-child(2) { width: 42%; }
+    .ref-score-table-grid th:nth-child(3) { width: 12%; }
+    .ref-score-table-grid th:nth-child(4) { width: 8%; }
+    .ref-score-table-grid th:nth-child(5) { width: 18%; }
+    .ref-score-table-grid th:nth-child(6) { width: 12%; }
+
     .ref-score-table-grid th,
     .ref-score-table-grid td {
         border-right: 1px solid var(--paper2);
@@ -310,6 +317,10 @@
     .ref-score-cell {
         padding: 12px 10px;
         min-width: 0;
+    }
+    @media (max-width: 1024px) {
+        .ref-score-cell { padding: 8px 6px; }
+        .ref-score-table-grid thead th { padding: 10px 6px; font-size: 10px; }
     }
     .ref-score-aspect {
         text-align: center;
@@ -367,6 +378,14 @@
     .ref-score-input.is-valid   { border-color: #27ae60; }
     .ref-score-input.is-invalid { border-color: var(--red); }
     .ref-score-range-hint { font-size: 13px; color: var(--smoke); letter-spacing: .05em; }
+    @media (max-width: 1024px) {
+        .ref-score-aspect { font-size: 15px; }
+        .ref-score-label { font-size: 15px; }
+        .ref-score-desc { font-size: 13px; margin-top: 2px; line-height: 1.3; }
+        .ref-score-weight, .ref-score-no, .ref-score-standard { font-size: 16px; }
+        .ref-score-input { font-size: 22px; max-width: 100px; padding: 10px 6px; }
+        .ref-score-range-hint { font-size: 11px; }
+    }
     .ref-score-table-subtotal {
         background: rgba(247,244,239,.55);
     }
