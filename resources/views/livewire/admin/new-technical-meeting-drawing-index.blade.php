@@ -129,27 +129,36 @@
 
             .tm-search-box input {
                 width: 100%;
-                padding: 8px 10px 8px 30px;
+                padding: 10px 12px 10px 40px;
                 border: 1px solid var(--paper2);
-                border-radius: 8px;
-                font-size: 11.5px;
+                border-radius: 10px;
+                font-size: 12px;
                 font-family: 'DM Sans', sans-serif;
                 outline: none;
-                transition: all .15s;
+                transition: all .2s;
+                background: #fff;
             }
 
             .tm-search-box input:focus {
                 border-color: var(--red);
-                box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.05);
+                box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.08);
+                background: #fff;
+            }
+
+            .tm-search-box input::placeholder {
+                color: #bbb;
+                font-weight: 400;
             }
 
             .tm-search-box i {
                 position: absolute;
-                left: 24px;
+                left: 26px;
                 top: 50%;
                 transform: translateY(-50%);
                 color: var(--smoke);
-                font-size: 11px;
+                font-size: 13px;
+                pointer-events: none;
+                opacity: 0.7;
             }
 
             /* MATCH LIST */
@@ -1333,9 +1342,11 @@
                     <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Panitera (Pilih 4)</label>
                     
                     <div style="position:relative; margin-bottom:8px;">
-                        <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--smoke);"></i>
+                        <i class="fa-solid fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--smoke); pointer-events:none; opacity:0.7;"></i>
                         <input type="text" wire:model.live.debounce.300ms="searchPanitera" placeholder="Cari nama panitera..." 
-                            style="width:100%; padding:8px 12px 8px 32px; border:1px solid var(--paper2); border-radius:8px; font-size:12px; outline:none; transition:border-color 0.15s;">
+                            style="width:100%; padding:10px 12px 10px 42px; border:1px solid var(--paper2); border-radius:10px; font-size:12.5px; outline:none; transition:all 0.2s; background:#fff;"
+                            onfocus="this.style.borderColor='var(--red)'; this.style.boxShadow='0 0 0 4px rgba(192,57,43,0.08)';"
+                            onblur="this.style.borderColor='var(--paper2)'; this.style.boxShadow='none';">
                     </div>
 
                     <div style="max-height:150px; overflow-y:auto; border:1px solid var(--paper2); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
