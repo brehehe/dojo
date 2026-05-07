@@ -778,13 +778,13 @@
 
     @include('layouts.premium-sidebar-nav')
 
-    <div class="sidebar-foot">
+    {{--<div class="sidebar-foot">
       <div class="avatar-premium">{{ substr(Auth::user()->name, 0, 2) }}</div>
       <div class="info">
         <h4>{{ Auth::user()->name }}</h4>
         <p>Administrator</p>
       </div>
-    </div>
+    </div>--}}
   </aside>
   @endif
 
