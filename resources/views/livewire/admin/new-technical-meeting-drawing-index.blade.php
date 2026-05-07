@@ -907,7 +907,7 @@
                                         @endif
                                     </div>
                                     @if($koor)
-                                    <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:12px;">
+                                    <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
                                         <div style="font-size:12.5px; color:#fff; background:#2c3e50; padding:8px 16px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 2px 4px rgba(0,0,0,0.15);">
                                             <i class="fa-solid fa-user-tie" style="color:#f39c12; font-size:14px;"></i>
                                             <span>Koor. Lapangan: <span style="font-weight:800;">{{ $koor }}</span></span>
@@ -918,6 +918,10 @@
                                             <span>Panitera: <span style="font-weight:800;">{{ implode(', ', $paniteras) }}</span></span>
                                         </div>
                                         @endif
+                                        
+                                        <button wire:click="openEditModal" class="btn-gen ghost" style="padding:6px 12px; font-size:11px; border-color:rgba(41,128,185,0.3); color:#2980b9;">
+                                            <i class="fa-solid fa-edit"></i> Edit Penugasan
+                                        </button>
                                     </div>
                                     @endif
                                 </div>
@@ -1152,15 +1156,20 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div style="text-align:right;">
-                                                        <div
-                                                            style="font-size:20px; font-weight:800; font-family:'Cinzel',serif; color:{{ $poolColor }};">
-                                                            {{ $entries->count() }}
+                                                    <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                                                        <div style="display:flex; align-items:center; gap:8px;">
+                                                            <div style="text-align:right;">
+                                                                <div style="font-size:20px; font-weight:800; font-family:'Cinzel',serif; color:{{ $poolColor }};">
+                                                                    {{ $entries->count() }}
+                                                                </div>
+                                                                <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--smoke); letter-spacing:.05em;">
+                                                                    Kontingen
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div
-                                                            style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--smoke); letter-spacing:.05em;">
-                                                            Kontingen
-                                                        </div>
+                                                        <button wire:click="openEditModal({{ $entries->first()->pool_id }})" class="btn-gen ghost" style="padding:4px 10px; font-size:10px; height:auto; border-color:rgba(0,0,0,0.1);">
+                                                            <i class="fa-solid fa-edit"></i> Edit
+                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -1242,6 +1251,78 @@
         </div>{{-- end layout --}}
 
     </div>
+
+    @if($showEditModal)
+    <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; width:100%; max-width:500px; border-radius:20px; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); animation: modalIn 0.3s ease-out;">
+            <div style="padding:20px 24px; border-bottom:1px solid var(--paper2); display:flex; justify-content:space-between; align-items:center; background:var(--ink); color:#fff;">
+                <h3 style="margin:0; font-family:'Cinzel',serif; font-size:16px;">Manual Edit Penugasan</h3>
+                <button wire:click="$set('showEditModal', false)" style="background:none; border:none; color:#fff; cursor:pointer; font-size:20px;">&times;</button>
+            </div>
+            <div style="padding:24px; display:flex; flex-direction:column; gap:20px;">
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Lapangan (Court)</label>
+                        <select wire:model="editCourtId" class="tm-filter-sel">
+                            <option value="">— Pilih Lapangan —</option>
+                            @foreach($courts as $c)
+                                <option value="{{ $c->id }}">Court {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Sesi Waktu</label>
+                        <select wire:model="editSessionId" class="tm-filter-sel">
+                            <option value="">— Pilih Sesi —</option>
+                            @foreach($sessionTimes as $st)
+                                <option value="{{ $st->id }}">{{ $st->name }} ({{ $st->start_time }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Koordinator Lapangan</label>
+                    <select wire:model="editKoorName" class="tm-filter-sel">
+                        <option value="">— Pilih Koordinator —</option>
+                        @foreach($koorUsers as $user)
+                            <option value="{{ $user->name }}">{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Panitera (Pilih 4)</label>
+                    <div style="max-height:150px; overflow-y:auto; border:1px solid var(--paper2); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                        @foreach($paniteraUsers as $user)
+                            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;">
+                                <input type="checkbox" wire:model="editPaniteraNames" value="{{ $user->name }}">
+                                <span>{{ $user->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <div style="margin-top:6px; font-size:10px; color:{{ count($editPaniteraNames) == 4 ? '#27ae60' : 'var(--red)' }}; font-weight:700;">
+                        Terpilih: {{ count($editPaniteraNames) }} / 4 Panitera
+                    </div>
+                </div>
+
+            </div>
+            <div style="padding:16px 24px; background:var(--paper); border-top:1px solid var(--paper2); display:flex; justify-content:flex-end; gap:12px;">
+                <button wire:click="$set('showEditModal', false)" class="btn-gen ghost">Batal</button>
+                <button wire:click="saveAssignments" class="btn-gen primary" {{ count($editPaniteraNames) != 4 ? 'disabled' : '' }}>
+                    Simpan Perubahan
+                </button>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    @endif
 
     @push('scripts')
         <script>

@@ -27,6 +27,18 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
     public bool $isGenerating = false;
 
+    public bool $showEditModal = false;
+
+    public ?int $editPoolId = null;
+
+    public ?int $editCourtId = null;
+
+    public ?int $editSessionId = null;
+
+    public string $editKoorName = '';
+
+    public array $editPaniteraNames = [];
+
     public function updatedDraftType(): void
     {
         $this->filterAgeGroupId = null;
@@ -418,6 +430,56 @@ class NewTechnicalMeetingDrawingIndex extends Component
         }
     }
 
+    public function openEditModal(?int $poolId = null): void
+    {
+        $this->editPoolId = $poolId;
+
+        $query = DrawingMatchNumber::where('match_number_id', $this->filterMatchNumberId);
+        if ($poolId) {
+            $query->where('pool_id', $poolId);
+        }
+
+        $first = $query->first();
+        if ($first) {
+            $this->editCourtId = $first->court_id;
+            $this->editSessionId = $first->session_time_id;
+            $this->editKoorName = $first->metadata['officials']['koordinator_lapangan'] ?? '';
+            $this->editPaniteraNames = $first->metadata['officials']['panitera'] ?? [];
+            $this->showEditModal = true;
+        }
+    }
+
+    public function saveAssignments(): void
+    {
+        $query = DrawingMatchNumber::where('match_number_id', $this->filterMatchNumberId);
+        if ($this->editPoolId) {
+            $query->where('pool_id', $this->editPoolId);
+        }
+
+        $records = $query->get();
+
+        foreach ($records as $record) {
+            $meta = $record->metadata;
+            $meta['officials'] = [
+                'koordinator_lapangan' => $this->editKoorName,
+                'panitera' => $this->editPaniteraNames,
+            ];
+
+            $record->update([
+                'court_id' => $this->editCourtId,
+                'session_time_id' => $this->editSessionId,
+                'metadata' => $meta,
+            ]);
+        }
+
+        $this->showEditModal = false;
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Tersimpan',
+            'text' => 'Penugasan berhasil diperbarui secara manual.',
+        ]);
+    }
+
     // ── RENDER ───────────────────────────────────────────────
     public function render()
     {
@@ -492,6 +554,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'matchAthletes' => $matchAthletes,
             'drawingEntries' => $drawingEntries,
             'stats' => $stats,
+            'courts' => Court::orderBy('order')->get(),
+            'sessionTimes' => SessionTime::orderBy('start_time')->get(),
+            'koorUsers' => User::role('Koordinator Lapangan')->orderBy('name')->get(),
+            'paniteraUsers' => User::role('Panitera')->orderBy('name')->get(),
         ]);
     }
 
