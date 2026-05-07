@@ -261,5 +261,6 @@
             @endif
             <span class="text-sm md:text-[15px] font-black text-slate-400 uppercase tracking-widest">LIVE ARBITRASE</span>
         </div>
+
     </div>
 </div>
