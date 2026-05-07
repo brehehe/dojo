@@ -39,6 +39,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
     public array $editPaniteraNames = [];
 
+    public string $searchMatchNumber = '';
+
+    public string $searchPanitera = '';
+
     public function updatedDraftType(): void
     {
         $this->filterAgeGroupId = null;
@@ -491,6 +495,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $matchNumbersQuery = MatchNumber::where('draft_type', $this->draftType)
             ->has('athletes')->with(['ageGroup'])->orderBy('name');
 
+        if ($this->searchMatchNumber) {
+            $matchNumbersQuery->where('name', 'like', '%'.$this->searchMatchNumber.'%');
+        }
+
         if ($this->filterAgeGroupId) {
             $matchNumbersQuery->where('age_group_id', $this->filterAgeGroupId);
         }
@@ -557,7 +565,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'courts' => Court::orderBy('order')->get(),
             'sessionTimes' => SessionTime::orderBy('start_time')->get(),
             'koorUsers' => User::role('Koordinator Lapangan')->orderBy('name')->get(),
-            'paniteraUsers' => User::role('Panitera')->orderBy('name')->get(),
+            'paniteraUsers' => User::role('Panitera')
+                ->when($this->searchPanitera, fn ($q) => $q->where('name', 'like', '%'.$this->searchPanitera.'%'))
+                ->orderBy('name')->get(),
         ]);
     }
 

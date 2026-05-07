@@ -121,6 +121,37 @@
                 border-color: var(--red);
             }
 
+            .tm-search-box {
+                padding: 10px 14px;
+                border-bottom: 1px solid var(--paper2);
+                position: relative;
+            }
+
+            .tm-search-box input {
+                width: 100%;
+                padding: 8px 10px 8px 30px;
+                border: 1px solid var(--paper2);
+                border-radius: 8px;
+                font-size: 11.5px;
+                font-family: 'DM Sans', sans-serif;
+                outline: none;
+                transition: all .15s;
+            }
+
+            .tm-search-box input:focus {
+                border-color: var(--red);
+                box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.05);
+            }
+
+            .tm-search-box i {
+                position: absolute;
+                left: 24px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--smoke);
+                font-size: 11px;
+            }
+
             /* MATCH LIST */
             .tm-match-list {
                 max-height: 420px;
@@ -740,6 +771,12 @@
                     </select>
                 </div>
 
+                {{-- Search Match Number --}}
+                <div class="tm-search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" wire:model.live.debounce.300ms="searchMatchNumber" placeholder="Cari nomor pertandingan...">
+                </div>
+
                 {{-- Match Number List --}}
                 <div class="tm-filter-group" style="padding-bottom:8px;">
                     <div class="tm-filter-label">Nomor Pertandingan</div>
@@ -1294,6 +1331,13 @@
 
                 <div>
                     <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Panitera (Pilih 4)</label>
+                    
+                    <div style="position:relative; margin-bottom:8px;">
+                        <i class="fa-solid fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--smoke);"></i>
+                        <input type="text" wire:model.live.debounce.300ms="searchPanitera" placeholder="Cari nama panitera..." 
+                            style="width:100%; padding:8px 12px 8px 32px; border:1px solid var(--paper2); border-radius:8px; font-size:12px; outline:none; transition:border-color 0.15s;">
+                    </div>
+
                     <div style="max-height:150px; overflow-y:auto; border:1px solid var(--paper2); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
                         @foreach($paniteraUsers as $user)
                             <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;">
