@@ -472,12 +472,12 @@
                                                     $minKey = null;
                                                     $maxKey = null;
                                                     
-                                                    if (count($scoredJudges) === 5) {
-                                                        $sortedVals = $rawVals;
+                                                    if (count($scoredJudges) >= 2) {
+                                                        $sortedVals = $scoredJudges;
                                                         asort($sortedVals);
                                                         $keys = array_keys($sortedVals);
                                                         $minKey = $keys[0];
-                                                        $maxKey = $keys[4];
+                                                        $maxKey = $keys[count($keys) - 1];
                                                     }
                                                 @endphp
                                                 

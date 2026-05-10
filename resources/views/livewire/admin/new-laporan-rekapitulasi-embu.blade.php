@@ -130,11 +130,33 @@
                                     </div>
                                     <div style="font-size:10px; font-weight:700; color:#2980b9; text-transform:uppercase; margin-top:2px;">{{ $score->registration->contingent?->name ?? '-' }}</div>
                                 </td>
-                                <td style="text-align:center; font-weight:700;">{{ number_format($score->judge_1, 1) }}</td>
-                                <td style="text-align:center; font-weight:700;">{{ number_format($score->judge_2, 1) }}</td>
-                                <td style="text-align:center; font-weight:700;">{{ number_format($score->judge_3, 1) }}</td>
-                                <td style="text-align:center; font-weight:700;">{{ number_format($score->judge_4, 1) }}</td>
-                                <td style="text-align:center; font-weight:700;">{{ number_format($score->judge_5, 1) }}</td>
+                                @php
+                                    $rawVals = [
+                                        1 => (float)$score->judge_1,
+                                        2 => (float)$score->judge_2,
+                                        3 => (float)$score->judge_3,
+                                        4 => (float)$score->judge_4,
+                                        5 => (float)$score->judge_5,
+                                    ];
+                                    $scoredJudges = array_filter($rawVals, fn($v) => $v > 0);
+                                    $minKey = null; $maxKey = null;
+                                    if (count($scoredJudges) >= 2) {
+                                        $tempScored = $scoredJudges;
+                                        asort($tempScored);
+                                        $keys = array_keys($tempScored);
+                                        $minKey = $keys[0];
+                                        $maxKey = $keys[count($keys) - 1];
+                                    }
+                                @endphp
+                                @foreach([1,2,3,4,5] as $j)
+                                    @php 
+                                        $val = $rawVals[$j];
+                                        $isOut = ($j === $minKey || $j === $maxKey);
+                                    @endphp
+                                    <td style="text-align:center; font-weight:700; {{ $isOut ? 'text-decoration: line-through; color: var(--smoke); opacity: 0.6;' : '' }}">
+                                        {{ $val > 0 ? number_format($val, 1) : '-' }}
+                                    </td>
+                                @endforeach
                                 <td style="text-align:center; font-weight:700; color:#c0392b;">{{ $score->denda > 0 ? '-'.number_format($score->denda,1) : '0' }}</td>
                                 <td style="text-align:center; background:rgba(41,128,185,.04);">
                                     <span style="font-family:'Outfit',sans-serif; font-size:16px; font-weight:800; color:var(--ink);">{{ number_format($score->nilai_akhir, 1) }}</span>

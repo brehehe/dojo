@@ -506,11 +506,12 @@
                         @endforelse
                     </div>
 
-                    <div class="court-links">
+                    <div class="court-links" style="grid-template-columns: repeat(2, 1fr);">
                         <a href="{{ route('admin.arbitrase.scoring.monitor', $courtCard->id) }}" target="_blank" class="court-link" style="background:var(--ink);color:#fff;border-color:var(--ink);">Panggilan</a>
                         <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.court', $courtCard->id) }}" target="_blank" class="court-link">Hasil</a>
                         <a href="{{ route('admin.arbitrase.scoring.monitor-timer.court', $courtCard->id) }}" target="_blank" class="court-link">Timer</a>
-                        <div style="display:flex; gap:4px;">
+                        <a href="{{ route('admin.arbitrase.scoring.monitor-rekapitulasi-hasil.court', $courtCard->id) }}" target="_blank" class="court-link">Rekapitulasi</a>
+                        <div style="display:flex; gap:4px; grid-column: span 2;">
                             <a href="{{ route('admin.arbitrase.scoring.monitor-referee.court', $courtCard->id) }}" target="_blank" class="court-link" style="flex:1;">Wasit</a>
                             <button wire:click="openRefereeModal({{ $courtCard->id }}, {{ $courtCard->activeDrawing?->rundown_id ?? 'null' }}, {{ $courtCard->activeDrawing?->session_time_id ?? 'null' }})" class="court-link" style="padding:4px 8px;cursor:pointer;"><i class="fas fa-user-plus"></i></button>
                         </div>

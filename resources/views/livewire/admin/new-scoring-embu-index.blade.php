@@ -557,12 +557,12 @@
                                 
                                 if($s) {
                                     $scoredJudges = array_filter($rawVals, fn($v) => $v > 0);
-                                    if (count($scoredJudges) === 5) {
-                                        $sorted = $rawVals;
-                                        asort($sorted);
-                                        $keys = array_keys($sorted);
+                                    if (count($scoredJudges) >= 2) {
+                                        $tempScored = $scoredJudges;
+                                        asort($tempScored);
+                                        $keys = array_keys($tempScored);
                                         $minKey = $keys[0];
-                                        $maxKey = $keys[4];
+                                        $maxKey = $keys[count($keys) - 1];
                                     } else {
                                         $minKey = null;
                                         $maxKey = null;

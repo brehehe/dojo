@@ -13,6 +13,7 @@ use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
+use App\Livewire\Admin\Arbitrase\Scoring\MonitorRekapitulasiHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorRefereeIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
@@ -269,6 +270,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');
                 Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
                 Route::get('/monitor-hasil/court/{courtId}', MonitorHasilIndex::class)->name('monitor-hasil.court');
+                Route::get('/monitor-rekapitulasi-hasil/court/{courtId}', MonitorRekapitulasiHasilIndex::class)->name('monitor-rekapitulasi-hasil.court');
                 Route::get('/monitor-hasil/match/{matchId}', MonitorHasilIndex::class)->name('monitor-hasil.match');
                 Route::get('/embu/{matchNumber}', AdminArbitraseScoringEmbuDetail::class)->name('embu.detail');
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
