@@ -315,4 +315,16 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('arbitrase')->name('arbitrase.')->group(function () {
+        Route::prefix('scoring')->name('scoring.')->group(function () {
+            Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
+            Route::get('/monitor-hasil/court/{courtId}', MonitorHasilIndex::class)->name('monitor-hasil.court');
+            Route::get('/monitor-hasil/match/{matchId}', MonitorHasilIndex::class)->name('monitor-hasil.match');
+            Route::get('/monitor-timer/court/{courtId}', MonitorTimerIndex::class)->name('monitor-timer.court');
+            Route::get('/monitor-referee/court/{courtId}', MonitorRefereeIndex::class)->name('monitor-referee.court');
+        });
+    });
+});
+
 // require __DIR__.'/auth.php'; // Disabling Breeze auth routes

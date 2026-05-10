@@ -227,13 +227,6 @@
                                             <h4 class="text-xl sm:text-2xl md:text-3xl lg:text-[2.2rem] font-black text-slate-800 uppercase leading-[1.05] break-words">
                                                 {{ $ath->name }}
                                             </h4>
-
-                                            <div class="inline-flex max-w-full items-center justify-center gap-2 self-center rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 sm:gap-3 sm:px-4 md:self-start md:px-5 md:py-3">
-                                                <i class="fas fa-shield-alt shrink-0 text-base sm:text-lg md:text-2xl text-emerald-500"></i>
-                                                <span class="min-w-0 break-words text-center text-sm sm:text-base md:text-lg lg:text-xl font-bold text-emerald-700 uppercase tracking-[0.12em] sm:tracking-[0.16em]">
-                                                    {{ $ath->registrations->first()?->contingent?->name ?? '-' }}
-                                                </span>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
