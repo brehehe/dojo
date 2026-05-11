@@ -35,6 +35,19 @@ class Setup extends Component
         ];
     }
 
+    protected function messages(): array
+    {
+        return [
+            'contingent_name.required' => 'Nama Kontingen wajib diisi',
+            'contingent_name.min' => 'Nama Kontingen minimal 3 karakter',
+            'contingent_city.required' => 'Kabupaten / Kota wajib diisi',
+            'leader_name.required' => 'Manager / Ketua wajib diisi',
+            'leader_name.min' => 'Manager / Ketua minimal 3 karakter',
+            'leader_phone.required' => 'Nomor HP / WA wajib diisi',
+            'address.required' => 'Alamat Kantor wajib diisi',
+        ];
+    }
+
     public function saveProfile()
     {
         $this->validate();

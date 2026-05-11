@@ -322,7 +322,7 @@
             <div class="mb-10 text-center md:text-left">
                 <h1>🏆 PIALA WALIKOTA SURABAYA 2026</h1>
                 <div class="subhead">CABANG OLAHRAGA SHORINJI KEMPO | "Generasi Juara, Inspirasi Nusantara" <br>
-                    Surabaya, 29-31 Mei 2026 - Gelora Pancasila</div>
+                    Surabaya, 14-16 Juni 2026 - Stadion Indoor Gelora Bung Tomo</div>
             </div>
 
             <form wire:submit.prevent="submit">

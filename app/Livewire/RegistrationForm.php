@@ -28,9 +28,9 @@ class RegistrationForm extends Component
     public string $contingent_city = '';
     public string $contingent_name = '';
     public string $leader_name = '';
-    public string $leader_phone = '';
-    public string $leader_email = '';
-    public string $address = '';
+    public $leader_phone;
+    public $leader_email;
+    public $address;
     public $transfer_proof;
     public $payment_method_detail = null;
     public bool $is_authenticated = false;
@@ -134,12 +134,12 @@ class RegistrationForm extends Component
         if ($contingent) {
             $this->is_authenticated = true;
             $this->contingent_id = $contingent->id;
-            $this->contingent_name = $contingent->name;
-            $this->contingent_city = $contingent->kab_kota;
-            $this->leader_name = $contingent->leader_name;
-            $this->leader_phone = $contingent->leader_phone;
-            $this->leader_email = $contingent->email;
-            $this->address = $contingent->address;
+            $this->contingent_name = $contingent?->name;
+            $this->contingent_city = $contingent?->kab_kota;
+            $this->leader_name = $contingent?->leader_name;
+            $this->leader_phone = $contingent?->leader_phone;
+            $this->leader_email = $contingent?->email;
+            $this->address = $contingent?->address;
         }
     }
 
@@ -172,7 +172,7 @@ class RegistrationForm extends Component
             'athletes.*.current_weight' => 'required|numeric',
             'athletes.*.weight_group_id' => 'required',
             'athletes.*.bpjs_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'athletes.*.photo' => 'nullable|image|max:2048',
+            'athletes.*.photo' => 'required|image|max:2048',
             'athletes.*.identity_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ];
     }
