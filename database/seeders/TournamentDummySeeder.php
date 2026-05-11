@@ -63,9 +63,9 @@ class TournamentDummySeeder extends Seeder
                 'name' => $cName,
                 'kab_kota' => $cName,
                 'leader_name' => 'Ketua ' . $cName,
-                'leader_phone' => '08',
-                'email' => $email,
-                'address' => 'Alamat Kontingen ' . $cName,
+                'leader_phone' => null,
+                'email' => null,
+                'address' => null,
             ]);
         }
 
