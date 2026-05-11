@@ -363,27 +363,47 @@ class NewEmbuResultIndex extends Component
             return;
         }
 
-        // Delete existing Final drawings for this match
+        $existingFinals = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
+            ->where('round', 'Final')
+            ->orderBy('sequence_number')
+            ->get();
+
+        $usedIds = [];
+        foreach ($qualifiers->values() as $seq => $reg) {
+            $existing = $existingFinals->where('sequence_number', $seq + 1)->first();
+
+            if ($existing) {
+                $meta = $existing->metadata;
+                $meta['contingent'] = $reg['contingent']?->name ?? 'Unknown';
+                $meta['athlete_name'] = $reg['athletes']->pluck('name')->implode(', ');
+
+                $existing->update([
+                    'registration_id' => $reg['id'],
+                    'metadata' => $meta,
+                ]);
+                $usedIds[] = $existing->id;
+            } else {
+                $newRecord = DrawingMatchNumber::create([
+                    'match_number_id' => $this->selectedMatchId,
+                    'registration_id' => $reg['id'],
+                    'round' => 'Final',
+                    'draft_type' => 'embu',
+                    'sequence_number' => $seq + 1,
+                    'court_id' => $this->finalCourtId,
+                    'pool_id' => $this->finalPoolId,
+                    'session_time_id' => $this->finalSessionTimeId,
+                    'rundown_id' => $this->finalRundownId,
+                    'schedule_date' => $this->finalScheduleDate,
+                ]);
+                $usedIds[] = $newRecord->id;
+            }
+        }
+
+        // Clean up any remaining unused TBD final slots
         DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
             ->where('round', 'Final')
+            ->whereNotIn('id', $usedIds)
             ->delete();
-
-        // Sort qualifiers based on their performance again just in case, or leave it grouped?
-        // Usually, Final drawing order is random or sorted. Here we just loop.
-        foreach ($qualifiers->values() as $seq => $reg) {
-            DrawingMatchNumber::create([
-                'match_number_id' => $this->selectedMatchId,
-                'registration_id' => $reg['id'],
-                'round' => 'Final',
-                'draft_type' => 'embu',
-                'sequence_number' => $seq + 1,
-                'court_id' => $this->finalCourtId,
-                'pool_id' => $this->finalPoolId,
-                'session_time_id' => $this->finalSessionTimeId,
-                'rundown_id' => $this->finalRundownId,
-                'schedule_date' => $this->finalScheduleDate,
-            ]);
-        }
 
         $this->showGenerateFinalModal = false;
 

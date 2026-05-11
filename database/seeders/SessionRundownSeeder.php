@@ -50,13 +50,13 @@ class SessionRundownSeeder extends Seeder
         $sessions = [
             [
                 'name' => 'Sesi Pagi',
-                'start_time' => '09:00:00',
-                'end_time' => '11:00:00',
+                'start_time' => '07:30:00',
+                'end_time' => '12:00:00',
             ],
             [
                 'name' => 'Sesi Sore',
                 'start_time' => '13:00:00',
-                'end_time' => '16:00:00',
+                'end_time' => '17:30:00',
             ],
         ];
 

@@ -143,8 +143,10 @@
             .draw-badge.done { background: rgba(39, 174, 96, .1); color: #27ae60; }
             .draw-badge.pending { background: var(--paper); color: var(--smoke); }
             .draw-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-            .draw-table th { padding: 8px 12px; background: var(--paper); font-size: 10px; color: var(--smoke); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; text-align: left; }
-            .draw-table td { padding: 10px 12px; border-top: 1px solid var(--paper2); vertical-align: middle; }
+            .draw-table th { padding: 12px 16px; background: #fafafa; font-size: 10px; color: var(--smoke); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; text-align: left; border-bottom: 2px solid var(--paper2); }
+            .draw-table td { padding: 12px 16px; border-bottom: 1px solid var(--paper2); vertical-align: top; }
+            .draw-table tr:hover td { background: rgba(0,0,0,0.015); }
+            .draw-table tr:last-child td { border-bottom: none; }
             .draw-num { width: 28px; height: 28px; border-radius: 8px; background: var(--ink); color: #fff; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 
             /* POOL SECTION */
@@ -211,6 +213,19 @@
             <button class="tm-tab {{ $draftType === 'jadwal' ? 'active' : '' }}" wire:click="$set('draftType','jadwal')">
                 <i class="fa-solid fa-calendar-alt"></i> Jadwal
             </button>
+            <div style="margin-left: auto; display:flex; gap: 8px;">
+                @if($draftType === 'jadwal')
+                    <button class="btn-gen primary" wire:click="exportExcel" wire:loading.attr="disabled" style="background:#27ae60; box-shadow:0 4px 12px rgba(39, 174, 96, .25);">
+                        <i class="fa-solid fa-file-excel"></i> Export Excel
+                    </button>
+                @else
+                    <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings">
+                        <i class="fa-solid fa-magic" wire:loading.remove wire:target="generateAllDrawings"></i>
+                        <i class="fa-solid fa-spinner fa-spin" wire:loading wire:target="generateAllDrawings"></i>
+                        Generate Semua
+                    </button>
+                @endif
+            </div>
         </div>
 
         {{-- STATS --}}
@@ -265,6 +280,27 @@
             <div class="tm-right">
 
                 @if($draftType === 'jadwal')
+                    <div style="display:flex; gap:12px; margin-bottom: 20px;">
+                        <div class="tm-card" style="flex:1; display:flex; align-items:center; gap:16px;">
+                            <div style="padding: 12px 20px;">
+                                <div style="font-size:11px; font-weight:700; color:var(--smoke); text-transform:uppercase;">Total Pertandingan</div>
+                                <div style="font-size:24px; font-weight:800; font-family:'Cinzel', serif; color:var(--ink);">{{ $scheduleStats['total'] ?? 0 }}</div>
+                            </div>
+                        </div>
+                        <div class="tm-card" style="flex:1; display:flex; align-items:center; gap:16px;">
+                            <div style="padding: 12px 20px;">
+                                <div style="font-size:11px; font-weight:700; color:var(--smoke); text-transform:uppercase;">Total Embu</div>
+                                <div style="font-size:24px; font-weight:800; font-family:'Cinzel', serif; color:var(--ink);">{{ $scheduleStats['embu'] ?? 0 }}</div>
+                            </div>
+                        </div>
+                        <div class="tm-card" style="flex:1; display:flex; align-items:center; gap:16px;">
+                            <div style="padding: 12px 20px;">
+                                <div style="font-size:11px; font-weight:700; color:var(--smoke); text-transform:uppercase;">Total Randori</div>
+                                <div style="font-size:24px; font-weight:800; font-family:'Cinzel', serif; color:var(--ink);">{{ $scheduleStats['randori'] ?? 0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+
                     @forelse($scheduleByRundown as $rId => $rundownData)
                         <div class="tm-card" style="margin-bottom: 24px; border: 2px solid var(--paper2);">
                             <div class="tm-card-head" style="background: var(--ink); color: #fff; padding: 12px 20px;">
@@ -276,10 +312,10 @@
                             </div>
                             <div class="tm-card-body" style="padding: 0;">
                                 @foreach($rundownData['sessions'] as $sId => $sessionData)
-                                    <div style="background: var(--paper); padding: 8px 20px; border-bottom: 1px solid var(--paper2); font-weight: 700; font-size: 11px; color: var(--smoke); display: flex; align-items: center; gap: 8px;">
-                                        <i class="fa-solid fa-clock"></i> 
+                                    <div style="background: var(--paper); padding: 10px 20px; border-bottom: 1px solid var(--paper2); font-weight: 800; font-size: 12px; color: var(--smoke); display: flex; align-items: center; gap: 8px;">
+                                        <div style="width:24px; height:24px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#64748b;"><i class="fa-solid fa-clock"></i></div>
                                         {{ $sessionData['model']->name ?? 'Sesi' }} 
-                                        <span style="font-weight: 400; opacity: 0.8;">({{ Carbon\Carbon::parse($sessionData['model']->start_time)->isoFormat('HH:mm') }} - {{ Carbon\Carbon::parse($sessionData['model']->end_time)->isoFormat('HH:mm') }})</span>
+                                        <span style="font-weight: 500; opacity: 0.7; font-family:'DM Mono', monospace;">({{ Carbon\Carbon::parse($sessionData['model']->start_time)->isoFormat('HH:mm') }} - {{ Carbon\Carbon::parse($sessionData['model']->end_time)->isoFormat('HH:mm') }})</span>
                                     </div>
                                     <div style="overflow-x:auto;">
                                         <table class="draw-table">
@@ -296,17 +332,44 @@
                                             <tbody>
                                                 @foreach($sessionData['times'] as $time => $row)
                                                     <tr>
-                                                        <td style="font-weight: 700; color: var(--ink);">{{ $time }}</td>
-                                                        <td style="color: var(--smoke); font-size: 10px;">{{ $row['duration'] }}'</td>
+                                                        <td style="font-weight: 800; color: var(--ink); font-family:'DM Mono', monospace; font-size:13px; vertical-align:middle;">{{ $time }}</td>
+                                                        <td style="color: var(--smoke); font-size: 10px; vertical-align:middle;"><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600;">{{ $row['duration'] }}'</span></td>
                                                         @foreach($courts as $court)
-                                                            @php $entry = $row['courts'][$court->id] ?? null; @endphp
-                                                            @if($entry)
+                                                            @php $entries = $row['courts'][$court->id] ?? []; @endphp
+                                                            @if(count($entries) > 0)
                                                                 <td style="font-size: 11px; padding: 8px 12px; border-left: 1px solid var(--paper2);">
-                                                                    <div style="font-weight: 700;">{{ $entry->matchNumber->name }}</div>
-                                                                    <div style="color: var(--smoke); font-size: 10px;">{{ $entry->registration->contingent->name }}</div>
-                                                                    <div style="margin-top: 2px;"><span class="draw-badge done" style="font-size: 8px; padding: 2px 6px;">{{ $entry->round }}</span></div>
+                                                                    <div style="font-weight: 700;">{{ $entries[0]->matchNumber->name }}</div>
+                                                                    
+                                                                    @if($entries[0]->draft_type === 'randori')
+                                                                        @php 
+                                                                           $red = null; $blue = null;
+                                                                           foreach($entries as $e) {
+                                                                               if (($e->metadata['side'] ?? '') === 'RED') $red = $e;
+                                                                               else $blue = $e;
+                                                                           }
+                                                                           if (!$blue && count($entries)>1) $blue = $entries[1];
+                                                                           if (!$red && count($entries)>0) $red = $entries[0];
+                                                                        @endphp
+                                                                        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+                                                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                                                <div style="width:4px; height:12px; background:var(--red); border-radius:2px;"></div>
+                                                                                <div style="color: var(--ink); font-size: 10.5px; font-weight: 600;">{{ $red->registration?->contingent?->name ?? ($red->metadata['contingent'] ?? 'TBD') }}</div>
+                                                                            </div>
+                                                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                                                <div style="width:4px; height:12px; background:#3b82f6; border-radius:2px;"></div>
+                                                                                <div style="color: var(--ink); font-size: 10.5px; font-weight: 600;">{{ $blue->registration?->contingent?->name ?? ($blue->metadata['contingent'] ?? 'TBD') }}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @else
+                                                                        <div style="color: var(--smoke); font-size: 10px; margin-top: 2px;">{{ $entries[0]->registration?->contingent?->name ?? ($entries[0]->metadata['contingent'] ?? 'TBD') }}</div>
+                                                                    @endif
+
+                                                                    <div style="margin-top: 6px;"><span class="draw-badge done" style="font-size: 8px; padding: 2px 6px;">{{ $entries[0]->round }}</span></div>
                                                                 </td>
-                                                                <td style="font-family: 'DM Mono', monospace; font-size: 10px; color: var(--red); font-weight: 700;">{{ $entry->metadata['match_id_code'] ?? '-' }}</td>
+                                                                <td style="font-family: 'DM Mono', monospace; font-size: 11px; color: var(--red); font-weight: 700; text-align: center;">
+                                                                    {{ $entries[0]->metadata['match_id_code'] ?? '-' }}<br>
+                                                                    <span style="color: var(--smoke); font-size: 9px;">#{{ $entries[0]->sequence_number }}</span>
+                                                                </td>
                                                             @else
                                                                 <td colspan="2" style="text-align: center; color: var(--paper2); font-style: italic; background: rgba(0,0,0,0.01); border-left: 1px solid var(--paper2);">Istirahat</td>
                                                             @endif
@@ -441,7 +504,8 @@
                                                 <button wire:click="openEditModal({{ $groupEntries->first()->pool_id }})" class="btn-gen ghost" style="padding:2px 8px; font-size:10px;"><i class="fa-solid fa-edit"></i> Edit Penugasan</button>
                                             </div>
                                             <div style="background:var(--paper); padding:10px 14px; border-radius:10px; margin-bottom:10px; display:flex; gap:20px; font-size:11px; border:1px solid var(--paper2);">
-                                                <div><span style="color:var(--smoke); font-weight:700; text-transform:uppercase; font-size:9px;">Court:</span> <span style="font-weight:700; color:var(--red);">{{ $groupEntries->first()->court->name ?? '-' }}</span></div>
+                                                <div><span style="color:var(--smoke); font-weight:700; text-transform:uppercase; font-size:9px;">Tanggal:</span> <span style="font-weight:700; color:var(--red);">{{ \Carbon\Carbon::parse($groupEntries->first()->rundown->date ?? now())->isoFormat('D MMM YYYY') }}</span></div>
+                                                <div><span style="color:var(--smoke); font-weight:700; text-transform:uppercase; font-size:9px;">Court:</span> <span style="font-weight:700;">{{ $groupEntries->first()->court->name ?? '-' }}</span></div>
                                                 <div><span style="color:var(--smoke); font-weight:700; text-transform:uppercase; font-size:9px;">Sesi:</span> <span style="font-weight:700;">{{ $groupEntries->first()->sessionTime->name ?? '-' }}</span></div>
                                                 <div><span style="color:var(--smoke); font-weight:700; text-transform:uppercase; font-size:9px;">Koor:</span> <span style="font-weight:700;">{{ $groupEntries->first()->metadata['officials']['koordinator_lapangan'] ?? '-' }}</span></div>
                                             </div>
@@ -465,7 +529,9 @@
                                                                         @if(isset($entry->metadata['side']))
                                                                             <div style="width:4px; height:16px; border-radius:2px; background:{{ $entry->metadata['side'] === 'RED' ? '#ef4444' : '#3b82f6' }};"></div>
                                                                         @endif
-                                                                        <div style="font-weight:700; color:var(--ink);">{{ $entry->registration->contingent->name }}</div>
+                                                                        <div style="font-weight:700; color:var(--ink);">
+                                                                            {{ $entry->registration?->contingent?->name ?? ($entry->metadata['contingent'] ?? 'TBD') }}
+                                                                        </div>
                                                                     </div>
                                                                 </td>
                                                                 <td>
@@ -473,7 +539,7 @@
                                                                         <div style="font-weight:700; color:var(--red);">{{ $entry->metadata['start_time'] ?? '-' }} - {{ $entry->metadata['end_time'] ?? '-' }}</div>
                                                                     @endif
                                                                 </td>
-                                                                <td><div style="font-family:'DM Mono',monospace; font-size:10px; color:var(--smoke);">{{ $entry->metadata['match_id_code'] ?? '-' }}</div></td>
+                                                                <td><div style="font-family:'DM Mono',monospace; font-size:10px; color:var(--smoke);">{{ $entry->metadata['match_id_code'] ?? '-' }}-{{ $entry->sequence_number }}</div></td>
                                                                 <td><span class="draw-badge done" style="font-size:9px;"><i class="fa-solid fa-check"></i> Siap</span></td>
                                                             </tr>
                                                         @endforeach

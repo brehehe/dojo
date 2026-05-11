@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Athlete;
 use App\Models\Contingent;
+use App\Models\Court\Court;
 use App\Models\Group\AgeGroup;
 use App\Models\Group\WeightGroup;
 use App\Models\MatchNumber\MatchNumber;
@@ -28,6 +29,13 @@ class TournamentDummySeeder extends Seeder
         Contingent::truncate();
         User::role('Contingent')->delete();
         DB::statement('SET session_replication_role = \'origin\';');
+
+        for ($i = 1; $i <= 3; $i++) {
+            Court::create([
+                'name' => 'Court '.$i,
+                'order' => $i,
+            ]);
+        }
 
         // 2. Load basic master data
         $weightGroups = WeightGroup::all();

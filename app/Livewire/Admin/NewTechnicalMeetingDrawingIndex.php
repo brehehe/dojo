@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exports\ScheduleExport;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.premium')]
@@ -80,17 +82,15 @@ class NewTechnicalMeetingDrawingIndex extends Component
         'Randori >70Kg' => 'R-GT70',
     ];
 
-    private function getMatchIdCode(MatchNumber $match): string
+    private function getMatchIdCode(MatchNumber $match, ?int $seq = null): string
     {
-        if (! empty($match->match_id)) {
+        if (! empty($match->match_id) && $seq === null) {
             return $match->match_id;
         }
 
         $fullName = $match->name;
-        if (isset($this->matchCodeMapping[$fullName])) {
-            return $this->matchCodeMapping[$fullName];
-        }
 
+        // Category
         $cat = match ($match->ageGroup->name ?? '') {
             'Pemula' => 'P',
             'Remaja A' => 'RA',
@@ -99,26 +99,42 @@ class NewTechnicalMeetingDrawingIndex extends Component
             default => 'U',
         };
 
+        // Type
         $type = ($match->draft_type === 'randori') ? 'R' : 'E';
 
-        $num = '00';
-
+        // SubType
+        $subType = 'XX';
         if ($match->draft_type === 'embu') {
             if (str_contains($fullName, 'Tandoku')) {
-                $num = 'TK';
+                $subType = 'TK';
             } elseif (str_contains($fullName, 'Pasangan')) {
-                $num = 'PS';
+                $subType = 'PS';
             } elseif (str_contains($fullName, 'Beregu')) {
-                $num = 'BG';
+                $subType = 'BG';
             }
         } else {
-            preg_match('/\d+/', $fullName, $m);
-            $num = $m[0] ?? 'XX';
+            if (str_contains($fullName, '<')) {
+                preg_match('/\d+/', $fullName, $m);
+                $subType = 'LT'.($m[0] ?? 'XX');
+            } elseif (str_contains($fullName, '>')) {
+                preg_match('/\d+/', $fullName, $m);
+                $subType = 'GT'.($m[0] ?? 'XX');
+            } elseif (str_contains($fullName, '-')) {
+                preg_match('/(\d+)-(\d+)/', $fullName, $m);
+                $subType = ($m[1] ?? '').($m[2] ?? '');
+            } else {
+                preg_match('/\d+/', $fullName, $m);
+                $subType = $m[0] ?? 'XX';
+            }
         }
 
-        $sifat = ($match->gender === 'L') ? 'PA' : (($match->gender === 'P') ? 'PI' : 'X');
+        // Order (Sequence)
+        $order = str_pad($seq ?? $match->order ?? 0, 2, '0', STR_PAD_LEFT);
 
-        return "{$cat}-{$type}-{$num}-{$sifat}";
+        // Gender
+        $gender = ($match->gender === 'L') ? 'PA' : (($match->gender === 'P') ? 'PI' : 'X');
+
+        return "{$cat}-{$type}-{$subType}-{$order}-{$gender}";
     }
 
     public function updatedDraftType(): void
@@ -138,7 +154,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
     }
 
     // ── RANDORI ──────────────────────────────────────────────
-    public function generateRandoriDrawing(): void
+    public function generateRandoriDrawing(bool $showSwal = true): void
     {
         if (! $this->filterMatchNumberId) {
             return;
@@ -219,16 +235,45 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'drawing_generated_at' => now(),
         ]);
 
-        $matchIdCode = $this->getMatchIdCode($match);
+        // 4. Schedule based on ALL bracket matches
+        $allMatchesToSchedule = [];
 
-        // 4. Schedule based on bracket matches (Round 1)
-        $firstRoundMatches = $drawingData['upper_bracket']['rounds'][0] ?? [];
-        $scheduledMatchesCount = 0;
-        foreach ($firstRoundMatches as $m) {
-            if (($m['athlete1']['id'] ?? 'BYE') !== 'BYE' && ($m['athlete2']['id'] ?? 'BYE') !== 'BYE') {
-                $scheduledMatchesCount++;
+        if (isset($drawingData['upper_bracket']['rounds'])) {
+            foreach ($drawingData['upper_bracket']['rounds'] as $rIdx => $round) {
+                foreach ($round as $mIdx => $m) {
+                    if (empty($m['is_bye'])) {
+                        $allMatchesToSchedule[] = [
+                            'round_name' => 'Penyisihan (UB R'.($rIdx + 1).')',
+                            'match' => $m,
+                        ];
+                    }
+                }
             }
         }
+
+        if (isset($drawingData['lower_bracket']['rounds'])) {
+            foreach ($drawingData['lower_bracket']['rounds'] as $rIdx => $round) {
+                foreach ($round as $mIdx => $m) {
+                    if (empty($m['is_bye'])) {
+                        $allMatchesToSchedule[] = [
+                            'round_name' => 'Penyisihan (LB R'.($rIdx + 1).')',
+                            'match' => $m,
+                        ];
+                    }
+                }
+            }
+        }
+
+        if (! empty($drawingData['grand_final']) && empty($drawingData['grand_final']['is_bye'])) {
+            // Some brackets don't have grand_final populated fully initially if not double elim,
+            // but if it's there and not a bye, schedule it.
+            $allMatchesToSchedule[] = [
+                'round_name' => 'Grand Final',
+                'match' => $drawingData['grand_final'],
+            ];
+        }
+
+        $scheduledMatchesCount = count($allMatchesToSchedule);
 
         $durationPerMatch = 10;
         // We need at least one slot even if it's mostly BYEs
@@ -244,70 +289,114 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $matchSeq = 1;
         $mIdx = 0;
-        foreach ($firstRoundMatches as $m) {
+
+        foreach ($allMatchesToSchedule as $scheduleItem) {
+            $m = $scheduleItem['match'];
+            $roundName = $scheduleItem['round_name'];
             $a1 = $m['athlete1'] ?? null;
             $a2 = $m['athlete2'] ?? null;
 
-            if (($a1['id'] ?? 'BYE') !== 'BYE' && ($a2['id'] ?? 'BYE') !== 'BYE') {
-                $matchStart = $startTime->copy()->addMinutes($mIdx * $durationPerMatch);
-                $matchEnd = $matchStart->copy()->addMinutes($durationPerMatch);
+            $matchStart = $startTime->copy()->addMinutes($mIdx * $durationPerMatch);
+            $matchEnd = $matchStart->copy()->addMinutes($durationPerMatch);
 
-                // Record for Athlete 1
-                DrawingMatchNumber::create([
-                    'match_number_id' => $matchId,
-                    'registration_id' => $a1['registration_id'],
-                    'court_id' => $court?->id,
-                    'session_time_id' => $sessionTime?->id,
-                    'rundown_id' => $rundown?->id,
-                    'round' => 'Penyisihan',
-                    'sequence_number' => $matchSeq,
-                    'draft_type' => 'randori',
-                    'metadata' => [
-                        'athlete_id' => $a1['id'],
-                        'officials' => $officials,
-                        'match_id_code' => $matchIdCode,
-                        'start_time' => $matchStart->format('H:i'),
-                        'end_time' => $matchEnd->format('H:i'),
-                        'duration' => $durationPerMatch,
-                        'side' => 'RED',
-                    ],
-                ]);
+            // Record for Athlete 1
+            DrawingMatchNumber::create([
+                'match_number_id' => $matchId,
+                'registration_id' => $a1['registration_id'] ?? null,
+                'court_id' => $court?->id,
+                'session_time_id' => $sessionTime?->id,
+                'rundown_id' => $rundown?->id,
+                'round' => $roundName,
+                'sequence_number' => $matchSeq,
+                'draft_type' => 'randori',
+                'metadata' => [
+                    'athlete_id' => $a1['id'] ?? null,
+                    'athlete_name' => $a1['name'] ?? 'TBD',
+                    'contingent' => $a1['contingent'] ?? 'TBD',
+                    'officials' => $officials,
+                    'match_id_code' => $this->getMatchIdCode($match, $matchSeq),
+                    'start_time' => $matchStart->format('H:i'),
+                    'end_time' => $matchEnd->format('H:i'),
+                    'duration' => $durationPerMatch,
+                    'side' => 'RED',
+                    'pool_label' => $roundName,
+                ],
+            ]);
 
-                // Record for Athlete 2
-                DrawingMatchNumber::create([
-                    'match_number_id' => $matchId,
-                    'registration_id' => $a2['registration_id'],
-                    'court_id' => $court?->id,
-                    'session_time_id' => $sessionTime?->id,
-                    'rundown_id' => $rundown?->id,
-                    'round' => 'Penyisihan',
-                    'sequence_number' => $matchSeq,
-                    'draft_type' => 'randori',
-                    'metadata' => [
-                        'athlete_id' => $a2['id'],
-                        'officials' => $officials,
-                        'match_id_code' => $matchIdCode,
-                        'start_time' => $matchStart->format('H:i'),
-                        'end_time' => $matchEnd->format('H:i'),
-                        'duration' => $durationPerMatch,
-                        'side' => 'BLUE',
-                    ],
-                ]);
+            // Record for Athlete 2
+            DrawingMatchNumber::create([
+                'match_number_id' => $matchId,
+                'registration_id' => $a2['registration_id'] ?? null,
+                'court_id' => $court?->id,
+                'session_time_id' => $sessionTime?->id,
+                'rundown_id' => $rundown?->id,
+                'round' => $roundName,
+                'sequence_number' => $matchSeq,
+                'draft_type' => 'randori',
+                'metadata' => [
+                    'athlete_id' => $a2['id'] ?? null,
+                    'athlete_name' => $a2['name'] ?? 'TBD',
+                    'contingent' => $a2['contingent'] ?? 'TBD',
+                    'officials' => $officials,
+                    'match_id_code' => $this->getMatchIdCode($match, $matchSeq),
+                    'start_time' => $matchStart->format('H:i'),
+                    'end_time' => $matchEnd->format('H:i'),
+                    'duration' => $durationPerMatch,
+                    'side' => 'BLUE',
+                    'pool_label' => $roundName,
+                ],
+            ]);
 
-                $matchSeq++;
-                $mIdx++;
-            }
+            $matchSeq++;
+            $mIdx++;
         }
         $this->isGenerating = false;
+        if ($showSwal) {
+            $this->dispatch('swal', [
+                'icon' => 'success',
+                'title' => 'Bagan '.$typeLabel.' Dibuat!',
+                'text' => $totalAthletes.' atlet | '.$scheduledMatchesCount.' Jadwal Match.',
+            ]);
+        }
+    }
+
+    // ── GENERATE ALL ─────────────────────────────────────────
+    public function generateAllDrawings(): void
+    {
+        $this->isGenerating = true;
+
+        $matches = MatchNumber::whereNull('drawing_generated_at')
+            ->has('athletes')
+            ->get();
+
+        $count = 0;
+        foreach ($matches as $match) {
+            $this->filterMatchNumberId = $match->id;
+            if ($match->draft_type === 'randori') {
+                $this->generateRandoriDrawing(false);
+            } else {
+                $this->generateEmbuDrawing(false);
+            }
+            $count++;
+        }
+
+        $this->filterMatchNumberId = null;
+        $this->isGenerating = false;
+
         $this->dispatch('swal', [
             'icon' => 'success',
-            'title' => 'Bagan '.$typeLabel.' Dibuat!',
-            'text' => $totalAthletes.' atlet | Slot '.$bracketSize,
+            'title' => 'Semua Bagan Digenerate!',
+            'text' => $count.' kelas pertandingan berhasil dibuatkan jadwal.',
         ]);
     }
 
+    public function exportExcel()
+    {
+        return Excel::download(new ScheduleExport, 'Jadwal_Pertandingan_Kempo.xlsx');
+    }
+
     // ── EMBU ─────────────────────────────────────────────────
-    public function generateEmbuDrawing(): void
+    public function generateEmbuDrawing(bool $showSwal = true): void
     {
         if (! $this->filterMatchNumberId) {
             return;
@@ -403,8 +492,6 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $localBusyPanitera = [];
         $poolOfficialsCache = [];
 
-        $matchIdCode = $this->getMatchIdCode($match);
-
         foreach ($entries as $index => $entry) {
             $poolIdx = ($format === '2_babak') ? 0 : ($index % $poolCount);
             $pool = $poolRecords[$poolIdx];
@@ -440,12 +527,69 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 'metadata' => [
                     'pool_label' => $poolLabel,
                     'officials' => $officials,
-                    'match_id_code' => $matchIdCode,
+                    'match_id_code' => $this->getMatchIdCode($match, $index + 1),
                     'start_time' => $entryStart->format('H:i'),
                     'end_time' => $entryEnd->format('H:i'),
                     'duration' => $durationPerMatch,
+                    'athlete_name' => $entry['athlete_name'] ?? 'TBD',
+                    'contingent' => $entry['contingent'] ?? 'TBD',
                 ],
             ]);
+        }
+
+        // --- GENERATE FINAL SLOTS (PLACEHOLDERS) ---
+        $qualifiersPerPool = 0;
+        if ($poolCount === 1) {
+            $qualifiersPerPool = $totalEntries;
+        } elseif ($poolCount === 2) {
+            $qualifiersPerPool = 4;
+        } elseif ($poolCount === 3) {
+            $qualifiersPerPool = 3;
+        } else {
+            $qualifiersPerPool = 2;
+        }
+
+        $totalFinalists = ($poolCount === 1) ? $totalEntries : ($poolCount * $qualifiersPerPool);
+
+        if ($totalFinalists > 0) {
+            $minFinalStartTime = null;
+            if (isset($rundown) && isset($entryEnd)) {
+                $rDate = Carbon::parse($rundown->date)->format('Y-m-d');
+                $eTime = Carbon::parse($entryEnd)->format('H:i:s');
+                $minFinalStartTime = Carbon::parse($rDate.' '.$eTime)->addHours(2); // At least 2 hours break
+            }
+
+            $finalSlotData = $this->findBestAvailableSlot($totalFinalists, $durationPerMatch, $minFinalStartTime);
+            $fCourtId = $finalSlotData['court'] ? $finalSlotData['court']->id : null;
+            $fStartTime = $finalSlotData['startTime'];
+
+            for ($i = 0; $i < $totalFinalists; $i++) {
+                $fStart = $fStartTime->copy()->addMinutes($i * $durationPerMatch);
+                $fEnd = $fStart->copy()->addMinutes($durationPerMatch);
+
+                DrawingMatchNumber::create([
+                    'match_number_id' => $matchId,
+                    'registration_id' => null, // TBD
+                    'pool_id' => null, // Final pool
+                    'court_id' => $fCourtId,
+                    'schedule_date' => $finalSlotData['rundown']?->date,
+                    'session_time_id' => $finalSlotData['session']?->id,
+                    'rundown_id' => $finalSlotData['rundown']?->id,
+                    'round' => 'Final',
+                    'sequence_number' => $i + 1,
+                    'draft_type' => 'embu',
+                    'metadata' => [
+                        'pool_label' => 'FINAL',
+                        'officials' => [],
+                        'match_id_code' => $this->getMatchIdCode($match, $totalEntries + $i + 1), // Offset by penyisihan entries
+                        'start_time' => $fStart->format('H:i'),
+                        'end_time' => $fEnd->format('H:i'),
+                        'duration' => $durationPerMatch,
+                        'contingent' => 'Lolos Final',
+                        'athlete_name' => 'TBD',
+                    ],
+                ]);
+            }
         }
 
         $match->update([
@@ -454,10 +598,12 @@ class NewTechnicalMeetingDrawingIndex extends Component
         ]);
 
         $this->isGenerating = false;
-        $this->dispatch('swal', ['icon' => 'success', 'title' => 'Drawing Embu Dibuat!', 'text' => $totalEntries.' tim | '.$description]);
+        if ($showSwal) {
+            $this->dispatch('swal', ['icon' => 'success', 'title' => 'Drawing Embu Dibuat!', 'text' => $totalEntries.' tim | '.$description]);
+        }
     }
 
-    private function findBestAvailableSlot(int $neededCount, int $durationMinutes = 10): array
+    private function findBestAvailableSlot(int $neededCount, int $durationMinutes = 10, ?Carbon $minStartTime = null): array
     {
         $rundowns = Rundown::where('type', 'pertandingan')->orderBy('date')->orderBy('order')->get();
         $sessions = SessionTime::orderBy('start_time')->get();
@@ -471,12 +617,22 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         ->where('court_id', $court->id)
                         ->get();
 
-                    $sessionStart = Carbon::parse($session->start_time);
-                    $sessionEnd = Carbon::parse($session->end_time);
+                    $uniqueStartTimes = $existingMatches->pluck('metadata.start_time')->unique()->count();
+                    $offsetCount = $uniqueStartTimes;
 
-                    $offsetCount = $existingMatches->count();
+                    $rDate = Carbon::parse($rundown->date)->format('Y-m-d');
+                    $sTime = Carbon::parse($session->start_time)->format('H:i:s');
+                    $sessionStart = Carbon::parse($rDate.' '.$sTime);
+
+                    $eTime = Carbon::parse($session->end_time)->format('H:i:s');
+                    $sessionEnd = Carbon::parse($rDate.' '.$eTime);
+
                     $startTime = $sessionStart->copy()->addMinutes($offsetCount * $durationMinutes);
                     $endTime = $startTime->copy()->addMinutes($neededCount * $durationMinutes);
+
+                    if ($minStartTime && $startTime->lt($minStartTime)) {
+                        continue;
+                    }
 
                     if ($endTime->lte($sessionEnd)) {
                         return [
@@ -490,13 +646,20 @@ class NewTechnicalMeetingDrawingIndex extends Component
             }
         }
 
-        // Fallback to absolute first if everything is full (admin will have to adjust)
-        return [
-            'rundown' => $rundowns->first(),
-            'session' => $sessions->first(),
-            'court' => $courts->first(),
-            'startTime' => Carbon::parse($sessions->first()->start_time),
-        ];
+        if ($minStartTime) {
+            foreach ($rundowns as $rundown) {
+                foreach ($sessions as $session) {
+                    $rDate = Carbon::parse($rundown->date)->format('Y-m-d');
+                    $sTime = Carbon::parse($session->start_time)->format('H:i:s');
+                    $sessionStart = Carbon::parse($rDate . ' ' . $sTime);
+                    if ($sessionStart->gte($minStartTime)) {
+                        return ['rundown' => $rundown, 'session' => $session, 'court' => $courts->first(), 'startTime' => $sessionStart];
+                    }
+                }
+            }
+            return ['rundown' => $rundowns->last(), 'session' => $sessions->last(), 'court' => $courts->first(), 'startTime' => $minStartTime->copy()];
+        }
+        return ['rundown' => $rundowns->first(), 'session' => $sessions->first(), 'court' => $courts->first(), 'startTime' => Carbon::parse($rundowns->first()->date . ' ' . $sessions->first()->start_time)];
     }
 
     public function resetDrawing(): void
@@ -712,6 +875,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         // Schedule View Data - Grouped by Rundown -> Session -> Time
         $scheduleByRundown = [];
+        $scheduleStats = [
+            'total' => 0,
+            'embu' => 0,
+            'randori' => 0,
+        ];
         if ($this->draftType === 'jadwal') {
             $allDrawings = DrawingMatchNumber::with(['matchNumber', 'registration.contingent', 'court', 'sessionTime', 'rundown'])
                 ->get()
@@ -748,7 +916,25 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         'courts' => [],
                     ];
                 }
-                $scheduleByRundown[$rId]['sessions'][$sId]['times'][$time]['courts'][$draw->court_id] = $draw;
+                if (! isset($scheduleByRundown[$rId]['sessions'][$sId]['times'][$time]['courts'][$draw->court_id])) {
+                    $scheduleByRundown[$rId]['sessions'][$sId]['times'][$time]['courts'][$draw->court_id] = [];
+                }
+                $scheduleByRundown[$rId]['sessions'][$sId]['times'][$time]['courts'][$draw->court_id][] = $draw;
+            }
+
+            foreach ($scheduleByRundown as $rId => $rData) {
+                foreach ($rData['sessions'] as $sId => $sData) {
+                    foreach ($sData['times'] as $tId => $tData) {
+                        foreach ($tData['courts'] as $cId => $entries) {
+                            $scheduleStats['total']++;
+                            if (isset($entries[0]) && $entries[0]->draft_type === 'randori') {
+                                $scheduleStats['randori']++;
+                            } else {
+                                $scheduleStats['embu']++;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -769,6 +955,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 'pending' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNull('drawing_generated_at')->count(),
             ],
             'scheduleByRundown' => $scheduleByRundown,
+            'scheduleStats' => $scheduleStats,
         ]);
     }
 
