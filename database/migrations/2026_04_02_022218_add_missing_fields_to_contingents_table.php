@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('transfer_proof_path')->nullable();
             $table->string('sim_perkemi_confirm')->nullable();
             $table->renameColumn('leader_email', 'email');
-            $table->string
         });
     }
 
