@@ -2,16 +2,13 @@
 
 namespace App\Livewire\Contingent;
 
-use App\Models\EmbuChampion;
-use App\Models\MatchNumber\MatchNumber;
-use App\Models\RandoriMatchResult;
 use App\Models\Registration;
 use App\Models\TournamentResult;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.admin')]
+#[Layout('layouts.premium')]
 class Results extends Component
 {
     public string $filterType = 'all';

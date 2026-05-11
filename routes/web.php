@@ -13,8 +13,8 @@ use App\Livewire\Admin\Arbitrase\Scoring\AdminArbitraseScoringRandoriDetail;
 use App\Livewire\Admin\Arbitrase\Scoring\AdminEmbuScoringTestbench;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorCourtIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorHasilIndex;
-use App\Livewire\Admin\Arbitrase\Scoring\MonitorRekapitulasiHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorRefereeIndex;
+use App\Livewire\Admin\Arbitrase\Scoring\MonitorRekapitulasiHasilIndex;
 use App\Livewire\Admin\Arbitrase\Scoring\MonitorTimerIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\HomeDashboardIndex;
@@ -100,7 +100,9 @@ use App\Livewire\Admin\TechnicalMeeting\Embu\AdminTechnicalMeetingEmbuIndex;
 use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriIndex;
 use App\Livewire\Auth\NewLoginIndex;
 use App\Livewire\Auth\Register;
+use App\Livewire\Contingent\Athletes;
 use App\Livewire\Contingent\Dashboard;
+use App\Livewire\Contingent\Officials;
 use App\Livewire\Contingent\Results;
 use App\Livewire\Contingent\Schedule;
 use App\Livewire\Contingent\Setup;
@@ -138,6 +140,8 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/jadwal', Schedule::class)->name('contingent.schedule');
     Route::get('contingent/hasil', Results::class)->name('contingent.results');
     Route::get('contingent/klasemen', Standings::class)->name('contingent.standings');
+    Route::get('contingent/athletes', Athletes::class)->name('contingent.athletes');
+    Route::get('contingent/officials', Officials::class)->name('contingent.officials');
 
     Route::post('logout', function () {
         Auth::logout();

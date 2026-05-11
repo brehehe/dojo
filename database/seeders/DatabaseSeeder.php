@@ -13,43 +13,43 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            KyuLevelSeeder::class,
-            CategorySeeder::class,
-            PostSeeder::class,
-            GallerySeeder::class,
-            RoleSeeder::class,
-            ContingentSeeder::class,
-            CourtAndPoolSeeder::class,
-            RefereeSeeder::class,
-            MatchNumberSeeder::class,
-            SessionRundownSeeder::class,
-            TechniqueSeeder::class,
-            TournamentDummySeeder::class,
-            // Embu9ContingentSeeder::class,
-        ]);
+        // $this->call([
+        //     KyuLevelSeeder::class,
+        //     CategorySeeder::class,
+        //     PostSeeder::class,
+        //     GallerySeeder::class,
+        //     RoleSeeder::class,
+        //     ContingentSeeder::class,
+        //     CourtAndPoolSeeder::class,
+        //     RefereeSeeder::class,
+        //     MatchNumberSeeder::class,
+        //     SessionRundownSeeder::class,
+        //     TechniqueSeeder::class,
+        //     TournamentDummySeeder::class,
+        //     // Embu9ContingentSeeder::class,
+        // ]);
 
-        PaymentMethod::create([
-            'bank' => 'Tunai',
-            'name' => 'Tunai',
-        ]);
+        // PaymentMethod::create([
+        //     'bank' => 'Tunai',
+        //     'name' => 'Tunai',
+        // ]);
 
-        PaymentMethod::create([
-            'bank' => 'BNI',
-            'account_number' => '0705667627',
-            'name' => 'KONI Kabupaten Bekasi',
-        ]);
+        // PaymentMethod::create([
+        //     'bank' => 'BNI',
+        //     'account_number' => '0705667627',
+        //     'name' => 'KONI Kabupaten Bekasi',
+        // ]);
 
-        PaymentMethod::create([
-            'bank' => 'BRI',
-            'account_number' => '0705667627',
-            'name' => 'KONI Kabupaten Bekasi',
-        ]);
+        // PaymentMethod::create([
+        //     'bank' => 'BRI',
+        //     'account_number' => '0705667627',
+        //     'name' => 'KONI Kabupaten Bekasi',
+        // ]);
 
-        PaymentMethod::create([
-            'bank' => 'Mandiri',
-            'account_number' => '0705667627',
-            'name' => 'KONI Kabupaten Bekasi',
-        ]);
+        // PaymentMethod::create([
+        //     'bank' => 'Mandiri',
+        //     'account_number' => '0705667627',
+        //     'name' => 'KONI Kabupaten Bekasi',
+        // ]);
     }
 }

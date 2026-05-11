@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.admin')]
+#[Layout('layouts.premium')]
 class Standings extends Component
 {
     public string $filterType = 'embu';

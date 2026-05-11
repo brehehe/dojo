@@ -48,8 +48,10 @@ class ScheduleExport implements FromCollection, ShouldAutoSize, WithHeadings, Wi
             'Nomor Pertandingan',
             'Babak/Pool',
             'Kode Partai',
-            'Sudut Merah (Embu)',
+            'Sudut Merah',
+            'Kontingen (M)',
             'Sudut Biru',
+            'Kontingen (B)',
         ];
     }
 
@@ -67,26 +69,25 @@ class ScheduleExport implements FromCollection, ShouldAutoSize, WithHeadings, Wi
         $partai = $first->metadata['match_id_code'] ?? '-';
 
         $merah = '-';
+        $merahCont = '-';
         $biru = '-';
+        $biruCont = '-';
 
         if ($first->draft_type === 'randori') {
             $redEntry = $group->firstWhere('metadata.side', 'RED');
             $blueEntry = $group->firstWhere('metadata.side', 'BLUE');
 
             if ($redEntry) {
-                $name = $redEntry->metadata['athlete_name'] ?? 'TBD';
-                $cont = $redEntry->metadata['contingent'] ?? 'TBD';
-                $merah = ($name === 'TBD') ? $cont : "{$name} ({$cont})";
+                $merah = $redEntry->metadata['athlete_name'] ?? 'TBD';
+                $merahCont = $redEntry->metadata['contingent'] ?? 'TBD';
             }
             if ($blueEntry) {
-                $name = $blueEntry->metadata['athlete_name'] ?? 'TBD';
-                $cont = $blueEntry->metadata['contingent'] ?? 'TBD';
-                $biru = ($name === 'TBD') ? $cont : "{$name} ({$cont})";
+                $biru = $blueEntry->metadata['athlete_name'] ?? 'TBD';
+                $biruCont = $blueEntry->metadata['contingent'] ?? 'TBD';
             }
         } else {
-            $name = $first->metadata['athlete_name'] ?? 'TBD';
-            $cont = $first->metadata['contingent'] ?? 'TBD';
-            $merah = ($name === 'TBD') ? $cont : "{$name} ({$cont})";
+            $merah = $first->metadata['athlete_name'] ?? 'TBD';
+            $merahCont = $first->metadata['contingent'] ?? 'TBD';
         }
 
         return [
@@ -98,7 +99,9 @@ class ScheduleExport implements FromCollection, ShouldAutoSize, WithHeadings, Wi
             $babak,
             $partai,
             $merah,
+            $merahCont,
             $biru,
+            $biruCont,
         ];
     }
 

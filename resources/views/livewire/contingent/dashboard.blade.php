@@ -121,22 +121,36 @@
         </div>
     </div>
 
+    {{-- ── QUICK ACTIONS ── --}}
+    <div style="padding: 0 16px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+        <a href="{{ route('contingent.athletes') }}" wire:navigate class="ctg-hero-cta" style="background: var(--ink); box-shadow: none; justify-content: center; padding: 12px;">
+            <i class="fa-solid fa-user-plus"></i> Tambah Atlet
+        </a>
+        <a href="{{ route('contingent.officials') }}" wire:navigate class="ctg-hero-cta" style="background: var(--smoke); box-shadow: none; justify-content: center; padding: 12px;">
+            <i class="fa-solid fa-user-tie"></i> Tambah Official
+        </a>
+    </div>
+
     {{-- ── STATS ── --}}
     <div class="ctg-stats">
+        <a href="{{ route('contingent.athletes') }}" wire:navigate style="text-decoration: none;">
+            <div class="ctg-stat-card">
+                <div class="ctg-stat-icon blue"><i class="fa-solid fa-users"></i></div>
+                <div class="ctg-stat-val">{{ $contingent->athletes()->count() }}</div>
+                <div class="ctg-stat-lbl">Master Atlet</div>
+            </div>
+        </a>
+        <a href="{{ route('contingent.officials') }}" wire:navigate style="text-decoration: none;">
+            <div class="ctg-stat-card">
+                <div class="ctg-stat-icon green"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="ctg-stat-val">{{ $contingent->officials()->count() }}</div>
+                <div class="ctg-stat-lbl">Master Official</div>
+            </div>
+        </a>
         <div class="ctg-stat-card">
             <div class="ctg-stat-icon red"><i class="fa-solid fa-trophy"></i></div>
             <div class="ctg-stat-val">{{ $registrations->count() }}</div>
             <div class="ctg-stat-lbl">Pendaftaran</div>
-        </div>
-        <div class="ctg-stat-card">
-            <div class="ctg-stat-icon blue"><i class="fa-solid fa-users"></i></div>
-            <div class="ctg-stat-val">{{ $registrations->sum('athletes_count') }}</div>
-            <div class="ctg-stat-lbl">Atlet</div>
-        </div>
-        <div class="ctg-stat-card">
-            <div class="ctg-stat-icon green"><i class="fa-solid fa-user-tie"></i></div>
-            <div class="ctg-stat-val">{{ $registrations->sum('officials_count') }}</div>
-            <div class="ctg-stat-lbl">Official</div>
         </div>
     </div>
 
