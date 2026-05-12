@@ -671,24 +671,23 @@
     /* ══════════════════════════════════════════════════════
    MOBILE ROLE — Bottom Nav (Contingent & Referee)
 ══════════════════════════════════════════════════════ */
-    .mob-body-role aside,
-    .mob-body-role #overlay {
-      display: none !important;
-    }
 
-    .mob-body-role main.premium-main {
-      margin-left: 0;
-      padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
-    }
+    /* Only apply mobile-specific layout overrides on actual mobile screens */
+    @media (max-width: 1024px) {
+      .mob-body-role main.premium-main {
+        margin-left: 0;
+        padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+      }
 
-    .mob-body-role header.premium-header .hamburger,
-    .mob-body-role header.premium-header .search-wrap-premium,
-    .mob-body-role header.premium-header .top-btn {
-      display: none !important;
-    }
+      .mob-body-role header.premium-header .hamburger,
+      .mob-body-role header.premium-header .search-wrap-premium,
+      .mob-body-role header.premium-header .top-btn {
+        display: none !important;
+      }
 
-    .mob-body-role .page-title-premium {
-      font-size: 13px;
+      .mob-body-role .page-title-premium {
+        font-size: 13px;
+      }
     }
 
     /* ── TOPBAR role badge (mobile roles) ── */
@@ -717,7 +716,9 @@
       z-index: 200;
     }
 
-    .mob-body-role .mob-bottomnav { display: flex; }
+    @media (max-width: 1024px) {
+      .mob-body-role .mob-bottomnav { display: flex; }
+    }
 
     .mob-nav-btn {
       flex: 1;
@@ -766,8 +767,7 @@
 
   <div id="overlay" onclick="closeSidebar()"></div>
 
-  {{-- ── Sidebar: only rendered for Admin roles ── --}}
-  @if(!$isMobileRole)
+  {{-- ── Sidebar: always rendered, role-visibility handled inside ── --}}
   <aside id="sidebar">
     <div class="brand">
       <div class="brand-top">
@@ -790,7 +790,6 @@
       </div>
     </div>--}}
   </aside>
-  @endif
 
   <main class="premium-main">
     <header class="premium-header">
@@ -876,18 +875,10 @@
         <i class="fa-solid fa-gavel"></i>
         <span>Scoring</span>
       </a>
-      <a class="mob-nav-btn {{ request()->routeIs('admin.profile') ? 'active' : '' }}"
-         href="{{ route('admin.profile') }}" wire:navigate>
-        <i class="fa-solid fa-circle-user"></i>
-        <span>Profil</span>
-      </a>
-      <form method="POST" action="{{ route('logout') }}" style="flex:1;display:contents;">
-        @csrf
-        <button type="submit" class="mob-nav-btn danger">
-          <i class="fa-solid fa-right-from-bracket"></i>
-          <span>Keluar</span>
-        </button>
-      </form>
+      <button type="button" class="mob-nav-btn" onclick="openSidebar()">
+        <i class="fa-solid fa-bars"></i>
+        <span>Menu</span>
+      </button>
     @else
       {{-- Contingent Nav --}}
       <a class="mob-nav-btn {{ request()->routeIs('contingent.dashboard') ? 'active' : '' }}"
@@ -910,18 +901,10 @@
         <i class="fa-solid fa-ranking-star"></i>
         <span>Klasemen</span>
       </a>
-      <a class="mob-nav-btn {{ request()->routeIs('admin.profile') ? 'active' : '' }}"
-         href="{{ route('admin.profile') }}" wire:navigate>
-        <i class="fa-solid fa-circle-user"></i>
-        <span>Profil</span>
-      </a>
-      <form method="POST" action="{{ route('logout') }}" style="flex:1;display:contents;">
-        @csrf
-        <button type="submit" class="mob-nav-btn danger">
-          <i class="fa-solid fa-right-from-bracket"></i>
-          <span>Keluar</span>
-        </button>
-      </form>
+      <button type="button" class="mob-nav-btn" onclick="openSidebar()">
+        <i class="fa-solid fa-bars"></i>
+        <span>Menu</span>
+      </button>
     @endif
   </nav>
   @endif

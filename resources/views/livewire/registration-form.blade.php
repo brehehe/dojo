@@ -1145,12 +1145,15 @@
                         </div>
                     @endif
 
-                    <div class="flex items-center gap-6 mt-12 pb-20 justify-center">
-                        <button type="submit" class="submit-btn" wire:loading.attr="disabled">
+                    <div class="flex flex-col sm:flex-row items-center gap-4 mt-12 pb-20 justify-center">
+                        <button type="submit" class="submit-btn order-1 sm:order-2" wire:loading.attr="disabled">
                             <span wire:loading.remove>KIRIM PENDAFTARAN FINAL</span>
                             <span wire:loading>MEMPROSES...</span>
                         </button>
-                        <button type="button" wire:click="$refresh" class="btn-remove">Reset Form</button>
+                        <button type="button" wire:click="saveDraft" class="px-6 py-3 border border-[rgba(255,215,0,0.5)] text-[#ffd700] rounded-xl font-bold hover:bg-[rgba(255,215,0,0.1)] transition-all order-2 sm:order-1" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="saveDraft">SIMPAN SEBAGAI DRAFT</span>
+                            <span wire:loading wire:target="saveDraft">MENYIMPAN...</span>
+                        </button>
                     </div>
                 </form>
             </div>

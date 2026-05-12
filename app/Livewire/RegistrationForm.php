@@ -34,6 +34,8 @@ class RegistrationForm extends Component
     public $transfer_proof;
     public $payment_method_detail = null;
     public bool $is_authenticated = false;
+    
+    public $registration_id = null;
 
     // B. OFFICIAL
     public array $officials = [
@@ -125,6 +127,48 @@ class RegistrationForm extends Component
                     ->orderBy('name', 'asc')
                     ->get(['athletes.id', 'athletes.name', 'athletes.nik']);
                 $this->masterOfficials = Official::where('contingent_id', auth()->user()->contingent?->id)->get(['id', 'name']);
+            }
+        }
+
+        if (request()->has('draft_id')) {
+            $this->loadDraft(request()->query('draft_id'));
+        }
+    }
+
+    public function loadDraft($id)
+    {
+        $reg = Registration::find($id);
+        if ($reg && $reg->status === 'draft') {
+            $this->registration_id = $reg->id;
+            $this->unique_code = $reg->unique_code;
+            
+            if ($reg->contingent) {
+                $this->loadContingentData($reg->contingent);
+            }
+            
+            $draft = json_decode($reg->draft_data, true);
+            if ($draft) {
+                // Load contingent fields from draft if available
+                if (isset($draft['contingent_name'])) $this->contingent_name = $draft['contingent_name'];
+                if (isset($draft['contingent_city'])) $this->contingent_city = $draft['contingent_city'];
+                if (isset($draft['leader_name'])) $this->leader_name = $draft['leader_name'];
+                if (isset($draft['leader_phone'])) $this->leader_phone = $draft['leader_phone'];
+                if (isset($draft['leader_email'])) $this->leader_email = $draft['leader_email'];
+                if (isset($draft['address'])) $this->address = $draft['address'];
+
+                if (isset($draft['officials']) && count($draft['officials']) > 0) {
+                    $this->officials = $draft['officials'];
+                }
+                if (isset($draft['athletes']) && count($draft['athletes']) > 0) {
+                    $this->athletes = $draft['athletes'];
+                }
+                if (isset($draft['matchTechniques'])) {
+                    $this->matchTechniques = $draft['matchTechniques'];
+                }
+                if (isset($draft['payment_method'])) {
+                    $this->payment_method = $draft['payment_method'];
+                    $this->getPaymentMethodDetail();
+                }
             }
         }
     }
@@ -657,20 +701,41 @@ class RegistrationForm extends Component
                 $contingent = Contingent::find($contingentId);
             }
 
-            // 4. Create Registration (Formulir) Transactional Data
+            // 4. Create or Update Registration (Formulir) Transactional Data
             $transferPath = $this->transfer_proof ? $this->transfer_proof->store('transfer_proofs', 'public') : null;
 
-            $registration = Registration::create([
-                'contingent_id' => $contingentId,
-                'total_cost' => $this->getTotalProperty(),
-                'final_amount' => $this->getFinalTotalProperty(),
-                'unique_code' => $this->unique_code,
-                'payment_method' => $this->payment_method,
-                'referral_code' => 'KEMPO-' . strtoupper(Str::random(5)),
-                'status' => 'pending',
-                'transfer_proof_path' => $transferPath,
-                'sim_perkemi_confirm' => $this->sim_perkemi_confirm,
-            ]);
+            if ($this->registration_id) {
+                $registration = Registration::find($this->registration_id);
+                $registration->update([
+                    'total_cost' => $this->getTotalProperty(),
+                    'final_amount' => $this->getFinalTotalProperty(),
+                    'payment_method' => $this->payment_method,
+                    'status' => 'pending',
+                    'draft_data' => null, // clear draft data
+                    'sim_perkemi_confirm' => $this->sim_perkemi_confirm,
+                ]);
+                if ($transferPath) {
+                    $registration->update(['transfer_proof_path' => $transferPath]);
+                }
+                
+                // Clear existing relationships before re-attaching
+                $registration->officials()->detach();
+                $registration->athletes()->detach();
+                DB::table('athlete_match_number')->where('registration_id', $registration->id)->delete();
+                
+            } else {
+                $registration = Registration::create([
+                    'contingent_id' => $contingentId,
+                    'total_cost' => $this->getTotalProperty(),
+                    'final_amount' => $this->getFinalTotalProperty(),
+                    'unique_code' => $this->unique_code,
+                    'payment_method' => $this->payment_method,
+                    'referral_code' => 'KEMPO-' . strtoupper(Str::random(5)),
+                    'status' => 'pending',
+                    'transfer_proof_path' => $transferPath,
+                    'sim_perkemi_confirm' => $this->sim_perkemi_confirm,
+                ]);
+            }
 
             $this->referral_code = $registration->referral_code;
 
@@ -777,6 +842,117 @@ class RegistrationForm extends Component
     public function getPaymentMethodDetail()
     {
         $this->payment_method_detail = PaymentMethod::where('bank', $this->payment_method)->first();
+    }
+
+    public function saveDraft()
+    {
+        $this->validate([
+            'contingent_name' => 'required|min:3',
+            'leader_name' => 'required|min:3',
+            'leader_phone' => 'required',
+            'leader_email' => 'required|email',
+        ]);
+
+        DB::transaction(function () {
+            $contingentId = $this->contingent_id;
+
+            if (!$this->is_authenticated) {
+                $tempPassword = Str::random(12);
+                $user = User::create([
+                    'name' => $this->contingent_name,
+                    'email' => $this->leader_email,
+                    'password' => Hash::make($tempPassword),
+                ]);
+                $user->assignRole('Contingent');
+
+                $contingent = Contingent::create([
+                    'user_id' => $user->id,
+                    'name' => $this->contingent_name,
+                    'kab_kota' => $this->contingent_city,
+                    'leader_name' => $this->leader_name,
+                    'leader_phone' => $this->leader_phone,
+                    'email' => $this->leader_email,
+                    'address' => $this->address,
+                ]);
+                $contingentId = $contingent->id;
+                
+                // Automatically login the new user so they can manage their draft
+                auth()->login($user);
+                $this->is_authenticated = true;
+                $this->contingent_id = $contingentId;
+            } else {
+                // Update existing contingent info
+                $contingent = Contingent::find($contingentId);
+                if ($contingent) {
+                    $contingent->update([
+                        'name' => $this->contingent_name,
+                        'kab_kota' => $this->contingent_city,
+                        'leader_name' => $this->leader_name,
+                        'leader_phone' => $this->leader_phone,
+                        'email' => $this->leader_email,
+                        'address' => $this->address,
+                    ]);
+                }
+            }
+
+            // Clean up file uploads from array before JSON encoding
+            $athletesData = $this->athletes;
+            foreach ($athletesData as &$ath) {
+                if (isset($ath['photo']) && is_object($ath['photo'])) {
+                    $ath['photo_path'] = $ath['photo']->store('athlete_photos', 'public');
+                    unset($ath['photo']);
+                }
+                if (isset($ath['bpjs_card']) && is_object($ath['bpjs_card'])) {
+                    $ath['bpjs_card_path'] = $ath['bpjs_card']->store('bpjs_cards', 'public');
+                    unset($ath['bpjs_card']);
+                }
+                if (isset($ath['identity_document']) && is_object($ath['identity_document'])) {
+                    $ath['identity_document_path'] = $ath['identity_document']->store('identity_docs', 'public');
+                    unset($ath['identity_document']);
+                }
+            }
+
+            $draftData = [
+                'contingent_name' => $this->contingent_name,
+                'contingent_city' => $this->contingent_city,
+                'leader_name' => $this->leader_name,
+                'leader_phone' => $this->leader_phone,
+                'leader_email' => $this->leader_email,
+                'address' => $this->address,
+                'officials' => $this->officials,
+                'athletes' => $athletesData,
+                'matchTechniques' => $this->matchTechniques,
+                'payment_method' => $this->payment_method,
+            ];
+
+            if (is_object($this->transfer_proof)) {
+                $draftData['transfer_proof_path'] = $this->transfer_proof->store('transfer_proofs', 'public');
+            }
+
+            if ($this->registration_id) {
+                $reg = Registration::find($this->registration_id);
+                $reg->update([
+                    'draft_data' => json_encode($draftData),
+                    'total_cost' => $this->getTotalProperty(),
+                    'final_amount' => $this->getFinalTotalProperty(),
+                ]);
+                $this->referral_code = $reg->referral_code;
+            } else {
+                $registration = Registration::create([
+                    'contingent_id' => $contingentId,
+                    'total_cost' => $this->getTotalProperty(),
+                    'final_amount' => $this->getFinalTotalProperty(),
+                    'unique_code' => $this->unique_code,
+                    'status' => 'draft',
+                    'draft_data' => json_encode($draftData),
+                ]);
+                $this->registration_id = $registration->id;
+                $this->referral_code = 'DRAFT-' . strtoupper(Str::random(5));
+                $registration->update(['referral_code' => $this->referral_code]);
+            }
+        });
+
+        $this->is_success = true;
     }
 
     public function render()

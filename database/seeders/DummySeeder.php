@@ -189,7 +189,34 @@ class DummySeeder extends Seeder
             ]);
         }
 
-        $this->command->info('✅ Tournament master data (MatchNumbers & WeightGroups) seeded successfully!');
+        // 5. Seed Administrative Roles for testing
+        $adminRoles = [
+            'Pendaftaran',
+            'Pertandingan',
+            'Panitera',
+            'Perwasitan',
+            'Arbitrase',
+            'Koordinator Lapangan',
+            'Wasit',
+        ];
+
+        foreach ($adminRoles as $roleName) {
+            $username = strtolower(str_replace(' ', '', $roleName));
+            $email = $username . '@smart-perkemi.id';
+
+            $user = User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'name' => $roleName . ' User',
+                    'password' => Hash::make($username),
+                ]
+            );
+
+            // Sync role (removes existing roles and assigns this one)
+            $user->syncRoles([$roleName]);
+        }
+
+        $this->command->info('✅ Tournament dummy data & admin roles seeded successfully!');
     }
 
     private function getTournamentData(): array

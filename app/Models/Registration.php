@@ -19,6 +19,7 @@ class Registration extends Model
         'payment_method',
         'referral_code',
         'status',
+        'draft_data',
         'transfer_proof_path',
         'sim_perkemi_confirm',
     ];

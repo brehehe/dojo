@@ -25,8 +25,8 @@ class DatabaseSeeder extends Seeder
             MatchNumberSeeder::class,
             SessionRundownSeeder::class,
             TechniqueSeeder::class,
-            TournamentDummySeeder::class,
-            // DummySeeder::class,
+            // TournamentDummySeeder::class,
+            DummySeeder::class,
             // Embu9ContingentSeeder::class,
         ]);
 

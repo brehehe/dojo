@@ -17,7 +17,7 @@ class KyuLevelSeeder extends Seeder
         DB::table('kyu_levels')->truncate();
 
         $levels = [
-            'Kyu 5', 'Kyu 3', 'Kyu 2', 'Kyu 1',
+            'Kyu 5', 'Kyu 4', 'Kyu 3', 'Kyu 2', 'Kyu 1',
             'Dan 1', 'Dan 2'
         ];
 
