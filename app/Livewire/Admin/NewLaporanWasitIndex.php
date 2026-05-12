@@ -21,13 +21,21 @@ class NewLaporanWasitIndex extends Component
     use HasRefereeAnalysis, WithPagination;
 
     public string $tab = 'skw';
+
     public $search = '';
+
     public $ageGroupFilter = '';
+
     public $matchNumberFilter = '';
+
     public $refereeFilter = '';
+
     public $genderFilter = '';
+
     public $roundFilter = '';
+
     public $courtFilter = '';
+
     public $draftTypeFilter = '';
 
     protected $queryString = [
@@ -47,7 +55,7 @@ class NewLaporanWasitIndex extends Component
         if ($property !== 'tab') {
             $this->resetPage();
         }
-        
+
         // Dispatch event for chart update
         $this->dispatch('refreshChart');
     }
@@ -66,9 +74,9 @@ class NewLaporanWasitIndex extends Component
         ];
 
         $refereeAnalysis = $this->getRefereeAnalysis($filters);
-        
+
         // Data for Chart (Top 10 Referees by SKW)
-        $performanceData = $refereeAnalysis->sortByDesc('skw')->take(10)->values()->map(fn($rf) => [
+        $performanceData = $refereeAnalysis->sortByDesc('skw')->take(10)->values()->map(fn ($rf) => [
             'name' => $rf['name'],
             'skw' => (float) $rf['skw'],
             'iaw' => (float) $rf['iaw'],
@@ -76,13 +84,11 @@ class NewLaporanWasitIndex extends Component
             'iv' => (float) ($rf['iv'] * 100),
         ]);
 
-        $gradeDistribution = collect(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0]);
-        $refereeAnalysis->each(function ($rf) use (&$gradeDistribution) {
-            if ($gradeDistribution->has($rf['grade'])) {
-                $gradeDistribution[$rf['grade']]++;
-            }
-        });
-        $gradeData = $gradeDistribution->map(fn($val, $key) => ['name' => $key, 'value' => $val])->values();
+        $counts = $refereeAnalysis->countBy('grade');
+        $gradeDistribution = collect(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0])
+            ->merge($counts)
+            ->only(['A', 'B', 'C', 'D', 'E']);
+        $gradeData = $gradeDistribution->map(fn ($val, $key) => ['name' => $key, 'value' => $val])->values();
 
         $this->dispatch('refreshChart', [
             'performance' => $performanceData,
@@ -142,6 +148,7 @@ class NewLaporanWasitIndex extends Component
                         $ekspresi += (float) $val;
                     }
                 }
+
                 return (object) [
                     'date' => $item->created_at->format('d/m/Y'),
                     'court' => $item->court_name ?? 'N/A',
@@ -179,7 +186,9 @@ class NewLaporanWasitIndex extends Component
 
         $data = $this->getRefereeAnalysis($filters);
         $type = strtoupper($this->tab);
-        if ($type === 'FULL') $type = 'SKW';
+        if ($type === 'FULL') {
+            $type = 'SKW';
+        }
 
         return Excel::download(
             new RefereeAnalysisExport($data, $type),

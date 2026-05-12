@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contingent;
 
+use App\Exports\RefereeAnalysisExport;
 use App\Models\Court\Court;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.premium')]
 class LaporanWasit extends Component
@@ -20,13 +22,21 @@ class LaporanWasit extends Component
     use HasRefereeAnalysis, WithPagination;
 
     public string $tab = 'skw';
+
     public $search = '';
+
     public $ageGroupFilter = '';
+
     public $matchNumberFilter = '';
+
     public $refereeFilter = '';
+
     public $genderFilter = '';
+
     public $roundFilter = '';
+
     public $courtFilter = '';
+
     public $draftTypeFilter = '';
 
     public $contingent;
@@ -46,7 +56,7 @@ class LaporanWasit extends Component
     public function mount()
     {
         $user = Auth::user();
-        if (!$user->contingent()->exists()) {
+        if (! $user->contingent()->exists()) {
             return redirect()->route('contingent.setup');
         }
         $this->contingent = $user->contingent;
@@ -57,7 +67,7 @@ class LaporanWasit extends Component
         if ($property !== 'tab') {
             $this->resetPage();
         }
-        
+
         $this->dispatch('refreshChart');
     }
 
@@ -76,9 +86,9 @@ class LaporanWasit extends Component
         ];
 
         $refereeAnalysis = $this->getRefereeAnalysis($filters);
-        
+
         // Data for Chart (Top 10 Referees by SKW)
-        $performanceData = $refereeAnalysis->sortByDesc('skw')->take(10)->values()->map(fn($rf) => [
+        $performanceData = $refereeAnalysis->sortByDesc('skw')->take(10)->values()->map(fn ($rf) => [
             'name' => $rf['name'],
             'skw' => (float) $rf['skw'],
             'iaw' => (float) $rf['iaw'],
@@ -86,13 +96,11 @@ class LaporanWasit extends Component
             'iv' => (float) ($rf['iv'] * 100),
         ]);
 
-        $gradeDistribution = collect(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0]);
-        $refereeAnalysis->each(function ($rf) use (&$gradeDistribution) {
-            if ($gradeDistribution->has($rf['grade'])) {
-                $gradeDistribution[$rf['grade']]++;
-            }
-        });
-        $gradeData = $gradeDistribution->map(fn($val, $key) => ['name' => $key, 'value' => $val])->values();
+        $counts = $refereeAnalysis->countBy('grade');
+        $gradeDistribution = collect(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0])
+            ->merge($counts)
+            ->only(['A', 'B', 'C', 'D', 'E']);
+        $gradeData = $gradeDistribution->map(fn ($val, $key) => ['name' => $key, 'value' => $val])->values();
 
         $this->dispatch('refreshChart', [
             'performance' => $performanceData,
@@ -108,7 +116,7 @@ class LaporanWasit extends Component
             ->join('courts', 'drawing_match_numbers.court_id', '=', 'courts.id')
             ->select('referee_score_details.*', 'courts.name as court_name')
             ->where('scorable_type', Registration::class)
-            ->whereHas('scorable', function($q) {
+            ->whereHas('scorable', function ($q) {
                 $q->where('contingent_id', $this->contingent->id);
             })
             ->where('total_calculated_score', '>', 0);
@@ -134,7 +142,7 @@ class LaporanWasit extends Component
             $query->where('drawing_match_numbers.court_id', $this->courtFilter);
         }
         if (! empty($this->draftTypeFilter)) {
-            $query->whereHas('matchNumber', function($q) {
+            $query->whereHas('matchNumber', function ($q) {
                 $q->where('draft_type', $this->draftTypeFilter);
             });
         }
@@ -165,7 +173,7 @@ class LaporanWasit extends Component
             'matchNumbers' => MatchNumber::all(),
             'referees' => Referee::all(),
             'courts' => Court::all(),
-        ])->title('Laporan Penilaian Wasit - ' . $this->contingent->name);
+        ])->title('Laporan Penilaian Wasit - '.$this->contingent->name);
     }
 
     public function exportExcel()
@@ -184,11 +192,13 @@ class LaporanWasit extends Component
 
         $data = $this->getRefereeAnalysis($filters);
         $type = strtoupper($this->tab);
-        if ($type === 'FULL' || $type === 'DETAIL') $type = 'SKW';
+        if ($type === 'FULL' || $type === 'DETAIL') {
+            $type = 'SKW';
+        }
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\RefereeAnalysisExport($data, $type),
-            'Laporan_Wasit_' . str_replace(' ', '_', $this->contingent->name) . '.xlsx'
+        return Excel::download(
+            new RefereeAnalysisExport($data, $type),
+            'Laporan_Wasit_'.str_replace(' ', '_', $this->contingent->name).'.xlsx'
         );
     }
 }

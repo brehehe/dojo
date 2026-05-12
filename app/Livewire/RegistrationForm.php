@@ -65,6 +65,7 @@ class RegistrationForm extends Component
             'address' => '',
             'phone' => '',
             'photo' => null,
+            'existing_photo_path' => null, // Existing DB path; if set, new upload is optional
             'current_weight' => '',
             'weight_group_id' => '',
             'age_group' => '',
@@ -246,6 +247,7 @@ class RegistrationForm extends Component
                 'address' => $ath->address,
                 'phone' => $ath->phone,
                 'photo' => null,
+                'existing_photo_path' => $ath->photo_path, // Keep existing path so re-upload is optional
                 'current_weight' => $ath->pivot->weight,
                 'weight_group_id' => $ath->pivot->weight_group_id,
                 'age_group' => $ath->pivot->age_group,
@@ -262,7 +264,7 @@ class RegistrationForm extends Component
 
             // Map match numbers to event1, event2, event3
             foreach ($matchNumbers as $i => $mn) {
-                $field = 'event' . ($i + 1);
+                $field = 'event'.($i + 1);
                 if ($i < 3) {
                     $athData[$field] = $mn->match_number_id;
                     $this->matchTechniques[$mn->match_number_id] = json_decode($mn->technique_ids, true) ?? [];
@@ -271,44 +273,44 @@ class RegistrationForm extends Component
 
             // Fill empty events
             for ($i = count($matchNumbers); $i < 3; $i++) {
-                $athData['event' . ($i + 1)] = '';
+                $athData['event'.($i + 1)] = '';
             }
 
             return $athData;
         })->toArray();
 
-            if (empty($this->athletes)) {
-                $this->athletes = [
-                    [
-                        'athlete_id' => '',
-                        'nik' => '',
-                        'name' => '',
-                        'gender' => 'Male',
-                        'birth_place' => '',
-                        'blood_type' => '',
-                        'birth_date' => '',
-                        'address' => '',
-                        'phone' => '',
-                        'photo' => null,
-                        'current_weight' => '',
-                        'weight_group_id' => '',
-                        'age_group' => '',
-                        'rank' => 'Kyu 6',
-                        'dojo_origin' => '',
-                        'city' => '',
-                        'bpjs_number' => '',
-                        'bpjs_status' => 'Aktif',
-                        'bpjs_card' => null,
-                        'event1' => '',
-                        'event2' => '',
-                        'event3' => '',
-                        'identity_document' => null,
-                        'is_master_found' => false,
-                        'show_fields' => false,
-                    ],
-                ];
-            }
+        if (empty($this->athletes)) {
+            $this->athletes = [
+                [
+                    'athlete_id' => '',
+                    'nik' => '',
+                    'name' => '',
+                    'gender' => 'Male',
+                    'birth_place' => '',
+                    'blood_type' => '',
+                    'birth_date' => '',
+                    'address' => '',
+                    'phone' => '',
+                    'photo' => null,
+                    'current_weight' => '',
+                    'weight_group_id' => '',
+                    'age_group' => '',
+                    'rank' => 'Kyu 6',
+                    'dojo_origin' => '',
+                    'city' => '',
+                    'bpjs_number' => '',
+                    'bpjs_status' => 'Aktif',
+                    'bpjs_card' => null,
+                    'event1' => '',
+                    'event2' => '',
+                    'event3' => '',
+                    'identity_document' => null,
+                    'is_master_found' => false,
+                    'show_fields' => false,
+                ],
+            ];
         }
+    }
 
     public function loadContingentData($contingent)
     {
@@ -353,8 +355,21 @@ class RegistrationForm extends Component
             'athletes.*.current_weight' => 'required|numeric',
             'athletes.*.weight_group_id' => 'required',
             'athletes.*.bpjs_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'athletes.*.photo' => 'required|image|max:2048',
             'athletes.*.identity_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'athletes.*.existing_photo_path' => 'nullable|string',
+            'athletes.*.photo' => [
+                // Only require a new upload if there is no existing photo stored in the DB
+                function ($attribute, $value, $fail) {
+                    $index = explode('.', $attribute)[1];
+                    $existingPath = $this->athletes[$index]['existing_photo_path'] ?? null;
+                    if (empty($existingPath) && empty($value)) {
+                        $fail('Foto profil wajib diunggah.');
+                    }
+                },
+                'nullable',
+                'image',
+                'max:2048',
+            ],
         ];
     }
 
@@ -587,6 +602,7 @@ class RegistrationForm extends Component
             'address' => '',
             'phone' => '',
             'photo' => null,
+            'existing_photo_path' => null,
             'current_weight' => '',
             'weight_group_id' => '',
             'age_group' => '',
@@ -889,7 +905,7 @@ class RegistrationForm extends Component
 
             if ($this->registration_id) {
                 $registration = Registration::find($this->registration_id);
-                
+
                 if ($registration && $registration->status === 'verified') {
                     throw new \Exception('Data pendaftaran ini sudah tidak dapat diubah karena sudah diverifikasi oleh admin.');
                 }
@@ -1120,7 +1136,7 @@ class RegistrationForm extends Component
                     $ath['identity_document_path'] = $ath['identity_document']->store('identity_docs', 'public');
                     $ath['identity_document'] = null;
                 }
-                
+
                 // Ensure keys exist even if not uploaded now
                 $ath['photo'] = $ath['photo'] ?? null;
                 $ath['bpjs_card'] = $ath['bpjs_card'] ?? null;

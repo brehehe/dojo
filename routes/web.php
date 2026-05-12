@@ -58,6 +58,8 @@ use App\Livewire\Admin\NewLaporanHasilIndex;
 use App\Livewire\Admin\NewLaporanRekapitulasiEmbu;
 use App\Livewire\Admin\NewLaporanRekapitulasiRandori;
 use App\Livewire\Admin\NewLaporanSkorIndex;
+use App\Livewire\Admin\NewLaporanWasitIndex;
+use App\Livewire\Admin\NewLaporanWasitJuriIndex;
 use App\Livewire\Admin\NewMatchNumberIndex;
 use App\Livewire\Admin\NewOfficialForm;
 use App\Livewire\Admin\NewOfficialIndex;
@@ -102,14 +104,15 @@ use App\Livewire\Auth\NewLoginIndex;
 use App\Livewire\Auth\Register;
 use App\Livewire\Contingent\Athletes;
 use App\Livewire\Contingent\Dashboard;
+use App\Livewire\Contingent\LaporanWasit;
 use App\Livewire\Contingent\Officials;
+use App\Livewire\Contingent\RekapPertandingan;
 use App\Livewire\Contingent\Results;
 use App\Livewire\Contingent\Schedule;
 use App\Livewire\Contingent\Setup;
 use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
 use App\Livewire\Referee\RefereeScoringDashboard;
-use App\Livewire\Admin\NewLaporanWasitIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -143,8 +146,8 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/klasemen', Standings::class)->name('contingent.standings');
     Route::get('contingent/athletes', Athletes::class)->name('contingent.athletes');
     Route::get('contingent/officials', Officials::class)->name('contingent.officials');
-    Route::get('contingent/laporan-wasit', \App\Livewire\Contingent\LaporanWasit::class)->name('contingent.laporan-wasit');
-    Route::get('contingent/rekap-pertandingan', \App\Livewire\Contingent\RekapPertandingan::class)->name('contingent.rekap-pertandingan');
+    Route::get('contingent/laporan-wasit', LaporanWasit::class)->name('contingent.laporan-wasit');
+    Route::get('contingent/rekap-pertandingan', RekapPertandingan::class)->name('contingent.rekap-pertandingan');
 
     Route::post('logout', function () {
         Auth::logout();
@@ -273,6 +276,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/new-rekapitulasi-randori', NewLaporanRekapitulasiRandori::class)->name('new-rekapitulasi-randori');
             Route::get('/new-rekapitulasi-embu', NewLaporanRekapitulasiEmbu::class)->name('new-rekapitulasi-embu');
             Route::get('/new-laporan-wasit', NewLaporanWasitIndex::class)->name('new-laporan-wasit');
+            Route::get('/new-laporan-wasit-juri', NewLaporanWasitJuriIndex::class)->name('new-laporan-wasit-juri');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');

@@ -208,6 +208,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-laporan-wasit') }}"><i
                         class="fa-solid fa-gavel"></i> Penilaian Wasit</a>
+                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
+                    href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i
+                        class="fa-solid fa-chart-simple"></i> Analisis Per Juri</a>
             </div>
         </div>
     @endhasanyrole

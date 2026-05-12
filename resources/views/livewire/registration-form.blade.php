@@ -553,14 +553,13 @@
                                         <div
                                             class="relative w-28 h-28 bg-white rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
                                             @if (isset($athlete['photo']) && $athlete['photo'])
+                                                {{-- Newly selected file (Livewire temp upload) --}}
                                                 <img src="{{ $athlete['photo']->temporaryUrl() }}"
-                                                    class="w-[50] h-[50] object-cover">
-                                            @elseif(isset($athlete['athlete_id']) &&
-                                                    is_numeric($athlete['athlete_id']) &&
-                                                    ($master = \App\Models\Athlete::find($athlete['athlete_id'])) &&
-                                                    $master->photo_path)
-                                                <img src="{{ asset('storage/' . $master->photo_path) }}"
-                                                    class="w-[50] h-[50] object-cover">
+                                                    class="w-full h-full object-cover">
+                                            @elseif (!empty($athlete['existing_photo_path']))
+                                                {{-- Existing photo from database --}}
+                                                <img src="{{ asset('storage/' . $athlete['existing_photo_path']) }}"
+                                                    class="w-full h-full object-cover">
                                             @else
                                                 <div class="text-center p-2">
                                                     <i class="fas fa-camera text-slate-300 text-xl block mb-1"></i>
@@ -577,6 +576,12 @@
                                                     class="required">*</span></label>
                                             <p class="text-[15px] text-slate-800 mb-2 font-medium">Unggah pas foto
                                                 formal (Background Merah/Biru) ukuran 3x4. Maksimal 2MB.</p>
+                                            @if (!empty($athlete['existing_photo_path']))
+                                                <p class="text-[13px] text-green-600 font-semibold mb-1">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Foto sudah tersimpan. Upload baru hanya jika ingin mengganti.
+                                                </p>
+                                            @endif
                                             @error('athletes.' . $index . '.photo')
                                                 <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p>
                                             @enderror
