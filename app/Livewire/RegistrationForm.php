@@ -105,6 +105,8 @@ class RegistrationForm extends Component
     // Payment & Pricing
     public string $payment_method = 'Tunai';
 
+    public bool $is_readonly = false;
+
     public int $unique_code = 0;
 
     public string $referral_code = '';
@@ -152,7 +154,16 @@ class RegistrationForm extends Component
     public function loadDraft($id)
     {
         $reg = Registration::find($id);
-        if ($reg && $reg->status === 'draft') {
+
+        if ($reg && $reg->status === 'verified') {
+            $this->is_readonly = true;
+        }
+
+        if ($reg && in_array($reg->status, ['draft', 'pending'])) {
+            $this->is_readonly = false;
+        }
+
+        if ($reg) {
             $this->registration_id = $reg->id;
             $this->unique_code = $reg->unique_code;
 
@@ -195,9 +206,109 @@ class RegistrationForm extends Component
                     $this->payment_method = $draft['payment_method'];
                     $this->getPaymentMethodDetail();
                 }
+            } else {
+                $this->loadDataFromRelationships($reg);
             }
         }
     }
+
+    public function loadDataFromRelationships($reg)
+    {
+        // 1. Load Officials
+        $this->officials = $reg->officials->map(function ($off) {
+            return [
+                'official_id' => $off->id,
+                'name' => $off->name,
+                'role' => $off->pivot->role,
+                'phone' => $off->phone,
+            ];
+        })->toArray();
+
+        if (empty($this->officials)) {
+            $this->officials = [['official_id' => '', 'name' => '', 'role' => '', 'phone' => '']];
+        }
+
+        // 2. Load Athletes & Match Numbers
+        $this->athletes = $reg->athletes->map(function ($ath) use ($reg) {
+            $matchNumbers = DB::table('athlete_match_number')
+                ->where('athlete_id', $ath->id)
+                ->where('registration_id', $reg->id)
+                ->get();
+
+            $athData = [
+                'athlete_id' => $ath->id,
+                'nik' => $ath->nik,
+                'name' => $ath->name,
+                'gender' => $ath->gender,
+                'birth_place' => $ath->birth_place,
+                'blood_type' => $ath->blood_type,
+                'birth_date' => $ath->birth_date,
+                'address' => $ath->address,
+                'phone' => $ath->phone,
+                'photo' => null,
+                'current_weight' => $ath->pivot->weight,
+                'weight_group_id' => $ath->pivot->weight_group_id,
+                'age_group' => $ath->pivot->age_group,
+                'rank' => $ath->pivot->rank,
+                'dojo_origin' => $ath->pivot->dojo_origin,
+                'city' => $ath->pivot->city,
+                'bpjs_number' => $ath->bpjs_number,
+                'bpjs_status' => $ath->bpjs_status,
+                'bpjs_card' => null,
+                'identity_document' => null,
+                'is_master_found' => true,
+                'show_fields' => true,
+            ];
+
+            // Map match numbers to event1, event2, event3
+            foreach ($matchNumbers as $i => $mn) {
+                $field = 'event' . ($i + 1);
+                if ($i < 3) {
+                    $athData[$field] = $mn->match_number_id;
+                    $this->matchTechniques[$mn->match_number_id] = json_decode($mn->technique_ids, true) ?? [];
+                }
+            }
+
+            // Fill empty events
+            for ($i = count($matchNumbers); $i < 3; $i++) {
+                $athData['event' . ($i + 1)] = '';
+            }
+
+            return $athData;
+        })->toArray();
+
+            if (empty($this->athletes)) {
+                $this->athletes = [
+                    [
+                        'athlete_id' => '',
+                        'nik' => '',
+                        'name' => '',
+                        'gender' => 'Male',
+                        'birth_place' => '',
+                        'blood_type' => '',
+                        'birth_date' => '',
+                        'address' => '',
+                        'phone' => '',
+                        'photo' => null,
+                        'current_weight' => '',
+                        'weight_group_id' => '',
+                        'age_group' => '',
+                        'rank' => 'Kyu 6',
+                        'dojo_origin' => '',
+                        'city' => '',
+                        'bpjs_number' => '',
+                        'bpjs_status' => 'Aktif',
+                        'bpjs_card' => null,
+                        'event1' => '',
+                        'event2' => '',
+                        'event3' => '',
+                        'identity_document' => null,
+                        'is_master_found' => false,
+                        'show_fields' => false,
+                    ],
+                ];
+            }
+        }
 
     public function loadContingentData($contingent)
     {
@@ -334,6 +445,7 @@ class RegistrationForm extends Component
                     $this->athletes[$index]['blood_type'] = $athlete->blood_type;
                     $this->athletes[$index]['birth_date'] = Carbon::parse($athlete->birth_date)->format('Y-m-d');
                     $this->athletes[$index]['address'] = $athlete->address;
+                    $this->athletes[$index]['dojo_origin'] = $athlete->dojo_origin;
                     $this->athletes[$index]['phone'] = $athlete->phone;
                     $this->athletes[$index]['bpjs_number'] = $athlete->bpjs_number;
                     $this->athletes[$index]['bpjs_status'] = $athlete->bpjs_status;
@@ -777,12 +889,38 @@ class RegistrationForm extends Component
 
             if ($this->registration_id) {
                 $registration = Registration::find($this->registration_id);
+                
+                if ($registration && $registration->status === 'verified') {
+                    throw new \Exception('Data pendaftaran ini sudah tidak dapat diubah karena sudah diverifikasi oleh admin.');
+                }
+
+                // Clean up file uploads from array before JSON encoding for the final draft state
+                $athletesData = $this->athletes;
+                foreach ($athletesData as &$ath) {
+                    $ath['photo'] = null;
+                    $ath['bpjs_card'] = null;
+                    $ath['identity_document'] = null;
+                }
+
+                $draftData = [
+                    'contingent_name' => $this->contingent_name,
+                    'contingent_city' => $this->contingent_city,
+                    'leader_name' => $this->leader_name,
+                    'leader_phone' => $this->leader_phone,
+                    'leader_email' => $this->leader_email,
+                    'address' => $this->address,
+                    'officials' => $this->officials,
+                    'athletes' => $athletesData,
+                    'matchTechniques' => $this->matchTechniques,
+                    'payment_method' => $this->payment_method,
+                ];
+
                 $registration->update([
                     'total_cost' => $this->getTotalProperty(),
                     'final_amount' => $this->getFinalTotalProperty(),
                     'payment_method' => $this->payment_method,
                     'status' => 'pending',
-                    'draft_data' => null, // clear draft data
+                    'draft_data' => json_encode($draftData),
                     'sim_perkemi_confirm' => $this->sim_perkemi_confirm,
                 ]);
                 if ($transferPath) {
@@ -827,9 +965,9 @@ class RegistrationForm extends Component
 
             // 6. Link Athletes to Registration (Find or Create Master)
             foreach ($this->athletes as $athleteData) {
-                $bpjsPath = $athleteData['bpjs_card'] ? $athleteData['bpjs_card']->store('bpjs_cards', 'public') : null;
-                $identityPath = $athleteData['identity_document'] ? $athleteData['identity_document']->store('identity_docs', 'public') : null;
-                $photoPath = $athleteData['photo'] ? $athleteData['photo']->store('athlete_photos', 'public') : null;
+                $bpjsPath = ($athleteData['bpjs_card'] ?? null) ? $athleteData['bpjs_card']->store('bpjs_cards', 'public') : null;
+                $identityPath = ($athleteData['identity_document'] ?? null) ? $athleteData['identity_document']->store('identity_docs', 'public') : null;
+                $photoPath = ($athleteData['photo'] ?? null) ? $athleteData['photo']->store('athlete_photos', 'public') : null;
 
                 // Create or Update Master Athlete Data
                 $athlete = Athlete::updateOrCreate(
@@ -841,6 +979,7 @@ class RegistrationForm extends Component
                         'blood_type' => $athleteData['blood_type'],
                         'birth_date' => $athleteData['birth_date'],
                         'address' => $athleteData['address'],
+                        'dojo_origin' => $athleteData['dojo_origin'],
                         'phone' => $athleteData['phone'],
                         'bpjs_number' => $athleteData['bpjs_number'],
                         'bpjs_status' => $athleteData['bpjs_status'],
@@ -971,16 +1110,21 @@ class RegistrationForm extends Component
             foreach ($athletesData as &$ath) {
                 if (isset($ath['photo']) && is_object($ath['photo'])) {
                     $ath['photo_path'] = $ath['photo']->store('athlete_photos', 'public');
-                    unset($ath['photo']);
+                    $ath['photo'] = null;
                 }
                 if (isset($ath['bpjs_card']) && is_object($ath['bpjs_card'])) {
                     $ath['bpjs_card_path'] = $ath['bpjs_card']->store('bpjs_cards', 'public');
-                    unset($ath['bpjs_card']);
+                    $ath['bpjs_card'] = null;
                 }
                 if (isset($ath['identity_document']) && is_object($ath['identity_document'])) {
                     $ath['identity_document_path'] = $ath['identity_document']->store('identity_docs', 'public');
-                    unset($ath['identity_document']);
+                    $ath['identity_document'] = null;
                 }
+                
+                // Ensure keys exist even if not uploaded now
+                $ath['photo'] = $ath['photo'] ?? null;
+                $ath['bpjs_card'] = $ath['bpjs_card'] ?? null;
+                $ath['identity_document'] = $ath['identity_document'] ?? null;
             }
 
             $draftData = [
@@ -1002,6 +1146,11 @@ class RegistrationForm extends Component
 
             if ($this->registration_id) {
                 $reg = Registration::find($this->registration_id);
+
+                if ($reg && $reg->status === 'verified') {
+                    throw new \Exception('Data pendaftaran ini sudah tidak dapat diubah karena sudah diverifikasi oleh admin.');
+                }
+
                 $reg->update([
                     'draft_data' => json_encode($draftData),
                     'total_cost' => $this->getTotalProperty(),

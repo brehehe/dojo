@@ -6,12 +6,13 @@ use App\Models\Athlete;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 #[Layout('layouts.premium')]
 class Athletes extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $contingent;
 
@@ -36,14 +37,22 @@ class Athletes extends Component
 
     public $address = '';
 
+    public $dojo_origin = '';
+
+    public $bpjs_number = '';
+
     public $bpjs_status = 'Aktif';
+
+    public $photo = null;
+
+    public $photo_path = null;
 
     public $isEditing = false;
 
     public function mount()
     {
         $user = Auth::user();
-        if (! $user->contingent()->exists()) {
+        if (! $user || ! $user->contingent()->exists()) {
             return redirect()->route('contingent.setup');
         }
         $this->contingent = $user->contingent;
@@ -72,7 +81,10 @@ class Athletes extends Component
         $this->blood_type = $athlete->blood_type;
         $this->phone = $athlete->phone;
         $this->address = $athlete->address;
+        $this->dojo_origin = $athlete->dojo_origin;
+        $this->bpjs_number = $athlete->bpjs_number;
         $this->bpjs_status = $athlete->bpjs_status ?? 'Aktif';
+        $this->photo_path = $athlete->photo_path;
 
         $this->isEditing = true;
     }
@@ -88,7 +100,11 @@ class Athletes extends Component
         $this->blood_type = '-';
         $this->phone = '';
         $this->address = '';
+        $this->dojo_origin = '';
+        $this->bpjs_number = '';
         $this->bpjs_status = 'Aktif';
+        $this->photo = null;
+        $this->photo_path = null;
         $this->isEditing = false;
     }
 
@@ -110,8 +126,14 @@ class Athletes extends Component
             'blood_type' => $this->blood_type,
             'phone' => $this->phone,
             'address' => $this->address,
+            'dojo_origin' => $this->dojo_origin,
+            'bpjs_number' => $this->bpjs_number,
             'bpjs_status' => $this->bpjs_status,
         ];
+
+        if ($this->photo) {
+            $data['photo_path'] = $this->photo->store('athlete_photos', 'public');
+        }
 
         if ($this->athleteId) {
             $athlete = Athlete::findOrFail($this->athleteId);

@@ -232,7 +232,12 @@
         @forelse($athletes as $athlete)
             <div class="ctg-athlete-card">
                 <div class="ctg-athlete-avatar">
-                    <i class="fa-solid fa-user"></i>
+                    @if ($athlete->photo_path)
+                        <img src="{{ asset('storage/' . $athlete->photo_path) }}"
+                            style="width: 100%; height: 100%; object-cover: cover;">
+                    @else
+                        <i class="fa-solid fa-user"></i>
+                    @endif
                 </div>
                 <div class="ctg-athlete-info">
                     <p class="ctg-athlete-name">{{ $athlete->name }}</p>
@@ -241,6 +246,10 @@
                         @if ($athlete->nik)
                             <span>•</span>
                             <span>{{ $athlete->nik }}</span>
+                        @endif
+                        @if ($athlete->dojo_origin)
+                            <span>•</span>
+                            <span><i class="fa-solid fa-house-chimney"></i> {{ $athlete->dojo_origin }}</span>
                         @endif
                     </div>
                 </div>
@@ -275,6 +284,30 @@
         <div class="ctg-overlay" wire:click.self="resetForm">
             <div class="ctg-form-sheet" x-data x-transition>
                 <h3 class="ctg-form-title">{{ $athleteId ? 'Edit Data Atlet' : 'Tambah Atlet Baru' }}</h3>
+
+                <div class="ctg-form-group" style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                    <div
+                        style="width: 80px; height: 80px; border-radius: 16px; background: var(--paper); border: 2px dashed var(--paper2); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                        @if ($photo)
+                            <img src="{{ $photo->temporaryUrl() }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        @elseif($photo_path)
+                            <img src="{{ asset('storage/' . $photo_path) }}"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                        @else
+                            <i class="fa-solid fa-camera" style="color: var(--smoke); font-size: 24px;"></i>
+                        @endif
+                        <input type="file" wire:model="photo"
+                            style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="ctg-form-label">Foto Profil (3x4)</label>
+                        <p style="font-size: 11px; color: var(--smoke); margin: 0;">Upload pas foto formal. Maks 2MB.
+                        </p>
+                        @error('photo')
+                            <span style="font-size:10px; color:var(--red);">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
 
                 <div class="ctg-form-group">
                     <label class="ctg-form-label">Nama Lengkap</label>
@@ -314,6 +347,11 @@
                 </div>
 
                 <div class="ctg-form-group">
+                    <label class="ctg-form-label">Asal Dojo</label>
+                    <input type="text" wire:model="dojo_origin" class="ctg-form-input" placeholder="Nama dojo/klub">
+                </div>
+
+                <div class="ctg-form-group">
                     <label class="ctg-form-label">Tempat Lahir</label>
                     <input type="text" wire:model="birth_place" class="ctg-form-input" placeholder="Kota kelahiran">
                 </div>
@@ -325,6 +363,17 @@
                         @error('birth_date')
                             <span style="font-size:10px; color:var(--red);">{{ $message }}</span>
                         @enderror
+                    </div>
+                    <div class="ctg-form-group">
+                        <label class="ctg-form-label">Nomor HP</label>
+                        <input type="text" wire:model="phone" class="ctg-form-input" placeholder="0812...">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="ctg-form-group">
+                        <label class="ctg-form-label">Nomor BPJS</label>
+                        <input type="text" wire:model="bpjs_number" class="ctg-form-input" placeholder="11 digit">
                     </div>
                     <div class="ctg-form-group">
                         <label class="ctg-form-label">Status BPJS</label>

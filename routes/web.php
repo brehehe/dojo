@@ -109,6 +109,7 @@ use App\Livewire\Contingent\Setup;
 use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
 use App\Livewire\Referee\RefereeScoringDashboard;
+use App\Livewire\Admin\NewLaporanWasitIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -142,6 +143,8 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/klasemen', Standings::class)->name('contingent.standings');
     Route::get('contingent/athletes', Athletes::class)->name('contingent.athletes');
     Route::get('contingent/officials', Officials::class)->name('contingent.officials');
+    Route::get('contingent/laporan-wasit', \App\Livewire\Contingent\LaporanWasit::class)->name('contingent.laporan-wasit');
+    Route::get('contingent/rekap-pertandingan', \App\Livewire\Contingent\RekapPertandingan::class)->name('contingent.rekap-pertandingan');
 
     Route::post('logout', function () {
         Auth::logout();
@@ -269,6 +272,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/new-laporan-skor', NewLaporanSkorIndex::class)->name('new-laporan-skor');
             Route::get('/new-rekapitulasi-randori', NewLaporanRekapitulasiRandori::class)->name('new-rekapitulasi-randori');
             Route::get('/new-rekapitulasi-embu', NewLaporanRekapitulasiEmbu::class)->name('new-rekapitulasi-embu');
+            Route::get('/new-laporan-wasit', NewLaporanWasitIndex::class)->name('new-laporan-wasit');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');

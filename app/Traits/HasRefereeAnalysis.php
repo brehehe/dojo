@@ -49,11 +49,21 @@ trait HasRefereeAnalysis
         }
 
         if (! empty($filters['roundFilter'])) {
-            $query->where('drawing_match_numbers.round_name', $filters['roundFilter']);
+            $query->where('drawing_match_numbers.round', $filters['roundFilter']);
         }
 
         if (! empty($filters['courtFilter'])) {
             $query->where('drawing_match_numbers.court_id', $filters['courtFilter']);
+        }
+
+        if (! empty($filters['draftTypeFilter'])) {
+            $query->where('match_numbers.draft_type', $filters['draftTypeFilter']);
+        }
+
+        if (! empty($filters['contingentId'])) {
+            $query->whereHas('scorable', function ($q) use ($filters) {
+                $q->where('contingent_id', $filters['contingentId']);
+            });
         }
 
         $details = $query->get();

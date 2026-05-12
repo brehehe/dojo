@@ -205,6 +205,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-randori') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-rekapitulasi-randori') }}"><i
                         class="fa-solid fa-fist-raised"></i> Rekap Randori</a>
+                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit') ? 'active' : '' }}"
+                    href="{{ route('admin.arbitrase.new-laporan-wasit') }}"><i
+                        class="fa-solid fa-gavel"></i> Penilaian Wasit</a>
             </div>
         </div>
     @endhasanyrole
@@ -224,6 +227,11 @@
                 href="{{ route('contingent.athletes') }}"><i class="fa-solid fa-users"></i> Atlet</a>
             <a class="nav-item {{ request()->routeIs('contingent.officials') ? 'active' : '' }}"
                 href="{{ route('contingent.officials') }}"><i class="fa-solid fa-user-tie"></i> Official</a>
+            <div class="nav-section">Laporan</div>
+            <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
+                href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan Wasit</a>
+            <a class="nav-item {{ request()->routeIs('contingent.rekap-pertandingan') ? 'active' : '' }}"
+                href="{{ route('contingent.rekap-pertandingan') }}"><i class="fa-solid fa-file-invoice"></i> Rekap Embu & Randori</a>
         @else
             <div x-data="{ open: @json(request()->routeIs('contingent.*')) }">
                 <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
@@ -243,6 +251,10 @@
                         href="{{ route('contingent.athletes') }}"><i class="fa-solid fa-users"></i> Atlet</a>
                     <a class="nav-item {{ request()->routeIs('contingent.officials') ? 'active' : '' }}"
                         href="{{ route('contingent.officials') }}"><i class="fa-solid fa-user-tie"></i> Official</a>
+                    <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
+                        href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan Wasit</a>
+                    <a class="nav-item {{ request()->routeIs('contingent.rekap-pertandingan') ? 'active' : '' }}"
+                        href="{{ route('contingent.rekap-pertandingan') }}"><i class="fa-solid fa-file-invoice"></i> Rekap Embu & Randori</a>
                 </div>
             </div>
         @endif

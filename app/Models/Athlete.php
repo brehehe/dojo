@@ -24,6 +24,7 @@ class Athlete extends Model
         'blood_type',
         'birth_date',
         'address',
+        'dojo_origin',
         'phone',
         'photo_path',
         'bpjs_number',

@@ -368,7 +368,22 @@
                     Surabaya, 14-16 Juni 2026 - Stadion Indoor Gelora Bung Tomo</div>
             </div>
 
+            @if ($is_readonly)
+                <div class="bg-amber-50 border-2 border-amber-200 p-6 rounded-[24px] mb-8 flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 bg-amber-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-100">
+                        <i class="fas fa-lock text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-amber-900 uppercase tracking-wider text-sm mb-1">Mode Lihat Saja</h4>
+                        <p class="text-amber-800 text-sm font-medium">Pendaftaran ini sudah diverifikasi oleh Admin. Data
+                            tidak dapat diubah kembali.</p>
+                    </div>
+                </div>
+            @endif
+
             <form wire:submit.prevent="submit">
+                <fieldset {{ $is_readonly ? 'disabled' : '' }} class="contents">
                 <!-- ==================== DATA KONTINGEN ==================== -->
                 <div class="section">
                     <div class="section-title">A. DATA KONTINGEN
@@ -537,7 +552,7 @@
                                         class="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 flex flex-col md:flex-row items-center gap-6">
                                         <div
                                             class="relative w-28 h-28 bg-white rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
-                                            @if ($athlete['photo'])
+                                            @if (isset($athlete['photo']) && $athlete['photo'])
                                                 <img src="{{ $athlete['photo']->temporaryUrl() }}"
                                                     class="w-[50] h-[50] object-cover">
                                             @elseif(isset($athlete['athlete_id']) &&
@@ -762,7 +777,8 @@
                                         <label class="!text-orange-600">NOMOR PERTANDINGAN (MAKS 3)</label>
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                                             @foreach (['event1', 'event2', 'event3'] as $evField)
-                                                <div class="flex flex-col gap-2" wire:key="athlete-{{ $index }}-{{ $evField }}">
+                                                <div class="flex flex-col gap-2"
+                                                    wire:key="athlete-{{ $index }}-{{ $evField }}">
                                                     <select
                                                         wire:key="select-athlete-{{ $index }}-{{ $evField }}"
                                                         wire:model.live="athletes.{{ $index }}.{{ $evField }}"
@@ -775,7 +791,7 @@
                                                                 $lowerName = strtolower($opt->name);
                                                                 $lowerGender = strtolower($opt->gender_indo);
                                                                 $showGender = !str_contains($lowerName, $lowerGender);
-                                                                
+
                                                                 if ($showGender && $opt->gender === 'Male') {
                                                                     $showGender = !str_contains($lowerName, 'putra');
                                                                 }
@@ -783,8 +799,9 @@
                                                                     $showGender = !str_contains($lowerName, 'putri');
                                                                 }
                                                             @endphp
-                                                            <option value="{{ $opt->id }}" wire:key="opt-{{ $opt->id }}">
-                                                                {{ $opt->name }}{{ $showGender ? " ({$opt->gender_indo})" : "" }}
+                                                            <option value="{{ $opt->id }}"
+                                                                wire:key="opt-{{ $opt->id }}">
+                                                                {{ $opt->name }}{{ $showGender ? " ({$opt->gender_indo})" : '' }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -1151,8 +1168,8 @@
                                 @endif
 
                                 <div class="form-group">
-                                    <label class="block text-[15px] font-bold text-black mb-2">Upload Bukti Transfer <span
-                                            class="required">*</span></label>
+                                    <label class="block text-[15px] font-bold text-black mb-2">Upload Bukti
+                                        Transfer</label>
                                     <div class="relative">
                                         <input type="file" wire:model="transfer_proof"
                                             class="form-input-custom border-dashed border-2">
@@ -1198,18 +1215,29 @@
                         </div>
                     @endif
 
-                    <div class="flex flex-col sm:flex-row items-center gap-4 mt-12 pb-20 justify-center">
-                        <button type="submit" class="submit-btn order-1 sm:order-2" wire:loading.attr="disabled">
-                            <span wire:loading.remove>KIRIM PENDAFTARAN FINAL</span>
-                            <span wire:loading>MEMPROSES...</span>
-                        </button>
-                        <button type="button" wire:click="saveDraft"
+                    </fieldset>
+
+                    @if (!$is_readonly)
+                        <div class="flex flex-col sm:flex-row items-center gap-4 mt-12 pb-20 justify-center">
+                            <button type="submit" class="submit-btn order-1 sm:order-2" wire:loading.attr="disabled">
+                                <span wire:loading.remove>Simpan Registrasi</span>
+                                <span wire:loading>MEMPROSES...</span>
+                            </button>
+                            {{-- <button type="button" wire:click="saveDraft"
                             class="px-6 py-3 border border-[rgba(255,215,0,0.5)] text-[#ffd700] rounded-xl font-bold hover:bg-[rgba(255,215,0,0.1)] transition-all order-2 sm:order-1"
                             wire:loading.attr="disabled">
                             <span wire:loading.remove wire:target="saveDraft">SIMPAN SEBAGAI DRAFT</span>
                             <span wire:loading wire:target="saveDraft">MENYIMPAN...</span>
-                        </button>
-                    </div>
+                        </button> --}}
+                        </div>
+                    @else
+                        <div class="mt-12 pb-20 text-center">
+                            <a href="{{ route('contingent.dashboard') }}"
+                                class="inline-flex items-center gap-2 px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+                                <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
+                            </a>
+                        </div>
+                    @endif
                 </form>
             </div>
         @endif

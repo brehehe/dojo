@@ -97,9 +97,12 @@
 
     {{-- ── FILTERS ── --}}
     <div class="res-filters">
-        <button wire:click=\"$set('filterType', 'all')\" class="res-filter-btn {{ $filterType === 'all' ? 'active' : '' }}">Semua</button>
-        <button wire:click=\"$set('filterType', 'embu')\" class="res-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
-        <button wire:click=\"$set('filterType', 'randori')\" class="res-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
+        <button wire:click="$set('filterType', 'all')"
+            class="res-filter-btn {{ $filterType === 'all' ? 'active' : '' }}">Semua</button>
+        <button wire:click="$set('filterType', 'embu')"
+            class="res-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
+        <button wire:click="$set('filterType', 'randori')"
+            class="res-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
     </div>
 
     <div class="res-container">

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Admin\SmartWasit;
+namespace App\Livewire\Admin;
 
 use App\Exports\RefereeAnalysisExport;
 use App\Models\Court\Court;
@@ -16,25 +16,19 @@ use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.premium')]
-class NewLaporanSmartWasitSummaryIndex extends Component
+class NewLaporanWasitIndex extends Component
 {
     use HasRefereeAnalysis, WithPagination;
 
     public string $tab = 'skw';
-
     public $search = '';
-
     public $ageGroupFilter = '';
-
     public $matchNumberFilter = '';
-
     public $refereeFilter = '';
-
     public $genderFilter = '';
-
     public $roundFilter = '';
-
     public $courtFilter = '';
+    public $draftTypeFilter = '';
 
     protected $queryString = [
         'tab' => ['except' => 'skw'],
@@ -45,7 +39,18 @@ class NewLaporanSmartWasitSummaryIndex extends Component
         'genderFilter' => ['except' => ''],
         'roundFilter' => ['except' => ''],
         'courtFilter' => ['except' => ''],
+        'draftTypeFilter' => ['except' => ''],
     ];
+
+    public function updated($property)
+    {
+        if ($property !== 'tab') {
+            $this->resetPage();
+        }
+        
+        // Dispatch event for chart update
+        $this->dispatch('refreshChart');
+    }
 
     public function render()
     {
@@ -57,9 +62,32 @@ class NewLaporanSmartWasitSummaryIndex extends Component
             'genderFilter' => $this->genderFilter,
             'roundFilter' => $this->roundFilter,
             'courtFilter' => $this->courtFilter,
+            'draftTypeFilter' => $this->draftTypeFilter,
         ];
 
         $refereeAnalysis = $this->getRefereeAnalysis($filters);
+        
+        // Data for Chart (Top 10 Referees by SKW)
+        $performanceData = $refereeAnalysis->sortByDesc('skw')->take(10)->values()->map(fn($rf) => [
+            'name' => $rf['name'],
+            'skw' => (float) $rf['skw'],
+            'iaw' => (float) $rf['iaw'],
+            'ik' => (float) ($rf['ik'] * 100),
+            'iv' => (float) ($rf['iv'] * 100),
+        ]);
+
+        $gradeDistribution = collect(['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'E' => 0]);
+        $refereeAnalysis->each(function ($rf) use (&$gradeDistribution) {
+            if ($gradeDistribution->has($rf['grade'])) {
+                $gradeDistribution[$rf['grade']]++;
+            }
+        });
+        $gradeData = $gradeDistribution->map(fn($val, $key) => ['name' => $key, 'value' => $val])->values();
+
+        $this->dispatch('refreshChart', [
+            'performance' => $performanceData,
+            'grades' => $gradeData,
+        ]);
 
         // Get detailed log for the bottom section
         $query = RefereeScoreDetail::with(['referee', 'scorable.contingent'])
@@ -72,37 +100,31 @@ class NewLaporanSmartWasitSummaryIndex extends Component
             ->where('scorable_type', Registration::class)
             ->where('total_calculated_score', '>', 0);
 
-        // Apply filters to log query as well
+        // Apply filters to log query
         if (! empty($this->search)) {
             $query->whereHas('scorable.athletes', function ($q) {
                 $q->where('name', 'ilike', '%'.$this->search.'%');
             });
         }
-
         if (! empty($this->ageGroupFilter)) {
             $query->whereHas('matchNumber', function ($q) {
                 $q->where('age_group_id', $this->ageGroupFilter);
             });
         }
-
         if (! empty($this->matchNumberFilter)) {
             $query->where('referee_score_details.match_number_id', $this->matchNumberFilter);
         }
-
         if (! empty($this->refereeFilter)) {
             $query->where('referee_id', $this->refereeFilter);
         }
-
         if (! empty($this->genderFilter)) {
             $query->whereHas('matchNumber', function ($q) {
                 $q->where('gender', $this->genderFilter);
             });
         }
-
         if (! empty($this->roundFilter)) {
             $query->where('drawing_match_numbers.round', $this->roundFilter);
         }
-
         if (! empty($this->courtFilter)) {
             $query->where('drawing_match_numbers.court_id', $this->courtFilter);
         }
@@ -113,7 +135,6 @@ class NewLaporanSmartWasitSummaryIndex extends Component
                 $details = $item->details ?? [];
                 $teknik = 0;
                 $ekspresi = 0;
-
                 foreach ($details as $key => $val) {
                     if (str_starts_with($key, 'goho_') || str_starts_with($key, 'juho_')) {
                         $teknik += (float) $val;
@@ -121,7 +142,6 @@ class NewLaporanSmartWasitSummaryIndex extends Component
                         $ekspresi += (float) $val;
                     }
                 }
-
                 return (object) [
                     'date' => $item->created_at->format('d/m/Y'),
                     'court' => $item->court_name ?? 'N/A',
@@ -133,14 +153,15 @@ class NewLaporanSmartWasitSummaryIndex extends Component
                 ];
             });
 
-        return view('livewire.admin.smart-wasit.new-laporan-smart-wasit-summary-index', [
+        return view('livewire.admin.new-laporan-wasit-index', [
             'refereeAnalysis' => $refereeAnalysis,
             'assessments' => $assessments,
+            'chartData' => $performanceData,
             'ageGroups' => AgeGroup::all(),
             'matchNumbers' => MatchNumber::all(),
             'referees' => Referee::all(),
             'courts' => Court::all(),
-        ])->title('Laporan Smart Wasit');
+        ])->title('Laporan Penilaian Wasit');
     }
 
     public function exportExcel()
@@ -153,18 +174,16 @@ class NewLaporanSmartWasitSummaryIndex extends Component
             'genderFilter' => $this->genderFilter,
             'roundFilter' => $this->roundFilter,
             'courtFilter' => $this->courtFilter,
+            'draftTypeFilter' => $this->draftTypeFilter,
         ];
 
         $data = $this->getRefereeAnalysis($filters);
         $type = strtoupper($this->tab);
-
-        if ($type === 'FULL') {
-            $type = 'SKW';
-        }
+        if ($type === 'FULL') $type = 'SKW';
 
         return Excel::download(
             new RefereeAnalysisExport($data, $type),
-            'Laporan_Smart_Wasit_'.$type.'_'.now()->format('Ymd_His').'.xlsx'
+            'Laporan_Penilaian_Wasit_'.$type.'_'.now()->format('Ymd_His').'.xlsx'
         );
     }
 }
