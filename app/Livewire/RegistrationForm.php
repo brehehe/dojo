@@ -15,6 +15,7 @@ use App\Models\Registration;
 use App\Models\Technique\Technique;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -120,6 +121,10 @@ class RegistrationForm extends Component
 
     public function mount()
     {
+        if (! Auth::check()) {
+            return redirect()->route('new-login');
+        }
+
         $this->unique_code = rand(100, 999);
         $this->kyuLevels = KyuLevel::orderBy('order', 'asc')->get();
         $this->weightGroups = WeightGroup::orderBy('order', 'asc')->get();

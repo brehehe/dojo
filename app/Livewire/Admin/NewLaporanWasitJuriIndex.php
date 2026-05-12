@@ -146,7 +146,7 @@ class NewLaporanWasitJuriIndex extends Component
             'chartData' => $chartData,
             'ageGroups' => AgeGroup::all(),
             'matchNumbers' => MatchNumber::where('draft_type', 'embu')->get(),
-            'referees' => Referee::orderBy('name')->get(),
+            'referees' => Referee::with('user')->join('users', 'referees.user_id', '=', 'users.id')->orderBy('users.name')->select('referees.*')->get(),
             'courts' => Court::orderBy('order')->get(),
             'pools' => Pool::orderBy('name')->get(),
             'rundowns' => Rundown::orderBy('order')->get(),
