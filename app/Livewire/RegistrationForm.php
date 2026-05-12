@@ -687,6 +687,8 @@ class RegistrationForm extends Component
                         $summary[$gender][$ageGroupName][$mId]['athletes'][] = [
                             'name' => $athlete['name'],
                             'rank' => $athlete['rank'] ?? 'N/A',
+                            'weight' => $athlete['current_weight'] ?? '-',
+                            'weight_group' => $this->weightGroups->firstWhere('id', $athlete['weight_group_id'])?->name ?? '-',
                         ];
                     }
                 }

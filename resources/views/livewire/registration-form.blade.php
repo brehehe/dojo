@@ -976,10 +976,18 @@
                                                                             <th
                                                                                 class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
                                                                                 Tingkat (Rank)</th>
-                                                                            @if($this->isEmbu($mId))
-                                                                            <th
-                                                                                class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
-                                                                                Urutan Komposisi yang Dimainkan :</th>
+                                                                            @if ($data['draft_type'] === 'embu')
+                                                                                <th
+                                                                                    class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
+                                                                                    Urutan Komposisi yang Dimainkan :
+                                                                                </th>
+                                                                            @else
+                                                                                <th
+                                                                                    class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
+                                                                                    Berat Badan</th>
+                                                                                <th
+                                                                                    class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
+                                                                                    Kelompok Berat</th>
                                                                             @endif
                                                                         </tr>
                                                                     </thead>
@@ -1001,28 +1009,35 @@
                                                                                         {{ $ath['rank'] }}
                                                                                     </span>
                                                                                 </td>
-                                                                                @if($this->isEmbu($mId))
-                                                                                <td class="px-6 py-4">
-                                                                                    @if ($loop->first)
-                                                                                        @forelse($data['techniques'] as $tIdx => $tName)
-                                                                                            <div
-                                                                                                class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 mb-2">
+                                                                                @if ($data['draft_type'] === 'embu')
+                                                                                    <td class="px-6 py-4">
+                                                                                        @if ($loop->first)
+                                                                                            @forelse($data['techniques'] as $tIdx => $tName)
+                                                                                                <div
+                                                                                                    class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 mb-2">
+                                                                                                    <span
+                                                                                                        class="text-[15px] font-black text-indigo-400">{{ $tIdx + 1 }}</span>
+                                                                                                    <span
+                                                                                                        class="text-[15px] font-black text-indigo-700 uppercase tracking-tight whitespace-nowrap">{{ $tName }}</span>
+                                                                                                </div>
+                                                                                            @empty
                                                                                                 <span
-                                                                                                    class="text-[15px] font-black text-indigo-400">{{ $tIdx + 1 }}</span>
-                                                                                                <span
-                                                                                                    class="text-[15px] font-black text-indigo-700 uppercase tracking-tight whitespace-nowrap">{{ $tName }}</span>
-                                                                                            </div>
-                                                                                        @empty
+                                                                                                    class="text-[15px] text-slate-300 font-bold uppercase italic tracking-widest">Belum
+                                                                                                    ada teknik</span>
+                                                                                            @endforelse
+                                                                                        @else
                                                                                             <span
-                                                                                                class="text-[15px] text-slate-300 font-bold uppercase italic tracking-widest">Belum
-                                                                                                ada teknik</span>
-                                                                                        @endforelse
-                                                                                    @else
-                                                                                        <span
-                                                                                            class="text-[15px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama
-                                                                                            seperti di atas)</span>
-                                                                                    @endif
-                                                                                </td>
+                                                                                                class="text-[15px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama
+                                                                                                seperti di atas)</span>
+                                                                                        @endif
+                                                                                    </td>
+                                                                                @else
+                                                                                    <td class="px-6 py-4">
+                                                                                        {{ $ath['weight'] }} KG
+                                                                                    </td>
+                                                                                    <td class="px-6 py-4">
+                                                                                        {{ $ath['weight_group'] }}
+                                                                                    </td>
                                                                                 @endif
                                                                             </tr>
                                                                         @endforeach
