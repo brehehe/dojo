@@ -12,6 +12,7 @@ use App\Models\MatchNumber\MatchNumber;
 use App\Models\Official;
 use App\Models\PaymentMethod\PaymentMethod;
 use App\Models\Registration;
+use App\Models\Technique\Technique;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,16 +26,25 @@ class RegistrationForm extends Component
     use WithFileUploads;
 
     public string $contingent_id = '';
+
     public string $contingent_city = '';
+
     public string $contingent_name = '';
+
     public string $leader_name = '';
+
     public $leader_phone;
+
     public $leader_email;
+
     public $address;
+
     public $transfer_proof;
+
     public $payment_method_detail = null;
+
     public bool $is_authenticated = false;
-    
+
     public $registration_id = null;
 
     // B. OFFICIAL
@@ -69,21 +79,25 @@ class RegistrationForm extends Component
             'event3' => '',
             'identity_document' => null,
             'is_master_found' => false,
-            'show_fields' => false
+            'show_fields' => false,
         ],
     ];
 
     public array $matchTechniques = [];
 
     public $weightGroups;
+
     public $masterAthletes;
+
     public $masterOfficials;
+
     public $ageGroups;
 
     // D. PERNYATAAN
     public string $sim_perkemi_confirm = 'Ya';
 
     public $kyuLevels;
+
     public $techniques;
 
     public bool $is_success = false;
@@ -107,7 +121,7 @@ class RegistrationForm extends Component
         $this->kyuLevels = KyuLevel::orderBy('order', 'asc')->get();
         $this->weightGroups = WeightGroup::orderBy('order', 'asc')->get();
         $this->ageGroups = AgeGroup::orderBy('order', 'asc')->get();
-        $this->techniques = \App\Models\Technique\Technique::orderBy('order', 'asc')->get();
+        $this->techniques = Technique::orderBy('order', 'asc')->get();
 
         // Set default age_group for first athlete
         if ($this->ageGroups->isNotEmpty()) {
@@ -141,20 +155,32 @@ class RegistrationForm extends Component
         if ($reg && $reg->status === 'draft') {
             $this->registration_id = $reg->id;
             $this->unique_code = $reg->unique_code;
-            
+
             if ($reg->contingent) {
                 $this->loadContingentData($reg->contingent);
             }
-            
+
             $draft = json_decode($reg->draft_data, true);
             if ($draft) {
                 // Load contingent fields from draft if available
-                if (isset($draft['contingent_name'])) $this->contingent_name = $draft['contingent_name'];
-                if (isset($draft['contingent_city'])) $this->contingent_city = $draft['contingent_city'];
-                if (isset($draft['leader_name'])) $this->leader_name = $draft['leader_name'];
-                if (isset($draft['leader_phone'])) $this->leader_phone = $draft['leader_phone'];
-                if (isset($draft['leader_email'])) $this->leader_email = $draft['leader_email'];
-                if (isset($draft['address'])) $this->address = $draft['address'];
+                if (isset($draft['contingent_name'])) {
+                    $this->contingent_name = $draft['contingent_name'];
+                }
+                if (isset($draft['contingent_city'])) {
+                    $this->contingent_city = $draft['contingent_city'];
+                }
+                if (isset($draft['leader_name'])) {
+                    $this->leader_name = $draft['leader_name'];
+                }
+                if (isset($draft['leader_phone'])) {
+                    $this->leader_phone = $draft['leader_phone'];
+                }
+                if (isset($draft['leader_email'])) {
+                    $this->leader_email = $draft['leader_email'];
+                }
+                if (isset($draft['address'])) {
+                    $this->address = $draft['address'];
+                }
 
                 if (isset($draft['officials']) && count($draft['officials']) > 0) {
                     $this->officials = $draft['officials'];
@@ -233,13 +259,13 @@ class RegistrationForm extends Component
         ];
 
         foreach ($this->officials as $index => $official) {
-            $prefix = 'Official #' . ($index + 1);
+            $prefix = 'Official #'.($index + 1);
             $attributes["officials.{$index}.name"] = "{$prefix} Nama";
             $attributes["officials.{$index}.role"] = "{$prefix} Jabatan";
         }
 
         foreach ($this->athletes as $index => $athlete) {
-            $prefix = 'Atlet #' . ($index + 1);
+            $prefix = 'Atlet #'.($index + 1);
             $attributes["athletes.{$index}.name"] = "{$prefix} Nama Lengkap";
             $attributes["athletes.{$index}.nik"] = "{$prefix} NIK";
             $attributes["athletes.{$index}.age_group"] = "{$prefix} Kelompok Usia";
@@ -265,10 +291,11 @@ class RegistrationForm extends Component
                 $this->officials[$index]['role'] = '';
                 $this->officials[$index]['name'] = '';
                 $this->officials[$index]['phone'] = '';
+
                 return;
             }
 
-            if (!empty($officialId)) {
+            if (! empty($officialId)) {
                 $official = Official::find($officialId);
                 if ($official) {
                     $this->officials[$index]['official_id'] = $official->id;
@@ -293,10 +320,11 @@ class RegistrationForm extends Component
                 $this->athletes[$index]['show_fields'] = true;
                 $this->athletes[$index]['nik'] = '';
                 $this->athletes[$index]['name'] = '';
+
                 return;
             }
 
-            if (!empty($athleteId)) {
+            if (! empty($athleteId)) {
                 $athlete = Athlete::find($athleteId);
                 if ($athlete) {
                     $this->athletes[$index]['nik'] = $athlete->nik;
@@ -317,7 +345,7 @@ class RegistrationForm extends Component
 
         // 2. Check if an event category was updated
         if (str_contains($key, 'event1') || str_contains($key, 'event2') || str_contains($key, 'event3')) {
-            if ($value && !isset($this->matchTechniques[$value])) {
+            if ($value && ! isset($this->matchTechniques[$value])) {
                 $this->matchTechniques[$value] = [];
             }
         }
@@ -325,27 +353,30 @@ class RegistrationForm extends Component
 
     public function addTechniqueToMatch($matchId, $techniqueValue)
     {
-        if (empty($matchId) || empty($techniqueValue))
+        if (empty($matchId) || empty($techniqueValue)) {
             return;
+        }
 
         $technique = null;
 
         // Check if $techniqueValue is an ID or a new name
         if (is_numeric($techniqueValue)) {
-            $technique = \App\Models\Technique\Technique::find($techniqueValue);
+            $technique = Technique::find($techniqueValue);
         } else {
             // It's a new name, create it
-            $technique = \App\Models\Technique\Technique::firstOrCreate(
+            $technique = Technique::firstOrCreate(
                 ['name' => $techniqueValue],
-                ['order' => \App\Models\Technique\Technique::max('order') + 1]
+                ['order' => Technique::max('order') + 1]
             );
             // Refresh the techniques list for the select
-            $this->techniques = \App\Models\Technique\Technique::orderBy('order', 'asc')->get();
+            $this->techniques = Technique::orderBy('order', 'asc')->get();
         }
 
-        if (!$technique) return;
+        if (! $technique) {
+            return;
+        }
 
-        if (!isset($this->matchTechniques[$matchId])) {
+        if (! isset($this->matchTechniques[$matchId])) {
             $this->matchTechniques[$matchId] = [];
         }
 
@@ -367,16 +398,17 @@ class RegistrationForm extends Component
 
     public function getMatchLeaderInfo($matchId)
     {
-        if (empty($matchId))
+        if (empty($matchId)) {
             return null;
+        }
 
         foreach ($this->athletes as $index => $athlete) {
             foreach (['event1', 'event2', 'event3'] as $fld) {
                 if ($athlete[$fld] == $matchId) {
                     return [
                         'athlete_index' => $index,
-                        'athlete_name' => $athlete['name'] ?: "Atlet #" . ($index + 1),
-                        'field' => $fld
+                        'athlete_name' => $athlete['name'] ?: 'Atlet #'.($index + 1),
+                        'field' => $fld,
                     ];
                 }
             }
@@ -391,6 +423,7 @@ class RegistrationForm extends Component
 
         if (strlen($nik) < 16) {
             $this->addError("athletes.{$index}.nik", 'NIK harus 16 digit.');
+
             return;
         }
 
@@ -412,7 +445,7 @@ class RegistrationForm extends Component
             $this->athletes[$index]['is_master_found'] = false;
             $this->athletes[$index]['show_fields'] = true;
 
-            $this->dispatch('swal', title: 'Data Baru', text: "NIK tidak terdaftar. Silakan lengkapi data atlet baru.", icon: 'info');
+            $this->dispatch('swal', title: 'Data Baru', text: 'NIK tidak terdaftar. Silakan lengkapi data atlet baru.', icon: 'info');
         }
     }
 
@@ -456,7 +489,7 @@ class RegistrationForm extends Component
             'event3' => '',
             'identity_document' => null,
             'is_master_found' => false,
-            'show_fields' => false
+            'show_fields' => false,
         ];
     }
 
@@ -470,8 +503,9 @@ class RegistrationForm extends Component
 
     public function getEventOptions($ageGroupId, $gender, $currentAthleteIndex = null, $currentField = null)
     {
-        if (empty($ageGroupId))
+        if (empty($ageGroupId)) {
             return [];
+        }
 
         return MatchNumber::where('age_group_id', $ageGroupId)
             ->where(function ($query) use ($gender) {
@@ -490,7 +524,7 @@ class RegistrationForm extends Component
                     } else {
                         $query->whereRaw('1 = 0');
                     }
-                }
+                },
             ])
             ->get()
             ->filter(function ($matchNumber) use ($currentAthleteIndex, $currentField) {
@@ -518,6 +552,15 @@ class RegistrationForm extends Component
                 return $matchNumber->max_athletes == 0 || $totalOccupied < $matchNumber->max_athletes;
             })
             ->pluck('name', 'id');
+    }
+
+    public function isEmbu($matchId)
+    {
+        if (empty($matchId)) {
+            return false;
+        }
+
+        return MatchNumber::find($matchId)?->draft_type === 'embu';
     }
 
     public function getAthletePemulaCount()
@@ -553,6 +596,7 @@ class RegistrationForm extends Component
                 $total += $ageGroup->price;
             }
         }
+
         return $total;
     }
 
@@ -574,16 +618,18 @@ class RegistrationForm extends Component
         // Collect unique match IDs
         foreach ($this->athletes as $athlete) {
             foreach (['event1', 'event2', 'event3'] as $field) {
-                if ($athlete[$field])
+                if ($athlete[$field]) {
                     $matchIds[] = $athlete[$field];
+                }
             }
         }
 
-        if (empty($matchIds))
+        if (empty($matchIds)) {
             return [];
+        }
 
         $matches = MatchNumber::whereIn('id', array_unique($matchIds))->with('ageGroup')->get()->keyBy('id');
-        $allTechniques = \App\Models\Technique\Technique::pluck('name', 'id')->toArray();
+        $allTechniques = Technique::pluck('name', 'id')->toArray();
 
         // Organize into: [Gender][AgeGroupName][MatchID]
         foreach ($matchIds as $mId) {
@@ -592,19 +638,20 @@ class RegistrationForm extends Component
                 $gender = $match->gender;
                 $ageGroupName = $match->ageGroup?->name ?? 'N/A';
 
-                if (!isset($summary[$gender])) {
+                if (! isset($summary[$gender])) {
                     $summary[$gender] = [];
                 }
 
-                if (!isset($summary[$gender][$ageGroupName])) {
+                if (! isset($summary[$gender][$ageGroupName])) {
                     $summary[$gender][$ageGroupName] = [];
                 }
 
-                if (!isset($summary[$gender][$ageGroupName][$mId])) {
+                if (! isset($summary[$gender][$ageGroupName][$mId])) {
                     // Resolve tech names
                     $selectedTechs = $this->matchTechniques[$mId] ?? [];
-                    if (!is_array($selectedTechs))
+                    if (! is_array($selectedTechs)) {
                         $selectedTechs = [];
+                    }
 
                     $techNames = [];
                     foreach ($selectedTechs as $tid) {
@@ -615,8 +662,9 @@ class RegistrationForm extends Component
 
                     $summary[$gender][$ageGroupName][$mId] = [
                         'name' => $match->name,
+                        'draft_type' => $match->draft_type,
                         'techniques' => $techNames,
-                        'athletes' => []
+                        'athletes' => [],
                     ];
                 }
             }
@@ -624,8 +672,9 @@ class RegistrationForm extends Component
 
         // Add Athletes to Matches with Rank
         foreach ($this->athletes as $athlete) {
-            if (empty($athlete['name']))
+            if (empty($athlete['name'])) {
                 continue;
+            }
 
             foreach (['event1', 'event2', 'event3'] as $field) {
                 $mId = $athlete[$field];
@@ -637,7 +686,7 @@ class RegistrationForm extends Component
                     if (isset($summary[$gender][$ageGroupName][$mId])) {
                         $summary[$gender][$ageGroupName][$mId]['athletes'][] = [
                             'name' => $athlete['name'],
-                            'rank' => $athlete['rank'] ?? 'N/A'
+                            'rank' => $athlete['rank'] ?? 'N/A',
                         ];
                     }
                 }
@@ -673,7 +722,7 @@ class RegistrationForm extends Component
         DB::transaction(function () {
             $contingentId = $this->contingent_id;
 
-            if (!$this->is_authenticated) {
+            if (! $this->is_authenticated) {
                 // 1. Create Login User (With Random Password if not already registered)
                 $tempPassword = Str::random(12);
                 $user = User::create([
@@ -717,12 +766,12 @@ class RegistrationForm extends Component
                 if ($transferPath) {
                     $registration->update(['transfer_proof_path' => $transferPath]);
                 }
-                
+
                 // Clear existing relationships before re-attaching
                 $registration->officials()->detach();
                 $registration->athletes()->detach();
                 DB::table('athlete_match_number')->where('registration_id', $registration->id)->delete();
-                
+
             } else {
                 $registration = Registration::create([
                     'contingent_id' => $contingentId,
@@ -730,7 +779,7 @@ class RegistrationForm extends Component
                     'final_amount' => $this->getFinalTotalProperty(),
                     'unique_code' => $this->unique_code,
                     'payment_method' => $this->payment_method,
-                    'referral_code' => 'KEMPO-' . strtoupper(Str::random(5)),
+                    'referral_code' => 'KEMPO-'.strtoupper(Str::random(5)),
                     'status' => 'pending',
                     'transfer_proof_path' => $transferPath,
                     'sim_perkemi_confirm' => $this->sim_perkemi_confirm,
@@ -743,7 +792,7 @@ class RegistrationForm extends Component
             foreach ($this->officials as $officialData) {
                 $officialData['contingent_id'] = $contingentId;
                 $official = Official::updateOrCreate(
-                    ['id' => !empty($officialData['official_id']) ? $officialData['official_id'] : null],
+                    ['id' => ! empty($officialData['official_id']) ? $officialData['official_id'] : null],
                     $officialData
                 );
 
@@ -781,7 +830,7 @@ class RegistrationForm extends Component
 
                 // Update Membership & Record History if changing contingent
                 $currentPrimary = $athlete->contingents()->wherePivot('is_primary', true)->first();
-                if (!$currentPrimary || $currentPrimary->id !== $contingent->id) {
+                if (! $currentPrimary || $currentPrimary->id !== $contingent->id) {
                     // Mark old as not primary
                     $athlete->contingents()->updateExistingPivot($currentPrimary?->id, ['is_primary' => false]);
 
@@ -790,14 +839,14 @@ class RegistrationForm extends Component
                         $contingent->id => [
                             'is_primary' => true,
                             'joined_at' => now(),
-                        ]
+                        ],
                     ]);
 
                     // Log History
                     $athlete->contingentHistories()->create([
                         'contingent_id' => $contingent->id,
                         'moved_at' => now(),
-                        'notes' => 'Pendaftaran Turnamen ' . $this->contingent_name,
+                        'notes' => 'Pendaftaran Turnamen '.$this->contingent_name,
                     ]);
                 }
 
@@ -856,7 +905,7 @@ class RegistrationForm extends Component
         DB::transaction(function () {
             $contingentId = $this->contingent_id;
 
-            if (!$this->is_authenticated) {
+            if (! $this->is_authenticated) {
                 $tempPassword = Str::random(12);
                 $user = User::create([
                     'name' => $this->contingent_name,
@@ -875,7 +924,7 @@ class RegistrationForm extends Component
                     'address' => $this->address,
                 ]);
                 $contingentId = $contingent->id;
-                
+
                 // Automatically login the new user so they can manage their draft
                 auth()->login($user);
                 $this->is_authenticated = true;
@@ -947,7 +996,7 @@ class RegistrationForm extends Component
                     'draft_data' => json_encode($draftData),
                 ]);
                 $this->registration_id = $registration->id;
-                $this->referral_code = 'DRAFT-' . strtoupper(Str::random(5));
+                $this->referral_code = 'DRAFT-'.strtoupper(Str::random(5));
                 $registration->update(['referral_code' => $this->referral_code]);
             }
         });

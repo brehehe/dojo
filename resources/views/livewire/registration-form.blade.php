@@ -590,7 +590,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label>Jenis Kelamin <span class="required">*</span></label>
-                                            <select wire:model="athletes.{{ $index }}.gender"
+                                            <select wire:model.live="athletes.{{ $index }}.gender"
                                                 class="form-input-custom">
                                                 <option value="Male">Laki-laki</option>
                                                 <option value="Female">Perempuan</option>
@@ -776,7 +776,7 @@
                                                     </select>
 
                                                     <!-- TECHNIQUE SELECTION LATER -->
-                                                    @if ($athlete[$evField])
+                                                    @if ($athlete[$evField] && $this->isEmbu($athlete[$evField]))
                                                         @php
                                                             $leaderInfo = $this->getMatchLeaderInfo($athlete[$evField]);
                                                             $isLeader =
@@ -976,9 +976,11 @@
                                                                             <th
                                                                                 class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
                                                                                 Tingkat (Rank)</th>
+                                                                            @if($this->isEmbu($mId))
                                                                             <th
                                                                                 class="px-6 py-4 text-[15px] font-black text-slate-800 uppercase tracking-wider">
                                                                                 Urutan Komposisi yang Dimainkan :</th>
+                                                                            @endif
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody class="divide-y divide-slate-50">
@@ -999,6 +1001,7 @@
                                                                                         {{ $ath['rank'] }}
                                                                                     </span>
                                                                                 </td>
+                                                                                @if($this->isEmbu($mId))
                                                                                 <td class="px-6 py-4">
                                                                                     @if ($loop->first)
                                                                                         @forelse($data['techniques'] as $tIdx => $tName)
@@ -1020,6 +1023,7 @@
                                                                                             seperti di atas)</span>
                                                                                     @endif
                                                                                 </td>
+                                                                                @endif
                                                                             </tr>
                                                                         @endforeach
                                                                     </tbody>
