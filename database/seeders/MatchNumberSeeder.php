@@ -35,15 +35,10 @@ class MatchNumberSeeder extends Seeder
                 'Laki-laki' => ['Embu Tandoku Kyu 5-4', 'Embu Tandoku Kyu 3', 'Embu Tandoku Kyu 2', 'Embu Tandoku Kyu 1', 'Embu Pasangan Kyu 5-4', 'Embu Pasangan Kyu 3', 'Embu Pasangan Kyu 2', 'Embu Pasangan Kyu 1', 'Embu Beregu', 'Randori 45Kg', 'Randori 50Kg', 'Randori 55Kg', 'Randori 60Kg', 'Randori 65Kg', 'Randori 70Kg', 'Randori >70Kg'],
                 'Perempuan' => ['Embu Tandoku Kyu 5-4', 'Embu Tandoku Kyu 3', 'Embu Tandoku Kyu 2', 'Embu Tandoku Kyu 1', 'Embu Pasangan Kyu 5-4', 'Embu Pasangan Kyu 3', 'Embu Pasangan Kyu 2', 'Embu Pasangan Kyu 1', 'Embu Beregu', 'Randori 45Kg', 'Randori 50Kg', 'Randori 55Kg', 'Randori 60Kg', 'Randori 65Kg', 'Randori 70Kg'],
             ],
-            'Dewasa A' => [
+            'Dewasa' => [
                 'price' => 500000,
                 'Laki-laki' => ['Embu Tandoku Kyu 3', 'Embu Tandoku Kyu 2', 'Embu Tandoku Kyu 1', 'Embu Tandoku Yudansa', 'Embu Pasangan Kyu 3', 'Embu Pasangan Kyu 2', 'Embu Pasangan Kyu 1', 'Embu Beregu', 'Randori 50Kg', 'Randori 55Kg', 'Randori 60Kg', 'Randori 65Kg', 'Randori 70Kg', 'Randori >70Kg'],
                 'Perempuan' => ['Embu Tandoku Kyu 3', 'Embu Tandoku Kyu 2', 'Embu Tandoku Kyu 1', 'Embu Tandoku Yudansa', 'Embu Pasangan Kyu 3', 'Embu Pasangan Kyu 2', 'Embu Pasangan Kyu 1', 'Embu Beregu', 'Randori 50Kg', 'Randori 55Kg', 'Randori 60Kg', 'Randori 65Kg', 'Randori 70Kg'],
-            ],
-            'Dewasa B (Senior)' => [
-                'price' => 500000,
-                'Laki-laki' => ['Embu Tandoku Kyu 3', 'Embu Tandoku Kyu 2', 'Embu Tandoku Kyu 1', 'Embu Tandoku Yudansa', 'Embu Pasangan Kyu 3', 'Embu Pasangan Kyu 2', 'Embu Pasangan Kyu 1', 'Embu Pasangan Yudansa', 'Embu Beregu', 'Randori 50Kg', 'Randori 55Kg', 'Randori 60Kg', 'Randori 65Kg', 'Randori 70Kg', 'Randori >70Kg'],
-                'Perempuan' => ['Embu Tandoku Kyu 3', 'Embu Tandoku Kyu 2', 'Embu Tandoku Kyu 1', 'Embu Tandoku Yudansa', 'Embu Pasangan Kyu 3', 'Embu Pasangan Kyu 2', 'Embu Pasangan Kyu 1', 'Embu Pasangan Yudansa', 'Embu Beregu', 'Randori 50Kg', 'Randori 55Kg', 'Randori 60Kg', 'Randori 65Kg', 'Randori 70Kg'],
             ],
         ];
 

@@ -89,15 +89,22 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
         $match = MatchNumber::findOrFail($matchId);
 
-        // 1. Get all distinct registration_ids (each = one team/contingent entry)
-        $registrations = DB::table('athlete_match_number')
+        $maxAthletes = $match->max_athletes ?: 1;
+        $registrationsQuery = DB::table('athlete_match_number')
             ->where('match_number_id', $matchId)
-            ->select('registration_id')
-            ->distinct()
-            ->get()
-            ->values();
+            ->select('registration_id', DB::raw('count(*) as athlete_count'))
+            ->groupBy('registration_id')
+            ->get();
 
-        $totalEntries = $registrations->count();
+        $allEntries = collect();
+        foreach ($registrationsQuery as $reg) {
+            $numEntries = ceil($reg->athlete_count / $maxAthletes);
+            for ($i = 0; $i < $numEntries; $i++) {
+                $allEntries->push((object) ['registration_id' => $reg->registration_id]);
+            }
+        }
+
+        $totalEntries = $allEntries->count();
 
         // 2. Clear existing drawing records for this match and round
         DrawingMatchNumber::where('match_number_id', $matchId)
@@ -115,7 +122,7 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         // Get contingent names per registration
         $regContingents = DB::table('registrations')
             ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
-            ->whereIn('registrations.id', $registrations->pluck('registration_id'))
+            ->whereIn('registrations.id', $allEntries->pluck('registration_id')->unique())
             ->pluck('contingents.name', 'registrations.id');
 
         $uniqueContingentCount = $regContingents->unique()->count();
@@ -123,16 +130,11 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         if ($uniqueContingentCount < 3) {
             $this->generatingMatchId = null;
 
-            // $this->dispatch('swal', [
-            //     'icon' => 'error',
-            //     'title' => 'Gagal Membuat Bagan',
-            //     'text' => "Kelas ini hanya diikuti oleh {$uniqueContingentCount} kontingen. Minimal 3 kontingen agar dapat dipertandingkan.",
-            // ]);
             return;
         }
 
         // Build entry list with contingent name
-        $entries = $registrations->map(function ($reg) use ($regContingents) {
+        $entries = $allEntries->map(function ($reg) use ($regContingents) {
             return [
                 'registration_id' => $reg->registration_id,
                 'contingent' => $regContingents[$reg->registration_id] ?? 'Unknown',
@@ -625,7 +627,8 @@ class AdminTechnicalMeetingEmbuIndex extends Component
                 $drawing = null;
             }
 
-            $matchAthletes = DB::table('athlete_match_number')
+            $maxAthletes = $match->max_athletes ?: 1;
+            $matchAthletesRaw = DB::table('athlete_match_number')
                 ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
                 ->join('registration_athlete', function ($join) {
                     $join->on('athlete_match_number.athlete_id', '=', 'registration_athlete.athlete_id')
@@ -642,15 +645,31 @@ class AdminTechnicalMeetingEmbuIndex extends Component
                     'athlete_match_number.technique_ids'
                 )
                 ->orderBy('athlete_match_number.registration_id')
-                ->get()
-                ->map(function ($ath) use ($allTechniqueNames) {
-                    $techIds = $ath->technique_ids ? json_decode($ath->technique_ids, true) : [];
-                    $ath->readable_techniques = array_map(function ($id) use ($allTechniqueNames) {
-                        return $allTechniqueNames[$id] ?? 'Unknown #'.$id;
-                    }, $techIds);
+                ->orderBy('athlete_match_number.id')
+                ->get();
 
-                    return $ath;
-                });
+            $matchEntries = [];
+            foreach ($matchAthletesRaw->groupBy('registration_id') as $regId => $regAthletes) {
+                $chunks = $regAthletes->chunk($maxAthletes);
+                $hasMultiple = $chunks->count() > 1;
+                foreach ($chunks as $chunkIndex => $chunk) {
+                    $contingentDisplayName = $chunk->first()->contingent . ($hasMultiple ? ' (' . ($chunkIndex + 1) . ')' : '');
+                    foreach ($chunk as $ath) {
+                        $techIds = $ath->technique_ids ? json_decode($ath->technique_ids, true) : [];
+                        $matchEntries[] = [
+                            'name' => $ath->name,
+                            'rank' => $ath->rank,
+                            'contingent' => $contingentDisplayName,
+                            'registration_id' => $ath->registration_id,
+                            'readable_techniques' => array_map(function ($id) use ($allTechniqueNames) {
+                                return $allTechniqueNames[$id] ?? 'Unknown #'.$id;
+                            }, $techIds)
+                        ];
+                    }
+                }
+            }
+
+            $matchAthletes = collect($matchEntries);
 
             // Embu scores for each round
             $embuScores = EmbuScore::where('match_number_id', $match->id)

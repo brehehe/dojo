@@ -81,7 +81,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'Pemula' => 'P',
             'Remaja A' => 'RA',
             'Remaja B' => 'RB',
-            'Dewasa A', 'Dewasa B (Senior)' => 'D',
+            'Dewasa' => 'D',
             default => 'U',
         };
 

@@ -498,7 +498,7 @@ class NewScoringIndex extends Component
         ]);
 
         return view('livewire.admin.new-scoring-index', [
-            'drawings' => $query->paginate(20),
+            'drawings' => $query->paginate(10),
             'courts' => $courts,
             'sessions' => $sessions,
             'rundowns' => $rundowns,

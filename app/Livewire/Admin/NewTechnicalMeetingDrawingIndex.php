@@ -95,7 +95,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'Pemula' => 'P',
             'Remaja A' => 'RA',
             'Remaja B' => 'RB',
-            'Dewasa A', 'Dewasa B (Senior)' => 'D',
+            'Dewasa' => 'D',
             default => 'U',
         };
 
@@ -420,14 +420,22 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $this->isGenerating = true;
         $match = MatchNumber::findOrFail($matchId);
 
-        $registrations = DB::table('athlete_match_number')
+        $maxAthletes = $match->max_athletes ?: 1;
+        $registrationsQuery = DB::table('athlete_match_number')
             ->where('match_number_id', $matchId)
-            ->select('registration_id')
-            ->distinct()
-            ->get()
-            ->values();
+            ->select('registration_id', DB::raw('count(*) as athlete_count'))
+            ->groupBy('registration_id')
+            ->get();
 
-        $totalEntries = $registrations->count();
+        $allEntries = collect();
+        foreach ($registrationsQuery as $reg) {
+            $numEntries = ceil($reg->athlete_count / $maxAthletes);
+            for ($i = 0; $i < $numEntries; $i++) {
+                $allEntries->push((object) ['registration_id' => $reg->registration_id]);
+            }
+        }
+
+        $totalEntries = $allEntries->count();
 
         DrawingMatchNumber::where('match_number_id', $matchId)->delete();
 
@@ -440,7 +448,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $regContingents = DB::table('registrations')
             ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
-            ->whereIn('registrations.id', $registrations->pluck('registration_id'))
+            ->whereIn('registrations.id', $allEntries->pluck('registration_id')->unique())
             ->pluck('contingents.name', 'registrations.id');
 
         $uniqueContingentCount = $regContingents->unique()->count();
@@ -456,7 +464,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             return;
         }
 
-        $entries = $registrations->map(fn ($r) => [
+        $entries = $allEntries->map(fn ($r) => [
             'registration_id' => $r->registration_id,
             'contingent' => $regContingents[$r->registration_id] ?? 'Unknown',
         ])->values()->toArray();
@@ -933,13 +941,22 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $filterMatchNumbers = $matchNumbersQuery->get();
 
-        // Get contingent counts for each match number to display in sidebar
-        $contingentCounts = DB::table('athlete_match_number')
-            ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
-            ->whereIn('athlete_match_number.match_number_id', $filterMatchNumbers->pluck('id'))
-            ->select('athlete_match_number.match_number_id', DB::raw('count(distinct registrations.contingent_id) as count'))
-            ->groupBy('athlete_match_number.match_number_id')
+        // Get entry counts for each match number to display in sidebar
+        $rawAthleteCounts = DB::table('athlete_match_number')
+            ->whereIn('match_number_id', $filterMatchNumbers->pluck('id'))
+            ->select('match_number_id', DB::raw('count(*) as count'))
+            ->groupBy('match_number_id')
             ->pluck('count', 'match_number_id');
+
+        $contingentCounts = [];
+        foreach ($filterMatchNumbers as $match) {
+            $count = $rawAthleteCounts[$match->id] ?? 0;
+            if ($match->draft_type === 'embu') {
+                $contingentCounts[$match->id] = ceil($count / ($match->max_athletes ?: 1));
+            } else {
+                $contingentCounts[$match->id] = $count;
+            }
+        }
 
         $selectedMatch = null;
         $matchAthletes = collect();
@@ -947,15 +964,27 @@ class NewTechnicalMeetingDrawingIndex extends Component
         if ($this->filterMatchNumberId) {
             $selectedMatch = MatchNumber::with(['ageGroup'])->find($this->filterMatchNumberId);
             if ($selectedMatch) {
-                $matchAthletes = DB::table('athlete_match_number')
+                $maxAthletes = $selectedMatch->max_athletes ?: 1;
+                $rawAthletes = DB::table('athlete_match_number')
                     ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
                     ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                     ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
                     ->where('athlete_match_number.match_number_id', $this->filterMatchNumberId)
-                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name')
+                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id')
                     ->orderBy('contingents.name')
-                    ->get()
-                    ->groupBy('contingent_name');
+                    ->orderBy('athlete_match_number.id')
+                    ->get();
+
+                $entryData = [];
+                foreach ($rawAthletes->groupBy('registration_id') as $regId => $regAthletes) {
+                    $chunks = $regAthletes->chunk($maxAthletes);
+                    $hasMultiple = $chunks->count() > 1;
+                    foreach ($chunks as $chunkIndex => $chunk) {
+                        $displayName = $chunk->first()->contingent_name . ($hasMultiple ? ' (' . ($chunkIndex + 1) . ')' : '');
+                        $entryData[$displayName] = $chunk;
+                    }
+                }
+                $matchAthletes = collect($entryData);
 
                 $drawingEntries = DrawingMatchNumber::with(['registration.contingent', 'court', 'sessionTime'])
                     ->where('match_number_id', $this->filterMatchNumberId)

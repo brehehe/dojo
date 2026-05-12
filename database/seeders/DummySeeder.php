@@ -96,24 +96,52 @@ class DummySeeder extends Seeder
 
                 foreach ($matches as $matchInfo) {
                     $matchName = $matchInfo['name'];
-                    $draftType = str_contains(strtolower($matchName), 'randori') ? 'randori' : 'embu';
-                    $maxAthletes = 1;
-                    if (str_contains(strtolower($matchName), 'pasangan')) {
-                        $maxAthletes = 2;
-                    }
-                    if (str_contains(strtolower($matchName), 'beregu')) {
-                        $maxAthletes = 4;
+                    $lowerName = strtolower($matchName);
+                    
+                    // Detect if name contains multiple genders to split
+                    $targetGenders = [];
+                    if (str_contains($lowerName, 'putra/putri/campuran')) {
+                        $targetGenders = ['Male', 'Female', 'Mix'];
+                    } elseif (str_contains($lowerName, 'putra/putri')) {
+                        $targetGenders = ['Male', 'Female'];
+                    } else {
+                        $targetGenders = [$gender]; // Default from category key
                     }
 
-                    MatchNumber::create([
-                        'name' => $matchName,
-                        'age_group_id' => $ageGroup->id,
-                        'gender' => $gender,
-                        'match_id' => $matchInfo['match_id'] ?? null,
-                        'draft_type' => $draftType,
-                        'max_athletes' => $maxAthletes,
-                        'order' => 1,
-                    ]);
+                    foreach ($targetGenders as $g) {
+                        $draftType = str_contains($lowerName, 'randori') ? 'randori' : 'embu';
+                        $maxAthletes = 1;
+                        if (str_contains($lowerName, 'pasangan')) {
+                            $maxAthletes = 2;
+                        }
+                        if (str_contains($lowerName, 'beregu')) {
+                            $maxAthletes = 4;
+                        }
+
+                        // Clean up name and append gender suffix if splitting
+                        $cleanName = $matchName;
+                        if (count($targetGenders) > 1) {
+                            $genderSuffix = match($g) {
+                                'Male' => ' (Putra)',
+                                'Female' => ' (Putri)',
+                                'Mix' => ' (Campuran)',
+                                default => ''
+                            };
+                            $cleanName = preg_replace('/\s*putra\/putri(\/campuran)?/i', '', $matchName) . $genderSuffix;
+                        }
+
+                        MatchNumber::create([
+                            'name' => $cleanName,
+                            'age_group_id' => $ageGroup->id,
+                            'gender' => $g,
+                            'match_id' => count($targetGenders) > 1 
+                                ? ($matchInfo['match_id'] . '-' . substr($g, 0, 1)) 
+                                : ($matchInfo['match_id'] ?? null),
+                            'draft_type' => $draftType,
+                            'max_athletes' => $maxAthletes,
+                            'order' => 1,
+                        ]);
+                    }
                 }
             }
         }

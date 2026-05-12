@@ -64,33 +64,38 @@ class AdminMatchNumberVerifiedIndex extends Component
                 continue;
             }
 
-            // Group athletes by contingent
+            // Group athletes by contingent and entry
             $contingents = [];
-            foreach ($athletes as $athlete) {
-                $cId = $athlete->contingent_id;
-                if (!isset($contingents[$cId])) {
-                    $techniques = json_decode($athlete->technique_ids ?? '[]', true);
+            $maxAthletes = $matchNumber->max_athletes ?: 1;
+            
+            foreach ($athletes->groupBy('contingent_id') as $cId => $regAthletes) {
+                $chunks = $regAthletes->chunk($maxAthletes);
+                $hasMultiple = $chunks->count() > 1;
+                
+                foreach ($chunks as $chunkIndex => $chunk) {
+                    $entryKey = $cId . '_' . $chunkIndex;
+                    $contingentName = $chunk->first()->contingent_name . ($hasMultiple ? ' (' . ($chunkIndex + 1) . ')' : '');
+                    
+                    $techniques = json_decode($chunk->first()->technique_ids ?? '[]', true);
                     $techNames = array_map(fn($id) => $this->allTechniques[$id] ?? 'Unknown', $techniques);
 
-                    $contingents[$cId] = [
-                        'name' => $athlete->contingent_name,
+                    $contingents[$entryKey] = [
+                        'name' => $contingentName,
                         'techniques' => $techNames,
-                        'athletes' => []
+                        'athletes' => $chunk->map(fn($ath) => [
+                            'name' => $ath->athlete_name,
+                            'nik' => $ath->nik,
+                            'kyu' => $ath->kyu,
+                            'weight' => $ath->weight,
+                            'rank' => $ath->rank,
+                            'dojo' => $ath->dojo_origin,
+                            'city' => $ath->city,
+                            'age' => $ath->age,
+                            'gender' => $ath->athlete_gender,
+                            'birth_date' => $ath->birth_date ? date('d/m/Y', strtotime($ath->birth_date)) : null,
+                        ])->toArray()
                     ];
                 }
-
-                $contingents[$cId]['athletes'][] = [
-                    'name' => $athlete->athlete_name,
-                    'nik' => $athlete->nik,
-                    'kyu' => $athlete->kyu,
-                    'weight' => $athlete->weight,
-                    'rank' => $athlete->rank,
-                    'dojo' => $athlete->dojo_origin,
-                    'city' => $athlete->city,
-                    'age' => $athlete->age,
-                    'gender' => $athlete->athlete_gender,
-                    'birth_date' => $athlete->birth_date ? date('d/m/Y', strtotime($athlete->birth_date)) : null,
-                ];
             }
 
             $data[] = [
