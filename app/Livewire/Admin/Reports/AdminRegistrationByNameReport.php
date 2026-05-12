@@ -53,7 +53,7 @@ class AdminRegistrationByNameReport extends Component
                     DB::raw("'P' as status_code")
                 );
             if ($this->search) {
-                $query->where('athletes.name', 'like', '%' . $this->search . '%');
+                $query->where('athletes.name', 'ilike', '%' . $this->search . '%');
             }
             $athletes = $query->get();
         }
@@ -72,7 +72,7 @@ class AdminRegistrationByNameReport extends Component
                     DB::raw("'O' as status_code")
                 );
             if ($this->search) {
-                $query->where('officials.name', 'like', '%' . $this->search . '%');
+                $query->where('officials.name', 'ilike', '%' . $this->search . '%');
             }
             $officials = $query->get();
         }

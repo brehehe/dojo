@@ -97,7 +97,7 @@ class NewWeightGroupIndex extends Component
         $query = WeightGroup::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $weightGroups = $query->latest()->paginate($this->perPage === 'all' ? WeightGroup::count() : $this->perPage);

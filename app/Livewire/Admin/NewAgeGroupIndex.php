@@ -109,7 +109,7 @@ class NewAgeGroupIndex extends Component
         $query = AgeGroup::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $ageGroups = $query->latest()->paginate($this->perPage === 'all' ? AgeGroup::count() : $this->perPage);

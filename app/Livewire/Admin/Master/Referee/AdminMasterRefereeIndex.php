@@ -169,11 +169,11 @@ class AdminMasterRefereeIndex extends Component
     {
         $referees = Referee::with('user')
             ->whereHas('user', function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('email', 'like', '%' . $this->search . '%');
+                $query->where('name', 'ilike', '%' . $this->search . '%')
+                    ->orWhere('email', 'ilike', '%' . $this->search . '%');
             })
-            ->orWhere('certification_level', 'like', '%' . $this->search . '%')
-            ->orWhere('phone', 'like', '%' . $this->search . '%')
+            ->orWhere('certification_level', 'ilike', '%' . $this->search . '%')
+            ->orWhere('phone', 'ilike', '%' . $this->search . '%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Referee::count() : $this->perPage);
 

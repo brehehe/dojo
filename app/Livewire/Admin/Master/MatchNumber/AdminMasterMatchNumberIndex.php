@@ -171,7 +171,7 @@ class AdminMasterMatchNumberIndex extends Component
     {
         $matchNumbers = MatchNumber::query()
             ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
+                $query->where('name', 'ilike', '%' . $this->search . '%');
             })
             ->when($this->filterAgeGroup, function ($query) {
                 $query->where('age_group_id', $this->filterAgeGroup);

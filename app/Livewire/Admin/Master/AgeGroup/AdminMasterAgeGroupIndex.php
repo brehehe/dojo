@@ -103,7 +103,7 @@ class AdminMasterAgeGroupIndex extends Component
 
     public function render()
     {
-        $ageGroups = AgeGroup::orWhere('name', 'like', '%' . $this->search . '%')
+        $ageGroups = AgeGroup::orWhere('name', 'ilike', '%' . $this->search . '%')
             ->latest()
             ->paginate($this->perPage === 'all' ? AgeGroup::count() : $this->perPage);
 

@@ -221,8 +221,8 @@ class NewGenerateRefereeIndex extends Component
         $refereesQuery = Referee::with('user');
         if (! empty($this->searchReferee)) {
             $refereesQuery->whereHas('user', function ($q) {
-                $q->where('name', 'like', '%'.$this->searchReferee.'%');
-            })->orWhere('license_number', 'like', '%'.$this->searchReferee.'%');
+                $q->where('name', 'ilike', '%'.$this->searchReferee.'%');
+            })->orWhere('license_number', 'ilike', '%'.$this->searchReferee.'%');
         }
         $referees = $refereesQuery->get()->sortBy([['certification_level', 'asc']]);
 

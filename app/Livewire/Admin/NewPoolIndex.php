@@ -97,7 +97,7 @@ class NewPoolIndex extends Component
         $query = Pool::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $pools = $query->latest()->paginate($this->perPage === 'all' ? Pool::count() : $this->perPage);

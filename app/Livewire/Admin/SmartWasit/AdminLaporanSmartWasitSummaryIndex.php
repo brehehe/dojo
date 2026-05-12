@@ -75,7 +75,7 @@ class AdminLaporanSmartWasitSummaryIndex extends Component
         // Apply filters to log query as well
         if (! empty($this->search)) {
             $query->whereHas('scorable.athletes', function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%');
+                $q->where('name', 'ilike', '%'.$this->search.'%');
             });
         }
 

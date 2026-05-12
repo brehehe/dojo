@@ -98,7 +98,7 @@ class AdminMasterWeightGroupIndex extends Component
 
     public function render()
     {
-        $weightGroups = WeightGroup::orWhere('name', 'like', '%'.$this->search.'%')
+        $weightGroups = WeightGroup::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? WeightGroup::count() : $this->perPage);
 

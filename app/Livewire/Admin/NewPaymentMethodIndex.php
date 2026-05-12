@@ -116,8 +116,8 @@ class NewPaymentMethodIndex extends Component
         $query = PaymentMethod::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%')
-                ->orWhere('bank', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%')
+                ->orWhere('bank', 'ilike', '%'.$this->search.'%');
         }
 
         $paymentMethods = $query->latest()->paginate($this->perPage === 'all' ? PaymentMethod::count() : $this->perPage);

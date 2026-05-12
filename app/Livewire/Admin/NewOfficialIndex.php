@@ -49,8 +49,8 @@ class NewOfficialIndex extends Component
     {
         $officials = Official::when($this->search, function ($query) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('phone', 'like', '%'.$this->search.'%');
+                $q->where('name', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('phone', 'ilike', '%'.$this->search.'%');
             });
         })
             ->when($this->filterContingent, function ($query) {

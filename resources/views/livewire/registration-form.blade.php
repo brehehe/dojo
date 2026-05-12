@@ -658,7 +658,7 @@
                                                 <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p>
                                             @enderror
                                         </div>
-                                        <div class="form-group">
+                                        <div class="form-group" wire:key="athlete-{{ $index }}-age_group">
                                             <label>Kelompok Usia</label>
                                             <select wire:model.live="athletes.{{ $index }}.age_group"
                                                 class="form-input-custom">
@@ -762,15 +762,29 @@
                                         <label class="!text-orange-600">NOMOR PERTANDINGAN (MAKS 3)</label>
                                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                                             @foreach (['event1', 'event2', 'event3'] as $evField)
-                                                <div class="flex flex-col gap-2">
+                                                <div class="flex flex-col gap-2" wire:key="athlete-{{ $index }}-{{ $evField }}">
                                                     <select
+                                                        wire:key="select-athlete-{{ $index }}-{{ $evField }}"
                                                         wire:model.live="athletes.{{ $index }}.{{ $evField }}"
                                                         class="form-input-custom @error('athletes.' . $index . '.' . $evField) border-red-500 @enderror">
                                                         <option value="">
                                                             {{ strtoupper(str_replace('event', 'Kategori ', $evField)) }}...
                                                         </option>
-                                                        @foreach ($this->getEventOptions($athlete['age_group'], $athlete['gender'], $index, $evField) as $id => $name)
-                                                            <option value="{{ $id }}">{{ $name }}
+                                                        @foreach ($this->getEventOptions($athlete['age_group'], $athlete['gender'], $index, $evField) as $opt)
+                                                            @php
+                                                                $lowerName = strtolower($opt->name);
+                                                                $lowerGender = strtolower($opt->gender_indo);
+                                                                $showGender = !str_contains($lowerName, $lowerGender);
+                                                                
+                                                                if ($showGender && $opt->gender === 'Male') {
+                                                                    $showGender = !str_contains($lowerName, 'putra');
+                                                                }
+                                                                if ($showGender && $opt->gender === 'Female') {
+                                                                    $showGender = !str_contains($lowerName, 'putri');
+                                                                }
+                                                            @endphp
+                                                            <option value="{{ $opt->id }}" wire:key="opt-{{ $opt->id }}">
+                                                                {{ $opt->name }}{{ $showGender ? " ({$opt->gender_indo})" : "" }}
                                                             </option>
                                                         @endforeach
                                                     </select>

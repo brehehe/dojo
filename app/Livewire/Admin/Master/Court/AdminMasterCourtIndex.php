@@ -100,7 +100,7 @@ class AdminMasterCourtIndex extends Component
 
     public function render()
     {
-        $courts = Court::orWhere('name', 'like', '%' . $this->search . '%')
+        $courts = Court::orWhere('name', 'ilike', '%' . $this->search . '%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Court::count() : $this->perPage);
 

@@ -114,7 +114,7 @@ class NewSessionTimeIndex extends Component
         $query = SessionTime::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $sessionTimes = $query->latest()->paginate($this->perPage === 'all' ? SessionTime::count() : $this->perPage);

@@ -526,12 +526,27 @@ class RegistrationForm extends Component
                     }
                 },
             ])
+            ->orderBy('created_at', 'asc')
+            ->orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
             ->get()
             ->filter(function ($matchNumber) use ($currentAthleteIndex, $currentField) {
                 // 1. Get DB Count (Now scoped to THIS contingent)
                 $dbCount = $matchNumber->athletes_count;
 
-                // 2. Get Current Form Count (from other athletes OR other fields of same athlete)
+                // 2. Check if this specific athlete has ALREADY picked this category in another slot
+                if ($currentAthleteIndex !== null) {
+                    foreach (['event1', 'event2', 'event3'] as $fld) {
+                        if ($fld === $currentField) {
+                            continue;
+                        }
+                        if ($this->athletes[$currentAthleteIndex][$fld] == $matchNumber->id) {
+                            return false; // Already selected by this athlete in another slot
+                        }
+                    }
+                }
+
+                // 3. Get Current Form Count (from other athletes)
                 $formCount = 0;
                 foreach ($this->athletes as $idx => $ath) {
                     foreach (['event1', 'event2', 'event3'] as $fld) {
@@ -548,10 +563,15 @@ class RegistrationForm extends Component
 
                 $totalOccupied = $dbCount + $formCount;
 
+                // Always include the currently selected value so the dropdown doesn't reset
+                if ($currentAthleteIndex !== null && $currentField !== null && $this->athletes[$currentAthleteIndex][$currentField] == $matchNumber->id) {
+                    return true;
+                }
+
                 // 3. Logic: If max_athletes > 0, check if we have space (per contingent)
                 return $matchNumber->max_athletes == 0 || $totalOccupied < $matchNumber->max_athletes;
             })
-            ->pluck('name', 'id');
+            ->values();
     }
 
     public function isEmbu($matchId)

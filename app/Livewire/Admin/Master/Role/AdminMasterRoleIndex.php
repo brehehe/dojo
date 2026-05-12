@@ -44,7 +44,7 @@ class AdminMasterRoleIndex extends Component
     public function render()
     {
         $roles = Role::withCount('users')
-            ->where('name', 'like', '%'.$this->search.'%')
+            ->where('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate(10);
 

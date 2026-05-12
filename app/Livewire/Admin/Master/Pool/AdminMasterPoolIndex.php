@@ -100,7 +100,7 @@ class AdminMasterPoolIndex extends Component
 
     public function render()
     {
-        $pools = Pool::orWhere('name', 'like', '%' . $this->search . '%')
+        $pools = Pool::orWhere('name', 'ilike', '%' . $this->search . '%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Pool::count() : $this->perPage);
 

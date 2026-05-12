@@ -24,7 +24,7 @@ class AdminMatchNumberVerifiedIndex extends Component
         // Fetch all match numbers that have verified athletes
         $matchNumbers = MatchNumber::with(['ageGroup'])
             ->when($this->search, function($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
+                $query->where('name', 'ilike', '%' . $this->search . '%');
             })
             ->get();
 

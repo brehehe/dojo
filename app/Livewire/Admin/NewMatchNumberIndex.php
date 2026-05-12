@@ -176,7 +176,7 @@ class NewMatchNumberIndex extends Component
         $query = MatchNumber::query()->with('ageGroup');
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
         if ($this->filterAgeGroup) {
             $query->where('age_group_id', $this->filterAgeGroup);

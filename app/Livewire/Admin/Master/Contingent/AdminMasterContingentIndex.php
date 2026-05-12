@@ -61,11 +61,11 @@ class AdminMasterContingentIndex extends Component
             }])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('leader_name', 'like', '%'.$this->search.'%')
-                        ->orWhere('kab_kota', 'like', '%'.$this->search.'%')
+                    $q->where('name', 'ilike', '%'.$this->search.'%')
+                        ->orWhere('leader_name', 'ilike', '%'.$this->search.'%')
+                        ->orWhere('kab_kota', 'ilike', '%'.$this->search.'%')
                         ->orWhereHas('registrations', function ($rq) {
-                            $rq->where('referral_code', 'like', '%'.$this->search.'%');
+                            $rq->where('referral_code', 'ilike', '%'.$this->search.'%');
                         });
                 });
             })

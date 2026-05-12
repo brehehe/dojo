@@ -50,8 +50,8 @@ class AdminMasterAthleteIndex extends Component
     {
         $athletes = Athlete::with(['contingents', 'categories'])
             ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('nik', 'like', '%'.$this->search.'%');
+                $query->where('name', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('nik', 'ilike', '%'.$this->search.'%');
             })
             ->when($this->filterContingent, function ($query) {
                 $query->whereHas('contingents', function ($q) {

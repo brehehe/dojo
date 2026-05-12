@@ -98,7 +98,7 @@ class AdminMasterTechniqueIndex extends Component
 
     public function render()
     {
-        $techniques = Technique::orWhere('name', 'like', '%' . $this->search . '%')
+        $techniques = Technique::orWhere('name', 'ilike', '%' . $this->search . '%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Technique::count() : $this->perPage);
 

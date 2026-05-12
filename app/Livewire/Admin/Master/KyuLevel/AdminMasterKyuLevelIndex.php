@@ -98,7 +98,7 @@ class AdminMasterKyuLevelIndex extends Component
 
     public function render()
     {
-        $kyuLevels = KyuLevel::orWhere('name', 'like', '%'.$this->search.'%')
+        $kyuLevels = KyuLevel::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? KyuLevel::count() : $this->perPage);
 

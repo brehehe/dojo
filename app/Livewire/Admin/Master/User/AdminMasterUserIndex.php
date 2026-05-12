@@ -132,8 +132,8 @@ class AdminMasterUserIndex extends Component
     {
         $users = User::with('roles')
             ->where(function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('email', 'like', '%' . $this->search . '%');
+                $query->where('name', 'ilike', '%' . $this->search . '%')
+                    ->orWhere('email', 'ilike', '%' . $this->search . '%');
             })
             ->latest();
 

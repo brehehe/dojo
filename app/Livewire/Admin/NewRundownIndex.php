@@ -121,7 +121,7 @@ class NewRundownIndex extends Component
         $query = Rundown::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $rundowns = $query->orderBy('date', 'asc')->paginate($this->perPage === 'all' ? Rundown::count() : $this->perPage);

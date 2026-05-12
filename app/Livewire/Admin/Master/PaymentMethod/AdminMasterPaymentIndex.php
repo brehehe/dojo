@@ -129,7 +129,7 @@ class AdminMasterPaymentIndex extends Component
 
     public function render()
     {
-        $paymentMethods = PaymentMethod::orWhere('name', 'like', '%' . $this->search . '%')
+        $paymentMethods = PaymentMethod::orWhere('name', 'ilike', '%' . $this->search . '%')
             ->latest()
             ->paginate($this->perPage === 'all' ? PaymentMethod::count() : $this->perPage);
 

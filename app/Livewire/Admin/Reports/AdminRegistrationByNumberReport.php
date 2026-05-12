@@ -33,7 +33,7 @@ class AdminRegistrationByNumberReport extends Component
         $query = MatchNumber::query()->orderBy('order');
 
         if ($this->search) {
-            $query->where('name', 'like', '%' . $this->search . '%');
+            $query->where('name', 'ilike', '%' . $this->search . '%');
         }
 
         return $query->get()->groupBy('gender');

@@ -23,9 +23,9 @@ class ContingentIndex extends Component
     {
         $query = Contingent::query()
             ->when($this->search, function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('kab_kota', 'like', '%'.$this->search.'%')
-                    ->orWhere('leader_name', 'like', '%'.$this->search.'%');
+                $q->where('name', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('kab_kota', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('leader_name', 'ilike', '%'.$this->search.'%');
             })
             ->when($this->statusFilter, function ($q) {
                 $q->where('status', $this->statusFilter);

@@ -44,9 +44,9 @@ class AdminRegistrationIndex extends Component
     {
         $registrations = Registration::with('contingent')
             ->when($this->search, function ($query) {
-                $query->where('referral_code', 'like', '%' . $this->search . '%')
+                $query->where('referral_code', 'ilike', '%' . $this->search . '%')
                     ->orWhereHas('contingent', function ($q) {
-                        $q->where('name', 'like', '%' . $this->search . '%');
+                        $q->where('name', 'ilike', '%' . $this->search . '%');
                     });
             })
             ->when($this->status, function ($query) {

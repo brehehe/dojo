@@ -97,7 +97,7 @@ class NewKyuLevelIndex extends Component
         $query = KyuLevel::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $kyuLevels = $query->latest()->paginate($this->perPage === 'all' ? KyuLevel::count() : $this->perPage);

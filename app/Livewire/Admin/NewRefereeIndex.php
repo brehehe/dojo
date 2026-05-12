@@ -205,12 +205,12 @@ class NewRefereeIndex extends Component
 
         if ($this->search) {
             $query->whereHas('user', function ($q) {
-                $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('email', 'like', '%'.$this->search.'%');
+                $q->where('name', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('email', 'ilike', '%'.$this->search.'%');
             })
-                ->orWhere('certification_level', 'like', '%'.$this->search.'%')
-                ->orWhere('phone', 'like', '%'.$this->search.'%')
-                ->orWhere('license_number', 'like', '%'.$this->search.'%');
+                ->orWhere('certification_level', 'ilike', '%'.$this->search.'%')
+                ->orWhere('phone', 'ilike', '%'.$this->search.'%')
+                ->orWhere('license_number', 'ilike', '%'.$this->search.'%');
         }
 
         $referees = $query->latest()->paginate($this->perPage === 'all' ? Referee::count() : $this->perPage);

@@ -932,7 +932,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->orderBy('id');
 
         if ($this->searchMatchNumber) {
-            $matchNumbersQuery->where('name', 'like', '%'.$this->searchMatchNumber.'%');
+            $matchNumbersQuery->where('name', 'ilike', '%'.$this->searchMatchNumber.'%');
         }
 
         if ($this->filterAgeGroupId) {
@@ -1069,7 +1069,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'courts' => Court::orderBy('order')->get(),
             'sessionTimes' => SessionTime::orderBy('start_time')->get(),
             'koorUsers' => User::role('Koordinator Lapangan')->orderBy('name')->get(),
-            'paniteraUsers' => User::role('Panitera')->where('name', 'like', '%'.$this->searchPanitera.'%')->orderBy('name')->get(),
+            'paniteraUsers' => User::role('Panitera')->where('name', 'ilike', '%'.$this->searchPanitera.'%')->orderBy('name')->get(),
             'stats' => [
                 'total' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->count(),
                 'drawn' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNotNull('drawing_generated_at')->count(),

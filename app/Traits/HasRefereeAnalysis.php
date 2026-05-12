@@ -24,7 +24,7 @@ trait HasRefereeAnalysis
         // Apply filters
         if (! empty($filters['search'])) {
             $query->whereHas('scorable.athletes', function ($q) use ($filters) {
-                $q->where('name', 'like', '%'.$filters['search'].'%');
+                $q->where('name', 'ilike', '%'.$filters['search'].'%');
             });
         }
 

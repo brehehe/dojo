@@ -111,7 +111,7 @@ class AdminMasterSessionTimeIndex extends Component
 
     public function render()
     {
-        $sessionTimes = SessionTime::orWhere('name', 'like', '%'.$this->search.'%')
+        $sessionTimes = SessionTime::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? SessionTime::count() : $this->perPage);
 

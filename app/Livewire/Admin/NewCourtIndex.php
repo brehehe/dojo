@@ -97,7 +97,7 @@ class NewCourtIndex extends Component
         $query = Court::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $courts = $query->latest()->paginate($this->perPage === 'all' ? Court::count() : $this->perPage);

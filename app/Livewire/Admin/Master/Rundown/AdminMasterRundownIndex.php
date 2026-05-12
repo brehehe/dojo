@@ -118,7 +118,7 @@ class AdminMasterRundownIndex extends Component
 
     public function render()
     {
-        $rundowns = Rundown::orWhere('name', 'like', '%'.$this->search.'%')
+        $rundowns = Rundown::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Rundown::count() : $this->perPage);
 

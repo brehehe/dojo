@@ -73,6 +73,7 @@ class MatchNumber extends Model
         return match ($this->gender) {
             'Male' => 'Laki-laki',
             'Female' => 'Perempuan',
+            'Mix' => 'Campuran',
             default => '-',
         };
     }

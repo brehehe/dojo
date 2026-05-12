@@ -97,7 +97,7 @@ class NewTechniqueIndex extends Component
         $query = Technique::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $techniques = $query->latest()->paginate($this->perPage === 'all' ? Technique::count() : $this->perPage);
