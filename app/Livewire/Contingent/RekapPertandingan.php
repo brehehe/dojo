@@ -84,33 +84,82 @@ class RekapPertandingan extends Component
 
     protected function getRandoriData()
     {
-        // For Randori, we check randori_match_results where one of the athletes belongs to this contingent
-        $query = RandoriMatchResult::with(['matchNumber.ageGroup', 'akaRegistration.contingent', 'shiroRegistration.contingent'])
-            ->where(function($q) {
-                $q->whereHas('akaRegistration', function($sq) {
-                    $sq->where('contingent_id', $this->contingent->id);
-                })->orWhereHas('shiroRegistration', function($sq) {
-                    $sq->where('contingent_id', $this->contingent->id);
-                });
+        // For Randori, we check randori_match_results and filter by contingent name in drawing_data
+        $query = RandoriMatchResult::with(['matchNumber.ageGroup'])
+            ->whereHas('matchNumber', function($q) {
+                $q->where('draft_type', 'randori');
             });
 
         if ($this->matchNumberFilter) {
             $query->where('match_number_id', $this->matchNumberFilter);
         }
 
-        if ($this->search) {
-            $query->where(function($q) {
-                $q->whereHas('akaRegistration.athletes', function($sq) {
-                    $sq->where('name', 'ilike', '%'.$this->search.'%');
-                })->orWhereHas('shiroRegistration.athletes', function($sq) {
-                    $sq->where('name', 'ilike', '%'.$this->search.'%');
-                });
-            });
-        }
+        $allResults = $query->latest()->get();
+        $contingentName = $this->contingent->name;
 
-        $results = $query->orderBy('match_number_id')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20, ['*'], 'randoriPage');
+        $filteredResults = $allResults->filter(function($res) use ($contingentName) {
+            $drawingData = $res->matchNumber->drawing_data ?? [];
+            $nodeParts = explode('_', $res->bracket_node);
+            $bracket = $nodeParts[0];
+            $roundIdx = (int) ($nodeParts[1] ?? 0);
+            $matchIdx = (int) ($nodeParts[2] ?? 0);
+
+            $matchInfo = null;
+            if ($bracket === 'ub') {
+                $matchInfo = $drawingData['upper_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+            } elseif ($bracket === 'lb') {
+                $matchInfo = $drawingData['lower_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+            } elseif ($bracket === 'gf') {
+                $matchInfo = $drawingData['grand_final'] ?? null;
+            }
+
+            if (!$matchInfo) return false;
+
+            $akaContingent = $matchInfo['athlete1']['contingent'] ?? '';
+            $shiroContingent = $matchInfo['athlete2']['contingent'] ?? '';
+
+            // Filter by search if exists
+            if ($this->search) {
+                $akaName = $matchInfo['athlete1']['name'] ?? '';
+                $shiroName = $matchInfo['athlete2']['name'] ?? '';
+                if (stripos($akaName, $this->search) === false && stripos($shiroName, $this->search) === false) {
+                    return false;
+                }
+            }
+
+            if ($akaContingent === $contingentName || $shiroContingent === $contingentName) {
+                // Attach processed info to the result object
+                $res->processed_aka = [
+                    'name' => $matchInfo['athlete1']['name'] ?? '-',
+                    'contingent' => $akaContingent,
+                    'is_winner' => $res->winner_color === 'athlete1',
+                    'is_mine' => $akaContingent === $contingentName
+                ];
+                $res->processed_shiro = [
+                    'name' => $matchInfo['athlete2']['name'] ?? '-',
+                    'contingent' => $shiroContingent,
+                    'is_winner' => $res->winner_color === 'athlete2',
+                    'is_mine' => $shiroContingent === $contingentName
+                ];
+                $res->round_label = $this->getRoundLabel($res->bracket_node, $res->matchNumber);
+                $res->pool_name = $matchInfo['pool'] ?? ($matchInfo['pool_id'] ?? 'A');
+                
+                return true;
+            }
+
+            return false;
+        });
+
+        // Paginate the collection manually
+        $page = request()->get('randoriPage', 1);
+        $perPage = 20;
+        $results = new \Illuminate\Pagination\LengthAwarePaginator(
+            $filteredResults->forPage($page, $perPage),
+            $filteredResults->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query(), 'pageName' => 'randoriPage']
+        );
 
         return ['results' => $results];
     }
