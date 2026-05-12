@@ -109,27 +109,31 @@
                                     <div style="font-size:10px; color:var(--smoke)">{{ $r->matchNumber->ageGroup->name ?? '-' }}</div>
                                 </td>
                                 <td>
-                                    <div style="font-weight:700; text-transform:uppercase">{{ $r->round_type }}</div>
+                                    <div style="font-weight:700; text-transform:uppercase">{{ $r->round_label }}</div>
                                     <div style="font-size:10px; color:var(--smoke)">Pool {{ $r->pool_name ?? '-' }}</div>
                                 </td>
                                 <td>
                                     <span class="badge-aka">AKA</span>
-                                    <span style="font-weight:600; margin-left:4px">{{ $r->akaRegistration->athletes->pluck('name')->join(' & ') }}</span>
-                                    @if($r->winner_registration_id == $r->aka_registration_id) <i class="fas fa-check-circle winner-mark"></i> @endif
-                                    <div style="font-size:10px; color:var(--smoke); margin-left:36px">{{ $r->akaRegistration->contingent->name }}</div>
+                                    <span style="font-weight:600; margin-left:4px">{{ $r->processed_aka['name'] }}</span>
+                                    @if($r->processed_aka['is_winner']) <i class="fas fa-check-circle winner-mark"></i> @endif
+                                    <div style="font-size:10px; color:var(--smoke); margin-left:36px">{{ $r->processed_aka['contingent'] }}</div>
                                 </td>
                                 <td>
                                     <span class="badge-shiro">SHIRO</span>
-                                    <span style="font-weight:600; margin-left:4px">{{ $r->shiroRegistration->athletes->pluck('name')->join(' & ') }}</span>
-                                    @if($r->winner_registration_id == $r->shiro_registration_id) <i class="fas fa-check-circle winner-mark"></i> @endif
-                                    <div style="font-size:10px; color:var(--smoke); margin-left:48px">{{ $r->shiroRegistration->contingent->name }}</div>
+                                    <span style="font-weight:600; margin-left:4px">{{ $r->processed_shiro['name'] }}</span>
+                                    @if($r->processed_shiro['is_winner']) <i class="fas fa-check-circle winner-mark"></i> @endif
+                                    <div style="font-size:10px; color:var(--smoke); margin-left:48px">{{ $r->processed_shiro['contingent'] }}</div>
                                 </td>
                                 <td align="center" style="font-weight:800; font-size:14px">
-                                    {{ $r->aka_score }} - {{ $r->shiro_score }}
+                                    {{ $r->score_red }} - {{ $r->score_blue }}
                                 </td>
                                 <td>
-                                    @if($r->aka_registration_id == $contingent->id || $r->shiro_registration_id == $contingent->id)
-                                        @if($r->winner_registration_id == ($r->akaRegistration->contingent_id == $contingent->id ? $r->aka_registration_id : $r->shiro_registration_id))
+                                    @if($r->processed_aka['is_mine'] || $r->processed_shiro['is_mine'])
+                                        @php 
+                                            $iWon = ($r->processed_aka['is_mine'] && $r->processed_aka['is_winner']) || 
+                                                    ($r->processed_shiro['is_mine'] && $r->processed_shiro['is_winner']);
+                                        @endphp
+                                        @if($iWon)
                                             <span style="color:#27ae60; font-weight:800; font-size:10px; text-transform:uppercase"><i class="fas fa-trophy"></i> Menang</span>
                                         @else
                                             <span style="color:#c0392b; font-weight:800; font-size:10px; text-transform:uppercase">Kalah</span>

@@ -163,4 +163,30 @@ class RekapPertandingan extends Component
 
         return ['results' => $results];
     }
+
+    private function getRoundLabel(string $nodeKey, $matchNumber): string
+    {
+        $parts = explode('_', $nodeKey);
+        $bracket = $parts[0];
+        $roundIdx = (int) ($parts[1] ?? 0);
+
+        if ($bracket === 'gf') {
+            return 'Final';
+        }
+
+        $totalRounds = count($matchNumber->drawing_data['upper_bracket']['rounds'] ?? []);
+
+        if ($bracket === 'ub') {
+            $diff = $totalRounds - 1 - $roundIdx;
+
+            return match ($diff) {
+                0 => 'Semi Final',
+                1 => 'Perempat Final',
+                2 => 'Babak 16 Besar',
+                default => 'Penyisihan',
+            };
+        }
+
+        return 'Repechage';
+    }
 }
