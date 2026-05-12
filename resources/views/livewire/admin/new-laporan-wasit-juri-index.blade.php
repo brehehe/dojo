@@ -73,20 +73,25 @@
                     </select>
                 </div>
                 <div>
-                    <span class="filter-label">Nomor Pertandingan</span>
-                    <select wire:model.live="matchNumberFilter" class="filter-sel">
-                        <option value="">Semua Nomor</option>
-                        @foreach($matchNumbers as $mn)
-                            <option value="{{ $mn->id }}">{{ $mn->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
                     <span class="filter-label">Kelompok Umur</span>
                     <select wire:model.live="ageGroupFilter" class="filter-sel">
                         <option value="">Semua Umur</option>
                         @foreach($ageGroups as $ag)
                             <option value="{{ $ag->id }}">{{ $ag->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <span class="filter-label">
+                        Nomor Pertandingan
+                        @if(empty($ageGroupFilter))
+                            <span style="font-weight:400; opacity:.6;">(pilih umur dulu)</span>
+                        @endif
+                    </span>
+                    <select wire:model.live="matchNumberFilter" class="filter-sel" @if(empty($ageGroupFilter)) disabled @endif style="{{ empty($ageGroupFilter) ? 'opacity:.5;cursor:not-allowed;' : '' }}">
+                        <option value="">Semua Nomor</option>
+                        @foreach($matchNumbers as $mn)
+                            <option value="{{ $mn->id }}">{{ $mn->name }}</option>
                         @endforeach
                     </select>
                 </div>

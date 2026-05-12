@@ -230,9 +230,23 @@
                 href="{{ route('contingent.athletes') }}"><i class="fa-solid fa-users"></i> Atlet</a>
             <a class="nav-item {{ request()->routeIs('contingent.officials') ? 'active' : '' }}"
                 href="{{ route('contingent.officials') }}"><i class="fa-solid fa-user-tie"></i> Official</a>
+            <div x-data="{ open: @json(request()->routeIs('contingent.registration-history*')) }">
+                <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
+                    <span class="label">Pendaftaran</span>
+                    <i class="fa-solid fa-chevron-right chevron"></i>
+                </button>
+                <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+                    class="collapsible-content">
+                    <a class="nav-item {{ request()->routeIs('contingent.registration-history*') ? 'active' : '' }}"
+                        href="{{ route('contingent.registration-history') }}"><i class="fa-solid fa-history"></i> History Registrasi</a>
+                </div>
+            </div>
             <div class="nav-section">Laporan</div>
             <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
                 href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan Wasit</a>
+            <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
+                href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i class="fa-solid fa-chart-simple"></i> Analisis Per Juri</a>
             <a class="nav-item {{ request()->routeIs('contingent.rekap-pertandingan') ? 'active' : '' }}"
                 href="{{ route('contingent.rekap-pertandingan') }}"><i class="fa-solid fa-file-invoice"></i> Rekap Embu & Randori</a>
         @else
@@ -254,8 +268,22 @@
                         href="{{ route('contingent.athletes') }}"><i class="fa-solid fa-users"></i> Atlet</a>
                     <a class="nav-item {{ request()->routeIs('contingent.officials') ? 'active' : '' }}"
                         href="{{ route('contingent.officials') }}"><i class="fa-solid fa-user-tie"></i> Official</a>
+                    <div x-data="{ open: @json(request()->routeIs('contingent.registration-history*')) }">
+                        <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
+                            <span class="label">Pendaftaran</span>
+                            <i class="fa-solid fa-chevron-right chevron"></i>
+                        </button>
+                        <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+                            class="collapsible-content">
+                            <a class="nav-item {{ request()->routeIs('contingent.registration-history*') ? 'active' : '' }}"
+                                href="{{ route('contingent.registration-history') }}"><i class="fa-solid fa-history"></i> History Registrasi</a>
+                        </div>
+                    </div>
                     <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
                         href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan Wasit</a>
+                    <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
+                        href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i class="fa-solid fa-chart-simple"></i> Analisis Per Juri</a>
                     <a class="nav-item {{ request()->routeIs('contingent.rekap-pertandingan') ? 'active' : '' }}"
                         href="{{ route('contingent.rekap-pertandingan') }}"><i class="fa-solid fa-file-invoice"></i> Rekap Embu & Randori</a>
                 </div>

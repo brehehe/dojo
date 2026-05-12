@@ -52,6 +52,12 @@ class NewLaporanWasitJuriIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedAgeGroupFilter(): void
+    {
+        $this->matchNumberFilter = '';
+        $this->resetPage();
+    }
+
     public function render()
     {
         // Primary query: one row = one referee score entry per match
@@ -144,12 +150,16 @@ class NewLaporanWasitJuriIndex extends Component
             'scoreRows' => $scoreRows,
             'drawings' => $drawings,
             'chartData' => $chartData,
-            'ageGroups' => AgeGroup::all(),
-            'matchNumbers' => MatchNumber::where('draft_type', 'embu')->get(),
+            'ageGroups' => AgeGroup::orderBy('order')->get(),
             'referees' => Referee::with('user')->join('users', 'referees.user_id', '=', 'users.id')->orderBy('users.name')->select('referees.*')->get(),
             'courts' => Court::orderBy('order')->get(),
             'pools' => Pool::orderBy('name')->get(),
             'rundowns' => Rundown::orderBy('order')->get(),
+            // matchNumbers is filtered by selected age group (cascade)
+            'matchNumbers' => MatchNumber::where('draft_type', 'embu')
+                ->when(! empty($this->ageGroupFilter), fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
+                ->orderBy('name')
+                ->get(),
         ])->title('Laporan Analisis Per Juri');
     }
 }

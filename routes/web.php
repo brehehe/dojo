@@ -106,6 +106,8 @@ use App\Livewire\Contingent\Athletes;
 use App\Livewire\Contingent\Dashboard;
 use App\Livewire\Contingent\LaporanWasit;
 use App\Livewire\Contingent\Officials;
+use App\Livewire\Contingent\RegistrationHistoryDetailIndex;
+use App\Livewire\Contingent\RegistrationHistoryIndex;
 use App\Livewire\Contingent\RekapPertandingan;
 use App\Livewire\Contingent\Results;
 use App\Livewire\Contingent\Schedule;
@@ -147,6 +149,8 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/athletes', Athletes::class)->name('contingent.athletes');
     Route::get('contingent/officials', Officials::class)->name('contingent.officials');
     Route::get('contingent/laporan-wasit', LaporanWasit::class)->name('contingent.laporan-wasit');
+    Route::get('contingent/registration-history', RegistrationHistoryIndex::class)->name('contingent.registration-history');
+    Route::get('contingent/registration-history/{registration}', RegistrationHistoryDetailIndex::class)->name('contingent.registration-history.show');
     Route::get('contingent/rekap-pertandingan', RekapPertandingan::class)->name('contingent.rekap-pertandingan');
 
     Route::post('logout', function () {
