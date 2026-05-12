@@ -40,10 +40,9 @@ class Referee extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function matchNumbers()
+    public function schedules()
     {
-        return $this->belongsToMany(MatchNumber::class, 'match_number_referee')
-            ->withTimestamps();
+        return $this->hasMany(ScheduleReferee::class);
     }
 
     /**

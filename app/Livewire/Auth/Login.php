@@ -22,6 +22,19 @@ class Login extends Component
         ];
     }
 
+    public function mount()
+    {
+        if (Auth::check()) {
+            if (Auth::user()->hasRole('Contingent')) {
+                return redirect()->intended(route('contingent.dashboard'));
+            } elseif (Auth::user()->hasRole('Perwasitan|Wasit')) {
+                return redirect()->intended(route('admin.referee.scoring'));
+            }
+
+            return redirect()->intended(route('admin.new-dashboard'));
+        }
+    }
+
     public function login()
     {
         $this->validate();
@@ -31,6 +44,8 @@ class Login extends Component
 
             if (Auth::user()->hasRole('Contingent')) {
                 return redirect()->intended(route('contingent.dashboard'));
+            } elseif (Auth::user()->hasRole('Perwasitan|Wasit')) {
+                return redirect()->intended(route('admin.referee.scoring'));
             }
 
             return redirect()->intended(route('admin.new-dashboard'));

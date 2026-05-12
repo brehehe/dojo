@@ -48,13 +48,6 @@ class MatchNumber extends Model
             ->withTimestamps();
     }
 
-    public function referees()
-    {
-        return $this->belongsToMany(Referee::class, 'match_number_referee')
-            ->withPivot('judge_index')
-            ->withTimestamps();
-    }
-
     public function embuScores()
     {
         return $this->hasMany(EmbuScore::class);

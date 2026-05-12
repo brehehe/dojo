@@ -90,6 +90,7 @@
     .portal-card-btn.red:hover   { background: var(--red);   border-color: var(--red);   color: #fff; }
     .portal-card-btn.blue:hover  { background: #2980b9;      border-color: #2980b9;      color: #fff; }
     .portal-card-btn.green:hover { background: #27ae60;      border-color: #27ae60;      color: #fff; }
+    .portal-card-btn.gold:hover { background: #b8860b;       border-color: #b8860b;      color: #fff; }
 
     /* ── ANNOUNCEMENT BANNER ── */
     .announcement-banner {
@@ -195,6 +196,22 @@
                     <i class="fa-solid fa-address-card"></i> Lihat Kartu
                 </button>
             </div>
+
+            @if ($isReferee)
+                {{-- Panel Wasit --}}
+                <div class="portal-card">
+                    <div class="portal-card-glow gold"></div>
+                    <div class="portal-card-icon gold">
+                        <i class="fa-solid fa-gavel"></i>
+                    </div>
+                    <h3>Panel Wasit</h3>
+                    <p>Akses sistem penilaian dan manajemen pertandingan Anda ({{ $assignedMatchesCount }} Pertandingan).
+                    </p>
+                    <a href="{{ route('admin.referee.scoring') }}" class="portal-card-btn gold">
+                        <i class="fa-solid fa-gauge-high"></i> Masuk Penilaian
+                    </a>
+                </div>
+            @endif
         </div>
 
         {{-- ── ANNOUNCEMENT BANNER ── --}}

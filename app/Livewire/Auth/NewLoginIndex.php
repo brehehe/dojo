@@ -22,6 +22,16 @@ class NewLoginIndex extends Component
 
     public function mount()
     {
+        if (Auth::check()) {
+            if (Auth::user()->hasRole('Contingent')) {
+                return redirect()->intended(route('contingent.dashboard'));
+            } elseif (Auth::user()->hasRole('Perwasitan|Wasit')) {
+                return redirect()->intended(route('admin.referee.scoring'));
+            }
+
+            return redirect()->intended(route('admin.new-dashboard'));
+        }
+
         $this->totalAthletes = Athlete::count();
         // Assuming provinces are calculated from contingents or similar
         $this->totalProvinces = Contingent::distinct('kab_kota')->count();
@@ -44,6 +54,8 @@ class NewLoginIndex extends Component
 
             if (Auth::user()->hasRole('Contingent')) {
                 return redirect()->intended(route('contingent.dashboard'));
+            } elseif (Auth::user()->hasRole('Perwasitan|Wasit')) {
+                return redirect()->intended(route('admin.referee.scoring'));
             }
 
             return redirect()->intended(route('admin.new-dashboard'));

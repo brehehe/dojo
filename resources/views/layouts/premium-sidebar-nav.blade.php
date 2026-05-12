@@ -141,6 +141,8 @@
     @endhasanyrole
 
     @hasanyrole('Wasit|Perwasitan')
+        <a class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}"><i
+                class="fa-solid fa-house"></i> Dashboard</a>
         <a class="nav-item {{ request()->routeIs('admin.referee.scoring') ? 'active' : '' }}"
             href="{{ route('admin.referee.scoring') }}"><i class="fa-solid fa-gauge-high"></i> Penilain Wasit</a>
     @endhasanyrole
