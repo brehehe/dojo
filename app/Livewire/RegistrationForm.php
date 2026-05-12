@@ -279,21 +279,38 @@ class RegistrationForm extends Component
         }
     }
 
-    public function addTechniqueToMatch($matchId, $techniqueId)
+    public function addTechniqueToMatch($matchId, $techniqueValue)
     {
-        if (empty($matchId) || empty($techniqueId))
+        if (empty($matchId) || empty($techniqueValue))
             return;
+
+        $technique = null;
+
+        // Check if $techniqueValue is an ID or a new name
+        if (is_numeric($techniqueValue)) {
+            $technique = \App\Models\Technique\Technique::find($techniqueValue);
+        } else {
+            // It's a new name, create it
+            $technique = \App\Models\Technique\Technique::firstOrCreate(
+                ['name' => $techniqueValue],
+                ['order' => \App\Models\Technique\Technique::max('order') + 1]
+            );
+            // Refresh the techniques list for the select
+            $this->techniques = \App\Models\Technique\Technique::orderBy('order', 'asc')->get();
+        }
+
+        if (!$technique) return;
 
         if (!isset($this->matchTechniques[$matchId])) {
             $this->matchTechniques[$matchId] = [];
         }
 
         // Prevent duplicates
-        if (in_array($techniqueId, $this->matchTechniques[$matchId])) {
+        if (in_array($technique->id, $this->matchTechniques[$matchId])) {
             return;
         }
 
-        $this->matchTechniques[$matchId][] = $techniqueId;
+        $this->matchTechniques[$matchId][] = $technique->id;
     }
 
     public function removeTechniqueFromMatch($matchId, $index)

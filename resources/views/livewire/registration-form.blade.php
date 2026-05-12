@@ -1,6 +1,45 @@
 <div>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+    </style>
+
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* Tom Select Premium Overrides */
+        .ts-control {
+            border: 2px solid #cbd5e1 !important;
+            border-radius: 14px !important;
+            padding: 8px 12px !important;
+            font-family: 'Outfit', sans-serif !important;
+            font-weight: 600 !important;
+            font-size: 15px !important;
+            transition: all 0.2s !important;
+            background: white !important;
+            min-height: 45px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+        }
+        .ts-dropdown {
+            border-radius: 12px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            margin-top: 5px !important;
+            overflow: hidden !important;
+        }
+        .ts-dropdown .active {
+            background-color: #f5f7ff !important;
+            color: #4f46e5 !important;
+        }
+        .ts-control input::placeholder {
+            color: #94a3b8 !important;
+            font-weight: 500 !important;
+        }
 
         .form-container {
             /* max-width: 1200px; */
@@ -742,60 +781,86 @@
                                                         @endphp
 
                                                         <div
-                                                            class="p-3 bg-white/50 rounded-xl border border-indigo-100/50 mt-1">
+                                                            class="mt-3 p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
                                                             @if ($isLeader)
-                                                                <label class="!text-[15px] !mb-1 text-indigo-600">Pilih
-                                                                    Komposisi (Berurutan)</label>
-                                                                <div x-data="{ selectedTech: '' }" class="flex gap-1">
-                                                                    <select x-model="selectedTech"
-                                                                        class="form-input-custom !py-1 !px-2 !text-[15px] !rounded-lg">
-                                                                        <option value="">+ Tambah Komposisi
-                                                                        </option>
-                                                                        @foreach ($techniques as $tech)
-                                                                            <option value="{{ $tech->id }}">
-                                                                                {{ $tech->name }}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                    <button type="button"
-                                                                        @click="if(selectedTech) { $wire.addTechniqueToMatch('{{ $athlete[$evField] }}', selectedTech); selectedTech = ''; }"
-                                                                        class="bg-indigo-600 text-white px-3 rounded-lg text-[15px] font-bold hover:bg-indigo-700 transition-colors">
-                                                                        ADD
-                                                                    </button>
+                                                                <div class="mb-3">
+                                                                    <label class="!text-[13px] !font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                                                        <i class="fa-solid fa-list-ol"></i>
+                                                                        Pilih Komposisi (Berurutan)
+                                                                    </label>
+                                                                    
+                                                                    <div x-data="{ 
+                                                                        selectedTech: '',
+                                                                        tomSelect: null,
+                                                                        initTS() {
+                                                                            this.tomSelect = new TomSelect(this.$refs.techSelect, {
+                                                                                create: true,
+                                                                                maxItems: 1,
+                                                                                placeholder: '+ Tambah Komposisi Baru...',
+                                                                                onChange: (val) => { this.selectedTech = val; }
+                                                                            });
+                                                                        }
+                                                                    }" x-init="initTS()" class="flex gap-2">
+                                                                        <div wire:ignore class="flex-1">
+                                                                            <select x-ref="techSelect" x-model="selectedTech">
+                                                                                <option value=""></option>
+                                                                                @foreach ($techniques as $tech)
+                                                                                    <option value="{{ $tech->id }}">
+                                                                                        {{ $tech->name }}</option>
+                                                                                @endforeach
+                                                                            </select>
+                                                                        </div>
+                                                                        <button type="button"
+                                                                            @click="if(selectedTech) { $wire.addTechniqueToMatch('{{ $athlete[$evField] }}', selectedTech); selectedTech = ''; tomSelect.clear(); }"
+                                                                            class="bg-indigo-600 text-white px-5 rounded-xl text-[14px] font-black hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 h-[45px]">
+                                                                            <i class="fa-solid fa-plus"></i>
+                                                                            ADD
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             @else
-                                                                <div class="flex items-center gap-2 mb-2">
-                                                                    <div class="w-1 h-1 rounded-full bg-orange-400">
+                                                                <div class="flex items-center gap-3 mb-3 bg-orange-50 p-3 rounded-xl border border-orange-100">
+                                                                    <div class="w-8 h-8 rounded-full bg-orange-400 flex items-center justify-center text-white text-[12px]">
+                                                                        <i class="fa-solid fa-user-check"></i>
                                                                     </div>
-                                                                    <span
-                                                                        class="text-[15px] font-bold text-orange-600 uppercase tracking-tight italic">
-                                                                        Komposisi dari:
-                                                                        {{ $leaderInfo['athlete_name'] }}
-                                                                    </span>
+                                                                    <div>
+                                                                        <p class="text-[11px] text-orange-500 font-bold uppercase tracking-wider mb-0.5">Komposisi dari Leader:</p>
+                                                                        <p class="text-[14px] font-black text-orange-700 uppercase tracking-tight">
+                                                                            {{ $leaderInfo['athlete_name'] }}
+                                                                        </p>
+                                                                    </div>
                                                                 </div>
                                                             @endif
 
-                                                            <div class="mt-2 space-y-2">
+                                                            <div class="space-y-2">
                                                                 @forelse($matchTechniques[$athlete[$evField]] ?? [] as $tIdx => $tId)
                                                                     @php $tName = $techniques->firstWhere('id', $tId)?->name ?? 'Unknown'; @endphp
                                                                     <div
-                                                                        class="flex justify-between items-center bg-white px-3 py-2 rounded-xl border border-indigo-50 shadow-sm group hover:border-indigo-200 transition-all animate-in slide-in-from-top-1">
-                                                                        <span
-                                                                            class="text-[15px] font-bold text-black uppercase tracking-tight">
-                                                                            <span
-                                                                                class="text-indigo-400 mr-2 font-black">{{ $tIdx + 1 }}.</span>
-                                                                            {{ $tName }}
-                                                                        </span>
-                                                                        <button type="button"
-                                                                            wire:click="removeTechniqueFromMatch('{{ $athlete[$evField] }}', {{ $tIdx }})"
-                                                                            class="text-slate-300 hover:text-rose-500 transition-colors"
-                                                                            title="Hapus Komposisi">
-                                                                            Hapus
-                                                                        </button>
+                                                                        class="flex justify-between items-center bg-white px-4 py-3 rounded-xl border border-indigo-50 shadow-sm group hover:border-indigo-300 hover:shadow-md transition-all duration-300 animate-in fade-in zoom-in-95">
+                                                                        <div class="flex items-center gap-3">
+                                                                            <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-[12px] font-black shadow-sm group-hover:scale-110 transition-transform">
+                                                                                {{ $tIdx + 1 }}
+                                                                            </div>
+                                                                            <span class="text-[15px] font-black text-slate-800 uppercase tracking-tight">
+                                                                                {{ $tName }}
+                                                                            </span>
+                                                                        </div>
+                                                                        @if($isLeader)
+                                                                            <button type="button"
+                                                                                wire:click="removeTechniqueFromMatch('{{ $athlete[$evField] }}', {{ $tIdx }})"
+                                                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-rose-500 transition-all duration-200"
+                                                                                title="Hapus Komposisi">
+                                                                                <i class="fa-solid fa-trash-can text-[12px]"></i>
+                                                                            </button>
+                                                                        @endif
                                                                     </div>
                                                                 @empty
-                                                                    <p
-                                                                        class="text-[15px] text-slate-800 italic font-medium px-1">
-                                                                        Belum ada teknik ditambahkan.</p>
+                                                                    <div class="py-4 text-center border-2 border-dashed border-indigo-100 rounded-2xl bg-indigo-50/20">
+                                                                        <p class="text-[14px] text-indigo-400 font-bold italic">
+                                                                            <i class="fa-solid fa-info-circle mr-1"></i>
+                                                                            Belum ada teknik yang ditambahkan.
+                                                                        </p>
+                                                                    </div>
                                                                 @endforelse
                                                             </div>
                                                         </div>
