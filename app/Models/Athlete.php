@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\AthleteContingentHistory;
 use App\Models\MatchNumber\MatchNumber;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,7 +37,7 @@ class Athlete extends Model
     public function registrations()
     {
         return $this->belongsToMany(Registration::class, 'registration_athlete')
-            ->withPivot(['weight', 'kyu', 'age_group', 'rank', 'match_type', 'dojo_origin', 'city', 'age'])
+            ->withPivot(['weight', 'kyu', 'age_group', 'rank', 'match_type', 'dojo_origin', 'city', 'age', 'weight_group_id'])
             ->withTimestamps();
     }
 
@@ -78,11 +77,11 @@ class Athlete extends Model
 
     public function getContingentAttribute()
     {
-        return $this->contingents()->wherePivot('is_primary', true)->first() 
+        return $this->contingents()->wherePivot('is_primary', true)->first()
             ?? $this->latestRegistration()?->contingent;
     }
 
-    public function contingentHistories()   
+    public function contingentHistories()
     {
         return $this->hasMany(AthleteContingentHistory::class)->orderBy('moved_at', 'desc');
     }

@@ -38,7 +38,7 @@ class Registration extends Model
     public function athletes(): BelongsToMany
     {
         return $this->belongsToMany(Athlete::class, 'registration_athlete')
-            ->withPivot(['weight', 'kyu', 'age_group', 'rank', 'match_type', 'dojo_origin', 'city', 'age'])
+            ->withPivot(['weight', 'kyu', 'age_group', 'rank', 'match_type', 'dojo_origin', 'city', 'age', 'weight_group_id'])
             ->withTimestamps();
     }
 

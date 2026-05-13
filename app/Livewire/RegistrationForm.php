@@ -248,14 +248,14 @@ class RegistrationForm extends Component
                 'gender' => $ath->gender,
                 'birth_place' => $ath->birth_place,
                 'blood_type' => $ath->blood_type,
-                'birth_date' => $ath->birth_date,
+                'birth_date' => $ath->birth_date instanceof Carbon ? $ath->birth_date->format('Y-m-d') : Carbon::parse($ath->birth_date)->format('Y-m-d'),
                 'address' => $ath->address,
                 'phone' => $ath->phone,
                 'photo' => null,
                 'existing_photo_path' => $ath->photo_path, // Keep existing path so re-upload is optional
                 'current_weight' => $ath->pivot->weight,
                 'weight_group_id' => $ath->pivot->weight_group_id,
-                'age_group' => $ath->pivot->age_group,
+                'age_group' => $this->ageGroups->firstWhere('name', $ath->pivot->age_group)?->id ?? $ath->pivot->age_group,
                 'rank' => $ath->pivot->rank,
                 'dojo_origin' => $ath->pivot->dojo_origin,
                 'city' => $ath->pivot->city,
@@ -640,6 +640,11 @@ class RegistrationForm extends Component
             return [];
         }
 
+        // Robust fallback: if $ageGroupId is a name (e.g. from legacy draft), find the ID
+        if ($ageGroupId && ! is_numeric($ageGroupId)) {
+            $ageGroupId = AgeGroup::where('name', $ageGroupId)->value('id') ?? $ageGroupId;
+        }
+
         return MatchNumber::where('age_group_id', $ageGroupId)
             ->where(function ($query) use ($gender) {
                 $query->where('gender', $gender)
@@ -720,7 +725,12 @@ class RegistrationForm extends Component
     {
         $count = 0;
         foreach ($this->athletes as $athlete) {
-            if ($athlete['age_group'] === 'Pemula') {
+            $ageGroupId = $athlete['age_group'];
+            $name = is_numeric($ageGroupId)
+                ? ($this->ageGroups->firstWhere('id', $ageGroupId)?->name)
+                : $ageGroupId;
+
+            if ($name === 'Pemula') {
                 $count++;
             }
         }
@@ -732,7 +742,12 @@ class RegistrationForm extends Component
     {
         $count = 0;
         foreach ($this->athletes as $athlete) {
-            if ($athlete['age_group'] !== 'Pemula') {
+            $ageGroupId = $athlete['age_group'];
+            $name = is_numeric($ageGroupId)
+                ? ($this->ageGroups->firstWhere('id', $ageGroupId)?->name)
+                : $ageGroupId;
+
+            if ($name !== 'Pemula' && ! empty($name)) {
                 $count++;
             }
         }
@@ -744,7 +759,13 @@ class RegistrationForm extends Component
     {
         $total = 0;
         foreach ($this->athletes as $athleteData) {
-            $ageGroup = $this->ageGroups->firstWhere('id', $athleteData['age_group']);
+            $ageGroupId = $athleteData['age_group'];
+            // Handle name-based age group (legacy or draft)
+            if ($ageGroupId && ! is_numeric($ageGroupId)) {
+                $ageGroupId = $this->ageGroups->firstWhere('name', $ageGroupId)?->id;
+            }
+
+            $ageGroup = $this->ageGroups->firstWhere('id', $ageGroupId);
             if ($ageGroup) {
                 $total += $ageGroup->price;
             }
