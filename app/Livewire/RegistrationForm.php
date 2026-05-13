@@ -58,6 +58,7 @@ class RegistrationForm extends Component
         [
             'athlete_id' => '',
             'nik' => '',
+            'nik_kenshi' => '',
             'name' => '',
             'gender' => 'Male',
             'birth_place' => '',
@@ -244,6 +245,7 @@ class RegistrationForm extends Component
             $athData = [
                 'athlete_id' => $ath->id,
                 'nik' => $ath->nik,
+                'nik_kenshi' => $ath->nik_kenshi,
                 'name' => $ath->name,
                 'gender' => $ath->gender,
                 'birth_place' => $ath->birth_place,
@@ -289,6 +291,7 @@ class RegistrationForm extends Component
                 [
                     'athlete_id' => '',
                     'nik' => '',
+                    'nik_kenshi' => '',
                     'name' => '',
                     'gender' => 'Male',
                     'birth_place' => '',
@@ -355,6 +358,7 @@ class RegistrationForm extends Component
             'athletes.*.rank' => 'required',
             'athletes.*.dojo_origin' => 'required',
             'athletes.*.nik' => 'required|numeric|digits:16',
+            'athletes.*.nik_kenshi' => 'nullable|string',
             'athletes.*.bpjs_number' => 'required|numeric',
             'athletes.*.bpjs_status' => 'required|in:Aktif',
             'athletes.*.current_weight' => 'required|numeric',
@@ -399,6 +403,7 @@ class RegistrationForm extends Component
             $prefix = 'Atlet #'.($index + 1);
             $attributes["athletes.{$index}.name"] = "{$prefix} Nama Lengkap";
             $attributes["athletes.{$index}.nik"] = "{$prefix} NIK";
+            $attributes["athletes.{$index}.nik_kenshi"] = "{$prefix} NIK Kenshi";
             $attributes["athletes.{$index}.age_group"] = "{$prefix} Kelompok Usia";
             $attributes["athletes.{$index}.rank"] = "{$prefix} Tingkatan (Rank)";
             $attributes["athletes.{$index}.dojo_origin"] = "{$prefix} Asal Dojo";
@@ -459,6 +464,7 @@ class RegistrationForm extends Component
                 $athlete = Athlete::find($athleteId);
                 if ($athlete) {
                     $this->athletes[$index]['nik'] = $athlete->nik;
+                    $this->athletes[$index]['nik_kenshi'] = $athlete->nik_kenshi;
                     $this->athletes[$index]['name'] = $athlete->name;
                     $this->athletes[$index]['gender'] = $athlete->gender;
                     $this->athletes[$index]['birth_place'] = $athlete->birth_place;
@@ -563,6 +569,7 @@ class RegistrationForm extends Component
 
         if ($athlete) {
             $this->athletes[$index]['athlete_id'] = $athlete->id;
+            $this->athletes[$index]['nik_kenshi'] = $athlete->nik_kenshi;
             $this->athletes[$index]['name'] = $athlete->name;
             $this->athletes[$index]['gender'] = $athlete->gender;
             $this->athletes[$index]['birth_date'] = $athlete->birth_date;
@@ -599,6 +606,7 @@ class RegistrationForm extends Component
         $this->athletes[] = [
             'athlete_id' => '',
             'nik' => '',
+            'nik_kenshi' => '',
             'name' => '',
             'gender' => 'Male',
             'birth_place' => '',
@@ -1016,6 +1024,7 @@ class RegistrationForm extends Component
                     ['nik' => $athleteData['nik']],
                     [
                         'name' => $athleteData['name'],
+                        'nik_kenshi' => $athleteData['nik_kenshi'] ?? null,
                         'gender' => $athleteData['gender'],
                         'birth_place' => $athleteData['birth_place'],
                         'blood_type' => $athleteData['blood_type'],

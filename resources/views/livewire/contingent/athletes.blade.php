@@ -247,6 +247,10 @@
                             <span>•</span>
                             <span>{{ $athlete->nik }}</span>
                         @endif
+                        @if ($athlete->nik_kenshi)
+                            <span>•</span>
+                            <span>{{ $athlete->nik_kenshi }}</span>
+                        @endif
                         @if ($athlete->dojo_origin)
                             <span>•</span>
                             <span><i class="fa-solid fa-house-chimney"></i> {{ $athlete->dojo_origin }}</span>
@@ -318,12 +322,21 @@
                     @enderror
                 </div>
 
-                <div class="ctg-form-group">
-                    <label class="ctg-form-label">NIK (Opsional)</label>
-                    <input type="text" wire:model="nik" class="ctg-form-input" placeholder="16 digit NIK">
-                    @error('nik')
-                        <span style="font-size:10px; color:var(--red);">{{ $message }}</span>
-                    @enderror
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="ctg-form-group">
+                        <label class="ctg-form-label">NIK (KTP/KK)</label>
+                        <input type="text" wire:model="nik" class="ctg-form-input" placeholder="16 digit NIK">
+                        @error('nik')
+                            <span style="font-size:10px; color:var(--red);">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="ctg-form-group">
+                        <label class="ctg-form-label">NIK Kenshi</label>
+                        <input type="text" wire:model="nik_kenshi" class="ctg-form-input" placeholder="No. Induk Kenshi">
+                        @error('nik_kenshi')
+                            <span style="font-size:10px; color:var(--red);">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">

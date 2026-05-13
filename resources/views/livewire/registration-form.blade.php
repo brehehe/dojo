@@ -609,6 +609,16 @@
                                             @enderror
                                         </div>
                                         <div class="form-group">
+                                            <label>NIK (Nomer Induk Kenshi)</label>
+                                            <input type="text"
+                                                wire:model="athletes.{{ $index }}.nik_kenshi"
+                                                placeholder="Contoh: 12345/JATIM"
+                                                class="form-input-custom @error('athletes.' . $index . '.nik_kenshi') border-red-500 @enderror">
+                                            @error('athletes.' . $index . '.nik_kenshi')
+                                                <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                        <div class="form-group">
                                             <label>Jenis Kelamin <span class="required">*</span></label>
                                             <select wire:model.live="athletes.{{ $index }}.gender"
                                                 class="form-input-custom">

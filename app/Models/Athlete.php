@@ -17,6 +17,7 @@ class Athlete extends Model
 
     protected $fillable = [
         'nik',
+        'nik_kenshi',
         'name',
         'gender',
         'birth_place',

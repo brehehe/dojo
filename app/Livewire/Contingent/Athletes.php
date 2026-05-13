@@ -12,7 +12,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.premium')]
 class Athletes extends Component
 {
-    use WithPagination, WithFileUploads;
+    use WithFileUploads, WithPagination;
 
     public $contingent;
 
@@ -24,6 +24,8 @@ class Athletes extends Component
     public $name = '';
 
     public $nik = '';
+
+    public $nik_kenshi = '';
 
     public $gender = 'Male'; // Based on model getGenderIndoAttribute
 
@@ -75,6 +77,7 @@ class Athletes extends Component
         $this->athleteId = $athlete->id;
         $this->name = $athlete->name;
         $this->nik = $athlete->nik;
+        $this->nik_kenshi = $athlete->nik_kenshi;
         $this->gender = $athlete->gender ?? 'Male';
         $this->birth_place = $athlete->birth_place;
         $this->birth_date = $athlete->birth_date ? $athlete->birth_date->format('Y-m-d') : '';
@@ -94,6 +97,7 @@ class Athletes extends Component
         $this->athleteId = null;
         $this->name = '';
         $this->nik = '';
+        $this->nik_kenshi = '';
         $this->gender = 'Male';
         $this->birth_place = '';
         $this->birth_date = '';
@@ -113,6 +117,7 @@ class Athletes extends Component
         $this->validate([
             'name' => 'required|string|max:255',
             'nik' => 'nullable|string|max:16',
+            'nik_kenshi' => 'nullable|string|max:255',
             'gender' => 'required|in:Male,Female',
             'birth_date' => 'nullable|date',
         ]);
@@ -120,6 +125,7 @@ class Athletes extends Component
         $data = [
             'name' => $this->name,
             'nik' => $this->nik,
+            'nik_kenshi' => $this->nik_kenshi,
             'gender' => $this->gender,
             'birth_place' => $this->birth_place,
             'birth_date' => $this->birth_date,
@@ -175,7 +181,8 @@ class Athletes extends Component
         $athletes = $this->contingent->athletes()
             ->when($this->search, function ($q) {
                 $q->where('name', 'ilike', '%'.$this->search.'%')
-                    ->orWhere('nik', 'ilike', '%'.$this->search.'%');
+                    ->orWhere('nik', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('nik_kenshi', 'ilike', '%'.$this->search.'%');
             })
             ->latest()
             ->paginate(10);
