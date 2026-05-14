@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -29,8 +30,13 @@ class NewRoleForm extends Component
 
     public function save()
     {
-        $this->validate([
-            'name' => 'required|string|max:255|unique:roles,name,'.$this->roleId,
+       $this->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')->ignore($this->roleId),
+            ],
         ]);
 
         if ($this->isEdit) {
