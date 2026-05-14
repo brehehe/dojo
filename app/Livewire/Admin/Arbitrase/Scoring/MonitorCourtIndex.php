@@ -16,6 +16,15 @@ class MonitorCourtIndex extends Component
         $this->courtId = $courtId;
     }
 
+    public function getTimerState()
+    {
+        return \Illuminate\Support\Facades\Cache::get("court_{$this->courtId}_timer", [
+            'status' => 'stopped',
+            'elapsed_ms' => 0,
+            'started_at_ms' => null
+        ]);
+    }
+
     public function render()
     {
         $court = Court::with([

@@ -31,10 +31,21 @@ class TournamentDummySeeder extends Seeder
         DB::statement('SET session_replication_role = \'origin\';');
 
         for ($i = 1; $i <= 3; $i++) {
-            Court::create([
+            $court = Court::create([
                 'name' => 'Court '.$i,
                 'order' => $i,
             ]);
+
+            // Buat User khusus untuk Court ini
+            $user = User::create([
+                'name' => 'Petugas ' . $court->name,
+                'email' => 'court' . $i . '@gmail.com',
+                'password' => bcrypt('password'),
+                'court_id' => $court->id,
+                'email_verified_at' => now(),
+            ]);
+
+            $user->assignRole('Court');
         }
 
         // 2. Load basic master data

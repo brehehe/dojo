@@ -359,13 +359,20 @@ class NewScoringIndex extends Component
 
     public function render()
     {
-        $courts = Court::with([
+        $query = Court::with([
             'activeMatch',
             'activeDrawing.pool',
             'activeDrawing.sessionTime',
             'activeDrawing.rundown',
             'activeDrawing.registration.contingent',
-        ])->orderBy('order')->get();
+        ])->orderBy('order');
+
+        // Jika user yang login memiliki court_id, filter hanya court tersebut
+        if (auth()->user()->court_id) {
+            $query->where('id', auth()->user()->court_id);
+        }
+
+        $courts = $query->get();
 
         $now = now();
         $currentTimeSession = SessionTime::whereTime('start_time', '<=', $now)

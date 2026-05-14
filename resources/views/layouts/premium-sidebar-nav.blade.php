@@ -121,7 +121,7 @@
     @endhasanyrole
 
     {{-- Sistem Panitera --}}
-    @hasanyrole('Super Admin|Admin|Panitera|Koordinator Lapangan')
+    @hasanyrole('Super Admin|Admin|Panitera|Koordinator Lapangan|Court')
         <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Panitera</span>

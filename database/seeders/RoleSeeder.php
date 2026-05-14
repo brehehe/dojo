@@ -35,6 +35,7 @@ class RoleSeeder extends Seeder
             'Arbitrase',
             'Contingent',
             'Koordinator Lapangan',
+            'Court',
         ];
 
         foreach ($roles as $roleName) {
