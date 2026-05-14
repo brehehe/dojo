@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Court\Court;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -65,7 +66,19 @@ class NewCourtIndex extends Component
                     'icon' => 'success',
                 ]);
             } else {
-                Court::create(['name' => $this->name]);
+                $court = Court::create(['name' => $this->name]);
+
+                // Buat User otomatis untuk Lapangan baru ini
+                $user = User::create([
+                    'name' => 'Petugas ' . $court->name,
+                    'email' => strtolower(str_replace(' ', '', $court->name)) . $court->id . '@gmail.com',
+                    'password' => bcrypt('password'), // Password default
+                    'court_id' => $court->id,
+                    'email_verified_at' => now(),
+                ]);
+
+                // Berikan role 'Court'
+                $user->assignRole('Court');
 
                 $this->dispatch('swal', [
                     'title' => 'Berhasil!',
