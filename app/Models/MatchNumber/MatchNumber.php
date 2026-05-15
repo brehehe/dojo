@@ -68,6 +68,11 @@ class MatchNumber extends Model
         return $this->hasMany(TournamentResult::class);
     }
 
+    public function mergeDetail()
+    {
+        return $this->hasOne(\App\Models\MatchNumberMergeDetail::class);
+    }
+
     public function getGenderIndoAttribute(): string
     {
         return match ($this->gender) {

@@ -7,6 +7,7 @@ use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\MatchNumberMerge;
 use App\Models\Pool\Pool;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
@@ -25,6 +26,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
     public ?int $filterAgeGroupId = null;
 
     public ?int $filterMatchNumberId = null;
+
+    public ?int $filterMergeId = null;
 
     public string $draftType = 'randori'; // randori, embu, jadwal
 
@@ -45,6 +48,18 @@ class NewTechnicalMeetingDrawingIndex extends Component
     public string $searchMatchNumber = '';
 
     public string $searchPanitera = '';
+
+    public function selectMatch($id): void
+    {
+        $this->filterMatchNumberId = $id;
+        $this->filterMergeId = null;
+    }
+
+    public function selectMerge($id): void
+    {
+        $this->filterMergeId = $id;
+        $this->filterMatchNumberId = null;
+    }
 
     public function mount(): void
     {
@@ -141,39 +156,45 @@ class NewTechnicalMeetingDrawingIndex extends Component
     {
         $this->filterAgeGroupId = null;
         $this->filterMatchNumberId = null;
+        $this->filterMergeId = null;
     }
 
     public function updatedFilterAgeGroupId(): void
     {
         $this->filterMatchNumberId = null;
-    }
-
-    public function selectMatch(int $id): void
-    {
-        $this->filterMatchNumberId = $id;
+        $this->filterMergeId = null;
     }
 
     // ── RANDORI ──────────────────────────────────────────────
     public function generateRandoriDrawing(bool $showSwal = true): void
     {
-        if (! $this->filterMatchNumberId) {
+        if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
             return;
         }
 
-        $matchId = $this->filterMatchNumberId;
         $this->isGenerating = true;
-        $match = MatchNumber::findOrFail($matchId);
+        $matchNumberIds = [];
+        $match = null;
+        if ($this->filterMergeId) {
+            $merge = MatchNumberMerge::with('matchNumbers')->findOrFail($this->filterMergeId);
+            $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
+            $match = $merge->matchNumbers->first();
+        } else {
+            $matchId = $this->filterMatchNumberId;
+            $match = MatchNumber::findOrFail($matchId);
+            $matchNumberIds = [$matchId];
+        }
 
         // 1. Clear existing drawing records
-        DrawingMatchNumber::where('match_number_id', $matchId)->delete();
+        DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->delete();
 
         // 2. Get athletes, spread to avoid same contingent meeting early
         $athletesQuery = DB::table('athlete_match_number')
             ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
             ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
             ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
-            ->where('athlete_match_number.match_number_id', $matchId)
-            ->select('athletes.id', 'athletes.name', 'athlete_match_number.registration_id', 'contingents.name as contingent_name')
+            ->whereIn('athlete_match_number.match_number_id', $matchNumberIds)
+            ->select('athletes.id', 'athletes.name', 'athlete_match_number.registration_id', 'contingents.name as contingent_name', 'athlete_match_number.match_number_id')
             ->distinct()
             ->get();
 
@@ -181,7 +202,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         if ($totalAthletes === 0) {
             $this->isGenerating = false;
-            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum Ada Peserta', 'text' => 'Tidak ada atlet yang terdaftar di kelas ini.']);
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum Ada Peserta', 'text' => 'Tidak ada atlet yang terdaftar di kategori ini.']);
 
             return;
         }
@@ -189,9 +210,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $grouped = $athletesQuery->groupBy('contingent_name');
         $uniqueContingentCount = $grouped->count();
 
-        if ($uniqueContingentCount <= 2) {
+        if ($uniqueContingentCount < 3 && $totalEntries < 3) {
             $this->isGenerating = false;
-            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Minimal Kontingen', 'text' => 'Minimal harus ada 4 kontingen berbeda untuk melakukan drawing. Saat ini hanya ada '.$uniqueContingentCount.' kontingen.']);
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Peserta Minim',
+                'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalEntries.' entri dari '.$uniqueContingentCount.' kontingen.'
+            ]);
 
             return;
         }
@@ -211,6 +236,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'name' => $a->name,
             'contingent' => $a->contingent_name,
             'registration_id' => $a->registration_id,
+            'match_number_id' => $a->match_number_id,
         ], $spreadAthletes);
 
         // Bracket size = next power of 2
@@ -230,7 +256,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $drawingData['type'] = 'single_elimination';
         }
 
-        $match->update([
+        MatchNumber::whereIn('id', $matchNumberIds)->update([
             'drawing_data' => $drawingData,
             'drawing_generated_at' => now(),
         ]);
@@ -315,7 +341,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
             // Record for Athlete 1
             DrawingMatchNumber::create([
-                'match_number_id' => $matchId,
+                'match_number_id' => $a1['match_number_id'] ?? $match->id,
                 'registration_id' => $a1['registration_id'] ?? null,
                 'court_id' => $court?->id,
                 'session_time_id' => $sessionTime?->id,
@@ -334,12 +360,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     'duration' => $durationPerMatch,
                     'side' => 'RED',
                     'pool_label' => $roundName,
+                    'merge_id' => $this->filterMergeId,
                 ],
             ]);
 
             // Record for Athlete 2
             DrawingMatchNumber::create([
-                'match_number_id' => $matchId,
+                'match_number_id' => $a2['match_number_id'] ?? $match->id,
                 'registration_id' => $a2['registration_id'] ?? null,
                 'court_id' => $court?->id,
                 'session_time_id' => $sessionTime?->id,
@@ -358,6 +385,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     'duration' => $durationPerMatch,
                     'side' => 'BLUE',
                     'pool_label' => $roundName,
+                    'merge_id' => $this->filterMergeId,
                 ],
             ]);
 
@@ -412,32 +440,58 @@ class NewTechnicalMeetingDrawingIndex extends Component
     // ── EMBU ─────────────────────────────────────────────────
     public function generateEmbuDrawing(bool $showSwal = true): void
     {
-        if (! $this->filterMatchNumberId) {
+        if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
             return;
         }
 
-        $matchId = $this->filterMatchNumberId;
         $this->isGenerating = true;
-        $match = MatchNumber::findOrFail($matchId);
+        $matchNumberIds = [];
+        $match = null;
+        $merge = null;
+
+        if ($this->filterMergeId) {
+            $merge = MatchNumberMerge::with('matchNumbers')->findOrFail($this->filterMergeId);
+            $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
+            $match = $merge->matchNumbers->first(); // Use first match as template for settings
+            $matchId = $match->id;
+        } else {
+            $matchId = $this->filterMatchNumberId;
+            $match = MatchNumber::findOrFail($matchId);
+            $matchNumberIds = [$matchId];
+        }
 
         $maxAthletes = $match->max_athletes ?: 1;
+
+        // Get all registrations across all included match numbers
         $registrationsQuery = DB::table('athlete_match_number')
-            ->where('match_number_id', $matchId)
-            ->select('registration_id', DB::raw('count(*) as athlete_count'))
-            ->groupBy('registration_id')
+            ->whereIn('match_number_id', $matchNumberIds)
+            ->select('registration_id', 'match_number_id', DB::raw('count(*) as athlete_count'))
+            ->groupBy('registration_id', 'match_number_id')
             ->get();
 
         $allEntries = collect();
         foreach ($registrationsQuery as $reg) {
-            $numEntries = ceil($reg->athlete_count / $maxAthletes);
-            for ($i = 0; $i < $numEntries; $i++) {
-                $allEntries->push((object) ['registration_id' => $reg->registration_id]);
+            $athleteIds = DB::table('athlete_match_number')
+                ->where('match_number_id', $reg->match_number_id)
+                ->where('registration_id', $reg->registration_id)
+                ->orderBy('id')
+                ->pluck('athlete_id');
+
+            $chunks = $athleteIds->chunk($maxAthletes);
+
+            foreach ($chunks as $chunk) {
+                $allEntries->push((object) [
+                    'registration_id' => $reg->registration_id,
+                    'match_number_id' => $reg->match_number_id,
+                    'athlete_ids' => $chunk->toArray(),
+                ]);
             }
         }
 
         $totalEntries = $allEntries->count();
 
-        DrawingMatchNumber::where('match_number_id', $matchId)->delete();
+        // Delete existing drawings for all affected match numbers
+        DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->delete();
 
         if ($totalEntries === 0) {
             $this->isGenerating = false;
@@ -453,12 +507,12 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $uniqueContingentCount = $regContingents->unique()->count();
 
-        if ($uniqueContingentCount < 3) {
+        if ($uniqueContingentCount < 3 && $totalEntries < 3) {
             $this->isGenerating = false;
             $this->dispatch('swal', [
                 'icon' => 'warning',
-                'title' => 'Minimal Kontingen',
-                'text' => "Kelas ini hanya diikuti oleh {$uniqueContingentCount} kontingen. Minimal harus ada 3 kontingen agar dapat dipertandingkan.",
+                'title' => 'Peserta Minim',
+                'text' => "Kategori ini hanya diikuti oleh {$totalEntries} peserta dari {$uniqueContingentCount} kontingen. Minimal harus ada 3 peserta agar dapat dipertandingkan.",
             ]);
 
             return;
@@ -466,6 +520,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $entries = $allEntries->map(fn ($r) => [
             'registration_id' => $r->registration_id,
+            'match_number_id' => $r->match_number_id,
+            'athlete_ids' => $r->athlete_ids,
             'contingent' => $regContingents[$r->registration_id] ?? 'Unknown',
         ])->values()->toArray();
 
@@ -543,7 +599,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $pools[$poolLabel][] = ['order' => $orderInPool, 'registration_id' => $entry['registration_id'], 'contingent' => $entry['contingent']];
 
             DrawingMatchNumber::create([
-                'match_number_id' => $matchId,
+                'match_number_id' => $entry['match_number_id'],
                 'registration_id' => $entry['registration_id'],
                 'pool_id' => $pool->id,
                 'court_id' => $courtId,
@@ -561,10 +617,15 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     'end_time' => $entryEnd->format('H:i'),
                     'duration' => $durationPerMatch,
                     'athlete_name' => $entry['athlete_name'] ?? 'TBD',
+                    'athlete_ids' => $entry['athlete_ids'] ?? [],
                     'contingent' => $entry['contingent'] ?? 'TBD',
+                    'merge_id' => $this->filterMergeId, // Optional: track merge
                 ],
             ]);
         }
+
+        // Update drawing_generated_at for all match numbers
+        MatchNumber::whereIn('id', $matchNumberIds)->update(['drawing_generated_at' => now()]);
 
         // --- GENERATE FINAL SLOTS (PLACEHOLDERS) ---
         $qualifiersPerPool = 0;
@@ -622,7 +683,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             }
         }
 
-        $match->update([
+        MatchNumber::whereIn('id', $matchNumberIds)->update([
             'drawing_data' => ['total_entries' => $totalEntries, 'format' => $format, 'pool_count' => $poolCount, 'description' => $description, 'pools' => $pools],
             'drawing_generated_at' => now(),
         ]);
@@ -764,12 +825,20 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
     public function resetDrawing(): void
     {
-        if (! $this->filterMatchNumberId) {
+        if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
             return;
         }
 
-        DrawingMatchNumber::where('match_number_id', $this->filterMatchNumberId)->delete();
-        MatchNumber::findOrFail($this->filterMatchNumberId)->update(['drawing_data' => null, 'drawing_generated_at' => null]);
+        $matchNumberIds = [];
+        if ($this->filterMergeId) {
+            $merge = MatchNumberMerge::with('matchNumbers')->findOrFail($this->filterMergeId);
+            $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
+        } else {
+            $matchNumberIds = [$this->filterMatchNumberId];
+        }
+
+        DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->delete();
+        MatchNumber::whereIn('id', $matchNumberIds)->update(['drawing_data' => null, 'drawing_generated_at' => null]);
 
         $this->dispatch('swal', ['icon' => 'success', 'title' => 'Drawing Direset', 'text' => 'Data drawing berhasil dihapus.', 'timer' => 2000]);
     }
@@ -927,6 +996,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $filterAgeGroups = AgeGroup::whereIn('id', $ageGroupIds)->orderBy('order')->get();
 
         $matchNumbersQuery = MatchNumber::where('draft_type', $this->draftType)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('match_number_merge_details')
+                    ->whereColumn('match_number_merge_details.match_number_id', 'match_numbers.id');
+            })
             ->has('athletes')->with(['ageGroup'])->orderBy('name', 'asc')
             ->orderBy('created_at', 'asc')
             ->orderBy('id');
@@ -940,6 +1014,21 @@ class NewTechnicalMeetingDrawingIndex extends Component
         }
 
         $filterMatchNumbers = $matchNumbersQuery->get();
+
+        // Get Match Number Merges
+        $mergeQuery = MatchNumberMerge::with('matchNumbers')
+            ->where('type', $this->draftType);
+        if ($this->filterAgeGroupId) {
+            $mergeQuery->where('age_group_id', $this->filterAgeGroupId);
+        }
+        if ($this->searchMatchNumber) {
+            $mergeQuery->where('name', 'ilike', '%'.$this->searchMatchNumber.'%');
+        }
+        $filterMerges = $mergeQuery->get()->map(function($m) {
+            $mergedNames = $m->matchNumbers->pluck('name')->join(', ');
+            $m->display_name = ($m->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+            return $m;
+        });
 
         // Get entry counts for each match number to display in sidebar
         $rawAthleteCounts = DB::table('athlete_match_number')
@@ -961,9 +1050,49 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $selectedMatch = null;
         $matchAthletes = collect();
         $drawingEntries = collect();
-        if ($this->filterMatchNumberId) {
+
+        if ($this->filterMergeId) {
+            $merge = MatchNumberMerge::with('matchNumbers')->find($this->filterMergeId);
+            if ($merge) {
+                $selectedMatch = $merge;
+                $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
+                $maxAthletes = $merge->matchNumbers->first()->max_athletes ?? 1;
+
+                // Calculate consolidated display name
+                $mergedNames = $merge->matchNumbers->pluck('name')->join(', ');
+                $selectedMatch->display_name = ($merge->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+
+                $rawAthletes = DB::table('athlete_match_number')
+                    ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
+                    ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
+                    ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
+                    ->whereIn('athlete_match_number.match_number_id', $matchNumberIds)
+                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id')
+                    ->orderBy('contingents.name')
+                    ->orderBy('athlete_match_number.id')
+                    ->get();
+
+                $entryData = [];
+                foreach ($rawAthletes->groupBy('registration_id') as $regId => $regAthletes) {
+                    $chunks = $regAthletes->chunk($maxAthletes);
+                    $hasMultiple = $chunks->count() > 1;
+                    foreach ($chunks as $chunkIndex => $chunk) {
+                        $displayName = $chunk->first()->contingent_name.($hasMultiple ? ' ('.($chunkIndex + 1).')' : '');
+                        $entryData[$displayName] = $chunk;
+                    }
+                }
+                $matchAthletes = collect($entryData);
+
+                $drawingEntries = DrawingMatchNumber::with(['registration.contingent', 'court', 'sessionTime'])
+                    ->whereIn('match_number_id', $matchNumberIds)
+                    ->orderBy('sequence_number')
+                    ->get()
+                    ->groupBy(fn ($e) => $e->metadata['pool_label'] ?? 'Drawing Result');
+            }
+        } elseif ($this->filterMatchNumberId) {
             $selectedMatch = MatchNumber::with(['ageGroup'])->find($this->filterMatchNumberId);
             if ($selectedMatch) {
+                $selectedMatch->display_name = $selectedMatch->name;
                 $maxAthletes = $selectedMatch->max_athletes ?: 1;
                 $rawAthletes = DB::table('athlete_match_number')
                     ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
@@ -980,7 +1109,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     $chunks = $regAthletes->chunk($maxAthletes);
                     $hasMultiple = $chunks->count() > 1;
                     foreach ($chunks as $chunkIndex => $chunk) {
-                        $displayName = $chunk->first()->contingent_name . ($hasMultiple ? ' (' . ($chunkIndex + 1) . ')' : '');
+                        $displayName = $chunk->first()->contingent_name.($hasMultiple ? ' ('.($chunkIndex + 1).')' : '');
                         $entryData[$displayName] = $chunk;
                     }
                 }
@@ -1002,7 +1131,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'randori' => 0,
         ];
         if ($this->draftType === 'jadwal') {
-            $allDrawings = DrawingMatchNumber::with(['matchNumber', 'registration.contingent', 'court', 'sessionTime', 'rundown'])
+            $allDrawings = DrawingMatchNumber::with(['matchNumber', 'registration.contingent', 'court', 'sessionTime', 'rundown', 'merge'])
                 ->get()
                 ->sortBy(function ($d) {
                     $date = $d->rundown->date ?? '9999-12-31';
@@ -1062,6 +1191,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
         return view('livewire.admin.new-technical-meeting-drawing-index', [
             'filterAgeGroups' => $filterAgeGroups,
             'filterMatchNumbers' => $filterMatchNumbers,
+            'filterMerges' => $filterMerges,
             'selectedMatch' => $selectedMatch,
             'matchAthletes' => $matchAthletes,
             'drawingEntries' => $drawingEntries,

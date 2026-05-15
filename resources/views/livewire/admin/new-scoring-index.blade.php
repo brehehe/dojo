@@ -654,7 +654,10 @@
                                         <td style="font-weight:700;">{{ $drawing->sequence_number ?? '-' }}</td>
                                         <td>
                                             <span class="draw-badge {{ $isRandori ? 'randori' : 'embu' }} mb-1" style="margin-bottom:4px;display:inline-block;">{{ $drawing->draft_type }}</span>
-                                            <div style="font-weight:700; color:var(--ink); font-size:13px;">{{ $mn?->name ?? '—' }}</div>
+                                            <div style="font-weight:700; color:var(--ink); font-size:13px;">{{ $drawing->merge_name ?: ($drawing->aggregated_match_names ?? $mn?->name ?? '—') }}</div>
+                                            @if($drawing->merge_name)
+                                                <div style="font-size:10px; color:var(--smoke); font-style:italic;">{{ $drawing->aggregated_match_names }}</div>
+                                            @endif
                                             @if($mn?->ageGroup)
                                                 <div style="font-size:11px; color:var(--smoke);">{{ $mn->ageGroup->name }}</div>
                                             @endif

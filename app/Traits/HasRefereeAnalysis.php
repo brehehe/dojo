@@ -35,7 +35,20 @@ trait HasRefereeAnalysis
         }
 
         if (! empty($filters['matchNumberFilter'])) {
-            $query->where('referee_score_details.match_number_id', $filters['matchNumberFilter']);
+            $matchId = $filters['matchNumberFilter'];
+            $mergeDetails = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                ->where('match_number_id', $matchId)
+                ->first();
+
+            if ($mergeDetails) {
+                $ids = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+                $query->whereIn('referee_score_details.match_number_id', $ids);
+            } else {
+                $query->where('referee_score_details.match_number_id', $matchId);
+            }
         }
 
         if (! empty($filters['refereeFilter'])) {

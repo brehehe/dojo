@@ -12,6 +12,9 @@
             <h1 class="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter drop-shadow-lg">
                 {{ $court->name }}
             </h1>
+            <p class="text-xl md:text-2xl font-bold text-indigo-200 uppercase tracking-[0.3em]">
+                {{ $court->activeMatch ? ($court->activeMatch->mergeDetail?->merge?->name ?? $court->activeMatch->name) : 'IDLE' }}
+            </p>
             
             <div class="flex flex-wrap items-center justify-center gap-4 mt-2">
                 @if($contextSession)

@@ -28,6 +28,7 @@ use App\Livewire\Admin\Master\Contingent\AdminMasterContingentIndex;
 use App\Livewire\Admin\Master\Court\AdminMasterCourtIndex;
 use App\Livewire\Admin\Master\KyuLevel\AdminMasterKyuLevelIndex;
 use App\Livewire\Admin\Master\MatchNumber\AdminMasterMatchNumberIndex;
+use App\Livewire\Admin\Master\NewMatchNumberMergeIndex;
 use App\Livewire\Admin\Master\Official\AdminMasterOfficialFormIndex;
 use App\Livewire\Admin\Master\Official\AdminMasterOfficialIndex;
 use App\Livewire\Admin\Master\PaymentMethod\AdminMasterPaymentIndex;
@@ -213,6 +214,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/weight-groups', AdminMasterWeightGroupIndex::class)->name('weight-groups');
             Route::get('/techniques', AdminMasterTechniqueIndex::class)->name('techniques');
             Route::get('/match-numbers', AdminMasterMatchNumberIndex::class)->name('match-numbers');
+            Route::get('/match-number-merges', NewMatchNumberMergeIndex::class)->name('match-number-merges');
             Route::get('/rundown', AdminMasterRundownIndex::class)->name('rundown');
             Route::get('/court', AdminMasterCourtIndex::class)->name('court');
             Route::get('/pool', AdminMasterPoolIndex::class)->name('pool');

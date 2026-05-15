@@ -2,8 +2,8 @@
     @push('styles')
         <style>
             /* ══════════════════════════════════════════════════════
-           PAGE STYLES — Referee Assignment (Premium Layout)
-        ══════════════════════════════════════════════════════ */
+                   PAGE STYLES — Referee Assignment (Premium Layout)
+                ══════════════════════════════════════════════════════ */
             .prem-page-a {
                 background: var(--paper);
                 color: var(--ink);
@@ -361,29 +361,33 @@
                             <thead>
                                 <tr>
                                     <th width="120">Court</th>
-                                    <th>Ketua Wasit</th>
-                                    <th>Wasit 1</th>
+                                    <th>Wasit Utama</th>
                                     <th>Wasit 2</th>
                                     <th>Wasit 3</th>
                                     <th>Wasit 4</th>
+                                    <th>Wasit 5</th>
                                     <th width="60"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($shift->active_courts as $courtItem)
+                                @foreach ($shift->active_courts as $courtItem)
                                     @php
-                                        $panel = $shift->assigned_referees->where('court_id', $courtItem->court_id)->keyBy('judge_index');
+                                        $panel = $shift->assigned_referees
+                                            ->where('court_id', $courtItem->court_id)
+                                            ->keyBy('judge_index');
                                     @endphp
                                     <tr>
                                         <td>
                                             <div class="court-label-a">{{ $courtItem->court->name ?? 'Court' }}</div>
                                         </td>
-                                        @for($i = 1; $i <= 5; $i++)
+                                        @for ($i = 1; $i <= 5; $i++)
                                             <td>
-                                                @if(isset($panel[$i]))
+                                                @if (isset($panel[$i]))
                                                     <div class="judge-box-a">
-                                                        <div class="judge-name-a">{{ $panel[$i]->referee->user->name }}</div>
-                                                        <div class="judge-city-a">{{ $panel[$i]->referee->city ?? '-' }}</div>
+                                                        <div class="judge-name-a">{{ $panel[$i]->referee->user->name }}
+                                                        </div>
+                                                        <div class="judge-city-a">{{ $panel[$i]->referee->city ?? '-' }}
+                                                        </div>
                                                     </div>
                                                 @else
                                                     <div class="judge-empty-a">Empty</div>
@@ -410,13 +414,15 @@
                         <div class="dewan-label-a">
                             <i class="fa-solid fa-shield-halved"></i>
                             <span>Dewan Arbitrase:</span>
-                            @if($dewan)
+                            @if ($dewan)
                                 <span class="dewan-val-a">{{ $dewan->referee->user->name }}</span>
                             @else
-                                <span style="color:var(--red); font-style:italic; font-size:10px;">Belum ditugaskan</span>
+                                <span style="color:var(--red); font-style:italic; font-size:10px;">Belum
+                                    ditugaskan</span>
                             @endif
                         </div>
-                        <button wire:click="openAssignModal({{ $shift->rundown_id }}, {{ $shift->session_time_id }}, null)"
+                        <button
+                            wire:click="openAssignModal({{ $shift->rundown_id }}, {{ $shift->session_time_id }}, null)"
                             style="padding:6px 14px; background:#fff; border:1px solid var(--paper2); border-radius:8px; font-size:10px; font-weight:700; text-transform:uppercase; cursor:pointer;">
                             Edit Dewan
                         </button>
@@ -428,7 +434,8 @@
                     <i class="fa-solid fa-calendar-xmark"
                         style="font-size:32px; color:var(--paper2); margin-bottom:12px;"></i>
                     <h3 style="font-family:'Cinzel',serif; font-size:16px; color:var(--ink);">Belum Ada Jadwal</h3>
-                    <p style="font-size:12px; color:var(--smoke);">Silakan generate drawing pertandingan terlebih dahulu.
+                    <p style="font-size:12px; color:var(--smoke);">Silakan generate drawing pertandingan terlebih
+                        dahulu.
                     </p>
                 </div>
             @endforelse
@@ -453,7 +460,7 @@
                             class="referee-item-a {{ in_array($ref->id, $selectedReferees) ? 'selected' : '' }}">
                             <div
                                 style="width:24px; height:24px; border-radius:6px; border:2px solid {{ in_array($ref->id, $selectedReferees) ? 'var(--red)' : 'var(--paper2)' }}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                @if(in_array($ref->id, $selectedReferees))
+                                @if (in_array($ref->id, $selectedReferees))
                                     <i class="fa-solid fa-check" style="color:var(--red); font-size:10px;"></i>
                                 @endif
                             </div>

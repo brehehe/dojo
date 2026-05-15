@@ -198,8 +198,27 @@
 
         {{-- HEADER --}}
         <div class="tm-hdr">
-            <h2><i class="fa-solid fa-dice" style="color:var(--red);margin-right:8px;"></i>Drawing Technical Meeting</h2>
-            <p>Pilih jenis, kelompok umur, dan nomor pertandingan untuk generate drawing</p>
+            @if($selectedMatch)
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div>
+                        <h2>{{ $selectedMatch->name }}</h2>
+                        <p>{{ $selectedMatch->ageGroup->name ?? '-' }} · {{ $matchAthletes->count() }} kontingen</p>
+                    </div>
+                    @php
+                        $isDrawn = $selectedMatch instanceof \App\Models\MatchNumberMerge 
+                            ? $selectedMatch->matchNumbers->every(fn($mn) => $mn->drawing_generated_at)
+                            : $selectedMatch->drawing_generated_at;
+                    @endphp
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="draw-badge {{ $isDrawn ? 'done' : 'pending' }}" style="font-size: 11px; padding: 6px 14px;">
+                            @if($isDrawn)<i class="fa-solid fa-check-circle"></i> Sudah Di-draw @else<i class="fa-solid fa-clock"></i> Belum Di-draw @endif
+                        </span>
+                    </div>
+                </div>
+            @else
+                <h2><i class="fa-solid fa-dice" style="color:var(--red);margin-right:8px;"></i>Drawing Technical Meeting</h2>
+                <p>Pilih jenis, kelompok umur, dan nomor pertandingan untuk melihat peserta dan generate drawing</p>
+            @endif
         </div>
 
         {{-- TYPE TABS --}}
@@ -260,6 +279,24 @@
                     </div>
 
                     <div class="tm-match-list">
+                        @if($filterMerges->count() > 0)
+                            <div class="px-4 py-2 bg-indigo-50 text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-100">
+                                <i class="fas fa-object-group mr-1"></i> Merge Nomer Pertandingan
+                            </div>
+                            @foreach($filterMerges as $merge)
+                                <div class="tm-match-item {{ $filterMergeId == $merge->id ? 'active' : '' }}" wire:click="selectMerge({{ $merge->id }})">
+                                    <span class="tm-match-dot {{ $merge->matchNumbers->every(fn($mn) => $mn->drawing_generated_at) ? 'drawn' : 'pending' }}"></span>
+                                    <div class="tm-match-text">
+                                        <div class="name">{{ $merge->display_name }}</div>
+                                        <div class="cnt">{{ $merge->ageGroup->name ?? '-' }} · <span style="color:var(--red); font-weight:700;">{{ $merge->matchNumbers->count() }} Kelas Digabung</span></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <div class="px-4 py-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                <i class="fas fa-list-check mr-1"></i> Nomor Standar
+                            </div>
+                        @endif
+
                         @forelse($filterMatchNumbers as $mn)
                             <div class="tm-match-item {{ $filterMatchNumberId == $mn->id ? 'active' : '' }}" wire:click="selectMatch({{ $mn->id }})">
                                 <span class="tm-match-dot {{ $mn->drawing_generated_at ? 'drawn' : 'pending' }}"></span>
@@ -332,13 +369,13 @@
                                             <tbody>
                                                 @foreach($sessionData['times'] as $time => $row)
                                                     <tr>
-                                                        <td style="font-weight: 800; color: var(--ink); font-family:'DM Mono', monospace; font-size:13px; vertical-align:middle;">{{ $time }}</td>
+<td style="font-weight: 800; color: var(--ink); font-family:'DM Mono', monospace; font-size:13px; vertical-align:middle;">{{ $time }}</td>
                                                         <td style="color: var(--smoke); font-size: 10px; vertical-align:middle;"><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600;">{{ $row['duration'] }}'</span></td>
                                                         @foreach($courts as $court)
                                                             @php $entries = $row['courts'][$court->id] ?? []; @endphp
                                                             @if(count($entries) > 0)
                                                                 <td style="font-size: 11px; padding: 8px 12px; border-left: 1px solid var(--paper2);">
-                                                                    <div style="font-weight: 700;">{{ $entries[0]->matchNumber->name }}</div>
+                                                                    <div style="font-weight: 700;">{{ $entries[0]->merge->name ?? $entries[0]->matchNumber->name }}</div>
                                                                     
                                                                     @if($entries[0]->draft_type === 'randori')
                                                                         @php 
@@ -395,11 +432,16 @@
                                 @if($draftType === 'randori')<i class="fa-solid fa-fist-raised"></i>@else<i class="fa-solid fa-wind"></i>@endif
                             </div>
                             <div class="info">
-                                <h3>{{ $selectedMatch->name }}</h3>
-                                <p>{{ $selectedMatch->ageGroup->name ?? '-' }} @if($selectedMatch->gender) · {{ $selectedMatch->gender === 'L' ? 'Putra' : 'Putri' }} @endif · {{ $matchAthletes->count() }} kontingen</p>
+                                <h3>{{ $selectedMatch->display_name }}</h3>
+                                <p>{{ $selectedMatch->ageGroup->name ?? '-' }} @if(isset($selectedMatch->gender)) · {{ $selectedMatch->gender === 'L' ? 'Putra' : 'Putri' }} @endif · {{ $matchAthletes->count() }} kontingen</p>
                             </div>
-                            <span class="draw-badge {{ $selectedMatch->drawing_generated_at ? 'done' : 'pending' }}">
-                                @if($selectedMatch->drawing_generated_at)<i class="fa-solid fa-check-circle"></i> Sudah Di-draw @else<i class="fa-solid fa-clock"></i> Belum Di-draw @endif
+                            @php
+                                $isDrawn = $selectedMatch instanceof \App\Models\MatchNumberMerge 
+                                    ? $selectedMatch->matchNumbers->every(fn($mn) => $mn->drawing_generated_at)
+                                    : $selectedMatch->drawing_generated_at;
+                            @endphp
+                            <span class="draw-badge {{ $isDrawn ? 'done' : 'pending' }}">
+                                @if($isDrawn)<i class="fa-solid fa-check-circle"></i> Sudah Di-draw @else<i class="fa-solid fa-clock"></i> Belum Di-draw @endif
                             </span>
                         </div>
                         <div class="tm-card-body">
@@ -415,14 +457,14 @@
                             <div class="draw-result-head">
                                 <h4>Hasil Drawing & Bagan</h4>
                                 <div class="tm-actions">
-                                    @if($selectedMatch->drawing_generated_at)<button onclick="confirmReset()" class="btn-gen ghost"><i class="fa-solid fa-rotate-left"></i> Reset</button>@endif
+                                    @if($isDrawn)<button onclick="confirmReset()" class="btn-gen ghost"><i class="fa-solid fa-rotate-left"></i> Reset</button>@endif
                                     <button wire:click="{{ $draftType === 'randori' ? 'generateRandoriDrawing' : 'generateEmbuDrawing' }}" class="btn-gen primary" {{ $isGenerating ? 'disabled' : '' }}>
-                                        @if($isGenerating)<i class="fa-solid fa-spinner fa-spin"></i> Generating...@else<i class="fa-solid fa-wand-magic-sparkles"></i> {{ $selectedMatch->drawing_generated_at ? 'Generate Ulang' : 'Generate Drawing' }}@endif
+                                        @if($isGenerating)<i class="fa-solid fa-spinner fa-spin"></i> Generating...@else<i class="fa-solid fa-wand-magic-sparkles"></i> {{ $isDrawn ? 'Generate Ulang' : 'Generate Drawing' }}@endif
                                     </button>
                                 </div>
                             </div>
 
-                            @if($selectedMatch->drawing_generated_at)
+                            @if($isDrawn)
                                 <div style="margin-top:20px;">
                                     @if($draftType === 'randori' && isset($selectedMatch->drawing_data['upper_bracket']))
                                         <div class="bracket-wrapper">
@@ -516,7 +558,7 @@
                                                         $groupedByTime = $groupEntries->groupBy(fn($e) => ($e->metadata['start_time'] ?? '00:00') . ($e->metadata['end_time'] ?? '00:00'));
                                                     @endphp
                                                     @foreach($groupedByTime as $timeKey => $timeEntries)
-                                                        @php $isPair = $timeEntries->count() > 1; @endphp
+                                                        @php $isPair = count($timeEntries) > 1; @endphp
                                                         @foreach($timeEntries as $idx => $entry)
                                                             <tr style="{{ $isPair && $idx === 0 ? 'border-top: 2px solid var(--paper2);' : '' }}">
                                                                 <td>

@@ -89,7 +89,20 @@ class NewLaporanWasitJuriIndex extends Component
             $query->where('referee_score_details.referee_id', $this->refereeFilter);
         }
         if (! empty($this->matchNumberFilter)) {
-            $query->where('referee_score_details.match_number_id', $this->matchNumberFilter);
+            $matchId = $this->matchNumberFilter;
+            $mergeDetails = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                ->where('match_number_id', $matchId)
+                ->first();
+
+            if ($mergeDetails) {
+                $ids = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+                $query->whereIn('referee_score_details.match_number_id', $ids);
+            } else {
+                $query->where('referee_score_details.match_number_id', $matchId);
+            }
         }
         if (! empty($this->ageGroupFilter)) {
             $query->whereHas('matchNumber', fn ($q) => $q->where('age_group_id', $this->ageGroupFilter));
@@ -158,7 +171,13 @@ class NewLaporanWasitJuriIndex extends Component
             // matchNumbers is filtered by selected age group (cascade)
             'matchNumbers' => MatchNumber::where('draft_type', 'embu')
                 ->when(! empty($this->ageGroupFilter), fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
-                ->orderBy('name')
+                ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
+                ->where(function($q) {
+                    $q->whereNull('match_number_merge_details.match_number_merge_id')
+                      ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+                })
+                ->orderBy('match_numbers.name')
+                ->select('match_numbers.*')
                 ->get(),
         ])->title('Laporan Analisis Per Juri');
     }

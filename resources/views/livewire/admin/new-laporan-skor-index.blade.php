@@ -89,7 +89,7 @@
             @php $isEmbu = strtolower($mn->draft_type) === 'embu'; @endphp
             <div class="mn-block">
                 <div class="mn-block-head">
-                    <div class="mn-block-title">{{ $mn->name }}</div>
+                    <div class="mn-block-title">{{ $mn->display_name ?? $mn->name }}</div>
                     <div class="mn-block-badges">
                         <span class="type-badge {{ $isEmbu ? 'embu' : 'randori' }}">{{ $mn->draft_type }}</span>
                         @if($mn->ageGroup)

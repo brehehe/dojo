@@ -40,11 +40,18 @@ class MonitorRekapitulasiHasilIndex extends Component
         if ($match) {
             $activeDrawing = $court?->activeDrawing;
             
-            $drawQuery = \App\Models\DrawingMatchNumber::where('match_number_id', $match->id)
+            $matchNumberIds = [$match->id];
+            if ($match->mergeDetail) {
+                $matchNumberIds = \App\Models\MatchNumberMergeDetail::where('match_number_merge_id', $match->mergeDetail->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+            }
+
+            $drawQuery = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
                 ->where('draft_type', 'embu');
 
             $currentRound = 'Penyisihan';
-            $validActiveDrawing = $activeDrawing && $activeDrawing->match_number_id === $match->id;
+            $validActiveDrawing = $activeDrawing && in_array($activeDrawing->match_number_id, $matchNumberIds);
 
             if ($validActiveDrawing) {
                 if ($activeDrawing->pool_id) {
@@ -56,7 +63,7 @@ class MonitorRekapitulasiHasilIndex extends Component
                 $currentRound = $activeDrawing->round ?? 'Penyisihan';
             } elseif ($this->courtId) {
                 $drawQuery->where('court_id', $this->courtId);
-                $firstDrawingOnCourt = \App\Models\DrawingMatchNumber::where('match_number_id', $match->id)
+                $firstDrawingOnCourt = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
                     ->with('pool')
                     ->where('court_id', $this->courtId)
                     ->whereNotNull('pool_id')
@@ -68,34 +75,52 @@ class MonitorRekapitulasiHasilIndex extends Component
                 }
             }
 
-            $drawingRegIds = $drawQuery->pluck('registration_id')->unique()->toArray();
+            $drawings = $drawQuery->get();
+            $drawingRegIds = $drawings->pluck('registration_id')->unique()->filter()->toArray();
 
-            $scores = $match->athletes
-                ->filter(fn($athlete) => in_array($athlete->pivot->registration_id, $drawingRegIds))
-                ->groupBy('pivot.registration_id')
-                ->map(function($athletes, $regId) use ($match, $currentRound) {
-                    $reg = Registration::with('contingent')->find($regId);
-                    $score = EmbuScore::where('match_number_id', $match->id)
-                        ->where('registration_id', $regId)
-                        ->where('round_label', $currentRound)
-                        ->first();
+            // Eager load registrations
+            $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $drawingRegIds)->get()->keyBy('id');
 
-                    return (object)[
-                        'registration_id' => $regId,
-                        'registration' => $reg,
-                        'athletes' => $athletes,
-                        'score' => $score,
-                        'judge_1' => $score?->judge_1 ?? 0,
-                        'judge_2' => $score?->judge_2 ?? 0,
-                        'judge_3' => $score?->judge_3 ?? 0,
-                        'judge_4' => $score?->judge_4 ?? 0,
-                        'judge_5' => $score?->judge_5 ?? 0,
-                        'denda' => $score?->denda ?? 0,
-                        'nilai_akhir' => $score?->nilai_akhir ?? 0,
-                    ];
-                })
-                ->sortByDesc('nilai_akhir')
-                ->values();
+            $scores = $drawings->map(function($drawing) use ($matchNumberIds, $currentRound, $registrations) {
+                $regId = $drawing->registration_id;
+                $reg = $registrations->get($regId);
+                $specificMatchId = $drawing->match_number_id;
+                
+                // Correctly filter athletes for this specific team/drawing
+                $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
+                $athletes = collect();
+                if (!empty($athleteIds)) {
+                    $athletes = $reg?->athletes->whereIn('id', $athleteIds)->values() ?? collect();
+                } elseif ($reg) {
+                    $athletes = $reg->athletes;
+                }
+
+                $matchRecord = \App\Models\MatchNumber\MatchNumber::find($specificMatchId);
+
+                $score = EmbuScore::where('match_number_id', $specificMatchId)
+                    ->where('registration_id', $regId)
+                    ->where('round_label', $currentRound)
+                    ->first();
+
+                return (object)[
+                    'registration_id' => $regId,
+                    'drawing_id' => $drawing->id,
+                    'registration' => $reg,
+                    'athletes' => $athletes,
+                    'match_number_id' => $specificMatchId,
+                    'match_name' => $matchRecord?->name,
+                    'score' => $score,
+                    'judge_1' => $score?->judge_1 ?? 0,
+                    'judge_2' => $score?->judge_2 ?? 0,
+                    'judge_3' => $score?->judge_3 ?? 0,
+                    'judge_4' => $score?->judge_4 ?? 0,
+                    'judge_5' => $score?->judge_5 ?? 0,
+                    'denda' => $score?->denda ?? 0,
+                    'nilai_akhir' => $score?->nilai_akhir ?? 0,
+                ];
+            })
+            ->sortByDesc('nilai_akhir')
+            ->values();
         }
 
         return view('livewire.admin.arbitrase.scoring.monitor-rekapitulasi-hasil-index', [

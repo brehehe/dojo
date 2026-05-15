@@ -10,6 +10,7 @@ use App\Models\ScheduleReferee;
 use App\Models\TournamentResult;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -17,6 +18,10 @@ use Livewire\Component;
 class NewScoringRandoriIndex extends Component
 {
     public MatchNumber $matchNumber;
+    
+    public $merge = null;
+    
+    public $displayName = '';
 
     public $drawingData = [];
 
@@ -46,10 +51,28 @@ class NewScoringRandoriIndex extends Component
         'yusei_kachi' => 0,
     ];
 
+    public $matchNumberIds = [];
+
     public function mount(MatchNumber $matchNumber)
     {
         try {
             $this->matchNumber = $matchNumber;
+            
+            // Check if this match is part of a merge
+            $mergeDetails = DB::table('match_number_merge_details')
+                ->where('match_number_id', $matchNumber->id)
+                ->first();
+
+            if ($mergeDetails) {
+                $this->merge = \App\Models\MatchNumberMerge::find($mergeDetails->match_number_merge_id);
+                $this->matchNumberIds = DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+            } else {
+                $this->matchNumberIds = [$matchNumber->id];
+            }
+
             $drawingData = $matchNumber->drawing_data ?? [];
 
             // Migrate legacy single-elimination to double_elimination if needed
@@ -209,7 +232,7 @@ class NewScoringRandoriIndex extends Component
         $data['upper_bracket']['rounds'] = $ubRounds;
         $data['lower_bracket']['rounds'] = $lbRounds;
 
-        $results = RandoriMatchResult::where('match_number_id', $this->matchNumber->id)
+        $results = RandoriMatchResult::whereIn('match_number_id', $this->matchNumberIds)
             ->orderBy('id')
             ->get();
 
@@ -288,7 +311,7 @@ class NewScoringRandoriIndex extends Component
     public function callOfficials()
     {
         $drawings = DrawingMatchNumber::with(['court', 'sessionTime', 'registration.contingent'])
-            ->where('match_number_id', $this->matchNumber->id)
+            ->whereIn('match_number_id', $this->matchNumberIds)
             ->get();
 
         $firstDrawing = $drawings->first();
@@ -350,16 +373,16 @@ class NewScoringRandoriIndex extends Component
 
     public function callMatch(string $nodeKey, int $roundIdx, int $matchIdx, string $bracket)
     {
-        $this->matchNumber->update(['active_bracket_node' => $nodeKey]);
+        MatchNumber::whereIn('id', $this->matchNumberIds)->update(['active_bracket_node' => $nodeKey]);
         $this->drawingData = $this->matchNumber->fresh()->drawing_data ?? [];
 
         $drawing = DrawingMatchNumber::with('court')
-            ->where('match_number_id', $this->matchNumber->id)
+            ->whereIn('match_number_id', $this->matchNumberIds)
             ->first();
 
         if ($drawing && $drawing->court_id) {
             $drawing->court->update([
-                'active_match_id' => $this->matchNumber->id,
+                'active_match_id' => $drawing->match_number_id,
                 'active_drawing_id' => $drawing->id,
                 'active_registration_id' => null,
                 'active_bracket_node' => $nodeKey,
@@ -378,15 +401,15 @@ class NewScoringRandoriIndex extends Component
 
     public function callGrandFinal()
     {
-        $this->matchNumber->update(['active_bracket_node' => 'gf_0_0']);
+        MatchNumber::whereIn('id', $this->matchNumberIds)->update(['active_bracket_node' => 'gf_0_0']);
 
         $drawing = DrawingMatchNumber::with('court')
-            ->where('match_number_id', $this->matchNumber->id)
+            ->whereIn('match_number_id', $this->matchNumberIds)
             ->first();
 
         if ($drawing && $drawing->court_id) {
             $drawing->court->update([
-                'active_match_id' => $this->matchNumber->id,
+                'active_match_id' => $drawing->match_number_id,
                 'active_drawing_id' => $drawing->id,
                 'active_registration_id' => null,
                 'active_bracket_node' => 'gf_0_0',
@@ -410,8 +433,8 @@ class NewScoringRandoriIndex extends Component
             $this->dispatch('timer-updated');
         }
 
-        $this->matchNumber->update(['active_bracket_node' => null]);
-        $drawing = DrawingMatchNumber::with('court')->where('match_number_id', $this->matchNumber->id)->first();
+        MatchNumber::whereIn('id', $this->matchNumberIds)->update(['active_bracket_node' => null]);
+        $drawing = DrawingMatchNumber::with('court')->whereIn('match_number_id', $this->matchNumberIds)->first();
         if ($drawing && $drawing->court_id) {
             $drawing->court->update(['active_match_id' => null, 'active_drawing_id' => null, 'active_registration_id' => null, 'active_bracket_node' => null]);
         }
@@ -430,7 +453,7 @@ class NewScoringRandoriIndex extends Component
 
         $this->activeMatch = ['bracket' => $bracket, 'round' => $roundIdx, 'match' => $matchIdx, 'data' => $match];
         $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
-        $existing = RandoriMatchResult::where('match_number_id', $this->matchNumber->id)->where('bracket_node', $nodeKey)->first();
+        $existing = RandoriMatchResult::whereIn('match_number_id', $this->matchNumberIds)->where('bracket_node', $nodeKey)->first();
         $this->loadScoringData($existing);
         $this->showModal = true;
         $this->dispatch('scroll-top');
@@ -452,7 +475,7 @@ class NewScoringRandoriIndex extends Component
         if (! $gf || (! $gf['athlete1'] && ! $gf['athlete2'])) return;
 
         $this->activeMatch = ['bracket' => 'gf', 'round' => 0, 'match' => 0, 'data' => $gf];
-        $existing = RandoriMatchResult::where('match_number_id', $this->matchNumber->id)->where('bracket_node', 'gf_0_0')->first();
+        $existing = RandoriMatchResult::whereIn('match_number_id', $this->matchNumberIds)->where('bracket_node', 'gf_0_0')->first();
         $this->loadScoringData($existing);
         $this->showModal = true;
         $this->dispatch('scroll-top');
@@ -529,8 +552,9 @@ class NewScoringRandoriIndex extends Component
 
         $data = $this->propagateBracketByes($data);
 
+        $matchId = $winnerData['match_number_id'] ?? $this->matchNumber->id;
         RandoriMatchResult::updateOrCreate(
-            ['match_number_id' => $this->matchNumber->id, 'bracket_node' => $bracket.'_'.$roundIdx.'_'.$matchIdx],
+            ['match_number_id' => $matchId, 'bracket_node' => $bracket.'_'.$roundIdx.'_'.$matchIdx],
             [
                 'bracket_node_index' => $roundIdx.'_'.$matchIdx,
                 'bracket_section' => $bracket,
@@ -544,7 +568,7 @@ class NewScoringRandoriIndex extends Component
             ]
         );
 
-        $this->matchNumber->update(['drawing_data' => $data, 'active_bracket_node' => null]);
+        MatchNumber::whereIn('id', $this->matchNumberIds)->update(['drawing_data' => $data, 'active_bracket_node' => null]);
         $this->drawingData = $data; $this->activeMatch = null; $this->resetDetailedScoring(); $this->stopTimer(); $this->showModal = false;
         $this->dispatch('swal', ['icon' => 'success', 'title' => 'Pemenang Dicatat!']);
     }
@@ -663,7 +687,7 @@ class NewScoringRandoriIndex extends Component
 
     private function getCourtId()
     {
-        $d = DrawingMatchNumber::where('match_number_id', $this->matchNumber->id)->first();
+        $d = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->first();
         return $d?->court_id;
     }
     public function confirmChampion()
@@ -689,7 +713,7 @@ class NewScoringRandoriIndex extends Component
         }
 
         // Delete old results for this match to avoid unique constraint violations on (match_id, rank)
-        TournamentResult::where('match_number_id', $this->matchNumber->id)->delete();
+        TournamentResult::whereIn('match_number_id', $this->matchNumberIds)->delete();
 
         foreach ($juara as $rank => $athlete) {
             if ($rank > 2) {
@@ -702,7 +726,7 @@ class NewScoringRandoriIndex extends Component
 
             TournamentResult::updateOrCreate(
                 [
-                    'match_number_id' => $this->matchNumber->id,
+                    'match_number_id' => $athlete['match_number_id'] ?? $this->matchNumber->id,
                     'registration_id' => $athlete['registration_id'] ?? null,
                 ],
                 [
@@ -782,5 +806,16 @@ class NewScoringRandoriIndex extends Component
         $c2 = $match['athlete2']['contingent'] ?? '';
         $txt = "Pertandingan selanjutnya: {$info}. Di sudut Merah, {$a1} dari {$c1}. Di sudut Putih, {$a2} dari {$c2}. Mohon segera bersiap.";
         $this->dispatch('play-announcer', ['text' => $txt]);
+    }
+    public function render()
+    {
+        if ($this->merge) {
+            $mergedNames = MatchNumber::whereIn('id', $this->matchNumberIds)->pluck('name')->join(', ');
+            $this->displayName = ($this->merge->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+        } else {
+            $this->displayName = $this->matchNumber->name;
+        }
+
+        return view('livewire.admin.new-scoring-randori-index');
     }
 }

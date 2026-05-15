@@ -413,32 +413,40 @@ class NewScoringIndex extends Component
         $matchNumbers = $matchNumberQuery->get();
 
         // ── Core query: grouped per scheduled match session ─────────
-        $query = DrawingMatchNumber::with([
-            'matchNumber.ageGroup',
-            'pool',
-            'court',
-            'sessionTime',
-            'rundown',
-        ])->whereNotNull('match_number_id')
+        $query = DrawingMatchNumber::query()
+            ->join('match_numbers', 'drawing_match_numbers.match_number_id', '=', 'match_numbers.id')
+            ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
+            ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
             ->select(
-                'match_number_id',
-                'court_id',
-                'pool_id',
-                'session_time_id',
-                'rundown_id',
-                'round',
-                'draft_type'
+                'drawing_match_numbers.court_id',
+                'drawing_match_numbers.pool_id',
+                'drawing_match_numbers.session_time_id',
+                'drawing_match_numbers.rundown_id',
+                'drawing_match_numbers.round',
+                'drawing_match_numbers.draft_type'
             )
-            ->selectRaw('MIN(id) as id, COUNT(registration_id) as total_athletes, MIN(sequence_number) as sequence_number')
+            ->selectRaw('COALESCE(MAX(match_number_merges.name), \'\') as merge_name')
+            ->selectRaw('STRING_AGG(DISTINCT match_numbers.name, \', \') as aggregated_match_names')
+            ->selectRaw('MIN(drawing_match_numbers.match_number_id) as match_number_id')
+            ->selectRaw('MIN(drawing_match_numbers.id) as id')
+            ->selectRaw('COUNT(drawing_match_numbers.registration_id) as total_athletes')
+            ->selectRaw('MIN(drawing_match_numbers.sequence_number) as sequence_number')
             ->groupBy(
-                'match_number_id',
-                'court_id',
-                'pool_id',
-                'session_time_id',
-                'rundown_id',
-                'round',
-                'draft_type'
-            );
+                'drawing_match_numbers.court_id',
+                'drawing_match_numbers.pool_id',
+                'drawing_match_numbers.session_time_id',
+                'drawing_match_numbers.rundown_id',
+                'drawing_match_numbers.round',
+                'drawing_match_numbers.draft_type',
+                'match_number_merges.id'
+            )
+            ->with([
+                'matchNumber.ageGroup',
+                'pool',
+                'court',
+                'sessionTime',
+                'rundown',
+            ]);
 
         // ── Filters ────────────────────────────────────────────────────────────
         if (! empty($this->filterCourt)) {
@@ -471,6 +479,10 @@ class NewScoringIndex extends Component
             $query->whereHas('matchNumber', function ($q) {
                 $q->where('gender', $this->filterGender);
             });
+        }
+
+        if (auth()->user()->court_id) {
+            $query->where('court_id', auth()->user()->court_id);
         }
 
         // Filter by contingent via registration relationship

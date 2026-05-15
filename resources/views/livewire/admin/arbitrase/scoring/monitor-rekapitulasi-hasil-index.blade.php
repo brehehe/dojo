@@ -14,11 +14,11 @@
             </div>
             <div>
                 <h1 class="text-3xl font-black tracking-tight text-slate-900 uppercase">
-                    REKAPITULASI HASIL EMBU
+                    REKAPITULASI {{ $match->mergeDetail?->merge?->name ?? 'HASIL EMBU' }}
                 </h1>
                 @if($match)
                     <p class="mt-1 text-lg font-bold text-slate-500 uppercase tracking-widest">
-                        {{ $match->name }} <span class="mx-3 text-slate-300">|</span> {{ $match->ageGroup?->name ?? 'SEMUA KATEGORI' }}
+                        {{ $match->mergeDetail?->merge?->name ?? $match->name }} <span class="mx-3 text-slate-300">|</span> {{ $match->ageGroup?->name ?? 'SEMUA KATEGORI' }}
                         @if($currentRound) <span class="mx-3 text-slate-300">|</span> <span class="text-blue-600">{{ $currentRound }}</span> @endif
                         @if($poolName) <span class="mx-3 text-slate-300">|</span> <span class="text-indigo-600">{{ $poolName }}</span> @endif
                     </p>
@@ -121,6 +121,11 @@
                         </div>
                         <div class="text-sm font-bold text-blue-600 uppercase tracking-widest mt-1">
                             {{ $score->registration?->contingent?->name ?? '-' }}
+                            @if($score->match_number_id != $match->id)
+                                <span class="ml-2 rounded bg-rose-50 px-2 py-0.5 text-[10px] font-black tracking-widest text-rose-500 border border-rose-100">
+                                    {{ $score->match_name }}
+                                </span>
+                            @endif
                         </div>
                     </div>
 

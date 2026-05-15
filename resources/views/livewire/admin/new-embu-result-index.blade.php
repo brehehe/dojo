@@ -347,7 +347,7 @@
                 <select wire:model.live="selectedMatchId" class="tm-select" style="min-width: 250px;">
                     <option value="">-- Pilih Nomor Embu --</option>
                     @foreach($embuMatches as $em)
-                        <option value="{{ $em->id }}">{{ $em->name }}{{ $em->ageGroup ? ' · '.$em->ageGroup->name : '' }}</option>
+                        <option value="{{ $em->id }}">{{ $em->display_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -370,11 +370,14 @@
                         @foreach($champions->take(4) as $champ)
                             @php
                                 $rankIcon = match($champ->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', 4 => '🥉', default => '#'.$champ->rank };
-                                $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id) ?? collect();
+                                $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank">{{ $rankIcon }}</div>
                                 <div style="flex:1; min-width:0;">
+                                    <div class="champion-name" title="{{ $athletes->pluck('name')->implode(' & ') }}">
+                                        {{ $athletes->pluck('name')->implode(' & ') ?: '-' }}
+                                    </div>
                                     <div class="champion-ctg">{{ $champ->registration?->contingent?->name }}</div>
                                 </div>
                                 <div>

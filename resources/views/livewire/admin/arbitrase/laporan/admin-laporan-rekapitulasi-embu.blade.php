@@ -43,7 +43,7 @@
                 <x-select wire:model.live="matchNumberFilter" placeholder="Pilih Nomor Pertandingan" wire:key="mn-filter-{{ count($matchNumbersForFilter) }}">
                     <option value="">Semua</option>
                     @foreach($matchNumbersForFilter as $mn)
-                        <option wire:key="mn-{{ $mn->id }}" value="{{ $mn->id }}">{{ $mn->name }}</option>
+                        <option wire:key="mn-{{ $mn->id }}" value="{{ $mn->id }}">{{ $mn->display_name }}</option>
                     @endforeach
                 </x-select>
             </div>

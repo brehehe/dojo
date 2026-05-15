@@ -17,9 +17,12 @@
             <div class="mt-2 flex flex-col gap-1">
                 @if($court->active_match_id && $court->activeMatch)
                     <p class="text-sm md:text-lg font-black text-white uppercase tracking-widest">
-                        {{ $court->activeMatch->name }}
+                        {{ $court->activeMatch->mergeDetail?->merge?->name ?? $court->activeMatch->name }}
                     </p>
-                    <p class="text-xs md:text-sm font-bold text -emerald-400 uppercase tracking-widest">
+                    <p class="text-xs md:text-sm font-bold text-emerald-400 uppercase tracking-widest">
+                        @if ($court->activeDrawing && $court->activeDrawing->match_number_id != $court->activeMatch->id)
+                            <span class="text-amber-300">{{ $court->activeDrawing->matchNumber->name }}</span> &bull;
+                        @endif
                         {{ $court->activeMatch->draft_type }} &bull; {{ $court->activeMatch->ageGroup?->name }}
                     </p>
                 @else

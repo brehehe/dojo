@@ -36,10 +36,15 @@
             $dContingent = $drawing?->registration?->contingent;
 
             // Athletes — untuk embu hanya tampilkan atlet dari registrasi yang sedang dipanggil.
-            // Untuk randori: ambil semua (vs layout).
+            // Gunakan metadata['athlete_ids'] jika tersedia untuk memisahkan Tim 1 / Tim 2 dari kontingen yang sama.
+            // PENTING: Gunakan matchNumber dari DRAWING (bukan activeMatch) karena atlet terikat ke match_number asli, bukan merge master.
             $activeRegId = $court->active_registration_id;
             if ($isRandori) {
                 $athletes = $match->athletes;
+            } elseif ($activeRegId && $drawing && !empty($drawing->metadata['athlete_ids'])) {
+                $athletes = $drawing->matchNumber->athletes->whereIn('id', $drawing->metadata['athlete_ids'])->values();
+            } elseif ($activeRegId && $drawing) {
+                $athletes = $drawing->matchNumber->athletes->filter(fn($a) => $a->pivot->registration_id == $activeRegId)->values();
             } elseif ($activeRegId) {
                 $athletes = $match->athletes->filter(fn($a) => $a->pivot->registration_id == $activeRegId)->values();
             } else {
@@ -65,10 +70,13 @@
                 </div>
                 <h1
                     class="text-3xl sm:text-4xl md:text-6xl xl:text-[5.5rem] leading-[0.95] font-black text-white uppercase tracking-tight md:tracking-tighter drop-shadow-lg px-2 sm:px-4">
-                    {{ $match->name }}
+                    {{ $match->mergeDetail?->merge?->name ?? $match->name }}
                 </h1>
                 <p
                     class="text-sm sm:text-lg md:text-2xl xl:text-3xl text-white/80 font-black uppercase tracking-[0.16em] sm:tracking-[0.2em] md:tracking-[0.3em] px-2 sm:px-4">
+                    @if ($drawing && $drawing->match_number_id != $match->id)
+                        <span class="text-amber-300">{{ $drawing->matchNumber->name }}</span> &bull;
+                    @endif
                     Kategori {{ ucfirst($match->draft_type) }} &bull; {{ $match->ageGroup?->name ?? 'Dewasa' }}
                 </p>
 

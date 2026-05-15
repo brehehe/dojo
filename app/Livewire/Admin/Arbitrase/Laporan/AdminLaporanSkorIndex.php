@@ -8,6 +8,7 @@ use App\Models\RandoriMatchResult;
 use App\Models\Registration;
 use App\Traits\HasExcelExport;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -57,7 +58,20 @@ class AdminLaporanSkorIndex extends Component
      */
     private function getEmbuScores(MatchNumber $matchNumber): Collection
     {
-        $scores = $matchNumber->embuScores()
+        $mergeDetails = DB::table('match_number_merge_details')
+            ->where('match_number_id', $matchNumber->id)
+            ->first();
+        
+        if ($mergeDetails) {
+            $matchNumberIds = DB::table('match_number_merge_details')
+                ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                ->pluck('match_number_id')
+                ->toArray();
+        } else {
+            $matchNumberIds = [$matchNumber->id];
+        }
+
+        $scores = \App\Models\EmbuScore::whereIn('match_number_id', $matchNumberIds)
             ->with(['registration.athletes', 'registration.contingent'])
             ->where('tiebreak_round', 0)
             ->get();
@@ -105,7 +119,20 @@ class AdminLaporanSkorIndex extends Component
      */
     private function getRandoriScores(MatchNumber $matchNumber): Collection
     {
-        $results = RandoriMatchResult::where('match_number_id', $matchNumber->id)
+        $mergeDetails = DB::table('match_number_merge_details')
+            ->where('match_number_id', $matchNumber->id)
+            ->first();
+        
+        if ($mergeDetails) {
+            $matchNumberIds = DB::table('match_number_merge_details')
+                ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                ->pluck('match_number_id')
+                ->toArray();
+        } else {
+            $matchNumberIds = [$matchNumber->id];
+        }
+
+        $results = RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)
             ->with(['winner'])
             ->orderBy('bracket_node')
             ->get();
@@ -213,18 +240,45 @@ class AdminLaporanSkorIndex extends Component
     {
         $ageGroups = AgeGroup::orderBy('order')->get();
 
-        $matchNumbers = MatchNumber::with(['ageGroup'])
-            ->when($this->search, fn ($q) => $q->where('name', 'ilike', '%'.$this->search.'%'))
-            ->when($this->draftTypeFilter, fn ($q) => $q->where('draft_type', $this->draftTypeFilter))
-            ->when($this->ageGroupFilter, fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
-            ->when($this->genderFilter, fn ($q) => $q->where('gender', $this->genderFilter))
-            ->orderBy('draft_type')
-            ->orderBy('age_group_id')
-            ->orderBy('order')
+        $query = MatchNumber::with(['ageGroup'])
+            ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
+            ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
+            ->select('match_numbers.*', 'match_number_merges.name as merge_group_name', 'match_number_merge_details.match_number_merge_id')
+            ->where(function($q) {
+                $q->whereNull('match_number_merge_details.match_number_merge_id')
+                  ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+            });
+
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('match_numbers.name', 'ilike', '%'.$this->search.'%')
+                  ->orWhere('match_number_merges.name', 'ilike', '%'.$this->search.'%');
+            });
+        }
+
+        if ($this->draftTypeFilter) $query->where('match_numbers.draft_type', $this->draftTypeFilter);
+        if ($this->ageGroupFilter) $query->where('match_numbers.age_group_id', $this->ageGroupFilter);
+        if ($this->genderFilter) $query->where('match_numbers.gender', $this->genderFilter);
+
+        $matchNumbers = $query->orderBy('match_numbers.draft_type')
+            ->orderBy('match_numbers.age_group_id')
+            ->orderBy('match_numbers.order')
             ->paginate(5); // Show fewer per page because details are long
 
         // Attach all score details for each match
         $matchNumbers->getCollection()->transform(function ($matchNumber) {
+            if ($matchNumber->match_number_merge_id) {
+                $mergedNames = DB::table('match_number_merge_details')
+                    ->join('match_numbers', 'match_number_merge_details.match_number_id', '=', 'match_numbers.id')
+                    ->where('match_number_merge_details.match_number_merge_id', $matchNumber->match_number_merge_id)
+                    ->pluck('match_numbers.name')
+                    ->join(', ');
+                
+                $matchNumber->display_name = ($matchNumber->merge_group_name ?: 'Merged Group') . " (" . $mergedNames . ")";
+            } else {
+                $matchNumber->display_name = $matchNumber->name;
+            }
+
             if (strtolower($matchNumber->draft_type) === 'embu') {
                 $matchNumber->all_scores = $this->getEmbuScores($matchNumber);
             } else {

@@ -59,6 +59,26 @@ class NewEmbuResultIndex extends Component
     // ─── Confirm champion modal ───────────────────────────────
     public bool $showChampionModal = false;
 
+    private function getMatchNumberIds(): array
+    {
+        if (! $this->selectedMatchId) {
+            return [];
+        }
+
+        $mergeDetails = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+            ->where('match_number_id', $this->selectedMatchId)
+            ->first();
+
+        if ($mergeDetails) {
+            return \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                ->pluck('match_number_id')
+                ->toArray();
+        }
+
+        return [$this->selectedMatchId];
+    }
+
     // ─── LIFECYCLE ────────────────────────────────────────────
 
     public function mount(): void
@@ -96,47 +116,60 @@ class NewEmbuResultIndex extends Component
             return collect();
         }
 
-        $match = MatchNumber::with(['athletes', 'embuScores'])->find($this->selectedMatchId);
-        if (! $match) {
-            return collect();
-        }
-
+        $matchIds = $this->getMatchNumberIds();
+        
         $drawings = DrawingMatchNumber::with('pool')
-            ->where('match_number_id', $this->selectedMatchId)
+            ->whereIn('match_number_id', $matchIds)
             ->where('round', 'Penyisihan')
-            ->get()
-            ->keyBy('registration_id');
+            ->get();
 
-        $participants = $match->athletes
-            ->groupBy('pivot.registration_id')
-            ->map(function ($athletes, $regId) use ($match, $drawings) {
-                $reg = Registration::with('contingent')->find($regId);
+        $drawingRegIds = $drawings->pluck('registration_id')->unique()->filter()->toArray();
+        $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $drawingRegIds)->get()->keyBy('id');
+        $scores = EmbuScore::whereIn('match_number_id', $matchIds)
+            ->where('round_label', 'Penyisihan')
+            ->get();
 
-                $score = $match->embuScores
-                    ->where('registration_id', $regId)
-                    ->where('round_label', 'Penyisihan')
-                    ->where('tiebreak_round', 0)
-                    ->first();
+        $participants = $drawings->map(function ($drawing) use ($matchIds, $scores, $registrations) {
+            $regId = $drawing->registration_id;
+            $reg = $registrations->get($regId);
+            if (!$reg) return null;
 
-                $tiebreakScore = $match->embuScores
-                    ->where('registration_id', $regId)
-                    ->where('round_label', 'Penyisihan')
-                    ->where('tiebreak_round', '>', 0)
-                    ->sortByDesc('tiebreak_round')
-                    ->first();
+            $specificMatchId = $drawing->match_number_id;
 
-                return [
-                    'id' => $regId,
-                    'pool_id' => $drawings[$regId]?->pool_id ?? 0,
-                    'pool_name' => $drawings[$regId]?->pool?->name ?? 'No Pool',
-                    'athletes' => $athletes,
-                    'contingent' => $reg?->contingent,
-                    'score' => $score,
-                    'tiebreak_score' => $tiebreakScore,
-                    'effective_score' => $tiebreakScore ?? $score,
-                ];
-            })
-            ->values();
+            // Correctly filter athletes for this specific team/drawing
+            $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            $athletes = collect();
+            if (!empty($athleteIds)) {
+                $athletes = $reg->athletes->whereIn('id', $athleteIds)->values();
+            } else {
+                $athletes = $reg->athletes;
+            }
+
+            $score = $scores->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
+                ->where('tiebreak_round', 0)
+                ->first();
+
+            $tiebreakScore = $scores->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
+                ->where('tiebreak_round', '>', 0)
+                ->sortByDesc('tiebreak_round')
+                ->first();
+
+            return [
+                'id' => $regId,
+                'drawing_id' => $drawing->id,
+                'match_number_id' => $specificMatchId,
+                'athlete_ids' => $athleteIds,
+                'pool_id' => $drawing->pool_id ?? 0,
+                'pool_name' => $drawing->pool?->name ?? 'No Pool',
+                'athletes' => $athletes,
+                'contingent' => $reg->contingent,
+                'score' => $score,
+                'tiebreak_score' => $tiebreakScore,
+                'effective_score' => $tiebreakScore ?? $score,
+            ];
+        })->filter()->values();
 
         // Sort: 1. Nilai Akhir (DESC), 2. Wasit Utama / judge_1 (DESC)
         $sorted = $participants->sort(function ($a, $b) {
@@ -166,42 +199,43 @@ class NewEmbuResultIndex extends Component
             return collect();
         }
 
-        $match = MatchNumber::with(['athletes', 'embuScores'])->find($this->selectedMatchId);
-        if (! $match) {
-            return collect();
-        }
+        $matchIds = $this->getMatchNumberIds();
+        $allScores = EmbuScore::whereIn('match_number_id', $matchIds)->get();
 
-        // Only those with Final drawings
-        $finalRegIds = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
+        // Use Drawings as primary source
+        $finalDrawings = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', 'Final')
-            ->pluck('registration_id')
-            ->unique();
+            ->get();
 
-        return $finalRegIds->map(function ($regId) use ($match) {
-            $reg = Registration::with('contingent')->find($regId);
+        $regIds = $finalDrawings->pluck('registration_id')->unique()->filter()->toArray();
+        $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $regIds)->get()->keyBy('id');
 
-            $penyisihanScore = $match->embuScores
-                ->where('registration_id', $regId)
+        return $finalDrawings->map(function ($drawing) use ($matchIds, $allScores, $registrations) {
+            $regId = $drawing->registration_id;
+            $reg = $registrations->get($regId);
+            $specificMatchId = $drawing->match_number_id;
+
+            $penyisihanScore = $allScores->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
                 ->where('round_label', 'Penyisihan')
                 ->where('tiebreak_round', 0)
                 ->first();
 
-            // Latest tiebreak for penyisihan
-            $penyisihanTbScore = $match->embuScores
-                ->where('registration_id', $regId)
+            $penyisihanTbScore = $allScores->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
                 ->where('round_label', 'Penyisihan')
                 ->where('tiebreak_round', '>', 0)
                 ->sortByDesc('tiebreak_round')
                 ->first();
 
-            $finalScore = $match->embuScores
-                ->where('registration_id', $regId)
+            $finalScore = $allScores->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
                 ->where('round_label', 'Final')
                 ->where('tiebreak_round', 0)
                 ->first();
 
-            $finalTbScore = $match->embuScores
-                ->where('registration_id', $regId)
+            $finalTbScore = $allScores->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
                 ->where('round_label', 'Final')
                 ->where('tiebreak_round', '>', 0)
                 ->sortByDesc('tiebreak_round')
@@ -210,12 +244,22 @@ class NewEmbuResultIndex extends Component
             $effectivePenyisihan = ($penyisihanTbScore ?? $penyisihanScore)?->nilai_akhir ?? 0;
             $effectiveFinal = ($finalTbScore ?? $finalScore)?->nilai_akhir ?? 0;
 
-            // Accumulated = penyisihan + final (always, even if final not scored yet)
             $accumulated = (float) $effectivePenyisihan + (float) $effectiveFinal;
+
+            // Correctly filter athletes for this specific team/drawing
+            $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            $athletes = collect();
+            if (!empty($athleteIds)) {
+                $athletes = $reg?->athletes->whereIn('id', $athleteIds)->values() ?? collect();
+            } elseif ($reg) {
+                $athletes = $reg->athletes;
+            }
 
             return [
                 'id' => $regId,
-                'athletes' => $match->athletes->filter(fn ($a) => $a->pivot->registration_id == $regId),
+                'drawing_id' => $drawing->id,
+                'match_number_id' => $specificMatchId,
+                'athletes' => $athletes,
                 'contingent' => $reg?->contingent,
                 'penyisihan_score' => $penyisihanTbScore ?? $penyisihanScore,
                 'final_score' => $finalTbScore ?? $finalScore,
@@ -223,7 +267,27 @@ class NewEmbuResultIndex extends Component
                 'final_scored' => ($finalTbScore ?? $finalScore) !== null,
             ];
         })
-            ->sortByDesc('accumulated')
+            ->sort(function ($a, $b) {
+                // 1. Total Accumulated
+                $accA = (float) $a['accumulated'];
+                $accB = (float) $b['accumulated'];
+                if ($accA !== $accB) {
+                    return $accB <=> $accA;
+                }
+
+                // 2. Final Round Judge 1 (Wasit Utama)
+                $j1A = (float) ($a['final_score']?->judge_1 ?? -1);
+                $j1B = (float) ($b['final_score']?->judge_1 ?? -1);
+                if ($j1A !== $j1B) {
+                    return $j1B <=> $j1A;
+                }
+
+                // 3. Penyisihan Judge 1 (Wasit Utama)
+                $p1A = (float) ($a['penyisihan_score']?->judge_1 ?? -1);
+                $p1B = (float) ($b['penyisihan_score']?->judge_1 ?? -1);
+                
+                return $p1B <=> $p1A;
+            })
             ->values();
     }
 
@@ -371,20 +435,23 @@ class NewEmbuResultIndex extends Component
         $usedIds = [];
         foreach ($qualifiers->values() as $seq => $reg) {
             $existing = $existingFinals->where('sequence_number', $seq + 1)->first();
+            
+            $meta = [
+                'contingent' => $reg['contingent']?->name ?? 'Unknown',
+                'athlete_name' => $reg['athletes']->pluck('name')->implode(', '),
+                'athlete_ids' => $reg['athlete_ids'] ?? [],
+            ];
 
             if ($existing) {
-                $meta = $existing->metadata;
-                $meta['contingent'] = $reg['contingent']?->name ?? 'Unknown';
-                $meta['athlete_name'] = $reg['athletes']->pluck('name')->implode(', ');
-
                 $existing->update([
                     'registration_id' => $reg['id'],
+                    'match_number_id' => $reg['match_number_id'],
                     'metadata' => $meta,
                 ]);
                 $usedIds[] = $existing->id;
             } else {
                 $newRecord = DrawingMatchNumber::create([
-                    'match_number_id' => $this->selectedMatchId,
+                    'match_number_id' => $reg['match_number_id'],
                     'registration_id' => $reg['id'],
                     'round' => 'Final',
                     'draft_type' => 'embu',
@@ -394,6 +461,7 @@ class NewEmbuResultIndex extends Component
                     'session_time_id' => $this->finalSessionTimeId,
                     'rundown_id' => $this->finalRundownId,
                     'schedule_date' => $this->finalScheduleDate,
+                    'metadata' => $meta,
                 ]);
                 $usedIds[] = $newRecord->id;
             }
@@ -506,43 +574,55 @@ class NewEmbuResultIndex extends Component
             return;
         }
 
-        // Clear previous champions for this match
-        EmbuChampion::where('match_number_id', $this->selectedMatchId)->delete();
-        TournamentResult::where('match_number_id', $this->selectedMatchId)->delete();
+        $matchIds = $this->getMatchNumberIds();
+
+        // Clear previous champions for all affected matches
+        EmbuChampion::whereIn('match_number_id', $matchIds)->delete();
+        TournamentResult::whereIn('match_number_id', $matchIds)->delete();
 
         foreach ($rankings as $idx => $reg) {
             $rank = $idx + 1;
 
-            // Simpan sampai peringkat 4 saja untuk Embu (Juara 1, 2, 3, 3 Bersama)
             if ($rank > 4) {
                 break;
             }
 
-            EmbuChampion::create([
-                'match_number_id' => $this->selectedMatchId,
-                'registration_id' => $reg['id'],
-                'rank' => $rank,
-                'penyisihan_score' => $reg['penyisihan_score']?->nilai_akhir ?? 0,
-                'final_score' => $reg['final_score']?->nilai_akhir ?? 0,
-                'accumulated_score' => $reg['accumulated'] ?? 0,
-            ]);
+            // USE THE SPECIFIC MATCH ID from the drawing, not just the master ID
+            $targetMatchId = $reg['match_number_id'] ?? $this->selectedMatchId;
 
-            $athleteNames = $reg['athletes']->pluck('name')->implode(', ');
+            EmbuChampion::updateOrCreate(
+                [
+                    'match_number_id' => $targetMatchId,
+                    'registration_id' => $reg['id'],
+                ],
+                [
+                    'rank' => $rank,
+                    'penyisihan_score' => $reg['penyisihan_score']?->nilai_akhir ?? 0,
+                    'final_score' => $reg['final_score']?->nilai_akhir ?? 0,
+                    'accumulated_score' => $reg['accumulated'] ?? 0,
+                ]
+            );
+
+            $athleteNames = $reg['athletes']->unique('id')->pluck('name')->implode(', ');
             $contingentName = $reg['contingent']?->name ?? '-';
 
-            TournamentResult::create([
-                'match_number_id' => $this->selectedMatchId,
-                'draft_type' => 'embu',
-                'rank' => $rank,
-                'registration_id' => $reg['id'],
-                'athlete_names' => $athleteNames,
-                'contingent_name' => $contingentName,
-                'penyisihan_score' => $reg['penyisihan_score']?->nilai_akhir ?? 0,
-                'final_score' => $reg['final_score']?->nilai_akhir ?? 0,
-                'accumulated_score' => $reg['accumulated'] ?? 0,
-                'generated_by' => Auth::user()?->name ?? 'System',
-                'confirmed_at' => now(),
-            ]);
+            TournamentResult::updateOrCreate(
+                [
+                    'match_number_id' => $targetMatchId,
+                    'registration_id' => $reg['id'],
+                    'rank' => $rank,
+                ],
+                [
+                    'draft_type' => 'embu',
+                    'athlete_names' => $athleteNames,
+                    'contingent_name' => $contingentName,
+                    'penyisihan_score' => $reg['penyisihan_score']?->nilai_akhir ?? 0,
+                    'final_score' => $reg['final_score']?->nilai_akhir ?? 0,
+                    'accumulated_score' => $reg['accumulated'] ?? 0,
+                    'generated_by' => Auth::user()?->name ?? 'System',
+                    'confirmed_at' => now(),
+                ]
+            );
         }
 
         $this->showChampionModal = false;
@@ -558,13 +638,34 @@ class NewEmbuResultIndex extends Component
 
     public function render()
     {
-        $embuMatches = MatchNumber::where('draft_type', 'embu')
+        $ageGroups = AgeGroup::whereHas('matchNumbers', function ($q) {
+            $q->where('draft_type', 'embu')
+                ->whereHas('athletes')
+                ->whereHas('drawings');
+        })->orderBy('name')->get();
+
+        $query = MatchNumber::where('draft_type', 'embu')
             ->whereHas('athletes')
             ->whereHas('drawings')
-            ->when($this->selectedAgeGroupId, fn ($q) => $q->where('age_group_id', $this->selectedAgeGroupId))
-            ->with('ageGroup')
-            ->orderBy('name')
-            ->get();
+            ->when($this->selectedAgeGroupId, fn ($q) => $q->where('match_numbers.age_group_id', $this->selectedAgeGroupId))
+            ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
+            ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
+            ->select('match_numbers.*', 'match_number_merges.name as merge_group_name', 'match_number_merge_details.match_number_merge_id')
+            ->where(function($q) {
+                $q->whereNull('match_number_merge_details.match_number_merge_id')
+                  ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+            });
+
+        $embuMatches = $query->orderBy('match_numbers.name')
+            ->get()
+            ->map(function($m) {
+                if ($m->match_number_merge_id) {
+                    $m->display_name = $m->merge_group_name ?: 'Merged Group';
+                } else {
+                    $m->display_name = $m->name;
+                }
+                return $m;
+            });
 
         $penyisihanRanking = $this->getPenyisihanRanking();
         $finalRanking = $this->getFinalRanking();
@@ -574,8 +675,9 @@ class NewEmbuResultIndex extends Component
         $tiedPenyisihanIds = $this->detectPenyisihanBoundaryTies();
         $tiedFinalIds = $this->detectFinalTies();
 
+        $matchIds = $this->getMatchNumberIds();
         $champions = $this->selectedMatchId
-            ? EmbuChampion::where('match_number_id', $this->selectedMatchId)
+            ? EmbuChampion::whereIn('match_number_id', $matchIds)
                 ->orderBy('rank')
                 ->with(['registration.contingent', 'matchNumber.athletes'])
                 ->get()

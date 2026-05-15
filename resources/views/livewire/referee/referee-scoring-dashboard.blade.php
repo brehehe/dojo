@@ -718,8 +718,20 @@
         <div class="ref-judge-info">
             <div class="ref-judge-icon"><i class="fa-solid fa-gavel"></i></div>
             <div>
-                <p class="ref-judge-name">{{ $referee?->user?->name ?? auth()->user()?->name ?? 'Wasit' }}</p>
-                <p class="ref-judge-sub">Wasit Juri Aktif</p>
+                <p class="ref-judge-name">
+                    @if($this->isTabletMode)
+                        {{ $referee?->user?->name ?? 'Belum Ditugaskan' }}
+                    @else
+                        {{ $referee?->user?->name ?? auth()->user()?->name ?? 'Wasit' }}
+                    @endif
+                </p>
+                <p class="ref-judge-sub">
+                    @if($this->isTabletMode)
+                        <span style="color:var(--red); font-weight:700;">Acting as {{ $this->judgeLabel }}</span>
+                    @else
+                        Wasit Juri Aktif
+                    @endif
+                </p>
             </div>
         </div>
         @if($judgeIndex)
@@ -735,11 +747,19 @@
 
     {{-- ── WARNING: bukan wasit terdaftar ── --}}
     @if(!$referee)
-        <div class="ref-warning">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+        <div class="ref-warning" style="background: {{ $this->isTabletMode ? 'rgba(52,152,219,.08)' : 'rgba(245,158,11,.08)' }}; border-color: {{ $this->isTabletMode ? 'rgba(52,152,219,.25)' : 'rgba(245,158,11,.25)' }};">
+            <i class="fa-solid {{ $this->isTabletMode ? 'fa-info-circle' : 'fa-triangle-exclamation' }}" style="color: {{ $this->isTabletMode ? '#2980b9' : '#d97706' }};"></i>
             <div>
-                <p class="ref-warning-title">Akun Bukan Wasit Terdaftar</p>
-                <p class="ref-warning-text">Akun Anda tidak terdaftar sebagai wasit. Scoring tidak dapat dikirim. Pastikan login menggunakan akun wasit yang benar.</p>
+                <p class="ref-warning-title" style="color: {{ $this->isTabletMode ? '#24364b' : '#92400e' }};">
+                    {{ $this->isTabletMode ? 'Menunggu Penugasan Wasit' : 'Akun Bukan Wasit Terdaftar' }}
+                </p>
+                <p class="ref-warning-text" style="color: {{ $this->isTabletMode ? '#2c3e50' : '#78350f' }};">
+                    @if($this->isTabletMode)
+                        Tablet ini sudah siap digunakan. Silakan tunggu Panitia/Admin menugaskan Wasit untuk shift ini di Court {{ Auth::user()->court_id }}.
+                    @else
+                        Akun Anda tidak terdaftar sebagai wasit. Scoring tidak dapat dikirim. Pastikan login menggunakan akun wasit yang benar.
+                    @endif
+                </p>
             </div>
         </div>
     @endif

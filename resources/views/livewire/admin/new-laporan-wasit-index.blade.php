@@ -142,6 +142,15 @@
                     </select>
                 </div>
                 <div>
+                    <span class="tm-filter-label">Nomor Pertandingan</span>
+                    <select wire:model.live="matchNumberFilter" class="tm-filter-sel">
+                        <option value="">Semua Nomor</option>
+                        @foreach($matchNumbers as $mn)
+                            <option value="{{ $mn->id }}">{{ $mn->display_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <span class="tm-filter-label">Kelompok Umur</span>
                     <select wire:model.live="ageGroupFilter" class="tm-filter-sel">
                         <option value="">Semua Umur</option>

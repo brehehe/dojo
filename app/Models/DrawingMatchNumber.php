@@ -79,4 +79,9 @@ class DrawingMatchNumber extends Model
     {
         return $this->belongsTo(SessionTime::class);
     }
+
+    public function merge(): BelongsTo
+    {
+        return $this->belongsTo(MatchNumberMerge::class, 'metadata->merge_id');
+    }
 }

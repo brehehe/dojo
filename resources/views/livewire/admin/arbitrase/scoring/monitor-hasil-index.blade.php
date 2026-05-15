@@ -17,7 +17,7 @@
                 </h1>
                 @if($match)
                     <p class="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 sm:text-sm md:text-[15px] lg:text-lg">
-                        {{ $match->name }}
+                        {{ $match->mergeDetail?->merge?->name ?? $match->name }}
                         @if($match->ageGroup) <span class="text-slate-300 mx-2">•</span> <span class="text-slate-500">{{ $match->ageGroup->name }}</span> @endif
                     </p>
                 @endif
@@ -102,6 +102,13 @@
                                         @if($row['athletes']->isNotEmpty())
                                             <div class="mt-1 text-xs font-medium text-slate-500 sm:text-sm md:mt-2 md:text-base lg:text-lg">
                                                 {{ $row['athletes']->pluck('name')->join(' & ') }}
+                                            </div>
+                                        @endif
+                                        @if($row['match_number_id'] != $match->id)
+                                            <div class="mt-1">
+                                                <span class="rounded bg-rose-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-rose-500 border border-rose-100">
+                                                    {{ $row['match_name'] }}
+                                                </span>
                                             </div>
                                         @endif
                                     </td>

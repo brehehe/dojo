@@ -118,7 +118,20 @@ class NewLaporanWasitIndex extends Component
             });
         }
         if (! empty($this->matchNumberFilter)) {
-            $query->where('referee_score_details.match_number_id', $this->matchNumberFilter);
+            $matchId = $this->matchNumberFilter;
+            $mergeDetails = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                ->where('match_number_id', $matchId)
+                ->first();
+
+            if ($mergeDetails) {
+                $ids = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+                $query->whereIn('referee_score_details.match_number_id', $ids);
+            } else {
+                $query->where('referee_score_details.match_number_id', $matchId);
+            }
         }
         if (! empty($this->refereeFilter)) {
             $query->where('referee_id', $this->refereeFilter);
@@ -165,7 +178,28 @@ class NewLaporanWasitIndex extends Component
             'assessments' => $assessments,
             'chartData' => $performanceData,
             'ageGroups' => AgeGroup::all(),
-            'matchNumbers' => MatchNumber::all(),
+            'matchNumbers' => MatchNumber::leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
+                ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
+                ->where(function($q) {
+                    $q->whereNull('match_number_merge_details.match_number_merge_id')
+                      ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+                })
+                ->orderBy('match_numbers.name')
+                ->select('match_numbers.*', 'match_number_merges.name as merge_group_name', 'match_number_merge_details.match_number_merge_id')
+                ->get()
+                ->map(function($m) {
+                    if ($m->match_number_merge_id) {
+                        $mergedNames = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                            ->join('match_numbers', 'match_number_merge_details.match_number_id', '=', 'match_numbers.id')
+                            ->where('match_number_merge_details.match_number_merge_id', $m->match_number_merge_id)
+                            ->pluck('match_numbers.name')
+                            ->join(', ');
+                        $m->display_name = ($m->merge_group_name ?: 'Merged Group') . " (" . $mergedNames . ")";
+                    } else {
+                        $m->display_name = $m->name;
+                    }
+                    return $m;
+                }),
             'referees' => Referee::all(),
             'courts' => Court::all(),
         ])->title('Laporan Penilaian Wasit');

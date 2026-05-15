@@ -331,7 +331,7 @@
                     <select wire:model.live="matchNumberFilter" class="tm-filter-sel">
                         <option value="">Semua Nomor</option>
                         @foreach($allMatchNumbersDropdown as $mn)
-                            <option value="{{ $mn->id }}">{{ $mn->name }} ({{ $mn->gender }})</option>
+                            <option value="{{ $mn->id }}">{{ $mn->display_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -359,14 +359,14 @@
                                     <span style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:.06em;">{{ $match->ageGroup->name }}</span>
                                 @endif
                             </div>
-                            <div class="match-card-title">{{ $match->name }}</div>
+                            <div class="match-card-title">{{ $match->display_name ?? $match->name }}</div>
                         </div>
                         <div class="match-card-badges">
                             @if($isSaved)
                                 <span class="type-badge saved"><i class="fas fa-check-circle"></i> Tersimpan</span>
                             @endif
                             @if($hasResult)
-                                <button wire:click="openGenerateModal({{ $match->id }}, '{{ addslashes($match->name) }}')"
+                                <button wire:click="openGenerateModal({{ $match->id }}, '{{ addslashes($match->display_name ?? $match->name) }}')"
                                     class="btn-gen warning" style="padding: 6px 12px; font-size: 10px;">
                                     <i class="fas fa-save"></i> {{ $isSaved ? 'Update' : 'Simpan' }}
                                 </button>

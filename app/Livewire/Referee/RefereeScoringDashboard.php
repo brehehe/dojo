@@ -43,6 +43,8 @@ class RefereeScoringDashboard extends Component
     public array $activeAthleteNames = [];
 
     public bool $activeIsTeamCategory = false;
+    public $matchNumberIds = [];
+    public $specificMatchId = null;
 
     // Embu Itemized Scores
     public $embuItems = [
@@ -65,6 +67,11 @@ class RefereeScoringDashboard extends Component
 
     public $totalShiro = 0;
 
+    public function getIsTabletModeProperty()
+    {
+        return Auth::user()->judge_index && Auth::user()->court_id;
+    }
+
     public function checkParticipantCalled()
     {
         if (! $this->activeMatch) {
@@ -78,11 +85,6 @@ class RefereeScoringDashboard extends Component
 
     public function mount()
     {
-        $user = Auth::user();
-        if ($user) {
-            $this->referee = Referee::where('user_id', $user->id)->first();
-        }
-
         $this->loadActiveMatch();
     }
 
@@ -98,46 +100,80 @@ class RefereeScoringDashboard extends Component
 
     public function loadActiveMatch()
     {
-        if (! $this->referee) {
-            return;
-        }
-
+        $user = Auth::user();
         $newActiveMatch = null;
         $newAssignedCourt = null;
         $newAssignedSession = null;
         $newAssignedRundown = null;
         $newJudgeIndex = null;
 
-        // Priority 1: Check ActiveCourtReferee (Manual override from Scoring Dashboard)
-        $activeAssignment = ActiveCourtReferee::with(['court.activeMatch'])
-            ->where('referee_id', $this->referee->id)
-            ->first();
+        // ─── 1. Identify Identity & Role ───────────────────────────
+        if ($user->judge_index && $user->court_id) {
+            // TABLET MODE: Role and Court are fixed from account
+            $newAssignedCourt = \App\Models\Court\Court::find($user->court_id);
+            $newJudgeIndex = $user->judge_index;
+            
+            // Resolve Acting Referee dynamically from Schedule
+            if ($newAssignedCourt && $newAssignedCourt->active_match_id) {
+                $newActiveMatch = $newAssignedCourt->activeMatch;
+                
+                // Find rundown/session from current drawing
+                $activeDrawing = \App\Models\DrawingMatchNumber::where('match_number_id', $newAssignedCourt->active_match_id)
+                    ->where('court_id', $newAssignedCourt->id)
+                    ->first();
+                
+                if ($activeDrawing) {
+                    $newAssignedSession = $activeDrawing->sessionTime;
+                    $newAssignedRundown = $activeDrawing->rundown;
 
-        if ($activeAssignment && $activeAssignment->court?->active_match_id) {
-            $newActiveMatch = $activeAssignment->court->activeMatch;
-            $newAssignedCourt = $activeAssignment->court;
-            $newJudgeIndex = $activeAssignment->judge_index;
-        }
-
-        // Priority 2: Fallback to Schedule (Auto detection)
-        if (! $newActiveMatch) {
-            $mySchedules = ScheduleReferee::with(['court.activeMatch', 'sessionTime', 'rundown'])
-                ->where('referee_id', $this->referee->id)
-                ->get();
-
-            foreach ($mySchedules as $schedule) {
-                if (! $schedule->court_id || ! $schedule->court) {
-                    continue;
+                    $schedule = ScheduleReferee::where('court_id', $newAssignedCourt->id)
+                        ->where('judge_index', $newJudgeIndex)
+                        ->where('rundown_id', $activeDrawing->rundown_id)
+                        ->where('session_time_id', $activeDrawing->session_time_id)
+                        ->first();
+                    
+                    if ($schedule) {
+                        $this->referee = $schedule->referee;
+                    }
                 }
+            }
+        } else {
+            // PERSONAL MODE: Referee is fixed, Court/Role are dynamic
+            $this->referee = Referee::where('user_id', $user->id)->first();
+            
+            if (!$this->referee) return;
 
-                $court = $schedule->court;
-                if ($court->active_match_id && $court->activeMatch) {
-                    $newActiveMatch = $court->activeMatch;
-                    $newAssignedCourt = $court;
-                    $newAssignedSession = $schedule->sessionTime;
-                    $newAssignedRundown = $schedule->rundown;
-                    $newJudgeIndex = $schedule->judge_index;
-                    break;
+            // Priority 1: Check ActiveCourtReferee (Manual override)
+            $activeAssignment = ActiveCourtReferee::with(['court.activeMatch'])
+                ->where('referee_id', $this->referee->id)
+                ->first();
+
+            if ($activeAssignment && $activeAssignment->court?->active_match_id) {
+                $newActiveMatch = $activeAssignment->court->activeMatch;
+                $newAssignedCourt = $activeAssignment->court;
+                $newJudgeIndex = $activeAssignment->judge_index;
+            }
+
+            // Priority 2: Fallback to Schedule (Auto detection)
+            if (! $newActiveMatch) {
+                $mySchedules = ScheduleReferee::with(['court.activeMatch', 'sessionTime', 'rundown'])
+                    ->where('referee_id', $this->referee->id)
+                    ->get();
+
+                foreach ($mySchedules as $schedule) {
+                    if (! $schedule->court_id || ! $schedule->court) {
+                        continue;
+                    }
+
+                    $court = $schedule->court;
+                    if ($court->active_match_id && $court->activeMatch) {
+                        $newActiveMatch = $court->activeMatch;
+                        $newAssignedCourt = $court;
+                        $newAssignedSession = $schedule->sessionTime;
+                        $newAssignedRundown = $schedule->rundown;
+                        $newJudgeIndex = $schedule->judge_index;
+                        break;
+                    }
                 }
             }
         }
@@ -151,6 +187,27 @@ class RefereeScoringDashboard extends Component
             $this->assignedSession = $newAssignedSession;
             $this->assignedRundown = $newAssignedRundown;
             $this->judgeIndex = $newJudgeIndex;
+
+            // Handle Merge Group IDs
+            $this->matchNumberIds = [];
+            $this->specificMatchId = null;
+            if ($this->activeMatch) {
+                $this->matchNumberIds = [$this->activeMatch->id];
+                if ($this->activeMatch->mergeDetail) {
+                    $this->matchNumberIds = \App\Models\MatchNumberMergeDetail::where('match_number_merge_id', $this->activeMatch->mergeDetail->match_number_merge_id)
+                        ->pluck('match_number_id')
+                        ->toArray();
+                }
+
+                // Identify specific match from active drawing
+                $activeDrawing = $this->assignedCourt?->activeDrawing;
+                if ($activeDrawing && in_array($activeDrawing->match_number_id, $this->matchNumberIds)) {
+                    $this->specificMatchId = $activeDrawing->match_number_id;
+                } else {
+                    $this->specificMatchId = $this->activeMatch->id;
+                }
+            }
+
             $this->syncActiveMatchMeta();
 
             if ($this->activeMatch) {
@@ -189,7 +246,7 @@ class RefereeScoringDashboard extends Component
         $registration = Registration::with([
             'contingent',
             'athletes.matchNumbers' => fn ($query) => $query
-                ->whereKey($this->activeMatch->id)
+                ->whereIn('match_numbers.id', $this->matchNumberIds)
                 ->wherePivot('registration_id', $this->activeMatch->active_registration_id),
         ])->find($this->activeMatch->active_registration_id);
 
@@ -287,7 +344,7 @@ class RefereeScoringDashboard extends Component
             return;
         }
 
-        $existing = RefereeScoreDetail::where('match_number_id', $this->activeMatch->id)
+        $existing = RefereeScoreDetail::where('match_number_id', $this->specificMatchId ?? $this->activeMatch->id)
             ->where('referee_id', $this->referee->id)
             ->where('scorable_id', $id)
             ->first();
@@ -453,10 +510,12 @@ class RefereeScoringDashboard extends Component
         $details = $this->activeMatch->draft_type === 'embu' ? $this->embuItems : $this->randoriItems;
 
         \DB::transaction(function () use ($id, $scorableType, $bracketNode, $details) {
+            $targetMatchId = $this->specificMatchId ?? $this->activeMatch->id;
+            
             // 1. Save Granular Details
             RefereeScoreDetail::updateOrCreate(
                 [
-                    'match_number_id' => $this->activeMatch->id,
+                    'match_number_id' => $targetMatchId,
                     'referee_id' => $this->referee->id,
                     'scorable_type' => $scorableType,
                     'scorable_id' => $id,
@@ -468,12 +527,12 @@ class RefereeScoringDashboard extends Component
                     'notes' => $this->notes,
                 ]
             );
-
+            
             // 2. Sync to Main Table for Quick Access
             if ($this->activeMatch->draft_type === 'embu') {
                 $column = 'judge_'.$this->judgeIndex;
                 EmbuScore::updateOrCreate(
-                    ['match_number_id' => $this->activeMatch->id, 'registration_id' => $id],
+                    ['match_number_id' => $targetMatchId, 'registration_id' => $id],
                     [$column => $this->totalScore]
                 );
             } else {
@@ -481,14 +540,14 @@ class RefereeScoringDashboard extends Component
                 $service = app(RandoriScoringService::class);
 
                 // AKA (Red)
-                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'ippon', 'aka', $this->randoriItems['aka']['ippon'] + $this->randoriItems['aka']['mujoken']);
-                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'waza_ari', 'aka', $this->randoriItems['aka']['wazaari'] + $this->randoriItems['aka']['yusei']);
-                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'hansoku', 'aka', $this->randoriItems['aka']['batsu5'] + $this->randoriItems['aka']['batsu10']);
+                $service->setScore($targetMatchId, $bracketNode, $this->judgeIndex, 'ippon', 'aka', $this->randoriItems['aka']['ippon'] + $this->randoriItems['aka']['mujoken']);
+                $service->setScore($targetMatchId, $bracketNode, $this->judgeIndex, 'waza_ari', 'aka', $this->randoriItems['aka']['wazaari'] + $this->randoriItems['aka']['yusei']);
+                $service->setScore($targetMatchId, $bracketNode, $this->judgeIndex, 'hansoku', 'aka', $this->randoriItems['aka']['batsu5'] + $this->randoriItems['aka']['batsu10']);
 
                 // SHIRO (White)
-                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'ippon', 'shiro', $this->randoriItems['shiro']['ippon'] + $this->randoriItems['shiro']['mujoken']);
-                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'waza_ari', 'shiro', $this->randoriItems['shiro']['wazaari'] + $this->randoriItems['shiro']['yusei']);
-                $service->setScore($this->activeMatch->id, $bracketNode, $this->judgeIndex, 'hansoku', 'shiro', $this->randoriItems['shiro']['batsu5'] + $this->randoriItems['shiro']['batsu10']);
+                $service->setScore($targetMatchId, $bracketNode, $this->judgeIndex, 'ippon', 'shiro', $this->randoriItems['shiro']['ippon'] + $this->randoriItems['shiro']['mujoken']);
+                $service->setScore($targetMatchId, $bracketNode, $this->judgeIndex, 'waza_ari', 'shiro', $this->randoriItems['shiro']['wazaari'] + $this->randoriItems['shiro']['yusei']);
+                $service->setScore($targetMatchId, $bracketNode, $this->judgeIndex, 'hansoku', 'shiro', $this->randoriItems['shiro']['batsu5'] + $this->randoriItems['shiro']['batsu10']);
             }
         });
 

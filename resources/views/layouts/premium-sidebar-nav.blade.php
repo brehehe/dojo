@@ -301,6 +301,7 @@
                 request()->routeIs('admin.new-weight-groups') ||
                 request()->routeIs('admin.new-techniques') ||
                 request()->routeIs('admin.new-match-numbers') ||
+                request()->routeIs('admin.master.match-number-merges') ||
                 request()->routeIs('admin.new-payment-methods') ||
                 request()->routeIs('admin.new-courts') ||
                 request()->routeIs('admin.new-pools') ||
@@ -338,6 +339,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.new-match-numbers') ? 'active' : '' }}"
                     href="{{ route('admin.new-match-numbers') }}"><i class="fa-solid fa-list-check"></i> Nomor
                     Pertandingan</a>
+                <a class="nav-item {{ request()->routeIs('admin.master.match-number-merges') ? 'active' : '' }}"
+                    href="{{ route('admin.master.match-number-merges') }}"><i class="fa-solid fa-object-group"></i>
+                    Merge Nomer Pertandingan</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-payment-methods') ? 'active' : '' }}"
                     href="{{ route('admin.new-payment-methods') }}"><i class="fa-solid fa-wallet"></i> Metode
                     Pembayaran</a>

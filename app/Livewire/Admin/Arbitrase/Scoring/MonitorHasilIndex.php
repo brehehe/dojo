@@ -46,7 +46,14 @@ class MonitorHasilIndex extends Component
             $activeDrawing = $court?->activeDrawing;
         }
 
-        $query = DrawingMatchNumber::where('match_number_id', $match->id)
+        $matchIds = [$match->id];
+        if ($match->mergeDetail) {
+            $matchIds = \App\Models\MatchNumberMergeDetail::where('match_number_merge_id', $match->mergeDetail->match_number_merge_id)
+                ->pluck('match_number_id')
+                ->toArray();
+        }
+
+        $query = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('draft_type', 'embu');
 
         // Apply URL filters if viewing by Match
@@ -61,7 +68,7 @@ class MonitorHasilIndex extends Component
                 $query->where('pool_id', $this->poolId);
             } else {
                 // If no pool_id specified, pick the first available pool for this round
-                $firstDrawing = DrawingMatchNumber::where('match_number_id', $match->id)
+                $firstDrawing = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
                     ->where('round', $currentRound)
                     ->whereNotNull('pool_id')
                     ->first();
@@ -72,7 +79,7 @@ class MonitorHasilIndex extends Component
         }
 
         // Active court overrides
-        $validActiveDrawing = $activeDrawing && $activeDrawing->match_number_id === $match->id;
+        $validActiveDrawing = $activeDrawing && in_array($activeDrawing->match_number_id, $matchIds);
 
         if ($validActiveDrawing) {
             if ($activeDrawing->pool_id) {
@@ -87,8 +94,7 @@ class MonitorHasilIndex extends Component
         } elseif ($courtId) {
             $query->where('court_id', $courtId);
             // If multiple pools are on this court for this match, just pick the first one by default
-            // to avoid showing 10-15 people at once if they haven't clicked Panggil yet.
-            $firstDrawingOnCourt = DrawingMatchNumber::where('match_number_id', $match->id)
+            $firstDrawingOnCourt = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
                 ->where('court_id', $courtId)
                 ->where('round', 'Penyisihan')
                 ->whereNotNull('pool_id')
@@ -103,82 +109,92 @@ class MonitorHasilIndex extends Component
             $currentRound = $activeDrawing->round;
         }
 
-        $drawingRegIds = $query->pluck('registration_id')->unique()->toArray();
+        $drawings = $query->get();
+        $drawingRegIds = $drawings->pluck('registration_id')->unique()->filter()->toArray();
 
-        return $match->athletes
-            ->filter(fn ($athlete) => in_array($athlete->pivot->registration_id, $drawingRegIds))
-            ->groupBy('pivot.registration_id')
-            ->map(function ($athletes, $regId) use ($match, $currentRound) {
-                $reg = Registration::with('contingent')->find($regId);
+        // Eager load registrations to avoid N+1
+        $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $drawingRegIds)->get()->keyBy('id');
 
-                $score = $match->embuScores
+        return $drawings->map(function ($drawing) use ($matchIds, $currentRound, $registrations) {
+            $regId = $drawing->registration_id;
+            $reg = $registrations->get($regId);
+            $specificMatchId = $drawing->match_number_id;
+            
+            // Correctly filter athletes for this specific team/drawing
+            $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            $athletes = collect();
+            if (!empty($athleteIds)) {
+                $athletes = $reg?->athletes->whereIn('id', $athleteIds)->values() ?? collect();
+            } elseif ($reg) {
+                $athletes = $reg->athletes;
+            }
+
+            $score = \App\Models\EmbuScore::where('match_number_id', $specificMatchId)
+                ->where('registration_id', $regId)
+                ->where('round_label', $currentRound)
+                ->where('tiebreak_round', 0)
+                ->first();
+
+            $tiebreakScore = \App\Models\EmbuScore::where('match_number_id', $specificMatchId)
+                ->where('registration_id', $regId)
+                ->where('round_label', $currentRound)
+                ->where('tiebreak_round', '>', 0)
+                ->orderByDesc('tiebreak_round')
+                ->first();
+
+            $effectiveScore = $tiebreakScore ?? $score;
+            $accumulatedScore = 0;
+
+            // Accumulate Penyisihan score if we are in Final
+            $penyisihanScore = null;
+            if ($currentRound === 'Final') {
+                $pScore = \App\Models\EmbuScore::where('match_number_id', $specificMatchId)
                     ->where('registration_id', $regId)
-                    ->where('round_label', $currentRound)
+                    ->where('round_label', 'Penyisihan')
                     ->where('tiebreak_round', 0)
                     ->first();
 
-                $tiebreakScore = $match->embuScores
+                $pTiebreak = \App\Models\EmbuScore::where('match_number_id', $specificMatchId)
                     ->where('registration_id', $regId)
-                    ->where('round_label', $currentRound)
+                    ->where('round_label', 'Penyisihan')
                     ->where('tiebreak_round', '>', 0)
-                    ->sortByDesc('tiebreak_round')
+                    ->orderByDesc('tiebreak_round')
                     ->first();
 
-                $effectiveScore = $tiebreakScore ?? $score;
-                $accumulatedScore = 0;
-
-                // Accumulate Penyisihan score if we are in Final
-                $penyisihanScore = null;
-                if ($currentRound === 'Final') {
-                    $pScore = $match->embuScores
-                        ->where('registration_id', $regId)
-                        ->where('round_label', 'Penyisihan')
-                        ->where('tiebreak_round', 0)
-                        ->first();
-
-                    $pTiebreak = $match->embuScores
-                        ->where('registration_id', $regId)
-                        ->where('round_label', 'Penyisihan')
-                        ->where('tiebreak_round', '>', 0)
-                        ->sortByDesc('tiebreak_round')
-                        ->first();
-
-                    $penyisihanScore = $pTiebreak ?? $pScore;
-                    if ($penyisihanScore) {
-                        $accumulatedScore += $penyisihanScore->nilai_akhir;
-                    }
+                $penyisihanScore = $pTiebreak ?? $pScore;
+                if ($penyisihanScore) {
+                    $accumulatedScore += $penyisihanScore->nilai_akhir;
                 }
+            }
 
-                if ($effectiveScore) {
-                    $accumulatedScore += $effectiveScore->nilai_akhir;
-                } elseif ($currentRound !== 'Final') {
-                    // If not Final and no effective score, accumulated is 0
-                    $accumulatedScore = 0;
-                }
+            if ($effectiveScore) {
+                $accumulatedScore += $effectiveScore->nilai_akhir;
+            }
 
-                return [
-                    'id' => $regId,
-                    'athletes' => $athletes,
-                    'contingent' => $reg?->contingent,
-                    'score' => $score,
-                    'tiebreak_score' => $tiebreakScore,
-                    'effective_score' => $effectiveScore,
-                    'penyisihan_score' => $penyisihanScore,
-                    'accumulated_score' => $accumulatedScore,
-                ];
-            })
-            // In Shorinji Kempo, highest score is best for both rounds.
-            ->sortBy(function ($r) use ($currentRound) {
-                if ($currentRound === 'Penyisihan') {
-                    // Higher is better. If 0 (hasn't played), put at bottom.
-                    return $r['effective_score'] ? -$r['effective_score']->nilai_akhir : 1;
-                } else {
-                    // For Final, higher is better (accumulated).
-                    // Even if they haven't played in Final yet, rank them by their Penyisihan score (which is now their accumulated score).
-                    return -$r['accumulated_score'];
-                }
-            })
-            ->values();
+            $matchRecord = \App\Models\MatchNumber\MatchNumber::find($specificMatchId);
+
+            return [
+                'id' => $regId,
+                'drawing_id' => $drawing->id,
+                'athletes' => $athletes,
+                'contingent' => $reg?->contingent,
+                'match_number_id' => $specificMatchId,
+                'match_name' => $matchRecord?->name,
+                'score' => $score,
+                'tiebreak_score' => $tiebreakScore,
+                'effective_score' => $effectiveScore,
+                'penyisihan_score' => $penyisihanScore,
+                'accumulated_score' => $accumulatedScore,
+            ];
+        })
+        ->sortBy(function ($r) use ($currentRound) {
+            if ($currentRound === 'Penyisihan') {
+                return $r['effective_score'] ? -$r['effective_score']->nilai_akhir : 1;
+            } else {
+                return -$r['accumulated_score'];
+            }
+        })
+        ->values();
     }
 
     public function render()

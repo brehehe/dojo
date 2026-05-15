@@ -329,7 +329,7 @@ class TournamentDummySeeder extends Seeder
                 ],
                 'Campuran' => [
                     ['match_id' => 'RA3', 'name' => 'Embu Pasangan Kyu kenshi Putra/Putri/Campuran eksebisi', 'contingents' => ['Kab Gresik', 'Surabaya A', 'Surabaya B', 'Kota Malang', 'sidoarjo', 'Surabaya A', 'Surabaya B', 'Kota Malang', 'Surabaya A', 'sidoarjo', 'Kab Tuban', 'Kab Tuban']],
-                    ['match_id' => 'RA4', 'name' => 'Embu Beregu putra/putri/campuran eksebisi', 'contingents' => ['Surabaya A', 'Surabaya A', 'Sidoarjo', 'Kab Tuban', 'Kab Tuban']],
+                    ['match_id' => 'RA4', 'name' => 'Embu Beregu putra/putri/campuran eksebisi', 'contingents' => ['Surabaya A', 'Kab Tuban', 'Sidoarjo', 'Kab Tuban', 'Surabaya A']],
                 ],
             ],
             'Remaja B' => [
