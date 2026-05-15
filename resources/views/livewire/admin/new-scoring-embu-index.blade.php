@@ -921,8 +921,6 @@
                             </div>
                             <div class="queue-actions">
                                 @if ($isActive)
-                                    <button wire:click="callParticipant({{ $item['drawing_id'] }})" class="btn-gen ghost"
-                                        style="flex:1;"><i class="fas fa-redo"></i> Ulang</button>
                                     <button wire:click="dismissParticipant()" class="btn-gen danger"
                                         style="flex:1;"><i class="fas fa-times"></i> Tutup</button>
                                 @else

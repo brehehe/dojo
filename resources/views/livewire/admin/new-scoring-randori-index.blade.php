@@ -489,8 +489,9 @@
         <div>
             <div class="tm-badge-title">{{ strtoupper($merge->name ?? 'RANDORI') }}</div>
             <h2>{{ $matchNumber->name }}</h2>
-            @if($merge)
-                <div style="font-size: 11px; color: var(--smoke); font-weight: 600; margin-top: 4px; font-style: italic;">
+            @if ($merge)
+                <div
+                    style="font-size: 11px; color: var(--smoke); font-weight: 600; margin-top: 4px; font-style: italic;">
                     {{ $displayName }}
                 </div>
             @endif
@@ -616,12 +617,18 @@
                             if (this.running) {
                                 this.time += 30;
                                 let s = Math.floor(this.time / 1000);
-                                if (s === 90 && !this.playedIntervals.has(90)) { window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                                    this.playedIntervals.add(90); }
-                                if (s === 120 && !this.playedIntervals.has(120)) { window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                                    this.playedIntervals.add(120); }
-                                if (s > this.lastTickSecond) { window.playTimerTick ? window.playTimerTick(1000, 0.05) : null;
-                                    this.lastTickSecond = s; }
+                                if (s === 90 && !this.playedIntervals.has(90)) {
+                                    window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                                    this.playedIntervals.add(90);
+                                }
+                                if (s === 120 && !this.playedIntervals.has(120)) {
+                                    window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                                    this.playedIntervals.add(120);
+                                }
+                                if (s > this.lastTickSecond) {
+                                    window.playTimerTick ? window.playTimerTick(1000, 0.05) : null;
+                                    this.lastTickSecond = s;
+                                }
                             } else { this.lastTickSecond = Math.floor(this.time / 1000); }
                         }, 30);
                         this.syncInterval = setInterval(() => { this.sync(); }, 1000);
@@ -632,9 +639,9 @@
                             $wire.startTimer();
                         }
                     },
-                    pause() { 
+                    pause() {
                         window.playBuzzerSingle ? window.playBuzzerSingle('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                        $wire.pauseTimer(); 
+                        $wire.pauseTimer();
                     },
                     stop() { $wire.stopTimer(); },
                     finish() {
@@ -954,9 +961,6 @@
                                                 wire:click="callMatch('{{ $nodeKey }}', {{ $roundIdx }}, {{ $matchIdx }}, 'ub')"
                                                 class="b-action-btn"><i class="fas fa-bullhorn"></i> Panggil</button>
                                         @elseif($isActive)
-                                            <button
-                                                wire:click="callMatch('{{ $nodeKey }}', {{ $roundIdx }}, {{ $matchIdx }}, 'ub')"
-                                                class="b-action-btn"><i class="fas fa-redo"></i> Ulang</button>
                                             <button
                                                 wire:click="openMatchModal('ub', {{ $roundIdx }}, {{ $matchIdx }})"
                                                 class="b-action-btn" style="color:#2980b9;"><i
