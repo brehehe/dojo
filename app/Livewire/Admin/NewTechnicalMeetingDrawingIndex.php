@@ -735,8 +735,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     ->get();
 
                 foreach ($existingDrawingInSession as $d) {
-                    $start = Carbon::parse($d->metadata['start_time']);
-                    $end = Carbon::parse($d->metadata['end_time']);
+                    $m = $d->metadata ?? [];
+                    if (!isset($m['start_time']) || !isset($m['end_time'])) continue;
+                    
+                    $start = Carbon::parse($m['start_time']);
+                    $end = Carbon::parse($m['end_time']);
                     $athletes = $d->registration ? $d->registration->athletes->pluck('id')->toArray() : [];
                     foreach ($athletes as $aId) {
                         $busyAthletes[$aId][] = ['start' => $start, 'end' => $end];
@@ -761,8 +764,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         $isCourtOccupied = false;
                         $courtMatches = $existingDrawingInSession->where('court_id', $court->id);
                         foreach ($courtMatches as $cm) {
-                            $cmStart = Carbon::parse($rDate.' '.Carbon::parse($cm->metadata['start_time'])->format('H:i:s'));
-                            $cmEnd = Carbon::parse($rDate.' '.Carbon::parse($cm->metadata['end_time'])->format('H:i:s'));
+                            $m = $cm->metadata ?? [];
+                            if (!isset($m['start_time']) || !isset($m['end_time'])) continue;
+
+                            $cmStart = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
+                            $cmEnd = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
 
                             if ($currentTime->lt($cmEnd) && $endTimeBlock->gt($cmStart)) {
                                 $isCourtOccupied = true;
