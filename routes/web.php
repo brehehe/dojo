@@ -69,6 +69,8 @@ use App\Livewire\Admin\NewPoolIndex;
 use App\Livewire\Admin\NewRefereeIndex;
 use App\Livewire\Admin\NewRegistrationIndex;
 use App\Livewire\Admin\NewRegistrationShow;
+use App\Livewire\Admin\NewRekapitulasiEmbuDetailIndex;
+use App\Livewire\Admin\NewRekapitulasiEmbuIndex;
 use App\Livewire\Admin\NewRoleForm;
 use App\Livewire\Admin\NewRoleIndex;
 use App\Livewire\Admin\NewRundownIndex;
@@ -283,6 +285,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/new-rekapitulasi-embu', NewLaporanRekapitulasiEmbu::class)->name('new-rekapitulasi-embu');
             Route::get('/new-laporan-wasit', NewLaporanWasitIndex::class)->name('new-laporan-wasit');
             Route::get('/new-laporan-wasit-juri', NewLaporanWasitJuriIndex::class)->name('new-laporan-wasit-juri');
+            Route::get('/new-rekapitulasi-embu-index', NewRekapitulasiEmbuIndex::class)->name('new-rekapitulasi-embu-index');
+            Route::get('/new-rekapitulasi-embu-detail/{matchNumber}', NewRekapitulasiEmbuDetailIndex::class)->name('new-rekapitulasi-embu-detail');
 
             Route::prefix('scoring')->name('scoring.')->group(function () {
                 Route::get('/', AdminArbitraseScoringIndex::class)->name('index');

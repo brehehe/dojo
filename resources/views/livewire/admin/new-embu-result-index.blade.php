@@ -370,7 +370,16 @@
                         @foreach($champions->take(4) as $champ)
                             @php
                                 $rankIcon = match($champ->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', 4 => '🥉', default => '#'.$champ->rank };
-                                $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
+                                $athletes = collect();
+                                if ($champ->drawing_id) {
+                                    $athleteIds = $champ->drawing->metadata['athlete_ids'] ?? [];
+                                    if (!empty($athleteIds)) {
+                                        $athletes = $champ->registration?->athletes->whereIn('id', $athleteIds) ?? collect();
+                                    }
+                                }
+                                if ($athletes->isEmpty()) {
+                                    $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
+                                }
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank">{{ $rankIcon }}</div>
@@ -459,7 +468,10 @@
                                         
                                         @if($score)
                                             <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                                                <div class="score-val">{{ number_format($score->nilai_akhir, 1) }}</div>
+                                                <div class="score-val">{{ number_format($reg['calculated_score'], 1) }}</div>
+                                                @if($score->denda > 0)
+                                                    <div style="font-size: 10px; color: var(--red); font-weight: 700; margin-top: -2px;">-{{ $score->denda }} Denda</div>
+                                                @endif
                                                 
                                                 @php
                                                     $rawVals = [

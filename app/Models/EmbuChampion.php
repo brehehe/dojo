@@ -11,11 +11,17 @@ class EmbuChampion extends Model
     protected $fillable = [
         'match_number_id',
         'registration_id',
+        'drawing_id',
         'rank',
         'penyisihan_score',
         'final_score',
         'accumulated_score',
     ];
+
+    public function drawing(): BelongsTo
+    {
+        return $this->belongsTo(DrawingMatchNumber::class, 'drawing_id');
+    }
 
     public function matchNumber(): BelongsTo
     {

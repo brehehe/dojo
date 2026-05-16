@@ -3,7 +3,10 @@
 namespace App\Livewire\Referee;
 
 use App\Models\ActiveCourtReferee;
+use App\Models\Court\Court;
+use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
+use App\Models\MatchNumberMergeDetail;
 use App\Models\RandoriMatchResult;
 use App\Models\Referee;
 use App\Models\RefereeScoreDetail;
@@ -43,7 +46,9 @@ class RefereeScoringDashboard extends Component
     public array $activeAthleteNames = [];
 
     public bool $activeIsTeamCategory = false;
+
     public $matchNumberIds = [];
+
     public $specificMatchId = null;
 
     // Embu Itemized Scores
@@ -88,12 +93,17 @@ class RefereeScoringDashboard extends Component
         $this->loadActiveMatch();
     }
 
-    private function getActiveIdentifier($match)
+    private function getActiveIdentifier($match, $court = null)
     {
         if (! $match) {
             return null;
         }
-        $subId = $match->draft_type === 'embu' ? $match->active_registration_id : $match->active_bracket_node;
+
+        if ($match->draft_type === 'embu') {
+            $subId = $court?->active_drawing_id ?? $match->active_registration_id;
+        } else {
+            $subId = $match->active_bracket_node;
+        }
 
         return $match->id.'_'.$subId;
     }
@@ -110,18 +120,18 @@ class RefereeScoringDashboard extends Component
         // ─── 1. Identify Identity & Role ───────────────────────────
         if ($user->judge_index && $user->court_id) {
             // TABLET MODE: Role and Court are fixed from account
-            $newAssignedCourt = \App\Models\Court\Court::find($user->court_id);
+            $newAssignedCourt = Court::find($user->court_id);
             $newJudgeIndex = $user->judge_index;
-            
+
             // Resolve Acting Referee dynamically from Schedule
             if ($newAssignedCourt && $newAssignedCourt->active_match_id) {
                 $newActiveMatch = $newAssignedCourt->activeMatch;
-                
+
                 // Find rundown/session from current drawing
-                $activeDrawing = \App\Models\DrawingMatchNumber::where('match_number_id', $newAssignedCourt->active_match_id)
+                $activeDrawing = DrawingMatchNumber::where('match_number_id', $newAssignedCourt->active_match_id)
                     ->where('court_id', $newAssignedCourt->id)
                     ->first();
-                
+
                 if ($activeDrawing) {
                     $newAssignedSession = $activeDrawing->sessionTime;
                     $newAssignedRundown = $activeDrawing->rundown;
@@ -131,7 +141,7 @@ class RefereeScoringDashboard extends Component
                         ->where('rundown_id', $activeDrawing->rundown_id)
                         ->where('session_time_id', $activeDrawing->session_time_id)
                         ->first();
-                    
+
                     if ($schedule) {
                         $this->referee = $schedule->referee;
                     }
@@ -140,8 +150,10 @@ class RefereeScoringDashboard extends Component
         } else {
             // PERSONAL MODE: Referee is fixed, Court/Role are dynamic
             $this->referee = Referee::where('user_id', $user->id)->first();
-            
-            if (!$this->referee) return;
+
+            if (! $this->referee) {
+                return;
+            }
 
             // Priority 1: Check ActiveCourtReferee (Manual override)
             $activeAssignment = ActiveCourtReferee::with(['court.activeMatch'])
@@ -178,7 +190,7 @@ class RefereeScoringDashboard extends Component
             }
         }
 
-        $newId = $this->getActiveIdentifier($newActiveMatch);
+        $newId = $this->getActiveIdentifier($newActiveMatch, $newAssignedCourt);
 
         if ($this->currentActiveIdentifier !== $newId) {
             $this->currentActiveIdentifier = $newId;
@@ -194,7 +206,7 @@ class RefereeScoringDashboard extends Component
             if ($this->activeMatch) {
                 $this->matchNumberIds = [$this->activeMatch->id];
                 if ($this->activeMatch->mergeDetail) {
-                    $this->matchNumberIds = \App\Models\MatchNumberMergeDetail::where('match_number_merge_id', $this->activeMatch->mergeDetail->match_number_merge_id)
+                    $this->matchNumberIds = MatchNumberMergeDetail::where('match_number_merge_id', $this->activeMatch->mergeDetail->match_number_merge_id)
                         ->pluck('match_number_id')
                         ->toArray();
                 }
@@ -322,7 +334,15 @@ class RefereeScoringDashboard extends Component
     public function loadExistingDetails()
     {
         if ($this->activeMatch->draft_type === 'embu') {
-            $id = $this->activeMatch->active_registration_id;
+            // Reload court to get the latest active_drawing_id
+            $currentCourt = $this->assignedCourt ? Court::find($this->assignedCourt->id) : null;
+            $drawingId = $currentCourt?->active_drawing_id;
+
+            if ($drawingId) {
+                $id = $drawingId;
+            } else {
+                $id = $this->activeMatch->active_registration_id;
+            }
         } else {
             $bracketNode = $this->activeMatch->active_bracket_node;
             if (! $bracketNode) {
@@ -478,8 +498,18 @@ class RefereeScoringDashboard extends Component
         }
 
         if ($this->activeMatch->draft_type === 'embu') {
-            $id = $this->activeMatch->active_registration_id;
-            $scorableType = Registration::class;
+            // Reload court to get the latest active_drawing_id
+            $currentCourt = $this->assignedCourt ? Court::find($this->assignedCourt->id) : null;
+            $drawingId = $currentCourt?->active_drawing_id;
+
+            if ($drawingId) {
+                $id = $drawingId;
+                $scorableType = DrawingMatchNumber::class;
+            } else {
+                $id = $this->activeMatch->active_registration_id;
+                $scorableType = Registration::class;
+            }
+
             $bracketNode = null;
         } else {
             $bracketNode = $this->activeMatch->active_bracket_node;
@@ -509,9 +539,9 @@ class RefereeScoringDashboard extends Component
 
         $details = $this->activeMatch->draft_type === 'embu' ? $this->embuItems : $this->randoriItems;
 
-        \DB::transaction(function () use ($id, $scorableType, $bracketNode, $details) {
+        \DB::transaction(function () use ($id, $scorableType, $bracketNode, $details, $drawingId) {
             $targetMatchId = $this->specificMatchId ?? $this->activeMatch->id;
-            
+
             // 1. Save Granular Details
             RefereeScoreDetail::updateOrCreate(
                 [
@@ -527,12 +557,16 @@ class RefereeScoringDashboard extends Component
                     'notes' => $this->notes,
                 ]
             );
-            
+
             // 2. Sync to Main Table for Quick Access
             if ($this->activeMatch->draft_type === 'embu') {
                 $column = 'judge_'.$this->judgeIndex;
                 EmbuScore::updateOrCreate(
-                    ['match_number_id' => $targetMatchId, 'registration_id' => $id],
+                    [
+                        'match_number_id' => $targetMatchId,
+                        'registration_id' => $this->activeMatch->active_registration_id,
+                        'drawing_id' => $drawingId ?? null,
+                    ],
                     [$column => $this->totalScore]
                 );
             } else {

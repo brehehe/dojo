@@ -681,9 +681,22 @@
                                     }
                                 }
 
-                                $nilaiAwal = $s?->total_score ?? 0;
+                                $calculatedTotal = 0;
+                                if ($s) {
+                                    $scoredCount = count(array_filter($rawVals, fn($v) => $v > 0));
+                                    if ($scoredCount === 5) {
+                                        $sortedVals = $rawVals;
+                                        asort($sortedVals);
+                                        $vals = array_values($sortedVals);
+                                        $calculatedTotal = $vals[1] + $vals[2] + $vals[3];
+                                    } else {
+                                        $calculatedTotal = array_sum($rawVals);
+                                    }
+                                }
+                                
+                                $nilaiAwal = $s?->total_score > 0 ? $s->total_score : $calculatedTotal;
                                 $denda = $s?->denda ?? 0;
-                                $nilaiAkhir = $s?->nilai_akhir ?? $nilaiAwal - $denda;
+                                $nilaiAkhir = $s?->nilai_akhir > 0 ? $s->nilai_akhir : max(0, $nilaiAwal - $denda);
                                 $isActive = isset($activeDrawingId) && $activeDrawingId == $item['drawing_id'];
                             @endphp
                             <tr style="{{ $isActive ? 'background:#fdfbf7;' : '' }}">

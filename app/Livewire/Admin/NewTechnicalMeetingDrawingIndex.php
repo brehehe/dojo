@@ -180,7 +180,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
             $match = $merge->matchNumbers->first();
         } else {
-            $matchId = $this->filterMatchNumberId;
+            $matchId = $this->filterMatchNumbe`rId;
             $match = MatchNumber::findOrFail($matchId);
             $matchNumberIds = [$matchId];
         }
@@ -210,12 +210,12 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $grouped = $athletesQuery->groupBy('contingent_name');
         $uniqueContingentCount = $grouped->count();
 
-        if ($uniqueContingentCount < 3 && $totalEntries < 3) {
+        if ($uniqueContingentCount < 3 && $totalAthletes < 3) {
             $this->isGenerating = false;
             $this->dispatch('swal', [
                 'icon' => 'warning',
                 'title' => 'Peserta Minim',
-                'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalEntries.' entri dari '.$uniqueContingentCount.' kontingen.'
+                'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalAthletes.' entri dari '.$uniqueContingentCount.' kontingen.'
             ]);
 
             return;

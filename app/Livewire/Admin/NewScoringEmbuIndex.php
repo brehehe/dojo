@@ -7,6 +7,7 @@ use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\MatchNumberMerge;
 use App\Models\Registration;
 use App\Models\ScheduleReferee;
 use Illuminate\Support\Facades\Cache;
@@ -25,9 +26,9 @@ class NewScoringEmbuIndex extends Component
     public ?int $urlPoolId = null;
 
     public MatchNumber $matchNumber;
-    
+
     public $merge = null;
-    
+
     public $displayName = '';
 
     public $scores = [];
@@ -48,14 +49,14 @@ class NewScoringEmbuIndex extends Component
     public function mount(MatchNumber $matchNumber)
     {
         $this->matchNumber = $matchNumber;
-        
+
         // Check if this match is part of a merge
         $mergeDetails = DB::table('match_number_merge_details')
             ->where('match_number_id', $matchNumber->id)
             ->first();
 
         if ($mergeDetails) {
-            $this->merge = \App\Models\MatchNumberMerge::find($mergeDetails->match_number_merge_id);
+            $this->merge = MatchNumberMerge::find($mergeDetails->match_number_merge_id);
             $this->matchNumberIds = DB::table('match_number_merge_details')
                 ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
                 ->pluck('match_number_id')
@@ -143,7 +144,7 @@ class NewScoringEmbuIndex extends Component
             if ($refereeNames->isNotEmpty()) {
                 $refereeCall = 'Kepada para dewan juri dan wasit: '.$refereeNames->implode(', ').'. Mohon segera menempati posisi. ';
             }
-            
+
             $outro = "Sekali lagi, panggilan untuk seluruh official dan kontingen pada kategori {$matchName}{$poolName}. Mohon segera menuju {$courtName}. Terima kasih.";
 
             $fullText = $intro.$contingentCall.$refereeCall.$outro;
@@ -166,7 +167,9 @@ class NewScoringEmbuIndex extends Component
         $drawing = DrawingMatchNumber::with(['court', 'pool', 'registration.contingent', 'registration.athletes', 'matchNumber'])
             ->find($drawingId);
 
-        if (!$drawing) return;
+        if (! $drawing) {
+            return;
+        }
 
         $registrationId = $drawing->registration_id;
 
@@ -184,15 +187,15 @@ class NewScoringEmbuIndex extends Component
 
             // Announcement logic - Use specific athletes from drawing metadata if possible
             $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
-            if (!empty($metaAthleteIds)) {
+            if (! empty($metaAthleteIds)) {
                 $athletes = Athlete::whereIn('id', $metaAthleteIds)->pluck('name')->implode(', ');
             } else {
-                $athletes = Athlete::whereHas('matchNumbers', function($q) use ($drawing) {
+                $athletes = Athlete::whereHas('matchNumbers', function ($q) use ($drawing) {
                     $q->where('match_numbers.id', $drawing->match_number_id)
-                      ->where('athlete_match_number.registration_id', $drawing->registration_id);
+                        ->where('athlete_match_number.registration_id', $drawing->registration_id);
                 })->pluck('name')->implode(', ');
             }
-            
+
             $contingent = $drawing->registration->contingent->name;
             $matchName = $this->merge->name ?? $drawing->matchNumber->name;
             $courtName = $drawing->court->name;
@@ -391,6 +394,7 @@ class NewScoringEmbuIndex extends Component
                 'match_number_id' => $drawing->match_number_id ?? $this->matchNumber->id,
                 'registration_id' => $this->activeRegistrationId,
                 'round_label' => $this->currentRound,
+                'drawing_id' => $drawing->id ?? null,
             ],
             array_merge($this->scores, [
                 'total_score' => $total,
@@ -425,6 +429,7 @@ class NewScoringEmbuIndex extends Component
                 if ($a->nilai_akhir != $b->nilai_akhir) {
                     return $b->nilai_akhir <=> $a->nilai_akhir; // Descending
                 }
+
                 return $b->judge_1 <=> $a->judge_1; // Tie-break: Judge 1 Descending
             })->values();
         } else {
@@ -445,6 +450,7 @@ class NewScoringEmbuIndex extends Component
                 if ($totalA != $totalB) {
                     return $totalB <=> $totalA; // Descending
                 }
+
                 return $b->judge_1 <=> $a->judge_1; // Tie-break: Judge 1 Descending
             })->values();
         }
@@ -469,6 +475,7 @@ class NewScoringEmbuIndex extends Component
             if ($a->nilai_akhir != $b->nilai_akhir) {
                 return $b->nilai_akhir <=> $a->nilai_akhir;
             }
+
             return $b->judge_1 <=> $a->judge_1;
         })->values();
 
@@ -478,7 +485,9 @@ class NewScoringEmbuIndex extends Component
         }
 
         $boundaryScore = $sorted->get($threshold - 1);
-        if (!$boundaryScore) return [];
+        if (! $boundaryScore) {
+            return [];
+        }
 
         $tied = $sorted->filter(
             fn ($s) => (float) $s->nilai_akhir === (float) $boundaryScore->nilai_akhir &&
@@ -514,7 +523,7 @@ class NewScoringEmbuIndex extends Component
                 ->where('registration_id', $regId)
                 ->where('round', $this->currentRound)
                 ->first();
-            
+
             $targetMatchId = $drawing ? $drawing->match_number_id : $this->matchNumber->id;
 
             $lastScore = EmbuScore::where('match_number_id', $targetMatchId)
@@ -645,7 +654,7 @@ class NewScoringEmbuIndex extends Component
         // Reload fresh
         // Fetch all match numbers in this merge/group
         $allMatchNumbers = MatchNumber::whereIn('id', $this->matchNumberIds)->get();
-        
+
         // Fetch all drawings for the current merge group and round
         $drawingsQuery = DrawingMatchNumber::with(['registration.contingent'])
             ->whereIn('match_number_id', $this->matchNumberIds)
@@ -670,28 +679,47 @@ class NewScoringEmbuIndex extends Component
 
             // Fetch athletes specific to THIS drawing entry to avoid duplication and mix-ups
             $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
-            
-            if (!empty($metaAthleteIds)) {
+
+            if (! empty($metaAthleteIds)) {
                 $athletes = Athlete::whereIn('id', $metaAthleteIds)->get();
             } else {
                 // Fallback to old logic for legacy drawings
-                $athletes = Athlete::whereHas('matchNumbers', function($q) use ($matchId, $regId) {
+                $athletes = Athlete::whereHas('matchNumbers', function ($q) use ($matchId, $regId) {
                     $q->where('match_numbers.id', $matchId)
-                      ->where('athlete_match_number.registration_id', $regId);
+                        ->where('athlete_match_number.registration_id', $regId);
                 })->get();
             }
 
             // Get the latest score for this specific drawing
             $score = $allScores->where('registration_id', $regId)
                 ->where('match_number_id', $matchId)
+                ->where('drawing_id', $drawing->id)
                 ->sortByDesc('tiebreak_round')
                 ->first();
+
+            if (! $score) {
+                // Fallback for legacy scores or if drawing_id not yet filled
+                $score = $allScores->where('registration_id', $regId)
+                    ->where('match_number_id', $matchId)
+                    ->whereNull('drawing_id')
+                    ->sortByDesc('tiebreak_round')
+                    ->first();
+            }
 
             // All score history for this specific drawing
             $scoreHistory = $allScores->where('registration_id', $regId)
                 ->where('match_number_id', $matchId)
+                ->where('drawing_id', $drawing->id)
                 ->sortBy('tiebreak_round')
                 ->values();
+
+            if ($scoreHistory->isEmpty()) {
+                $scoreHistory = $allScores->where('registration_id', $regId)
+                    ->where('match_number_id', $matchId)
+                    ->whereNull('drawing_id')
+                    ->sortBy('tiebreak_round')
+                    ->values();
+            }
 
             $accumulatedScore = 0;
             $penyisihanScore = null;
@@ -761,7 +789,7 @@ class NewScoringEmbuIndex extends Component
         // Calculate consolidated display name
         if ($this->merge) {
             $mergedNames = MatchNumber::whereIn('id', $this->matchNumberIds)->pluck('name')->join(', ');
-            $this->displayName = ($this->merge->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+            $this->displayName = ($this->merge->name ?: 'Merged Group').' ('.$mergedNames.')';
         } else {
             $this->displayName = $this->matchNumber->name;
         }

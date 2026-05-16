@@ -211,6 +211,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i class="fa-solid fa-chart-simple"></i>
                     Analisis Per Juri</a>
+                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-embu-index') ? 'active' : '' }}"
+                    href="{{ route('admin.arbitrase.new-rekapitulasi-embu-index') }}"><i
+                        class="fa-solid fa-chart-line"></i> Rekapitulasi Embu</a>
             </div>
         </div>
     @endhasanyrole

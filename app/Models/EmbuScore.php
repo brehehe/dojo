@@ -12,6 +12,7 @@ class EmbuScore extends Model
     protected $fillable = [
         'match_number_id',
         'registration_id',
+        'drawing_id',
         'judge_1',
         'judge_2',
         'judge_3',

@@ -21,12 +21,13 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             // ContingentSeeder::class,
             CourtAndPoolSeeder::class,
-            RefereeSeeder::class,
+            // RefereeSeeder::class,
             MatchNumberSeeder::class,
             SessionRundownSeeder::class,
             TechniqueSeeder::class,
-            TournamentDummySeeder::class,
-            // DummySeeder::class,
+            // TournamentDummySeeder::class,
+            DummySeeder::class,
+            TabRefeeCourtSeeder::class,
             // Embu9ContingentSeeder::class,
         ]);
 
