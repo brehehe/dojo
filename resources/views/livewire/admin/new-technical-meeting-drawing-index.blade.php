@@ -733,11 +733,11 @@
                         <i class="fa-solid fa-file-excel"></i> Export Excel
                     </button>
                 @else
-                    {{-- <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings">
+                    <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings">
                         <i class="fa-solid fa-magic" wire:loading.remove wire:target="generateAllDrawings"></i>
                         <i class="fa-solid fa-spinner fa-spin" wire:loading wire:target="generateAllDrawings"></i>
                         Generate Semua
-                    </button> --}}
+                    </button>
                 @endif
             </div>
         </div>
