@@ -94,6 +94,9 @@
             <div x-show="open" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 class="collapsible-content">
+                <a class="nav-item {{ request()->routeIs('admin.master.match-number-merges') ? 'active' : '' }}"
+                    href="{{ route('admin.master.match-number-merges') }}"><i class="fa-solid fa-object-group"></i>
+                    Merge Nomer Pertandingan</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-tm-drawing') ? 'active' : '' }}"
                     href="{{ route('admin.new-tm-drawing') }}"><i class="fa-solid fa-dice"></i> Drawing TM</a>
             </div>
@@ -342,9 +345,6 @@
                 <a class="nav-item {{ request()->routeIs('admin.new-match-numbers') ? 'active' : '' }}"
                     href="{{ route('admin.new-match-numbers') }}"><i class="fa-solid fa-list-check"></i> Nomor
                     Pertandingan</a>
-                <a class="nav-item {{ request()->routeIs('admin.master.match-number-merges') ? 'active' : '' }}"
-                    href="{{ route('admin.master.match-number-merges') }}"><i class="fa-solid fa-object-group"></i>
-                    Merge Nomer Pertandingan</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-payment-methods') ? 'active' : '' }}"
                     href="{{ route('admin.new-payment-methods') }}"><i class="fa-solid fa-wallet"></i> Metode
                     Pembayaran</a>

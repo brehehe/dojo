@@ -180,7 +180,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
             $match = $merge->matchNumbers->first();
         } else {
-            $matchId = $this->filterMatchNumbe`rId;
+            $matchId = $this->filterMatchNumberId;
             $match = MatchNumber::findOrFail($matchId);
             $matchNumberIds = [$matchId];
         }
@@ -425,11 +425,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $this->filterMatchNumberId = null;
         $this->isGenerating = false;
 
-        $this->dispatch('swal', [
-            'icon' => 'success',
-            'title' => 'Semua Bagan Digenerate!',
-            'text' => $count.' kelas pertandingan berhasil dibuatkan jadwal.',
-        ]);
+        // $this->dispatch('swal', [
+        //     'icon' => 'success',
+        //     'title' => 'Semua Bagan Digenerate!',
+        //     'text' => $count.' kelas pertandingan berhasil dibuatkan jadwal.',
+        // ]);
     }
 
     public function exportExcel()
