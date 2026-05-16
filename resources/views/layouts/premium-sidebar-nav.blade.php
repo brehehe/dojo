@@ -184,7 +184,7 @@
 
 
     {{-- Laporan --}}
-    @hasanyrole('Super Admin|Admin|Arbitrase|Perwasitan|Pertandingan|Koordinator Lapangan')
+    @hasanyrole('Super Admin|Admin|Arbitrase|Perwasitan|Pertandingan|Koordinator Lapangan|Court|Panitera')
         <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-*') || request()->routeIs('admin.arbitrase.new-rekapitulasi-*')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Laporan</span>

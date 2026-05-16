@@ -198,7 +198,7 @@ class NewScoringEmbuIndex extends Component
             $courtName = $drawing->court->name;
             $poolName = $drawing->pool ? ' Pool '.$drawing->pool->name : '';
 
-            $text = "Panggilan untuk kontingen {$contingent}. Atas nama {$athletes}. Silakan menuju {$courtName}. Untuk kategori {$matchName}{$poolName}. Sekali lagi, panggilan untuk kontingen {$contingent}. Atas nama {$athletes}. Silakan menuju {$courtName}. Terima kasih.";
+            $text = "Panggilan untuk kontingen {$contingent}. Atas nama {$athletes}. Silakan menuju {$courtName}. Untuk kategori {$matchName}{$poolName}.";
 
             $this->dispatch('play-announcer', ['text' => $text]);
         }

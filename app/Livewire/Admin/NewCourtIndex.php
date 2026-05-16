@@ -60,6 +60,17 @@ class NewCourtIndex extends Component
                 $model = Court::findOrFail($this->courtIdBeingEdited);
                 $model->update(['name' => $this->name]);
 
+                $user = User::updateOrCreate([
+                    'court_id' => $model->id,
+                ],[
+                    'name' => 'Petugas ' . $model->name,
+                    'email' => 'court' . $model->id . '@gmail.com',
+                    'password' => bcrypt('password'), // Password default
+                    'email_verified_at' => now(),
+                ]);
+
+                $user->assignRole('Court');
+
                 $this->dispatch('swal', [
                     'title' => 'Berhasil!',
                     'text' => 'Data Lapangan (Court) telah diperbarui.',
@@ -68,10 +79,9 @@ class NewCourtIndex extends Component
             } else {
                 $court = Court::create(['name' => $this->name]);
 
-                // Buat User otomatis untuk Lapangan baru ini
                 $user = User::create([
                     'name' => 'Petugas ' . $court->name,
-                    'email' => strtolower(str_replace(' ', '', $court->name)) . $court->id . '@gmail.com',
+                    'email' => 'court' . $court->id . '@gmail.com',
                     'password' => bcrypt('password'), // Password default
                     'court_id' => $court->id,
                     'email_verified_at' => now(),
