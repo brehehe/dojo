@@ -333,6 +333,10 @@ class RefereeScoringDashboard extends Component
 
     public function loadExistingDetails()
     {
+        if (! $this->referee) {
+            return;
+        }
+
         if ($this->activeMatch->draft_type === 'embu') {
             // Reload court to get the latest active_drawing_id
             $currentCourt = $this->assignedCourt ? Court::find($this->assignedCourt->id) : null;
