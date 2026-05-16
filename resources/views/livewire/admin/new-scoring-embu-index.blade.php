@@ -519,8 +519,9 @@
         <div class="tm-hdr">
             <div>
                 <div class="tm-badge-title">{{ strtoupper($merge->name ?? $matchNumber->name) }}</div>
-                @if($merge)
-                    <div style="font-size: 11px; color: var(--smoke); font-weight: 600; margin-top: 4px; font-style: italic;">
+                @if ($merge)
+                    <div
+                        style="font-size: 11px; color: var(--smoke); font-weight: 600; margin-top: 4px; font-style: italic;">
                         {{ $displayName }}
                     </div>
                 @endif
@@ -683,7 +684,7 @@
                                 $nilaiAwal = $s?->total_score ?? 0;
                                 $denda = $s?->denda ?? 0;
                                 $nilaiAkhir = $s?->nilai_akhir ?? $nilaiAwal - $denda;
-                                $isActive = (isset($activeDrawingId) && $activeDrawingId == $item['drawing_id']);
+                                $isActive = isset($activeDrawingId) && $activeDrawingId == $item['drawing_id'];
                             @endphp
                             <tr style="{{ $isActive ? 'background:#fdfbf7;' : '' }}">
                                 <td>{{ $item['sequence_number'] ?? $no + 1 }}</td>
@@ -694,9 +695,11 @@
                                             {{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}
                                         @endforeach
                                     </div>
-                                    @if($merge)
-                                        <div style="font-size:10px; color:var(--red); font-weight:700; margin-top:2px; text-transform:uppercase; letter-spacing:0.02em;">
-                                            <i class="fas fa-tag" style="margin-right:4px; font-size:9px;"></i> {{ $item['match_name'] }}
+                                    @if ($merge)
+                                        <div
+                                            style="font-size:10px; color:var(--red); font-weight:700; margin-top:2px; text-transform:uppercase; letter-spacing:0.02em;">
+                                            <i class="fas fa-tag" style="margin-right:4px; font-size:9px;"></i>
+                                            {{ $item['match_name'] }}
                                         </div>
                                     @endif
                                     <div style="font-size:11px; color:var(--smoke); margin-top:2px;">
@@ -752,9 +755,12 @@
                     ->where('registration_id', $matchNumber->active_registration_id)
                     ->where('round', $currentRound)
                     ->first();
-                
-                $activeRegItem = $registrations->first(fn($r) => $r['id'] == $matchNumber->active_registration_id && $r['match_number_id'] == ($activeDrawing->match_number_id ?? 0));
-                
+
+                $activeRegItem = $registrations->first(
+                    fn($r) => $r['id'] == $matchNumber->active_registration_id &&
+                        $r['match_number_id'] == ($activeDrawing->match_number_id ?? 0),
+                );
+
                 // Fallback if not found precisely
                 if (!$activeRegItem) {
                     $activeRegItem = $registrations->firstWhere('id', $matchNumber->active_registration_id);
@@ -840,9 +846,9 @@
                             $wire.startTimer();
                         }
                     },
-                    pause() { 
+                    pause() {
                         window.playBuzzerSingle ? window.playBuzzerSingle('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                        $wire.pauseTimer(); 
+                        $wire.pauseTimer();
                     },
                     stop() { $wire.stopTimer(); },
                     finish() {
@@ -912,8 +918,9 @@
                                     </div>
                                     <div class="queue-cont"><i class="fas fa-shield-alt"
                                             style="margin-right:4px;"></i>{{ $item['contingent']?->name }}</div>
-                                    @if($merge)
-                                        <div style="font-size:9px; color:var(--red); font-weight:700; margin-top:2px; text-transform:uppercase;">
+                                    @if ($merge)
+                                        <div
+                                            style="font-size:9px; color:var(--red); font-weight:700; margin-top:2px; text-transform:uppercase;">
                                             <i class="fas fa-tag"></i> {{ $item['match_name'] }}
                                         </div>
                                     @endif
@@ -921,11 +928,15 @@
                             </div>
                             <div class="queue-actions">
                                 @if ($isActive)
+                                    <button wire:click="callParticipant({{ $item['drawing_id'] }})"
+                                        class="btn-gen primary" style="flex:1;"><i class="fas fa-bullhorn"></i>
+                                        Panggil Ulang</button>
                                     <button wire:click="dismissParticipant()" class="btn-gen danger"
                                         style="flex:1;"><i class="fas fa-times"></i> Tutup</button>
                                 @else
-                                    <button wire:click="callParticipant({{ $item['drawing_id'] }})" class="btn-gen primary"
-                                        style="width:100%;"><i class="fas fa-bullhorn"></i> Panggil</button>
+                                    <button wire:click="callParticipant({{ $item['drawing_id'] }})"
+                                        class="btn-gen primary" style="width:100%;"><i class="fas fa-bullhorn"></i>
+                                        Panggil</button>
                                 @endif
                             </div>
                             @if ($isActive)
@@ -989,8 +1000,9 @@
                                         @foreach ($item['athletes'] as $athlete)
                                             {{ $athlete->name }}{{ !$loop->last ? ' & ' : '' }}
                                         @endforeach
-                                        @if($merge)
-                                            <div style="font-size:9px; color:var(--red); font-weight:400; margin-top:2px;">
+                                        @if ($merge)
+                                            <div
+                                                style="font-size:9px; color:var(--red); font-weight:400; margin-top:2px;">
                                                 <i class="fas fa-tag"></i> {{ $item['match_name'] }}
                                             </div>
                                         @endif
