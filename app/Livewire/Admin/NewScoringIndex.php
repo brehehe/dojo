@@ -422,9 +422,9 @@ class NewScoringIndex extends Component
                 'drawing_match_numbers.pool_id',
                 'drawing_match_numbers.session_time_id',
                 'drawing_match_numbers.rundown_id',
-                'drawing_match_numbers.round',
                 'drawing_match_numbers.draft_type'
             )
+            ->selectRaw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END as round")
             ->selectRaw('COALESCE(MAX(match_number_merges.name), \'\') as merge_name')
             ->selectRaw('STRING_AGG(DISTINCT match_numbers.name, \', \') as aggregated_match_names')
             ->selectRaw('MIN(drawing_match_numbers.match_number_id) as match_number_id')
@@ -436,7 +436,7 @@ class NewScoringIndex extends Component
                 'drawing_match_numbers.pool_id',
                 'drawing_match_numbers.session_time_id',
                 'drawing_match_numbers.rundown_id',
-                'drawing_match_numbers.round',
+                \Illuminate\Support\Facades\DB::raw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END"),
                 'drawing_match_numbers.draft_type',
                 'match_number_merges.id'
             )
@@ -465,7 +465,7 @@ class NewScoringIndex extends Component
             $query->where('round', $this->filterRound);
         }
         if (! empty($this->filterType)) {
-            $query->where('draft_type', $this->filterType);
+            $query->where('drawing_match_numbers.draft_type', $this->filterType);
         }
         if (! empty($this->filterAgeGroup)) {
             $query->whereHas('matchNumber', function ($q) {

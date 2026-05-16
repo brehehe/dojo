@@ -86,7 +86,7 @@
 
     {{-- Pertandingan --}}
     @hasanyrole('Super Admin|Admin|Pertandingan|Koordinator Lapangan')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-tm-drawing')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-tm-drawing') || request()->routeIs('admin.match-number-merges')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Pertandingan</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -94,8 +94,8 @@
             <div x-show="open" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 class="collapsible-content">
-                <a class="nav-item {{ request()->routeIs('admin.master.match-number-merges') ? 'active' : '' }}"
-                    href="{{ route('admin.master.match-number-merges') }}"><i class="fa-solid fa-object-group"></i>
+                <a class="nav-item {{ request()->routeIs('admin.match-number-merges') ? 'active' : '' }}"
+                    href="{{ route('admin.match-number-merges') }}"><i class="fa-solid fa-object-group"></i>
                     Merge Nomer Pertandingan</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-tm-drawing') ? 'active' : '' }}"
                     href="{{ route('admin.new-tm-drawing') }}"><i class="fa-solid fa-dice"></i> Drawing TM</a>

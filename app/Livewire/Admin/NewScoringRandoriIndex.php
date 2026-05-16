@@ -579,6 +579,29 @@ class NewScoringRandoriIndex extends Component
         if ($b === 'ub') $data['upper_bracket']['rounds'][$next['round']][$next['match']][$slot] = $athleteData;
         elseif ($b === 'lb') $data['lower_bracket']['rounds'][$next['round']][$next['match']][$slot] = $athleteData;
         elseif ($b === 'gf') $data['grand_final'][$slot] = $athleteData;
+
+        // Update DrawingMatchNumber untuk Jadwal
+        $nodeKey = $b.'_'.$next['round'].'_'.$next['match'];
+        $side = $slot === 'athlete1' ? 'RED' : 'BLUE';
+
+        $drawings = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->get();
+        
+        foreach ($drawings as $d) {
+            $meta = $d->metadata;
+            if (is_string($meta)) {
+                $meta = json_decode($meta, true);
+            }
+            
+            if (($meta['node_key'] ?? null) === $nodeKey && ($meta['side'] ?? null) === $side) {
+                $d->registration_id = $athleteData['registration_id'] ?? null;
+                $meta['athlete_id'] = $athleteData['id'] ?? null;
+                $meta['athlete_name'] = $athleteData['name'] ?? 'TBD';
+                $meta['contingent'] = $athleteData['contingent'] ?? 'TBD';
+                $d->metadata = $meta;
+                $d->save();
+            }
+        }
+
         return $data;
     }
 

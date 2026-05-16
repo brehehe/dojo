@@ -166,10 +166,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
     }
 
     // ── RANDORI ──────────────────────────────────────────────
-    public function generateRandoriDrawing(bool $showSwal = true): void
+    public function generateRandoriDrawing(bool $showSwal = true)
     {
         if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
-            return;
+            return false;
         }
 
         $this->isGenerating = true;
@@ -202,23 +202,36 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         if ($totalAthletes === 0) {
             $this->isGenerating = false;
-            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum Ada Peserta', 'text' => 'Tidak ada atlet yang terdaftar di kategori ini.']);
+            if ($showSwal) {
+                $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum Ada Peserta', 'text' => 'Tidak ada atlet yang terdaftar di kategori ini.']);
+            }
 
-            return;
+            return false;
         }
 
         $grouped = $athletesQuery->groupBy('contingent_name');
         $uniqueContingentCount = $grouped->count();
 
         if ($uniqueContingentCount < 3 && $totalAthletes < 3) {
-            $this->isGenerating = false;
-            $this->dispatch('swal', [
-                'icon' => 'warning',
-                'title' => 'Peserta Minim',
-                'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalAthletes.' entri dari '.$uniqueContingentCount.' kontingen.'
+
+            // optional logging / collect skipped
+            logger()->warning('Drawing skipped karena peserta minim', [
+                'match_id' => $match->id,
+                'total_athletes' => $totalAthletes,
+                'unique_contingent' => $uniqueContingentCount,
             ]);
 
-            return;
+            $this->isGenerating = false;
+
+            if ($showSwal) {
+                $this->dispatch('swal', [
+                    'icon' => 'warning',
+                    'title' => 'Peserta Minim',
+                    'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalAthletes.' entri dari '.$uniqueContingentCount.' kontingen.'
+                ]);
+            }
+
+            return false;
         }
 
         $spreadAthletes = [];
@@ -271,6 +284,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         $allMatchesToSchedule[] = [
                             'round_name' => 'Penyisihan (UB R'.($rIdx + 1).')',
                             'match' => $m,
+                            'node_key' => 'ub_'.$rIdx.'_'.$mIdx,
                         ];
                     }
                 }
@@ -284,6 +298,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         $allMatchesToSchedule[] = [
                             'round_name' => 'Penyisihan (LB R'.($rIdx + 1).')',
                             'match' => $m,
+                            'node_key' => 'lb_'.$rIdx.'_'.$mIdx,
                         ];
                     }
                 }
@@ -291,11 +306,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
         }
 
         if (! empty($drawingData['grand_final']) && empty($drawingData['grand_final']['is_bye'])) {
-            // Some brackets don't have grand_final populated fully initially if not double elim,
-            // but if it's there and not a bye, schedule it.
             $allMatchesToSchedule[] = [
                 'round_name' => 'Grand Final',
                 'match' => $drawingData['grand_final'],
+                'node_key' => 'gf_0_0',
             ];
         }
 
@@ -361,6 +375,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     'side' => 'RED',
                     'pool_label' => $roundName,
                     'merge_id' => $this->filterMergeId,
+                    'node_key' => $scheduleItem['node_key'] ?? null,
                 ],
             ]);
 
@@ -386,6 +401,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     'side' => 'BLUE',
                     'pool_label' => $roundName,
                     'merge_id' => $this->filterMergeId,
+                    'node_key' => $scheduleItem['node_key'] ?? null,
                 ],
             ]);
 
@@ -411,25 +427,39 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->has('athletes')
             ->get();
 
-        $count = 0;
+        $success = 0;
+        $skipped = 0;
+
         foreach ($matches as $match) {
             $this->filterMatchNumberId = $match->id;
-            if ($match->draft_type === 'randori') {
-                $this->generateRandoriDrawing(false);
-            } else {
-                $this->generateEmbuDrawing(false);
+
+            try {
+                if ($match->draft_type === 'randori') {
+                    $result = $this->generateRandoriDrawing(false);
+                } else {
+                    $result = $this->generateEmbuDrawing(false);
+                }
+
+                if ($result === false) {
+                    $skipped++;
+                } else {
+                    $success++;
+                }
+
+            } catch (\Throwable $e) {
+                $skipped++;
+                logger()->error($e->getMessage());
             }
-            $count++;
         }
 
         $this->filterMatchNumberId = null;
         $this->isGenerating = false;
 
-        // $this->dispatch('swal', [
-        //     'icon' => 'success',
-        //     'title' => 'Semua Bagan Digenerate!',
-        //     'text' => $count.' kelas pertandingan berhasil dibuatkan jadwal.',
-        // ]);
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Generate Selesai',
+            'text' => $success.' berhasil, '.$skipped.' dilewati.',
+        ]);
     }
 
     public function exportExcel()
@@ -438,10 +468,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
     }
 
     // ── EMBU ─────────────────────────────────────────────────
-    public function generateEmbuDrawing(bool $showSwal = true): void
+    public function generateEmbuDrawing(bool $showSwal = true)
     {
         if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
-            return;
+            return false; 
         }
 
         $this->isGenerating = true;
@@ -495,9 +525,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         if ($totalEntries === 0) {
             $this->isGenerating = false;
-            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum Ada Peserta', 'text' => 'Tidak ada peserta terdaftar.']);
+            if ($showSwal) {
+                $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Belum Ada Peserta', 'text' => 'Tidak ada peserta terdaftar.']);
+            }
 
-            return;
+            return false;
         }
 
         $regContingents = DB::table('registrations')
@@ -515,7 +547,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 'text' => "Kategori ini hanya diikuti oleh {$totalEntries} peserta dari {$uniqueContingentCount} kontingen. Minimal harus ada 3 peserta agar dapat dipertandingkan.",
             ]);
 
-            return;
+            return false;
         }
 
         $entries = $allEntries->map(fn ($r) => [
@@ -1121,11 +1153,16 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 }
                 $matchAthletes = collect($entryData);
 
-                $drawingEntries = DrawingMatchNumber::with(['registration.contingent', 'court', 'sessionTime'])
+                $drawingEntriesQuery = DrawingMatchNumber::with(['registration.contingent', 'court', 'sessionTime'])
                     ->where('match_number_id', $this->filterMatchNumberId)
                     ->orderBy('sequence_number')
-                    ->get()
-                    ->groupBy(fn ($e) => $e->metadata['pool_label'] ?? 'Drawing Result');
+                    ->get();
+
+                if ($selectedMatch->draft_type === 'randori') {
+                    $drawingEntries = collect(['Jadwal Pertandingan' => $drawingEntriesQuery]);
+                } else {
+                    $drawingEntries = $drawingEntriesQuery->groupBy(fn ($e) => $e->metadata['pool_label'] ?? 'Drawing Result');
+                }
             }
         }
 

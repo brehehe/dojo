@@ -185,6 +185,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/new-session-times', NewSessionTimeIndex::class)->name('new-session-times');
         Route::get('/new-rundowns', NewRundownIndex::class)->name('new-rundowns');
         Route::get('/new-tm-drawing', NewTechnicalMeetingDrawingIndex::class)->name('new-tm-drawing');
+        Route::get('/match-number-merges', NewMatchNumberMergeIndex::class)->name('match-number-merges');
         Route::get('/new-users', NewUserIndex::class)->name('new-users');
         Route::get('/master/new-referees', NewRefereeIndex::class)->name('master.new-referees');
         Route::get('/arbitrase/new-referees', NewRefereeIndex::class)->name('arbitrase.new-referees');
@@ -216,7 +217,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/weight-groups', AdminMasterWeightGroupIndex::class)->name('weight-groups');
             Route::get('/techniques', AdminMasterTechniqueIndex::class)->name('techniques');
             Route::get('/match-numbers', AdminMasterMatchNumberIndex::class)->name('match-numbers');
-            Route::get('/match-number-merges', NewMatchNumberMergeIndex::class)->name('match-number-merges');
             Route::get('/rundown', AdminMasterRundownIndex::class)->name('rundown');
             Route::get('/court', AdminMasterCourtIndex::class)->name('court');
             Route::get('/pool', AdminMasterPoolIndex::class)->name('pool');
