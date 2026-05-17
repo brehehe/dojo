@@ -738,6 +738,9 @@
                         <i class="fa-solid fa-spinner fa-spin" wire:loading wire:target="generateAllDrawings"></i>
                         Generate Semua
                     </button>
+                    <button class="btn-gen ghost" onclick="confirmResetAll()" wire:loading.attr="disabled">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Semua
+                    </button>
                 @endif
             </div>
         </div>
@@ -1416,6 +1419,22 @@
                     reverseButtons: true,
                 }).then((r) => {
                     if (r.isConfirmed) @this.resetDrawing();
+                });
+            }
+
+            function confirmResetAll() {
+                Swal.fire({
+                    title: 'Reset Semua Drawing?',
+                    text: 'SEMUA data drawing akan dihapus dan harus di-generate ulang.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#c0392b',
+                    cancelButtonColor: '#7f8c8d',
+                    confirmButtonText: 'Ya, Reset Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                }).then((r) => {
+                    if (r.isConfirmed) @this.resetAllDrawings();
                 });
             }
         </script>

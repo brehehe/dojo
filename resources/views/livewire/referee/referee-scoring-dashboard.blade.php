@@ -2,8 +2,8 @@
     @push('styles')
         <style>
             /* ══════════════════════════════════════════════════════
-                       REFEREE SCORING DASHBOARD — Mobile Premium
-                    ══════════════════════════════════════════════════════ */
+                               REFEREE SCORING DASHBOARD — Mobile Premium
+                            ══════════════════════════════════════════════════════ */
 
             body.referee-scoring-immersive {
                 overflow: auto;
@@ -1032,6 +1032,84 @@
                     padding: 14px 15px;
                 }
             }
+            /* ── REFEREE UNAVAILABLE / READONLY ── */
+            .ref-form-readonly {
+                margin: 0 16px 16px;
+                background: #fff;
+                border-radius: 14px;
+                border: 1px solid var(--paper2);
+                overflow: hidden;
+            }
+
+            .ref-card-hdr {
+                padding: 20px;
+                background: var(--paper);
+                border-bottom: 1px solid var(--paper2);
+            }
+
+            .ref-card-hdr h2 {
+                font-family: 'Cinzel', serif;
+                font-size: 17px;
+                font-weight: 700;
+                color: var(--ink);
+                margin: 0 0 12px;
+            }
+
+            .ref-match-info {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .ref-info-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+            }
+
+            .ref-info-label {
+                color: var(--smoke);
+                font-weight: 500;
+            }
+
+            .ref-info-value {
+                color: var(--ink);
+                font-weight: 600;
+                text-align: right;
+            }
+
+            .ref-readonly-overlay {
+                padding: 32px 20px;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .ref-readonly-overlay i {
+                font-size: 32px;
+                color: #e74c3c;
+                margin-bottom: 12px;
+                display: block;
+            }
+
+            .ref-readonly-overlay h3 {
+                font-family: 'Cinzel', serif;
+                font-size: 17px;
+                font-weight: 700;
+                color: var(--ink);
+                margin: 0 0 6px;
+            }
+
+            .ref-readonly-overlay p {
+                font-size: 13px;
+                color: var(--smoke);
+                margin: 0;
+                line-height: 1.5;
+                max-width: 280px;
+                margin-inline: auto;
+            }
         </style>
     @endpush
     @push('scripts')
@@ -1305,205 +1383,237 @@
 
         @if ($activeMatch->draft_type === 'embu')
             {{-- ── EMBU FORM ── --}}
-            <div class="ref-form-panel">
-                @php
-                    $techniqueRows = [
-                        ['key' => 'goho_1', 'aspect' => 'GOHO', 'desc' => 'Serangan, bertahan, balasan', 'no' => 1],
-                        ['key' => 'goho_2', 'aspect' => 'GOHO', 'desc' => 'Lima unsur serangan', 'no' => 2],
-                        ['key' => 'goho_3', 'aspect' => 'GOHO', 'desc' => 'Kombinasi & timing', 'no' => 3],
-                        ['key' => 'juho_1', 'aspect' => 'JUHO', 'desc' => 'Shuha, nukiwaza, gyaku waza', 'no' => 4],
-                        ['key' => 'juho_2', 'aspect' => 'JUHO', 'desc' => 'Nage waza, katame waza, dll', 'no' => 5],
-                        ['key' => 'juho_3', 'aspect' => 'JUHO', 'desc' => 'Kelancaran & kontrol', 'no' => 6],
-                    ];
-                    $expressionRows = [
-                        [
-                            'key' => 'ekspresi_1',
-                            'aspect' => 'Ekspresi',
-                            'desc' => 'Rangkaian, Irama, Harmoni',
-                            'no' => 1,
-                        ],
-                        [
-                            'key' => 'ekspresi_2',
-                            'aspect' => 'Ekspresi',
-                            'desc' => 'Tai gamae, Kuda-kuda, Keindahan',
-                            'no' => 2,
-                        ],
-                        ['key' => 'ekspresi_3', 'aspect' => 'Ekspresi', 'desc' => 'Semangat, Disiplin', 'no' => 3],
-                        [
-                            'key' => 'ekspresi_4',
-                            'aspect' => 'Ekspresi',
-                            'desc' => 'Nafas, Pandangan mata, Zanshin',
-                            'no' => 4,
-                        ],
-                    ];
-                    $techniqueSubtotal = collect($techniqueRows)->sum(
-                        fn($row) => is_numeric($embuItems[$row['key']] ?? null) ? (float) $embuItems[$row['key']] : 0,
-                    );
-                    $expressionSubtotal = collect($expressionRows)->sum(
-                        fn($row) => is_numeric($embuItems[$row['key']] ?? null) ? (float) $embuItems[$row['key']] : 0,
-                    );
-                @endphp
+            @if ($referee)
+                <div class="ref-form-panel">
+                    @php
+                        $techniqueRows = [
+                            ['key' => 'goho_1', 'aspect' => 'GOHO', 'desc' => 'Serangan, bertahan, balasan', 'no' => 1],
+                            ['key' => 'goho_2', 'aspect' => 'GOHO', 'desc' => 'Lima unsur serangan', 'no' => 2],
+                            ['key' => 'goho_3', 'aspect' => 'GOHO', 'desc' => 'Kombinasi & timing', 'no' => 3],
+                            ['key' => 'juho_1', 'aspect' => 'JUHO', 'desc' => 'Shuha, nukiwaza, gyaku waza', 'no' => 4],
+                            ['key' => 'juho_2', 'aspect' => 'JUHO', 'desc' => 'Nage waza, katame waza, dll', 'no' => 5],
+                            ['key' => 'juho_3', 'aspect' => 'JUHO', 'desc' => 'Kelancaran & kontrol', 'no' => 6],
+                        ];
+                        $expressionRows = [
+                            [
+                                'key' => 'ekspresi_1',
+                                'aspect' => 'Ekspresi',
+                                'desc' => 'Rangkaian, Irama, Harmoni',
+                                'no' => 1,
+                            ],
+                            [
+                                'key' => 'ekspresi_2',
+                                'aspect' => 'Ekspresi',
+                                'desc' => 'Tai gamae, Kuda-kuda, Keindahan',
+                                'no' => 2,
+                            ],
+                            ['key' => 'ekspresi_3', 'aspect' => 'Ekspresi', 'desc' => 'Semangat, Disiplin', 'no' => 3],
+                            [
+                                'key' => 'ekspresi_4',
+                                'aspect' => 'Ekspresi',
+                                'desc' => 'Nafas, Pandangan mata, Zanshin',
+                                'no' => 4,
+                            ],
+                        ];
+                        $techniqueSubtotal = collect($techniqueRows)->sum(
+                            fn($row) => is_numeric($embuItems[$row['key']] ?? null)
+                                ? (float) $embuItems[$row['key']]
+                                : 0,
+                        );
+                        $expressionSubtotal = collect($expressionRows)->sum(
+                            fn($row) => is_numeric($embuItems[$row['key']] ?? null)
+                                ? (float) $embuItems[$row['key']]
+                                : 0,
+                        );
+                    @endphp
 
-                <div class="ref-score-table">
-                    <div class="ref-score-table-wrap">
-                        <table class="ref-score-table-grid">
-                            <thead>
-                                <tr>
-                                    <th>Aspek</th>
-                                    <th>Deskripsi</th>
-                                    <th>Bobot</th>
-                                    <th>No</th>
-                                    <th>Nilai</th>
-                                    <th>Standar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($techniqueRows as $index => $row)
+                    <div class="ref-score-table">
+                        <div class="ref-score-table-wrap">
+                            <table class="ref-score-table-grid">
+                                <thead>
                                     <tr>
-                                        @if ($index === 0)
-                                            <td class="ref-score-cell ref-score-aspect"
-                                                rowspan="{{ count($techniqueRows) }}">
-                                                Penguasaan Teknik (60)
-                                            </td>
-                                        @endif
-                                        @if ($index === 0 || $index === 3)
-                                            <td class="ref-score-cell ref-score-desc-cell" rowspan="3">
-                                                @if ($index === 0)
-                                                    <div style="line-height: 1.6;">
-                                                        <strong
-                                                            style="color: var(--ink); font-size: 14px;">GOHO</strong><span
-                                                            style="color: var(--ink); font-size: 14px;"> : Serangan,
-                                                            bertahan, serangan balasan, lima unsur serangan dan
-                                                            lain-lain</span>
+                                        <th>Aspek</th>
+                                        <th>Deskripsi</th>
+                                        <th>Bobot</th>
+                                        <th>No</th>
+                                        <th>Nilai</th>
+                                        <th>Standar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($techniqueRows as $index => $row)
+                                        <tr>
+                                            @if ($index === 0)
+                                                <td class="ref-score-cell ref-score-aspect"
+                                                    rowspan="{{ count($techniqueRows) }}">
+                                                    Penguasaan Teknik (60)
+                                                </td>
+                                            @endif
+                                            @if ($index === 0 || $index === 3)
+                                                <td class="ref-score-cell ref-score-desc-cell" rowspan="3">
+                                                    @if ($index === 0)
+                                                        <div style="line-height: 1.6;">
+                                                            <strong
+                                                                style="color: var(--ink); font-size: 14px;">GOHO</strong><span
+                                                                style="color: var(--ink); font-size: 14px;"> : Serangan,
+                                                                bertahan, serangan balasan, lima unsur serangan dan
+                                                                lain-lain</span>
+                                                        </div>
+                                                    @else
+                                                        <div style="line-height: 1.6;">
+                                                            <strong
+                                                                style="color: var(--ink); font-size: 14px;">JUHO</strong><span
+                                                                style="color: var(--ink); font-size: 14px;"> : Shuha,
+                                                                nukiwaza, gyaku waza, nage waza, katame waza dan
+                                                                lain-lain</span>
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                            @endif
+                                            @if ($index === 0)
+                                                <td class="ref-score-cell ref-score-weight"
+                                                    rowspan="{{ count($techniqueRows) }}">
+                                                    <div>
+                                                        60
+                                                        <span class="ref-score-weight-note">(Masing² 10)</span>
                                                     </div>
-                                                @else
-                                                    <div style="line-height: 1.6;">
-                                                        <strong
-                                                            style="color: var(--ink); font-size: 14px;">JUHO</strong><span
-                                                            style="color: var(--ink); font-size: 14px;"> : Shuha,
-                                                            nukiwaza, gyaku waza, nage waza, katame waza dan
-                                                            lain-lain</span>
-                                                    </div>
-                                                @endif
-                                            </td>
-                                        @endif
-                                        @if ($index === 0)
-                                            <td class="ref-score-cell ref-score-weight"
-                                                rowspan="{{ count($techniqueRows) }}">
-                                                <div>
-                                                    60
-                                                    <span class="ref-score-weight-note">(Masing² 10)</span>
+                                                </td>
+                                            @endif
+                                            <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
+                                            <td class="ref-score-cell ref-score-input-cell">
+                                                <div class="ref-score-input-wrap">
+                                                    <input type="number"
+                                                        wire:model.lazy="embuItems.{{ $row['key'] }}"
+                                                        class="ref-score-input"
+                                                        onfocus="window.refereeScoreInputFocus?.(this)"
+                                                        onblur="window.refereeScoreInputBlur?.(this)" min="0"
+                                                        max="10" step="0.1" placeholder="0.0">
+                                                    <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
                                                 </div>
                                             </td>
-                                        @endif
-                                        <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
-                                        <td class="ref-score-cell ref-score-input-cell">
-                                            <div class="ref-score-input-wrap">
-                                                <input type="number" wire:model.lazy="embuItems.{{ $row['key'] }}"
-                                                    class="ref-score-input"
-                                                    onfocus="window.refereeScoreInputFocus?.(this)"
-                                                    onblur="window.refereeScoreInputBlur?.(this)" min="0"
-                                                    max="10" step="0.1" placeholder="0.0">
-                                                <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
-                                            </div>
+                                            <td class="ref-score-cell ref-score-standard">8</td>
+                                        </tr>
+                                    @endforeach
+
+                                    <tr class="ref-score-table-subtotal">
+                                        <td class="ref-score-cell ref-score-subtotal-label" colspan="5">Sub Total-1
                                         </td>
-                                        <td class="ref-score-cell ref-score-standard">8</td>
+                                        <td class="ref-score-cell ref-score-subtotal-value">
+                                            {{ number_format($techniqueSubtotal, 1) }}</td>
                                     </tr>
-                                @endforeach
 
-                                <tr class="ref-score-table-subtotal">
-                                    <td class="ref-score-cell ref-score-subtotal-label" colspan="5">Sub Total-1</td>
-                                    <td class="ref-score-cell ref-score-subtotal-value">
-                                        {{ number_format($techniqueSubtotal, 1) }}</td>
-                                </tr>
-
-                                @foreach ($expressionRows as $index => $row)
-                                    <tr>
-                                        @if ($index === 0)
-                                            <td class="ref-score-cell ref-score-aspect"
-                                                rowspan="{{ count($expressionRows) }}">
-                                                Ekspresi (40)
-                                            </td>
-                                        @endif
-                                        <td class="ref-score-cell ref-score-desc-cell">
-                                            <div class="ref-score-desc"
-                                                style="color: var(--ink); font-weight: 500; font-size: 14px; margin-top: 0;">
-                                                {{ $row['no'] }}. {{ $row['desc'] }}
-                                            </div>
-                                        </td>
-                                        @if ($index === 0)
-                                            <td class="ref-score-cell ref-score-weight"
-                                                rowspan="{{ count($expressionRows) }}">
-                                                <div>
-                                                    40
-                                                    <span class="ref-score-weight-note">(Masing² 10)</span>
+                                    @foreach ($expressionRows as $index => $row)
+                                        <tr>
+                                            @if ($index === 0)
+                                                <td class="ref-score-cell ref-score-aspect"
+                                                    rowspan="{{ count($expressionRows) }}">
+                                                    Ekspresi (40)
+                                                </td>
+                                            @endif
+                                            <td class="ref-score-cell ref-score-desc-cell">
+                                                <div class="ref-score-desc"
+                                                    style="color: var(--ink); font-weight: 500; font-size: 14px; margin-top: 0;">
+                                                    {{ $row['no'] }}. {{ $row['desc'] }}
                                                 </div>
                                             </td>
-                                        @endif
-                                        <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
-                                        <td class="ref-score-cell ref-score-input-cell">
-                                            <div class="ref-score-input-wrap">
-                                                <input type="number" wire:model.lazy="embuItems.{{ $row['key'] }}"
-                                                    class="ref-score-input"
-                                                    onfocus="window.refereeScoreInputFocus?.(this)"
-                                                    onblur="window.refereeScoreInputBlur?.(this)" min="0"
-                                                    max="10" step="0.1" placeholder="0.0">
-                                                <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
-                                            </div>
+                                            @if ($index === 0)
+                                                <td class="ref-score-cell ref-score-weight"
+                                                    rowspan="{{ count($expressionRows) }}">
+                                                    <div>
+                                                        40
+                                                        <span class="ref-score-weight-note">(Masing² 10)</span>
+                                                    </div>
+                                                </td>
+                                            @endif
+                                            <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
+                                            <td class="ref-score-cell ref-score-input-cell">
+                                                <div class="ref-score-input-wrap">
+                                                    <input type="number"
+                                                        wire:model.lazy="embuItems.{{ $row['key'] }}"
+                                                        class="ref-score-input"
+                                                        onfocus="window.refereeScoreInputFocus?.(this)"
+                                                        onblur="window.refereeScoreInputBlur?.(this)" min="0"
+                                                        max="10" step="0.1" placeholder="0.0">
+                                                    <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
+                                                </div>
+                                            </td>
+                                            <td class="ref-score-cell ref-score-standard">8</td>
+                                        </tr>
+                                    @endforeach
+
+                                    <tr class="ref-score-table-subtotal">
+                                        <td class="ref-score-cell ref-score-subtotal-label" colspan="5">Sub Total-2
                                         </td>
-                                        <td class="ref-score-cell ref-score-standard">8</td>
+                                        <td class="ref-score-cell ref-score-subtotal-value">
+                                            {{ number_format($expressionSubtotal, 1) }}</td>
                                     </tr>
-                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                                <tr class="ref-score-table-subtotal">
-                                    <td class="ref-score-cell ref-score-subtotal-label" colspan="5">Sub Total-2
-                                    </td>
-                                    <td class="ref-score-cell ref-score-subtotal-value">
-                                        {{ number_format($expressionSubtotal, 1) }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    {{-- Total Banner --}}
+                    <div class="ref-total-banner">
+                        <div class="ref-total-left">
+                            <div class="ref-total-label">Total Skor</div>
+                            <div class="ref-total-sub">Sub Total-1 + Sub Total-2 (10 aspek)</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="ref-total-val">{{ number_format($totalScore, 1) }}</div>
+                            @if ($totalScore > 0)
+                                <div class="ref-avg-val">Rata-rata: {{ number_format($totalScore / 10, 2) }}</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Notes --}}
+                    <div class="ref-notes-wrap">
+                        <div class="ref-notes-hdr">
+                            <i class="fa-solid fa-pen-line" style="font-size:10px;"></i>
+                            Catatan Wasit (Opsional)
+                        </div>
+                        <textarea wire:model="notes" class="ref-notes-textarea" rows="3" placeholder="Ketik catatan di sini..."></textarea>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="ref-actions">
+                        <button wire:click="resetForm" class="ref-btn-reset">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                        <button wire:click="submitScore" class="ref-btn-submit">
+                            <span wire:loading.remove wire:target="submitScore">
+                                <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
+                            </span>
+                            <span wire:loading wire:target="submitScore">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...
+                            </span>
+                        </button>
                     </div>
                 </div>
-
-                {{-- Total Banner --}}
-                <div class="ref-total-banner">
-                    <div class="ref-total-left">
-                        <div class="ref-total-label">Total Skor</div>
-                        <div class="ref-total-sub">Sub Total-1 + Sub Total-2 (10 aspek)</div>
+            @else
+                <div class="ref-form-readonly">
+                    <div class="ref-card-hdr">
+                        <h2>Penilaian {{ $activeMatch->name ?? '—' }}</h2>
+                        <div class="ref-match-info">
+                            <div class="ref-info-row">
+                                <span class="ref-info-label">Arena</span>
+                                <span class="ref-info-value">{{ $assignedCourt->name ?? '—' }}</span>
+                            </div>
+                            <div class="ref-info-row">
+                                <span class="ref-info-label">Wasit</span>
+                                <span class="ref-info-value">{{ Auth::user()->name }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div style="text-align:right;">
-                        <div class="ref-total-val">{{ number_format($totalScore, 1) }}</div>
-                        @if ($totalScore > 0)
-                            <div class="ref-avg-val">Rata-rata: {{ number_format($totalScore / 10, 2) }}</div>
-                        @endif
+                    <div class="ref-readonly-overlay">
+                        <div>
+                            <i class="fa-solid fa-user-slash"></i>
+                            <h3>Wasit Tidak Tersedia</h3>
+                            <p>Anda tidak terdaftar sebagai wasit untuk pertandingan ini atau wasit belum diatur.</p>
+                        </div>
                     </div>
                 </div>
-
-                {{-- Notes --}}
-                <div class="ref-notes-wrap">
-                    <div class="ref-notes-hdr">
-                        <i class="fa-solid fa-pen-line" style="font-size:10px;"></i>
-                        Catatan Wasit (Opsional)
-                    </div>
-                    <textarea wire:model="notes" class="ref-notes-textarea" rows="3" placeholder="Ketik catatan di sini..."></textarea>
-                </div>
-
-                {{-- Actions --}}
-                <div class="ref-actions">
-                    <button wire:click="resetForm" class="ref-btn-reset">
-                        <i class="fa-solid fa-rotate-left"></i> Reset
-                    </button>
-                    <button wire:click="submitScore" class="ref-btn-submit">
-                        <span wire:loading.remove wire:target="submitScore">
-                            <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
-                        </span>
-                        <span wire:loading wire:target="submitScore">
-                            <i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...
-                        </span>
-                    </button>
-                </div>
-            </div>
+            @endif
         @else
             {{-- ── RANDORI INFO ── --}}
             <div class="ref-randori-info">

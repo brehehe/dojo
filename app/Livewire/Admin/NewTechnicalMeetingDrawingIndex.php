@@ -421,6 +421,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
     // ── GENERATE ALL ─────────────────────────────────────────
     public function generateAllDrawings(): void
     {
+        set_time_limit(0);
         $this->isGenerating = true;
 
         $matches = MatchNumber::whereNull('drawing_generated_at')
@@ -459,6 +460,21 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'icon' => 'success',
             'title' => 'Generate Selesai',
             'text' => $success.' berhasil, '.$skipped.' dilewati.',
+        ]);
+    }
+
+    public function resetAllDrawings(): void
+    {
+        set_time_limit(0);
+        
+        DrawingMatchNumber::query()->delete();
+        MatchNumber::whereNotNull('drawing_generated_at')
+            ->update(['drawing_data' => null, 'drawing_generated_at' => null]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Reset Selesai',
+            'text' => 'Semua data drawing telah direset.',
         ]);
     }
 

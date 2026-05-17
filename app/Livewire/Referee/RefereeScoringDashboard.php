@@ -427,12 +427,12 @@ class RefereeScoringDashboard extends Component
             // Embu score range: 8.0 – 10.0
             foreach ($this->embuItems as $key => $val) {
                 $numericVal = is_numeric($val) ? (float) $val : 0;
+                $clampedVal = $numericVal;
                 if ($numericVal !== 0.0) {
                     // Only clamp non-zero values (zero = not yet filled)
-                    $numericVal = max(8.0, min(10.0, $numericVal));
-                    $this->embuItems[$key] = $numericVal;
+                    $clampedVal = max(8.0, min(10.0, $numericVal));
                 }
-                $this->totalScore += $numericVal;
+                $this->totalScore += $clampedVal;
             }
         } elseif ($this->activeMatch) {
             $aka = $this->randoriItems['aka'];
@@ -541,7 +541,17 @@ class RefereeScoringDashboard extends Component
             return;
         }
 
-        $details = $this->activeMatch->draft_type === 'embu' ? $this->embuItems : $this->randoriItems;
+        if ($this->activeMatch->draft_type === 'embu') {
+            foreach ($this->embuItems as $key => $val) {
+                $numericVal = is_numeric($val) ? (float) $val : 0;
+                if ($numericVal !== 0.0) {
+                    $this->embuItems[$key] = max(8.0, min(10.0, $numericVal));
+                }
+            }
+            $details = $this->embuItems;
+        } else {
+            $details = $this->randoriItems;
+        }
 
         \DB::transaction(function () use ($id, $scorableType, $bracketNode, $details, $drawingId) {
             $targetMatchId = $this->specificMatchId ?? $this->activeMatch->id;
