@@ -351,17 +351,8 @@ class NewScoringEmbuIndex extends Component
         $score->nilai_akhir = max(0, $total - $score->denda);
         $score->save();
 
-        // Close call
+        // Close call - Do not clear court state yet, let Panitera close it manually via dismissParticipant
         $this->matchNumber->update(['active_registration_id' => null]);
-
-        if ($drawing && $drawing->court_id) {
-            $drawing->court->update([
-                'active_match_id' => null,
-                'active_drawing_id' => null,
-                'active_registration_id' => null,
-                'active_bracket_node' => null,
-            ]);
-        }
 
         $this->dispatch('swal', [
             'icon' => 'success',
@@ -915,6 +906,9 @@ class NewScoringEmbuIndex extends Component
 
             Court::where('id', $courtId)->update([
                 'active_registration_id' => null,
+                'active_drawing_id' => null,
+                'active_match_id' => null,
+                'active_bracket_node' => null,
             ]);
         }
 

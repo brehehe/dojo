@@ -15,6 +15,7 @@ use App\Models\ScheduleReferee;
 use App\Models\Technique\Technique;
 use App\Services\RandoriScoringService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -71,6 +72,8 @@ class RefereeScoringDashboard extends Component
     public $totalAka = 0;
 
     public $totalShiro = 0;
+
+    public bool $isFormOpen = false;
 
     public function getIsTabletModeProperty()
     {
@@ -192,6 +195,25 @@ class RefereeScoringDashboard extends Component
 
         $newId = $this->getActiveIdentifier($newActiveMatch, $newAssignedCourt);
 
+        $participantCalled = false;
+        if ($newActiveMatch) {
+            $participantCalled = $newActiveMatch->draft_type === 'embu'
+                ? ! is_null($newActiveMatch->active_registration_id)
+                : ! is_null($newActiveMatch->active_bracket_node);
+        }
+
+        if ($participantCalled) {
+            $this->isFormOpen = true;
+        } else {
+            // If participant is not called, we only close the form if there is no active match
+            // or if the active drawing ID is cleared (which Panitera does to close the form).
+            $activeDrawingId = $newAssignedCourt?->active_drawing_id;
+
+            if (! $newActiveMatch || ! $activeDrawingId) {
+                $this->isFormOpen = false;
+            }
+        }
+
         if ($this->currentActiveIdentifier !== $newId) {
             $this->currentActiveIdentifier = $newId;
             $this->activeMatch = $newActiveMatch;
@@ -228,6 +250,13 @@ class RefereeScoringDashboard extends Component
                 $this->resetForm();
             }
         }
+    }
+
+    public function closeForm(): void
+    {
+        $this->isFormOpen = false;
+        $this->currentActiveIdentifier = null; // Force reload on next poll
+        $this->loadActiveMatch(); // Refresh state
     }
 
     public function getJudgeLabelProperty()
@@ -407,6 +436,11 @@ class RefereeScoringDashboard extends Component
     public function updated($propertyName, $value)
     {
         if (str_starts_with($propertyName, 'embuItems') || str_starts_with($propertyName, 'randoriItems')) {
+            if (is_string($value)) {
+                $value = str_replace(',', '.', $value);
+                data_set($this, $propertyName, $value);
+            }
+
             // Strip leading zeros for numeric inputs (e.g., "05" -> "5")
             if (is_string($value) && strlen($value) > 1 && $value[0] === '0' && is_numeric($value) && (! isset($value[1]) || $value[1] !== '.')) {
                 $sanitized = ltrim($value, '0');
@@ -415,6 +449,7 @@ class RefereeScoringDashboard extends Component
                 }
 
                 data_set($this, $propertyName, $sanitized);
+                $value = $sanitized;
             }
             $this->calculateTotal();
         }
@@ -430,7 +465,7 @@ class RefereeScoringDashboard extends Component
                 $clampedVal = $numericVal;
                 if ($numericVal !== 0.0) {
                     // Only clamp non-zero values (zero = not yet filled)
-                    $clampedVal = max(8.0, min(10.0, $numericVal));
+                    $clampedVal = max(0.0, min(10.0, $numericVal));
                 }
                 $this->totalScore += $clampedVal;
             }
@@ -545,7 +580,7 @@ class RefereeScoringDashboard extends Component
             foreach ($this->embuItems as $key => $val) {
                 $numericVal = is_numeric($val) ? (float) $val : 0;
                 if ($numericVal !== 0.0) {
-                    $this->embuItems[$key] = max(8.0, min(10.0, $numericVal));
+                    $this->embuItems[$key] = max(0.0, min(10.0, $numericVal));
                 }
             }
             $details = $this->embuItems;
@@ -553,7 +588,7 @@ class RefereeScoringDashboard extends Component
             $details = $this->randoriItems;
         }
 
-        \DB::transaction(function () use ($id, $scorableType, $bracketNode, $details, $drawingId) {
+        DB::transaction(function () use ($id, $scorableType, $bracketNode, $details, $drawingId) {
             $targetMatchId = $this->specificMatchId ?? $this->activeMatch->id;
 
             // 1. Save Granular Details
@@ -575,10 +610,17 @@ class RefereeScoringDashboard extends Component
             // 2. Sync to Main Table for Quick Access
             if ($this->activeMatch->draft_type === 'embu') {
                 $column = 'judge_'.$this->judgeIndex;
+
+                $registrationId = $this->activeMatch->active_registration_id;
+                if (! $registrationId && $drawingId) {
+                    $drawing = DrawingMatchNumber::find($drawingId);
+                    $registrationId = $drawing?->registration_id;
+                }
+
                 EmbuScore::updateOrCreate(
                     [
                         'match_number_id' => $targetMatchId,
-                        'registration_id' => $this->activeMatch->active_registration_id,
+                        'registration_id' => $registrationId,
                         'drawing_id' => $drawingId ?? null,
                     ],
                     [$column => $this->totalScore]

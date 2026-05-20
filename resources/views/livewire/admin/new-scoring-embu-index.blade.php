@@ -590,7 +590,7 @@
             </div>
         </div>
 
-        @if (count($tiedIds) > 0)
+        {{-- @if (count($tiedIds) > 0)
             <div
                 style="background:rgba(192,57,43,.05); border:1px solid var(--red); border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <div style="display:flex; align-items:center; gap:16px;">
@@ -623,7 +623,7 @@
                         Loloskan ke Final</button>
                 </div>
             @endif
-        @endif
+        @endif --}}
 
         {{-- MAIN TABLE --}}
         <div class="tm-card">
@@ -693,7 +693,7 @@
                                         $calculatedTotal = array_sum($rawVals);
                                     }
                                 }
-                                
+
                                 $nilaiAwal = $s?->total_score > 0 ? $s->total_score : $calculatedTotal;
                                 $denda = $s?->denda ?? 0;
                                 $nilaiAkhir = $s?->nilai_akhir > 0 ? $s->nilai_akhir : max(0, $nilaiAwal - $denda);
@@ -953,10 +953,13 @@
                                 @endif
                             </div>
                             @if ($isActive)
-                                <div style="margin-top:8px; display:flex; justify-content:center;">
+                                <div style="margin-top:8px; display:flex; gap:8px; justify-content:center;">
                                     <button wire:click="finishMatch({{ $item['id'] }}, 0)" class="btn-gen success"
-                                        style="width:100%;"><i class="fas fa-flag-checkered"></i> Selesai
+                                        style="flex:1;"><i class="fas fa-flag-checkered"></i> Selesai
                                         (Simpan)</button>
+                                    <button wire:click="dismissParticipant()" class="btn-gen danger"
+                                        style="flex:1;"><i class="fas fa-rectangle-xmark"></i> Tutup Form
+                                        Wasit</button>
                                 </div>
                             @endif
                         </div>

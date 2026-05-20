@@ -107,7 +107,7 @@ class NewMatchNumberMergeIndex extends Component
         $query = MatchNumberMerge::with(['ageGroup', 'matchNumbers']);
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'ilike', '%'.$this->search.'%');
         }
 
         $merges = $query->latest()->paginate($this->perPage);

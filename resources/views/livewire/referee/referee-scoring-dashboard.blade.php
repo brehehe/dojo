@@ -1315,7 +1315,7 @@
     @endif
 
     {{-- ── MATCH ACTIVE ── --}}
-    @if ($activeMatch && $this->checkParticipantCalled())
+    @if ($isFormOpen)
 
         {{-- Match Header --}}
         <div class="ref-match-hdr">
@@ -1482,13 +1482,15 @@
                                             <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
                                             <td class="ref-score-cell ref-score-input-cell">
                                                 <div class="ref-score-input-wrap">
-                                                    <input type="number"
+                                                    <input type="text"
+                                                        inputmode="decimal"
                                                         wire:model.lazy="embuItems.{{ $row['key'] }}"
                                                         class="ref-score-input"
                                                         onfocus="window.refereeScoreInputFocus?.(this)"
-                                                        onblur="window.refereeScoreInputBlur?.(this)" min="0"
-                                                        max="10" step="0.1" placeholder="0.0">
-                                                    <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
+                                                        onblur="window.refereeScoreInputBlur?.(this)"
+                                                        oninput="this.value = this.value.replace(',', '.')"
+                                                        placeholder="0.0">
+                                                    <span class="ref-score-range-hint">Isi 0.0 – 10.0</span>
                                                 </div>
                                             </td>
                                             <td class="ref-score-cell ref-score-standard">8</td>
@@ -1528,13 +1530,15 @@
                                             <td class="ref-score-cell ref-score-no">{{ $row['no'] }}</td>
                                             <td class="ref-score-cell ref-score-input-cell">
                                                 <div class="ref-score-input-wrap">
-                                                    <input type="number"
+                                                    <input type="text"
+                                                        inputmode="decimal"
                                                         wire:model.lazy="embuItems.{{ $row['key'] }}"
                                                         class="ref-score-input"
                                                         onfocus="window.refereeScoreInputFocus?.(this)"
-                                                        onblur="window.refereeScoreInputBlur?.(this)" min="0"
-                                                        max="10" step="0.1" placeholder="0.0">
-                                                    <span class="ref-score-range-hint">Isi 8.0 – 10.0</span>
+                                                        onblur="window.refereeScoreInputBlur?.(this)"
+                                                        oninput="this.value = this.value.replace(',', '.')"
+                                                        placeholder="0.0">
+                                                    <span class="ref-score-range-hint">Isi 0.0 – 10.0</span>
                                                 </div>
                                             </td>
                                             <td class="ref-score-cell ref-score-standard">8</td>
