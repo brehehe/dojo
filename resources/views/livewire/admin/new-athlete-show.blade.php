@@ -110,7 +110,7 @@
                 </a>
                 <div>
                     <div class="ath-title">{{ $athlete->name }}</div>
-                    <div class="ath-sub">Detail Profil Atlet &nbsp;·&nbsp; NIK: <span style="font-family:monospace;">{{ $athlete->nik ?? '-' }}</span></div>
+                    <div class="ath-sub">Detail Profil Atlet &nbsp;·&nbsp; NIK: <span style="font-family:monospace;">{{ $athlete->nik ?? '-' }}</span> &nbsp;·&nbsp; NIK Kenshi: <span style="font-family:monospace;">{{ $athlete->nik_kenshi ?? '-' }}</span></div>
                 </div>
             </div>
             <div style="display:flex;gap:10px;">
@@ -133,6 +133,7 @@
                         <div class="ath-avatar-big">{{ substr($athlete->name, 0, 1) }}</div>
                         <div class="ath-name">{{ $athlete->name }}</div>
                         <div class="ath-nik">{{ $athlete->nik ?? 'NIK belum ada' }}</div>
+                        <div class="ath-nik" style="margin-top:2px;">NIK Kenshi: {{ $athlete->nik_kenshi ?? '-' }}</div>
                         <div class="ath-chips">
                             <span class="ath-chip chip-gender {{ $athlete->gender === 'P' ? 'female' : '' }}">
                                 <i class="fa-solid {{ $athlete->gender === 'L' ? 'fa-mars' : 'fa-venus' }}" style="font-size:8px;"></i>
@@ -204,6 +205,10 @@
                         <div class="field-block">
                             <div class="field-label">NIK</div>
                             <div class="field-value" style="font-family:monospace;">{{ $athlete->nik ?? '-' }}</div>
+                        </div>
+                        <div class="field-block">
+                            <div class="field-label">NIK Kenshi</div>
+                            <div class="field-value" style="font-family:monospace;">{{ $athlete->nik_kenshi ?? '-' }}</div>
                         </div>
                         <div class="field-block">
                             <div class="field-label">Tempat Lahir</div>
