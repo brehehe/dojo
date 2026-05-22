@@ -688,7 +688,11 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                     <div>
                         <h2>{{ $selectedMatch->name }}</h2>
-                        <p>{{ $selectedMatch->ageGroup->name ?? '-' }} · {{ $matchAthletes->count() }} kontingen</p>
+                        <p>{{ $selectedMatch->ageGroup->name ?? '-' }}
+                            @if (isset($selectedMatch->gender))
+                                · {{ in_array($selectedMatch->gender, ['L', 'Male']) ? 'Putra' : 'Putri' }}
+                            @endif
+                            · {{ $matchAthletes->count() }} kontingen</p>
                     </div>
                     @php
                         $isDrawn =
@@ -819,7 +823,11 @@
                                     class="tm-match-dot {{ $mn->drawing_generated_at ? 'drawn' : 'pending' }}"></span>
                                 <div class="tm-match-text">
                                     <div class="name">{{ $mn->name }}</div>
-                                    <div class="cnt">{{ $mn->ageGroup->name ?? '-' }} · <span
+                                    <div class="cnt">{{ $mn->ageGroup->name ?? '-' }}
+                                        @if (isset($mn->gender))
+                                            · {{ in_array($mn->gender, ['L', 'Male']) ? 'Putra' : 'Putri' }}
+                                        @endif
+                                        · <span
                                             style="color:var(--red); font-weight:700;">{{ $contingentCounts[$mn->id] ?? 0 }}
                                             Kontingen</span></div>
                                 </div>
@@ -1027,7 +1035,7 @@
                             <div class="info">
                                 <h3>{{ $selectedMatch->display_name }}</h3>
                                 <p>{{ $selectedMatch->ageGroup->name ?? '-' }} @if (isset($selectedMatch->gender))
-                                        · {{ $selectedMatch->gender === 'L' ? 'Putra' : 'Putri' }}
+                                        · {{ in_array($selectedMatch->gender, ['L', 'Male']) ? 'Putra' : 'Putri' }}
                                     @endif · {{ $matchAthletes->count() }} kontingen</p>
                             </div>
                             @php

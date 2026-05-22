@@ -824,7 +824,7 @@
                                                     <!-- TECHNIQUE SELECTION LATER -->
                                                     @if ($athlete[$evField] && $this->isEmbu($athlete[$evField]))
                                                         @php
-                                                            $leaderInfo = $this->getMatchLeaderInfo($athlete[$evField]);
+                                                            $leaderInfo = $this->getMatchLeaderInfo($athlete[$evField], $index);
                                                             $isLeader =
                                                                 $leaderInfo &&
                                                                 $leaderInfo['athlete_index'] == $index &&
@@ -866,7 +866,7 @@
                                                                             </select>
                                                                         </div>
                                                                         <button type="button"
-                                                                            @click="if(selectedTech) { $wire.addTechniqueToMatch('{{ $athlete[$evField] }}', selectedTech); selectedTech = ''; tomSelect.clear(); }"
+                                                                            @click="if(selectedTech) { $wire.addTechniqueToMatch('{{ $athlete[$evField] }}', selectedTech, {{ $index }}); selectedTech = ''; tomSelect.clear(); }"
                                                                             class="bg-indigo-600 text-white px-5 rounded-xl text-[14px] font-black hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 h-[45px]">
                                                                             <i class="fa-solid fa-plus"></i>
                                                                             ADD
@@ -893,7 +893,10 @@
                                                             @endif
 
                                                             <div class="space-y-2">
-                                                                @forelse($matchTechniques[$athlete[$evField]] ?? [] as $tIdx => $tId)
+                                                                @php
+                                                                    $matchKey = $this->getMatchKey($athlete[$evField], $index);
+                                                                @endphp
+                                                                @forelse($matchTechniques[$matchKey] ?? [] as $tIdx => $tId)
                                                                     @php $tName = $techniques->firstWhere('id', $tId)?->name ?? 'Unknown'; @endphp
                                                                     <div
                                                                         class="flex justify-between items-center bg-white px-4 py-3 rounded-xl border border-indigo-50 shadow-sm group hover:border-indigo-300 hover:shadow-md transition-all duration-300 animate-in fade-in zoom-in-95">
@@ -909,7 +912,7 @@
                                                                         </div>
                                                                         @if ($isLeader)
                                                                             <button type="button"
-                                                                                wire:click="removeTechniqueFromMatch('{{ $athlete[$evField] }}', {{ $tIdx }})"
+                                                                                wire:click="removeTechniqueFromMatch('{{ $athlete[$evField] }}', {{ $tIdx }}, {{ $index }})"
                                                                                 class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-rose-500 transition-all duration-200"
                                                                                 title="Hapus Komposisi">
                                                                                 <i
@@ -1057,8 +1060,8 @@
                                                                                 </td>
                                                                                 @if ($data['draft_type'] === 'embu')
                                                                                     <td class="px-6 py-4">
-                                                                                        @if ($loop->first)
-                                                                                            @forelse($data['techniques'] as $tIdx => $tName)
+                                                                                        @if (isset($data['max_athletes']) && $data['max_athletes'] == 1)
+                                                                                            @forelse($ath['techniques'] as $tIdx => $tName)
                                                                                                 <div
                                                                                                     class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 mb-2">
                                                                                                     <span
@@ -1072,9 +1075,25 @@
                                                                                                     ada teknik</span>
                                                                                             @endforelse
                                                                                         @else
-                                                                                            <span
-                                                                                                class="text-[15px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama
-                                                                                                seperti di atas)</span>
+                                                                                            @if ($loop->first)
+                                                                                                @forelse($ath['techniques'] as $tIdx => $tName)
+                                                                                                    <div
+                                                                                                        class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-1 mb-2">
+                                                                                                        <span
+                                                                                                            class="text-[15px] font-black text-indigo-400">{{ $tIdx + 1 }}</span>
+                                                                                                        <span
+                                                                                                            class="text-[15px] font-black text-indigo-700 uppercase tracking-tight whitespace-nowrap">{{ $tName }}</span>
+                                                                                                    </div>
+                                                                                                @empty
+                                                                                                    <span
+                                                                                                        class="text-[15px] text-slate-300 font-bold uppercase italic tracking-widest">Belum
+                                                                                                        ada teknik</span>
+                                                                                                @endforelse
+                                                                                            @else
+                                                                                                <span
+                                                                                                    class="text-[15px] text-slate-200 font-bold uppercase tracking-widest italic">(Sama
+                                                                                                    seperti di atas)</span>
+                                                                                            @endif
                                                                                         @endif
                                                                                     </td>
                                                                                 @else

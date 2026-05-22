@@ -236,7 +236,7 @@ class RegistrationForm extends Component
         }
 
         // 2. Load Athletes & Match Numbers
-        $this->athletes = $reg->athletes->map(function ($ath) use ($reg) {
+        $this->athletes = $reg->athletes->map(function ($ath, $index) use ($reg) {
             $matchNumbers = DB::table('athlete_match_number')
                 ->where('athlete_id', $ath->id)
                 ->where('registration_id', $reg->id)
@@ -274,7 +274,8 @@ class RegistrationForm extends Component
                 $field = 'event'.($i + 1);
                 if ($i < 3) {
                     $athData[$field] = $mn->match_number_id;
-                    $this->matchTechniques[$mn->match_number_id] = json_decode($mn->technique_ids, true) ?? [];
+                    $matchKey = $this->getMatchKey($mn->match_number_id, $index);
+                    $this->matchTechniques[$matchKey] = json_decode($mn->technique_ids, true) ?? [];
                 }
             }
 
@@ -489,7 +490,19 @@ class RegistrationForm extends Component
         }
     }
 
-    public function addTechniqueToMatch($matchId, $techniqueValue)
+    public function getMatchKey($matchId, $athleteIndex)
+    {
+        if (empty($matchId)) {
+            return $matchId;
+        }
+        $match = MatchNumber::find($matchId);
+        if ($match && $match->max_athletes == 1) {
+            return $athleteIndex . '_' . $matchId;
+        }
+        return $matchId;
+    }
+
+    public function addTechniqueToMatch($matchId, $techniqueValue, $athleteIndex = null)
     {
         if (empty($matchId) || empty($techniqueValue)) {
             return;
@@ -514,30 +527,52 @@ class RegistrationForm extends Component
             return;
         }
 
-        if (! isset($this->matchTechniques[$matchId])) {
-            $this->matchTechniques[$matchId] = [];
+        $key = $athleteIndex !== null ? $this->getMatchKey($matchId, $athleteIndex) : $matchId;
+
+        if (! isset($this->matchTechniques[$key])) {
+            $this->matchTechniques[$key] = [];
         }
 
         // Prevent duplicates
-        if (in_array($technique->id, $this->matchTechniques[$matchId])) {
+        if (in_array($technique->id, $this->matchTechniques[$key])) {
             return;
         }
 
-        $this->matchTechniques[$matchId][] = $technique->id;
+        $this->matchTechniques[$key][] = $technique->id;
     }
 
-    public function removeTechniqueFromMatch($matchId, $index)
+    public function removeTechniqueFromMatch($matchId, $index, $athleteIndex = null)
     {
-        if (isset($this->matchTechniques[$matchId][$index])) {
-            unset($this->matchTechniques[$matchId][$index]);
-            $this->matchTechniques[$matchId] = array_values($this->matchTechniques[$matchId]);
+        $key = $athleteIndex !== null ? $this->getMatchKey($matchId, $athleteIndex) : $matchId;
+        if (isset($this->matchTechniques[$key][$index])) {
+            unset($this->matchTechniques[$key][$index]);
+            $this->matchTechniques[$key] = array_values($this->matchTechniques[$key]);
         }
     }
 
-    public function getMatchLeaderInfo($matchId)
+    public function getMatchLeaderInfo($matchId, $currentAthleteIndex = null)
     {
         if (empty($matchId)) {
             return null;
+        }
+
+        $match = MatchNumber::find($matchId);
+        if ($match && $match->max_athletes == 1 && $currentAthleteIndex !== null) {
+            $athlete = $this->athletes[$currentAthleteIndex] ?? null;
+            if ($athlete) {
+                $field = '';
+                foreach (['event1', 'event2', 'event3'] as $fld) {
+                    if ($athlete[$fld] == $matchId) {
+                        $field = $fld;
+                        break;
+                    }
+                }
+                return [
+                    'athlete_index' => $currentAthleteIndex,
+                    'athlete_name' => $athlete['name'] ?: 'Atlet #'.($currentAthleteIndex + 1),
+                    'field' => $field,
+                ];
+            }
         }
 
         foreach ($this->athletes as $index => $athlete) {
@@ -714,6 +749,11 @@ class RegistrationForm extends Component
                     return true;
                 }
 
+                // If max_athletes == 1, allow unlimited selections (individual match)
+                if ($matchNumber->max_athletes == 1) {
+                    return true;
+                }
+
                 // 3. Logic: If max_athletes > 0, check if we have space (per contingent)
                 return $matchNumber->max_athletes == 0 || $totalOccupied < $matchNumber->max_athletes;
             })
@@ -845,7 +885,7 @@ class RegistrationForm extends Component
                     $summary[$gender][$ageGroupName][$mId] = [
                         'name' => $match->name,
                         'draft_type' => $match->draft_type,
-                        'techniques' => $techNames,
+                        'max_athletes' => $match->max_athletes,
                         'athletes' => [],
                     ];
                 }
@@ -853,7 +893,7 @@ class RegistrationForm extends Component
         }
 
         // Add Athletes to Matches with Rank
-        foreach ($this->athletes as $athlete) {
+        foreach ($this->athletes as $index => $athlete) {
             if (empty($athlete['name'])) {
                 continue;
             }
@@ -866,11 +906,23 @@ class RegistrationForm extends Component
                     $ageGroupName = $match->ageGroup?->name ?? 'N/A';
 
                     if (isset($summary[$gender][$ageGroupName][$mId])) {
+                        $techNames = [];
+                        $matchKey = $this->getMatchKey($mId, $index);
+                        $selectedTechs = $this->matchTechniques[$matchKey] ?? [];
+                        if (is_array($selectedTechs)) {
+                            foreach ($selectedTechs as $tid) {
+                                if (isset($allTechniques[$tid])) {
+                                    $techNames[] = $allTechniques[$tid];
+                                }
+                            }
+                        }
+
                         $summary[$gender][$ageGroupName][$mId]['athletes'][] = [
                             'name' => $athlete['name'],
                             'rank' => $athlete['rank'] ?? 'N/A',
                             'weight' => $athlete['current_weight'] ?? '-',
                             'weight_group' => $this->weightGroups->firstWhere('id', $athlete['weight_group_id'])?->name ?? '-',
+                            'techniques' => $techNames,
                         ];
                     }
                 }
@@ -1014,7 +1066,7 @@ class RegistrationForm extends Component
             }
 
             // 6. Link Athletes to Registration (Find or Create Master)
-            foreach ($this->athletes as $athleteData) {
+            foreach ($this->athletes as $index => $athleteData) {
                 $bpjsPath = ($athleteData['bpjs_card'] ?? null) ? $athleteData['bpjs_card']->store('bpjs_cards', 'public') : null;
                 $identityPath = ($athleteData['identity_document'] ?? null) ? $athleteData['identity_document']->store('identity_docs', 'public') : null;
                 $photoPath = ($athleteData['photo'] ?? null) ? $athleteData['photo']->store('athlete_photos', 'public') : null;
@@ -1082,9 +1134,10 @@ class RegistrationForm extends Component
                 foreach (['event1', 'event2', 'event3'] as $fld) {
                     $matchNumberId = $athleteData[$fld];
                     if ($matchNumberId) {
+                        $matchKey = $this->getMatchKey($matchNumberId, $index);
                         $athlete->matchNumbers()->attach($matchNumberId, [
                             'registration_id' => $registration->id,
-                            'technique_ids' => json_encode($this->matchTechniques[$matchNumberId] ?? []),
+                            'technique_ids' => json_encode($this->matchTechniques[$matchKey] ?? []),
                         ]);
                     }
                 }

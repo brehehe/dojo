@@ -345,31 +345,54 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php
-                                            $athletes = $data['athletes'];
-                                            $techniques = $data['techniques'] ?? [];
-                                            $rowCount = max(count($athletes), count($techniques));
-                                        @endphp
-                                        @for($i = 0; $i < $rowCount; $i++)
-                                        <tr>
-                                            <td>{{ $i < count($athletes) ? $i + 1 : '' }}</td>
-                                            <td>
-                                                @if(isset($athletes[$i]))
-                                                <div style="font-weight:600;">{{ $athletes[$i]->name }}</div>
-                                                <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athletes[$i]->nik }}</div>
+                                        @if(($data['max_athletes'] ?? 2) == 1)
+                                            @foreach($data['athletes'] as $i => $athData)
+                                            <tr>
+                                                <td>{{ $i + 1 }}</td>
+                                                <td>
+                                                    <div style="font-weight:600;">{{ $athData['model']->name }}</div>
+                                                    <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athData['model']->nik }}</div>
+                                                </td>
+                                                <td>{{ $athData['model']->pivot->rank ?? '-' }}</td>
+                                                <td>
+                                                    @forelse($athData['techniques'] as $tIdx => $tId)
+                                                        <div>{{ $tIdx + 1 }}. {{ $allTechniques[$tId] ?? '-' }}</div>
+                                                    @empty
+                                                        <span style="color:var(--smoke);font-style:italic;font-size:12px;">Belum ada teknik</span>
+                                                    @endforelse
+                                                </td>
+                                                @if(($data['details']->draft_type ?? '') == 'randori')
+                                                <td>{{ rtrim(rtrim(number_format($athData['model']->pivot->weight, 2, '.', ''), '0'), '.') }}</td>
                                                 @endif
-                                            </td>
-                                            <td>{{ isset($athletes[$i]) ? ($athletes[$i]->pivot->rank ?? '-') : '' }}</td>
-                                            <td>
-                                                @if(isset($techniques[$i]))
-                                                    {{ $i + 1 }}. {{ $allTechniques[$techniques[$i]] ?? '-' }}
+                                            </tr>
+                                            @endforeach
+                                        @else
+                                            @php
+                                                $athletes = $data['athletes'];
+                                                $techniques = $data['techniques'] ?? [];
+                                                $rowCount = max(count($athletes), count($techniques));
+                                            @endphp
+                                            @for($i = 0; $i < $rowCount; $i++)
+                                            <tr>
+                                                <td>{{ $i < count($athletes) ? $i + 1 : '' }}</td>
+                                                <td>
+                                                    @if(isset($athletes[$i]))
+                                                    <div style="font-weight:600;">{{ $athletes[$i]['model']->name }}</div>
+                                                    <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athletes[$i]['model']->nik }}</div>
+                                                    @endif
+                                                </td>
+                                                <td>{{ isset($athletes[$i]) ? ($athletes[$i]['model']->pivot->rank ?? '-') : '' }}</td>
+                                                <td>
+                                                    @if(isset($techniques[$i]))
+                                                        {{ $i + 1 }}. {{ $allTechniques[$techniques[$i]] ?? '-' }}
+                                                    @endif
+                                                </td>
+                                                @if(($data['details']->draft_type ?? '') == 'randori')
+                                                <td>{{ isset($athletes[$i]) ? rtrim(rtrim(number_format($athletes[$i]['model']->pivot->weight, 2, '.', ''), '0'), '.') : '' }}</td>
                                                 @endif
-                                            </td>
-                                            @if(($data['details']->draft_type ?? '') == 'randori')
-                                            <td>{{ isset($athletes[$i]) ? rtrim(rtrim(number_format($athletes[$i]->pivot->weight, 2, '.', ''), '0'), '.') : '' }}</td>
-                                            @endif
-                                        </tr>
-                                        @endfor
+                                            </tr>
+                                            @endfor
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>

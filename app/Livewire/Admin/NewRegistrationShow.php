@@ -92,12 +92,16 @@ class NewRegistrationShow extends Component
                 if (! isset($matches[$mId])) {
                     $matches[$mId] = [
                         'details' => $match,
+                        'max_athletes' => $match->max_athletes,
                         'techniques' => json_decode($match->pivot->technique_ids ?? '[]', true),
                         'athletes' => [],
                     ];
                 }
 
-                $matches[$mId]['athletes'][] = $athlete;
+                $matches[$mId]['athletes'][] = [
+                    'model' => $athlete,
+                    'techniques' => json_decode($match->pivot->technique_ids ?? '[]', true),
+                ];
             }
         }
 
