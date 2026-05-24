@@ -6,15 +6,17 @@ use App\Models\Referee;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.admin')]
 class AdminMasterRefereeIndex extends Component
 {
-    use WithPagination;
+    use WithFileUploads, WithPagination;
 
     public function paginationView()
     {
@@ -22,15 +24,46 @@ class AdminMasterRefereeIndex extends Component
     }
 
     public $search = '';
+
     public $perPage = 5;
 
     // User Fields
-    public $name, $email, $password;
-    
+    public $name;
+
+    public $email;
+
+    public $password;
+
     // Referee Fields
-    public $nik, $phone, $gender, $birth_place, $birth_date, $address, $certification_level, $license_number, $province, $city;
+    public $nik;
+
+    public $phone;
+
+    public $gender;
+
+    public $birth_place;
+
+    public $birth_date;
+
+    public $address;
+
+    public $certification_level;
+
+    public $license_number;
+
+    public $province;
+
+    public $city;
+
+    // Photo Fields
+    public $photo;
+
+    public $existingPhoto;
+
+    public $photoDeleted = false;
 
     public $showingRefereeModal = false;
+
     public $refereeIdBeingEdited = null;
 
     protected $queryString = [
@@ -46,7 +79,7 @@ class AdminMasterRefereeIndex extends Component
     public function showCreateModal()
     {
         $this->resetValidation();
-        $this->reset(['name', 'email', 'password', 'nik', 'phone', 'gender', 'birth_place', 'birth_date', 'address', 'certification_level', 'license_number', 'province', 'city', 'refereeIdBeingEdited']);
+        $this->reset(['name', 'email', 'password', 'nik', 'phone', 'gender', 'birth_place', 'birth_date', 'address', 'certification_level', 'license_number', 'province', 'city', 'photo', 'existingPhoto', 'photoDeleted', 'refereeIdBeingEdited']);
         $this->showingRefereeModal = true;
     }
 
@@ -55,7 +88,7 @@ class AdminMasterRefereeIndex extends Component
         $this->resetValidation();
         $this->refereeIdBeingEdited = $refereeId;
         $referee = Referee::with('user')->findOrFail($refereeId);
-        
+
         // Load User Data
         $this->name = $referee->user->name;
         $this->email = $referee->user->email;
@@ -72,18 +105,31 @@ class AdminMasterRefereeIndex extends Component
         $this->license_number = $referee->license_number;
         $this->province = $referee->province;
         $this->city = $referee->city;
+        $this->existingPhoto = $referee->photo;
+        $this->photo = null;
+        $this->photoDeleted = false;
 
         $this->showingRefereeModal = true;
+    }
+
+    public function removePhoto()
+    {
+        $this->photo = null;
+        $this->existingPhoto = null;
+        if ($this->refereeIdBeingEdited) {
+            $this->photoDeleted = true;
+        }
     }
 
     public function saveReferee()
     {
         $rules = [
             'name' => 'required|min:3',
-            'email' => 'required|email|unique:users,email,' . ($this->refereeIdBeingEdited ? Referee::find($this->refereeIdBeingEdited)->user_id : 'NULL'),
+            'email' => 'required|email|unique:users,email,'.($this->refereeIdBeingEdited ? Referee::find($this->refereeIdBeingEdited)->user_id : 'NULL'),
             'password' => $this->refereeIdBeingEdited ? 'nullable|min:8' : 'required|min:8',
             'phone' => 'nullable|numeric',
             'certification_level' => 'nullable|string',
+            'photo' => 'nullable|image|max:2048',
         ];
 
         $this->validate($rules);
@@ -92,7 +138,7 @@ class AdminMasterRefereeIndex extends Component
             if ($this->refereeIdBeingEdited) {
                 $referee = Referee::findOrFail($this->refereeIdBeingEdited);
                 $user = $referee->user;
-                
+
                 $user->update([
                     'name' => $this->name,
                     'email' => $this->email,
@@ -100,6 +146,20 @@ class AdminMasterRefereeIndex extends Component
 
                 if ($this->password) {
                     $user->update(['password' => Hash::make($this->password)]);
+                }
+
+                $photoPath = $referee->photo;
+                if ($this->photoDeleted) {
+                    if ($referee->photo && Storage::disk('public')->exists($referee->photo)) {
+                        Storage::disk('public')->delete($referee->photo);
+                    }
+                    $photoPath = null;
+                }
+                if ($this->photo) {
+                    if ($referee->photo && Storage::disk('public')->exists($referee->photo)) {
+                        Storage::disk('public')->delete($referee->photo);
+                    }
+                    $photoPath = $this->photo->store('referees/photos', 'public');
                 }
 
                 $referee->update([
@@ -113,6 +173,7 @@ class AdminMasterRefereeIndex extends Component
                     'license_number' => $this->license_number,
                     'province' => $this->province,
                     'city' => $this->city,
+                    'photo' => $photoPath,
                 ]);
 
                 $this->dispatch('swal', title: 'Berhasil!', text: 'Data wasit telah diperbarui.', icon: 'success');
@@ -126,6 +187,11 @@ class AdminMasterRefereeIndex extends Component
                 // Auto-assign Perwasitan role
                 $user->assignRole('Perwasitan');
 
+                $photoPath = null;
+                if ($this->photo) {
+                    $photoPath = $this->photo->store('referees/photos', 'public');
+                }
+
                 Referee::create([
                     'user_id' => $user->id,
                     'nik' => $this->nik,
@@ -138,6 +204,7 @@ class AdminMasterRefereeIndex extends Component
                     'license_number' => $this->license_number,
                     'province' => $this->province,
                     'city' => $this->city,
+                    'photo' => $photoPath,
                 ]);
 
                 $this->dispatch('swal', title: 'Berhasil!', text: 'Wasit baru telah ditambahkan.', icon: 'success');
@@ -154,10 +221,14 @@ class AdminMasterRefereeIndex extends Component
 
         if ($user->id === auth()->id()) {
             $this->dispatch('swal', title: 'Ups!', text: 'Anda tidak bisa menghapus akun Anda sendiri.', icon: 'error');
+
             return;
         }
 
         DB::transaction(function () use ($referee, $user) {
+            if ($referee->photo && Storage::disk('public')->exists($referee->photo)) {
+                Storage::disk('public')->delete($referee->photo);
+            }
             $referee->delete();
             $user->delete();
         });
@@ -167,18 +238,20 @@ class AdminMasterRefereeIndex extends Component
 
     public function render()
     {
+        $operator = DB::connection()->getDriverName() === 'sqlite' ? 'like' : 'ilike';
+
         $referees = Referee::with('user')
-            ->whereHas('user', function ($query) {
-                $query->where('name', 'ilike', '%' . $this->search . '%')
-                    ->orWhere('email', 'ilike', '%' . $this->search . '%');
+            ->whereHas('user', function ($query) use ($operator) {
+                $query->where('name', $operator, '%'.$this->search.'%')
+                    ->orWhere('email', $operator, '%'.$this->search.'%');
             })
-            ->orWhere('certification_level', 'ilike', '%' . $this->search . '%')
-            ->orWhere('phone', 'ilike', '%' . $this->search . '%')
+            ->orWhere('certification_level', $operator, '%'.$this->search.'%')
+            ->orWhere('phone', $operator, '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Referee::count() : $this->perPage);
 
         return view('livewire.admin.master.referee.admin-master-referee-index', [
-            'referees' => $referees
+            'referees' => $referees,
         ]);
     }
 }

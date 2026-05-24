@@ -7,12 +7,14 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class NewRefereeIndex extends Component
 {
-    use WithPagination;
+    use WithFileUploads, WithPagination;
 
     public $search = '';
 
@@ -46,6 +48,13 @@ class NewRefereeIndex extends Component
 
     public $city;
 
+    // Photo Fields
+    public $photo;
+
+    public $existingPhoto;
+
+    public $photoDeleted = false;
+
     public $showingRefereeModal = false;
 
     public $refereeIdBeingEdited = null;
@@ -63,7 +72,7 @@ class NewRefereeIndex extends Component
     public function showCreateModal()
     {
         $this->resetValidation();
-        $this->reset(['name', 'email', 'password', 'nik', 'phone', 'gender', 'birth_place', 'birth_date', 'address', 'certification_level', 'license_number', 'province', 'city', 'refereeIdBeingEdited']);
+        $this->reset(['name', 'email', 'password', 'nik', 'phone', 'gender', 'birth_place', 'birth_date', 'address', 'certification_level', 'license_number', 'province', 'city', 'photo', 'existingPhoto', 'photoDeleted', 'refereeIdBeingEdited']);
         $this->showingRefereeModal = true;
     }
 
@@ -89,8 +98,20 @@ class NewRefereeIndex extends Component
         $this->license_number = $referee->license_number;
         $this->province = $referee->province;
         $this->city = $referee->city;
+        $this->existingPhoto = $referee->photo;
+        $this->photo = null;
+        $this->photoDeleted = false;
 
         $this->showingRefereeModal = true;
+    }
+
+    public function removePhoto()
+    {
+        $this->photo = null;
+        $this->existingPhoto = null;
+        if ($this->refereeIdBeingEdited) {
+            $this->photoDeleted = true;
+        }
     }
 
     public function saveReferee()
@@ -101,6 +122,7 @@ class NewRefereeIndex extends Component
             'password' => $this->refereeIdBeingEdited ? 'nullable|min:8' : 'required|min:8',
             'phone' => 'nullable|numeric',
             'certification_level' => 'nullable|string',
+            'photo' => 'nullable|image|max:2048',
         ];
 
         $this->validate($rules);
@@ -119,6 +141,20 @@ class NewRefereeIndex extends Component
                     $user->update(['password' => Hash::make($this->password)]);
                 }
 
+                $photoPath = $referee->photo;
+                if ($this->photoDeleted) {
+                    if ($referee->photo && Storage::disk('public')->exists($referee->photo)) {
+                        Storage::disk('public')->delete($referee->photo);
+                    }
+                    $photoPath = null;
+                }
+                if ($this->photo) {
+                    if ($referee->photo && Storage::disk('public')->exists($referee->photo)) {
+                        Storage::disk('public')->delete($referee->photo);
+                    }
+                    $photoPath = $this->photo->store('referees/photos', 'public');
+                }
+
                 $referee->update([
                     'nik' => $this->nik,
                     'phone' => $this->phone,
@@ -130,6 +166,7 @@ class NewRefereeIndex extends Component
                     'license_number' => $this->license_number,
                     'province' => $this->province,
                     'city' => $this->city,
+                    'photo' => $photoPath,
                 ]);
 
                 $this->dispatch('swal', [
@@ -147,6 +184,11 @@ class NewRefereeIndex extends Component
                 // Auto-assign Perwasitan role
                 $user->assignRole('Perwasitan');
 
+                $photoPath = null;
+                if ($this->photo) {
+                    $photoPath = $this->photo->store('referees/photos', 'public');
+                }
+
                 Referee::create([
                     'user_id' => $user->id,
                     'nik' => $this->nik,
@@ -159,6 +201,7 @@ class NewRefereeIndex extends Component
                     'license_number' => $this->license_number,
                     'province' => $this->province,
                     'city' => $this->city,
+                    'photo' => $photoPath,
                 ]);
 
                 $this->dispatch('swal', [
@@ -188,6 +231,9 @@ class NewRefereeIndex extends Component
         }
 
         DB::transaction(function () use ($referee, $user) {
+            if ($referee->photo && Storage::disk('public')->exists($referee->photo)) {
+                Storage::disk('public')->delete($referee->photo);
+            }
             $referee->delete();
             $user->delete();
         });
@@ -201,16 +247,18 @@ class NewRefereeIndex extends Component
 
     public function render()
     {
+        $operator = DB::connection()->getDriverName() === 'sqlite' ? 'like' : 'ilike';
+
         $query = Referee::with('user');
 
         if ($this->search) {
-            $query->whereHas('user', function ($q) {
-                $q->where('name', 'ilike', '%'.$this->search.'%')
-                    ->orWhere('email', 'ilike', '%'.$this->search.'%');
+            $query->whereHas('user', function ($q) use ($operator) {
+                $q->where('name', $operator, '%'.$this->search.'%')
+                    ->orWhere('email', $operator, '%'.$this->search.'%');
             })
-                ->orWhere('certification_level', 'ilike', '%'.$this->search.'%')
-                ->orWhere('phone', 'ilike', '%'.$this->search.'%')
-                ->orWhere('license_number', 'ilike', '%'.$this->search.'%');
+                ->orWhere('certification_level', $operator, '%'.$this->search.'%')
+                ->orWhere('phone', $operator, '%'.$this->search.'%')
+                ->orWhere('license_number', $operator, '%'.$this->search.'%');
         }
 
         $referees = $query->latest()->paginate($this->perPage === 'all' ? Referee::count() : $this->perPage);

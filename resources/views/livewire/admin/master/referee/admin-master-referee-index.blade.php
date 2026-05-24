@@ -83,8 +83,12 @@
                             <td class="py-4 px-6 border-r border-slate-200">
                                 <div class="flex items-center gap-3">
                                     <div
-                                        class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 font-black shadow-sm group-hover:scale-110 transition-transform">
-                                        {{ substr($referee->name, 0, 1) }}
+                                        class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 font-black shadow-sm group-hover:scale-110 transition-transform overflow-hidden">
+                                        @if($referee->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($referee->photo))
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::url($referee->photo) }}" class="w-full h-full object-cover">
+                                        @else
+                                            {{ substr($referee->name, 0, 1) }}
+                                        @endif
                                     </div>
                                     <div class="flex flex-col">
                                         <span
@@ -240,6 +244,46 @@
                             <label class="text-[15px] font-black uppercase tracking-widest text-slate-800 ml-1">Alamat
                                 Lengkap</label>
                             <x-textarea wire:model="address" rows="2" placeholder="Alamat Domisili" />
+                        </div>
+                        
+                        <!-- Section: Foto Wasit -->
+                        <div class="space-y-4 pt-4 border-t border-slate-100 md:col-span-2">
+                            <div class="flex items-center gap-3">
+                                <div class="h-4 w-1 bg-orange-600 rounded-full"></div>
+                                <h4 class="text-[15px] font-black uppercase tracking-widest text-slate-800">3. Foto Wasit</h4>
+                            </div>
+                            <div class="flex flex-col md:flex-row items-center gap-6 bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200">
+                                <div class="relative group shrink-0">
+                                    @if ($photo)
+                                        <img src="{{ $photo->temporaryUrl() }}" class="w-28 h-28 object-cover rounded-2xl border-2 border-orange-500 shadow-md">
+                                        <button type="button" wire:click="removePhoto" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95 z-20" title="Hapus Foto">
+                                            <i class="fas fa-times text-[12px]"></i>
+                                        </button>
+                                    @elseif ($existingPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists($existingPhoto))
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($existingPhoto) }}" class="w-28 h-28 object-cover rounded-2xl border border-slate-200 shadow-md">
+                                        <button type="button" wire:click="removePhoto" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95 z-20" title="Hapus Foto">
+                                            <i class="fas fa-times text-[12px]"></i>
+                                        </button>
+                                    @else
+                                        <div class="w-28 h-28 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black border border-slate-200">
+                                            <i class="fas fa-user-tie text-4xl"></i>
+                                        </div>
+                                    @endif
+                                    
+                                    <div wire:loading wire:target="photo" class="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center text-white text-[12px] font-black uppercase tracking-widest">
+                                        <div class="flex flex-col items-center gap-1">
+                                            <i class="fas fa-circle-notch animate-spin text-lg"></i>
+                                            <span>Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1 space-y-2 w-full">
+                                    <label class="text-[15px] font-black uppercase tracking-widest text-slate-800 ml-1">Unggah Foto Resmi Wasit</label>
+                                    <x-input wire:model="photo" type="file" class="text-[15px]" accept="image/*" />
+                                    <p class="text-[13px] text-slate-500 font-medium">Format: JPG, PNG, WEBP (Maksimal 2MB). Foto ini akan digunakan untuk tanda pengenal resmi dan profil tugas.</p>
+                                    @error('photo') <p class="text-[15px] text-red-500 mt-1 italic font-bold">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

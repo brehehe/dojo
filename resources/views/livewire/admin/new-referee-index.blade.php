@@ -540,8 +540,12 @@
                                 <td>
                                     <div style="display:flex;align-items:center;gap:12px;">
                                         <div
-                                            style="width:36px;height:36px;border-radius:10px;background:var(--paper);display:flex;align-items:center;justify-content:center;color:var(--smoke);">
-                                            <i class="fa-solid fa-gavel"></i>
+                                            style="width:36px;height:36px;border-radius:10px;background:var(--paper);display:flex;align-items:center;justify-content:center;color:var(--smoke);overflow:hidden;">
+                                            @if($referee->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists($referee->photo))
+                                                <img src="{{ \Illuminate\Support\Facades\Storage::url($referee->photo) }}" style="width:100%;height:100%;object-fit:cover;">
+                                            @else
+                                                <i class="fa-solid fa-gavel"></i>
+                                            @endif
                                         </div>
                                         <div>
                                             <div class="group-name">{{ $referee->user->name ?? '-' }}</div>
@@ -699,6 +703,36 @@
                             <textarea wire:model="address" class="modal-textarea"
                                 placeholder="Alamat domisili wasit..."></textarea>
                             @error('address') <span class="modal-err">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="section-title">Foto Wasit</div>
+                        <div class="modal-field" style="background: var(--paper); padding: 16px; border-radius: 12px; border: 1px dashed var(--paper2); display: flex; align-items: center; gap: 16px;">
+                            <div style="position: relative; flex-shrink: 0; width: 80px; height: 80px; border-radius: 12px; background: #fff; border: 1px solid var(--paper2); display: flex; align-items: center; justify-content: center; color: var(--smoke);">
+                                @if ($photo)
+                                    <img src="{{ $photo->temporaryUrl() }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                                    <button type="button" wire:click="removePhoto" style="position: absolute; -top: 6px; -right: 6px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 10px; z-index: 20;" title="Hapus Foto">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                @elseif ($existingPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists($existingPhoto))
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($existingPhoto) }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                                    <button type="button" wire:click="removePhoto" style="position: absolute; -top: 6px; -right: 6px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 10px; z-index: 20;" title="Hapus Foto">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                @else
+                                    <i class="fa-solid fa-user-tie" style="font-size: 28px;"></i>
+                                @endif
+                                
+                                <div wire:loading wire:target="photo" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; border-radius: 12px;">
+                                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 14px; margin-bottom: 2px;"></i>
+                                    <span>Wait...</span>
+                                </div>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink); margin-bottom: 4px; display: block;">Unggah Foto Resmi</label>
+                                <input wire:model="photo" type="file" class="modal-input" accept="image/*" style="font-size: 12px; padding: 6px 12px;">
+                                <p style="font-size: 11px; color: var(--smoke); margin: 4px 0 0;">Format: JPG, PNG, WEBP (Maks. 2MB). Foto resmi untuk profil penugasan.</p>
+                                @error('photo') <span class="modal-err">{{ $message }}</span> @enderror
+                            </div>
                         </div>
                     </div>
                 </form>
