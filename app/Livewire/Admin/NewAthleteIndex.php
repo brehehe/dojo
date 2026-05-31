@@ -48,12 +48,20 @@ class NewAthleteIndex extends Component
         ]);
     }
 
+    public function export()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\AthleteExport($this->search, $this->filterContingent, $this->filterGender),
+            'data-atlet.xlsx'
+        );
+    }
+
     public function getStats(): array
     {
         return [
             'total' => Athlete::count(),
-            'male' => Athlete::where('gender', 'L')->count(),
-            'female' => Athlete::where('gender', 'P')->count(),
+            'male' => Athlete::where('gender', 'Male')->count(),
+            'female' => Athlete::where('gender', 'Female')->count(),
             'contingents' => Contingent::count(),
         ];
     }

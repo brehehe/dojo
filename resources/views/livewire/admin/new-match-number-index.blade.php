@@ -546,6 +546,12 @@
                     <option value="randori">Randori</option>
                     <option value="embu">Embu</option>
                 </select>
+                <select wire:model.live="filterGender" class="perpage-select-prem">
+                    <option value="">Semua Gender</option>
+                    <option value="Male">Putra</option>
+                    <option value="Female">Putri</option>
+                    <option value="Mix">Campuran</option>
+                </select>
                 <select wire:model.live="perPage" class="perpage-select-prem">
                     <option value="10">10 Baris</option>
                     <option value="25">25 Baris</option>
@@ -556,6 +562,7 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th style="width: 50px; text-align: center;">No</th>
                             <th>Nomor Pertandingan</th>
                             <th>Kategori</th>
                             <th>Kapasitas</th>
@@ -565,6 +572,9 @@
                     <tbody>
                         @forelse($matchNumbers as $mn)
                             <tr>
+                                <td style="text-align: center; font-weight: 600; color: var(--smoke);">
+                                    {{ $matchNumbers->firstItem() + $loop->index }}
+                                </td>
                                 <td>
                                     <div class="group-name">{{ $mn->name }}</div>
                                     <div style="display:flex; gap:6px; margin-top:4px;">
@@ -611,7 +621,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" style="text-align:center;padding:40px 20px;">
+                                <td colspan="5" style="text-align:center;padding:40px 20px;">
                                     <i class="fa-solid fa-box-open"
                                         style="font-size:32px;color:var(--paper2);margin-bottom:12px;"></i>
                                     <div style="font-family:'Cinzel',serif;font-weight:700;color:var(--ink);">Data

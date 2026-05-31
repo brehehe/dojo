@@ -121,10 +121,16 @@
                 <h2>Data Atlet</h2>
                 <p>Database seluruh atlet yang terdaftar dalam turnamen</p>
             </div>
-            <a href="{{ route('admin.new-athletes.create') }}" class="btn-prem-add">
-                <i class="fa-solid fa-user-plus"></i>
-                Tambah Atlet Baru
-            </a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button wire:click="export" class="btn-prem-add" style="background: #27ae60; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.2);">
+                    <i class="fa-solid fa-file-excel"></i>
+                    Export
+                </button>
+                <a href="{{ route('admin.new-athletes.create') }}" class="btn-prem-add">
+                    <i class="fa-solid fa-user-plus"></i>
+                    Tambah Atlet Baru
+                </a>
+            </div>
         </div>
 
         {{-- ── STAT CARDS ── --}}
@@ -173,8 +179,8 @@
                 {{-- Filter Gender --}}
                 <select wire:model.live="filterGender" class="perpage-select-prem" style="max-width:130px;">
                     <option value="">Semua Gender</option>
-                    <option value="L">Laki-laki</option>
-                    <option value="P">Perempuan</option>
+                    <option value="Male">Laki-laki</option>
+                    <option value="Female">Perempuan</option>
                 </select>
 
                 {{-- Per Page --}}
@@ -227,9 +233,9 @@
                             </td>
                             <td style="text-align:center;">
                                 <div style="margin-bottom:4px;">
-                                    <span class="gender-badge {{ $athlete->gender === 'L' ? 'male' : 'female' }}">
-                                        <i class="fa-solid {{ $athlete->gender === 'L' ? 'fa-mars' : 'fa-venus' }}" style="font-size:9px;"></i>
-                                        {{ $athlete->gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+                                    <span class="gender-badge {{ $athlete->gender === 'Male' ? 'male' : 'female' }}">
+                                        <i class="fa-solid {{ $athlete->gender === 'Male' ? 'fa-mars' : 'fa-venus' }}" style="font-size:9px;"></i>
+                                        {{ $athlete->gender === 'Male' ? 'Laki-laki' : 'Perempuan' }}
                                     </span>
                                 </div>
                                 <div style="font-size:12px;">

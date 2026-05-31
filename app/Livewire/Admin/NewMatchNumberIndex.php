@@ -35,6 +35,8 @@ class NewMatchNumberIndex extends Component
 
     public $filterDraftType = '';
 
+    public $filterGender = '';
+
     public $showingAthletesModal = false;
 
     public $selectedMatchNumber = null;
@@ -46,7 +48,16 @@ class NewMatchNumberIndex extends Component
         'perPage' => ['except' => 10],
         'filterAgeGroup' => ['except' => ''],
         'filterDraftType' => ['except' => ''],
+        'filterGender' => ['except' => ''],
     ];
+
+    public function mount()
+    {
+        // DB::transaction(function () {
+        //     MatchNumber::where('name', 'ilike', '%Embu Beregu%')->update(['max_athletes' => 4]);
+        //     MatchNumber::where('name', 'ilike', '%Embu Pasangan%')->update(['max_athletes' => 2]);
+        // });
+    }
 
     public function updatedFilterAgeGroup()
     {
@@ -54,6 +65,11 @@ class NewMatchNumberIndex extends Component
     }
 
     public function updatedFilterDraftType()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterGender()
     {
         $this->resetPage();
     }
@@ -183,6 +199,9 @@ class NewMatchNumberIndex extends Component
         }
         if ($this->filterDraftType) {
             $query->where('draft_type', $this->filterDraftType);
+        }
+        if ($this->filterGender) {
+            $query->where('gender', $this->filterGender);
         }
 
         $matchNumbers = $query->latest()->paginate($this->perPage === 'all' ? MatchNumber::count() : $this->perPage);
