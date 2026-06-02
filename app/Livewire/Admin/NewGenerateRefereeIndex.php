@@ -87,6 +87,7 @@ class NewGenerateRefereeIndex extends Component
         if ($this->isDewanArbitraseMode) {
             if (count($this->selectedReferees) > 1) {
                 $this->addError('referees', 'Pilih maksimal 1 Wasit untuk Dewan Arbitrase.');
+
                 return;
             }
             if (count($this->selectedReferees) === 0) {
@@ -105,6 +106,7 @@ class NewGenerateRefereeIndex extends Component
         } else {
             if (count($this->selectedReferees) < 5) {
                 $this->addError('referees', 'Minimal 5 Wasit harus dipilih.');
+
                 return;
             }
 
@@ -134,9 +136,21 @@ class NewGenerateRefereeIndex extends Component
 
     public function autoGenerateAllReferees()
     {
-        $allRefereeIds = Referee::pluck('id')->toArray();
-        if (count($allRefereeIds) < 6) {
-            $this->dispatch('swal', ['title' => 'Gagal!', 'text' => 'Master Wasit minimal harus ada 6 orang (1 Dewan + 5 Wasit Lapangan).', 'icon' => 'error']);
+        $arbitraseIds = Referee::whereHas('user', function ($q) {
+            $q->role('Arbitrase');
+        })->pluck('id')->toArray();
+
+        $refereeIds = Referee::whereHas('user', function ($q) {
+            $q->role('Perwasitan');
+        })->pluck('id')->toArray();
+
+        if (count($arbitraseIds) < 1 || count($refereeIds) < 5) {
+            $this->dispatch('swal', [
+                'title' => 'Gagal!',
+                'text' => 'Master Wasit minimal harus ada 1 Dewan Arbitrase dan 5 Wasit Lapangan.',
+                'icon' => 'error',
+            ]);
+
             return;
         }
 
@@ -153,7 +167,7 @@ class NewGenerateRefereeIndex extends Component
                 ->exists();
 
             if (! $existingDewan) {
-                $randomDewanId = collect($allRefereeIds)->random();
+                $randomDewanId = collect($arbitraseIds)->random();
                 ScheduleReferee::create([
                     'rundown_id' => $shift->rundown_id,
                     'session_time_id' => $shift->session_time_id,
@@ -179,7 +193,7 @@ class NewGenerateRefereeIndex extends Component
                     ->count();
 
                 if ($existing < 5) {
-                    $randomIds = collect($allRefereeIds)->random(5)->toArray();
+                    $randomIds = collect($refereeIds)->random(5)->toArray();
                     ScheduleReferee::where('rundown_id', $shift->rundown_id)
                         ->where('session_time_id', $shift->session_time_id)
                         ->where('court_id', $courtId)
@@ -215,14 +229,31 @@ class NewGenerateRefereeIndex extends Component
                 ->distinct()->with('court')->orderBy('court_id')->get();
             $shift->assigned_referees = ScheduleReferee::with('referee.user')
                 ->where('rundown_id', $shift->rundown_id)->where('session_time_id', $shift->session_time_id)->get();
+
             return $shift;
         });
 
+        $operator = DB::connection()->getDriverName() === 'sqlite' ? 'like' : 'ilike';
         $refereesQuery = Referee::with('user');
+
+        if ($this->assigningBlock) {
+            if ($this->isDewanArbitraseMode) {
+                $refereesQuery->whereHas('user', function ($q) {
+                    $q->role('Arbitrase');
+                });
+            } else {
+                $refereesQuery->whereHas('user', function ($q) {
+                    $q->role('Perwasitan');
+                });
+            }
+        }
+
         if (! empty($this->searchReferee)) {
-            $refereesQuery->whereHas('user', function ($q) {
-                $q->where('name', 'ilike', '%'.$this->searchReferee.'%');
-            })->orWhere('license_number', 'ilike', '%'.$this->searchReferee.'%');
+            $refereesQuery->where(function ($sub) use ($operator) {
+                $sub->whereHas('user', function ($q) use ($operator) {
+                    $q->where('name', $operator, '%'.$this->searchReferee.'%');
+                })->orWhere('license_number', $operator, '%'.$this->searchReferee.'%');
+            });
         }
         $referees = $refereesQuery->get()->sortBy([['certification_level', 'asc']]);
 

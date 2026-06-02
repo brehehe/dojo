@@ -12,7 +12,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
-class NewRefereeIndex extends Component
+class NewArbitraseIndex extends Component
 {
     use WithFileUploads, WithPagination;
 
@@ -171,7 +171,7 @@ class NewRefereeIndex extends Component
 
                 $this->dispatch('swal', [
                     'title' => 'Berhasil!',
-                    'text' => 'Data wasit telah diperbarui.',
+                    'text' => 'Data dewan arbitrase telah diperbarui.',
                     'icon' => 'success',
                 ]);
             } else {
@@ -181,8 +181,8 @@ class NewRefereeIndex extends Component
                     'password' => Hash::make($this->password),
                 ]);
 
-                // Auto-assign Perwasitan role
-                $user->assignRole('Perwasitan');
+                // Auto-assign Arbitrase role for arbitrators
+                $user->assignRole('Arbitrase');
 
                 $photoPath = null;
                 if ($this->photo) {
@@ -206,7 +206,7 @@ class NewRefereeIndex extends Component
 
                 $this->dispatch('swal', [
                     'title' => 'Berhasil!',
-                    'text' => 'Wasit baru telah ditambahkan.',
+                    'text' => 'Dewan Arbitrase baru telah ditambahkan.',
                     'icon' => 'success',
                 ]);
             }
@@ -240,7 +240,7 @@ class NewRefereeIndex extends Component
 
         $this->dispatch('swal', [
             'title' => 'Dihapus!',
-            'text' => 'Wasit dan akun login terkait telah dihapus.',
+            'text' => 'Dewan Arbitrase dan akun login terkait telah dihapus.',
             'icon' => 'success',
         ]);
     }
@@ -250,7 +250,7 @@ class NewRefereeIndex extends Component
         $operator = DB::connection()->getDriverName() === 'sqlite' ? 'like' : 'ilike';
 
         $query = Referee::with('user')->whereHas('user', function ($q) {
-            $q->role('Perwasitan');
+            $q->role('Arbitrase');
         });
 
         if ($this->search) {
@@ -267,8 +267,8 @@ class NewRefereeIndex extends Component
 
         $referees = $query->latest()->paginate($this->perPage === 'all' ? Referee::count() : $this->perPage);
 
-        return view('livewire.admin.new-referee-index', [
+        return view('livewire.admin.new-arbitrase-index', [
             'referees' => $referees,
-        ])->layout('layouts.premium', ['title' => 'Master Wasit (Referee)']);
+        ])->layout('layouts.premium', ['title' => 'Master Dewan Arbitrase (Arbitrators)']);
     }
 }

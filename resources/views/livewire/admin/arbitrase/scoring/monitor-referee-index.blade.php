@@ -69,7 +69,11 @@
                                 @endswitch
                             </span>
                             <h3 class="text-2xl font-black text-slate-800 uppercase leading-tight line-clamp-2 min-h-[4rem] group-hover:text-indigo-700 transition-colors">
-                                {{ $schedule->referee?->name ?? 'Belum Ditugaskan' }}
+                                @if($schedule->referee && $schedule->referee->name !== '-')
+                                    {{ $schedule->referee->name }}
+                                @else
+                                    Belum Ditugaskan
+                                @endif
                             </h3>
                             
                             <div class="mt-4 pt-4 border-t border-slate-50 flex flex-col gap-2">

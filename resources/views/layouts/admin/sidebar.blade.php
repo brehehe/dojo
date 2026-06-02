@@ -37,10 +37,10 @@
         </a>
 
         <!-- Laporan Dropdown -->
-        <div x-data="{ open: {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'true' : 'false' }} }"
+        <div x-data="{ open: {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*', 'admin.new-multi-nomor-report') ? 'true' : 'false' }} }"
             class="mt-1">
             <button @click="open = !open"
-                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
+                class="w-full flex items-center py-3 rounded-xl transition-all group {{ request()->routeIs('admin.match-numbers.verified', 'admin.reports.*', 'admin.new-multi-nomor-report') ? 'bg-white/5 text-orange-400' : 'text-slate-400 hover:text-white hover:bg-white/5' }}"
                 :class="collapsed ? 'justify-center px-0' : 'justify-between px-3'">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-file-invoice w-5 text-center text-[15px] opacity-70 group-hover:opacity-100"></i>
@@ -65,6 +65,9 @@
                 <a href="{{ route('admin.reports.athlete-biodata') }}"
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.reports.athlete-biodata') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Biodata
                     Peserta</a>
+                <a href="{{ route('admin.new-multi-nomor-report') }}"
+                    class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.new-multi-nomor-report') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Atlet
+                    Multi-Nomor</a>
             </div>
         </div>
         @endrole

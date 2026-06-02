@@ -38,10 +38,34 @@ class EmbuScore extends Model
         'tiebreak_round' => 'integer',
     ];
 
-    /** Get the effective score for ranking (nilai_akhir if set, else total_score). */
+    /** Get the effective score for ranking (nilai_akhir if set, else total_score, computed on-the-fly if needed). */
     public function getEffectiveScoreAttribute(): float
     {
-        return $this->nilai_akhir > 0 ? $this->nilai_akhir : $this->total_score;
+        if ($this->nilai_akhir > 0) {
+            return $this->nilai_akhir;
+        }
+
+        if ($this->total_score > 0) {
+            return max(0.0, $this->total_score - (float) $this->denda);
+        }
+
+        $rawVals = [
+            (float) $this->judge_1,
+            (float) $this->judge_2,
+            (float) $this->judge_3,
+            (float) $this->judge_4,
+            (float) $this->judge_5,
+        ];
+
+        $scoredCount = count(array_filter($rawVals, fn ($v) => $v > 0));
+        if ($scoredCount === 5) {
+            sort($rawVals);
+            $total = $rawVals[1] + $rawVals[2] + $rawVals[3];
+        } else {
+            $total = array_sum($rawVals);
+        }
+
+        return max(0.0, $total - (float) $this->denda);
     }
 
     public function matchNumber()

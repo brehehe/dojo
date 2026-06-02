@@ -3,9 +3,11 @@
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
 use App\Models\Court\Court;
-use App\Models\MatchNumber\MatchNumber;
-use App\Models\Registration;
+use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
+use App\Models\MatchNumber\MatchNumber;
+use App\Models\MatchNumberMergeDetail;
+use App\Models\Registration;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -13,6 +15,7 @@ use Livewire\Component;
 class MonitorRekapitulasiHasilIndex extends Component
 {
     public ?int $courtId = null;
+
     public ?int $matchId = null;
 
     public function mount(?int $courtId = null, ?int $matchId = null)
@@ -39,15 +42,15 @@ class MonitorRekapitulasiHasilIndex extends Component
         $poolName = null;
         if ($match) {
             $activeDrawing = $court?->activeDrawing;
-            
+
             $matchNumberIds = [$match->id];
             if ($match->mergeDetail) {
-                $matchNumberIds = \App\Models\MatchNumberMergeDetail::where('match_number_merge_id', $match->mergeDetail->match_number_merge_id)
+                $matchNumberIds = MatchNumberMergeDetail::where('match_number_merge_id', $match->mergeDetail->match_number_merge_id)
                     ->pluck('match_number_id')
                     ->toArray();
             }
 
-            $drawQuery = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+            $drawQuery = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
                 ->where('draft_type', 'embu');
 
             $currentRound = 'Penyisihan';
@@ -58,12 +61,16 @@ class MonitorRekapitulasiHasilIndex extends Component
                     $drawQuery->where('pool_id', $activeDrawing->pool_id);
                     $poolName = $activeDrawing->pool?->name;
                 }
-                if ($activeDrawing->court_id) $drawQuery->where('court_id', $activeDrawing->court_id);
-                if ($activeDrawing->round) $drawQuery->where('round', $activeDrawing->round);
+                if ($activeDrawing->court_id) {
+                    $drawQuery->where('court_id', $activeDrawing->court_id);
+                }
+                if ($activeDrawing->round) {
+                    $drawQuery->where('round', $activeDrawing->round);
+                }
                 $currentRound = $activeDrawing->round ?? 'Penyisihan';
             } elseif ($this->courtId) {
                 $drawQuery->where('court_id', $this->courtId);
-                $firstDrawingOnCourt = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+                $firstDrawingOnCourt = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
                     ->with('pool')
                     ->where('court_id', $this->courtId)
                     ->whereNotNull('pool_id')
@@ -81,28 +88,45 @@ class MonitorRekapitulasiHasilIndex extends Component
             // Eager load registrations
             $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $drawingRegIds)->get()->keyBy('id');
 
-            $scores = $drawings->map(function($drawing) use ($matchNumberIds, $currentRound, $registrations) {
+            // Eager load match records to avoid N+1
+            $matchRecords = MatchNumber::whereIn('id', $matchNumberIds)->get()->keyBy('id');
+
+            // Eager load all EmbuScore records to avoid N+1
+            $allScores = EmbuScore::whereIn('match_number_id', $matchNumberIds)
+                ->where('round_label', $currentRound)
+                ->get();
+
+            $scores = $drawings->map(function ($drawing) use ($registrations, $matchRecords, $allScores) {
                 $regId = $drawing->registration_id;
                 $reg = $registrations->get($regId);
                 $specificMatchId = $drawing->match_number_id;
-                
+
                 // Correctly filter athletes for this specific team/drawing
                 $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
                 $athletes = collect();
-                if (!empty($athleteIds)) {
+                if (! empty($athleteIds)) {
                     $athletes = $reg?->athletes->whereIn('id', $athleteIds)->values() ?? collect();
                 } elseif ($reg) {
                     $athletes = $reg->athletes;
                 }
 
-                $matchRecord = \App\Models\MatchNumber\MatchNumber::find($specificMatchId);
+                $matchRecord = $matchRecords->get($specificMatchId);
 
-                $score = EmbuScore::where('match_number_id', $specificMatchId)
-                    ->where('registration_id', $regId)
-                    ->where('round_label', $currentRound)
+                $score = $allScores->where('registration_id', $regId)
+                    ->where('match_number_id', $specificMatchId)
+                    ->where('drawing_id', $drawing->id)
+                    ->sortByDesc('tiebreak_round')
                     ->first();
 
-                return (object)[
+                if (! $score) {
+                    $score = $allScores->where('registration_id', $regId)
+                        ->where('match_number_id', $specificMatchId)
+                        ->whereNull('drawing_id')
+                        ->sortByDesc('tiebreak_round')
+                        ->first();
+                }
+
+                return (object) [
                     'registration_id' => $regId,
                     'drawing_id' => $drawing->id,
                     'registration' => $reg,
@@ -116,11 +140,12 @@ class MonitorRekapitulasiHasilIndex extends Component
                     'judge_4' => $score?->judge_4 ?? 0,
                     'judge_5' => $score?->judge_5 ?? 0,
                     'denda' => $score?->denda ?? 0,
-                    'nilai_akhir' => $score?->nilai_akhir ?? 0,
+                    'nilai_akhir' => $score?->effective_score ?? 0,
+                    'effective_score' => $score?->effective_score ?? 0,
                 ];
             })
-            ->sortByDesc('nilai_akhir')
-            ->values();
+                ->sortByDesc('effective_score')
+                ->values();
         }
 
         return view('livewire.admin.arbitrase.scoring.monitor-rekapitulasi-hasil-index', [

@@ -43,6 +43,7 @@ use App\Livewire\Admin\Master\User\AdminMasterUserIndex;
 use App\Livewire\Admin\Master\WeightGroup\AdminMasterWeightGroupIndex;
 use App\Livewire\Admin\MatchNumber\AdminMatchNumberVerifiedIndex;
 use App\Livewire\Admin\NewAgeGroupIndex;
+use App\Livewire\Admin\NewArbitraseIndex;
 use App\Livewire\Admin\NewAthleteCreate;
 use App\Livewire\Admin\NewAthleteEdit;
 use App\Livewire\Admin\NewAthleteIndex;
@@ -62,6 +63,7 @@ use App\Livewire\Admin\NewLaporanSkorIndex;
 use App\Livewire\Admin\NewLaporanWasitIndex;
 use App\Livewire\Admin\NewLaporanWasitJuriIndex;
 use App\Livewire\Admin\NewMatchNumberIndex;
+use App\Livewire\Admin\NewMultiNomorReportIndex;
 use App\Livewire\Admin\NewOfficialForm;
 use App\Livewire\Admin\NewOfficialIndex;
 use App\Livewire\Admin\NewPaymentMethodIndex;
@@ -188,8 +190,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/match-number-merges', NewMatchNumberMergeIndex::class)->name('match-number-merges');
         Route::get('/new-users', NewUserIndex::class)->name('new-users');
         Route::get('/master/new-referees', NewRefereeIndex::class)->name('master.new-referees');
-        Route::get('/arbitrase/new-referees', NewRefereeIndex::class)->name('arbitrase.new-referees');
+        Route::get('/arbitrase/new-referees', function () {
+            return redirect()->route('admin.master.new-referees');
+        });
+        Route::get('/arbitrase/new-arbitrators', NewArbitraseIndex::class)->name('arbitrase.new-arbitrators');
         Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
+        Route::get('/new-multi-nomor-report', NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
 
         Route::get('/new-scoring', NewScoringIndex::class)->name('new-scoring-index');
         Route::get('/new-scoring/embu/{matchNumber}', NewScoringEmbuIndex::class)->name('new-scoring-embu-index');

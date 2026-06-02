@@ -86,7 +86,7 @@
 
     {{-- Pertandingan --}}
     @hasanyrole('Super Admin|Admin|Pertandingan|Koordinator Lapangan')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-tm-drawing') || request()->routeIs('admin.match-number-merges')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-tm-drawing') || request()->routeIs('admin.match-number-merges') || request()->routeIs('admin.new-multi-nomor-report')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Pertandingan</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -97,6 +97,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.match-number-merges') ? 'active' : '' }}"
                     href="{{ route('admin.match-number-merges') }}"><i class="fa-solid fa-object-group"></i>
                     Merge Nomer Pertandingan</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-multi-nomor-report') ? 'active' : '' }}"
+                    href="{{ route('admin.new-multi-nomor-report') }}"><i class="fa-solid fa-file-lines"></i>
+                    Deteksi Atlet Multi-Nomor</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-tm-drawing') ? 'active' : '' }}"
                     href="{{ route('admin.new-tm-drawing') }}"><i class="fa-solid fa-dice"></i> Drawing TM</a>
             </div>
@@ -105,7 +108,7 @@
 
     {{-- Sistem Arbitrase --}}
     @hasanyrole('Super Admin|Admin|Arbitrase|Perwasitan')
-        <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-referees') || request()->routeIs('admin.new-generate-referee')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-arbitrators') || request()->routeIs('admin.master.new-referees') || request()->routeIs('admin.new-generate-referee')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Arbitrase</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -113,9 +116,10 @@
             <div x-show="open" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 class="collapsible-content">
-                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-referees') ? 'active' : '' }}"
-                    href="{{ route('admin.arbitrase.new-referees') }}"><i class="fa-solid fa-gavel"></i> Data
-                    Wasit</a>
+                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-arbitrators') ? 'active' : '' }}"
+                    href="{{ route('admin.arbitrase.new-arbitrators') }}"><i class="fa-solid fa-shield-halved"></i> Data Dewan Arbitrase</a>
+                <a class="nav-item {{ request()->routeIs('admin.master.new-referees') ? 'active' : '' }}"
+                    href="{{ route('admin.master.new-referees') }}"><i class="fa-solid fa-gavel"></i> Data Wasit / Juri</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-generate-referee') ? 'active' : '' }}"
                     href="{{ route('admin.new-generate-referee') }}"><i class="fa-solid fa-users-gear"></i> Penugasan
                     Wasit</a>

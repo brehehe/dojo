@@ -1,4 +1,4 @@
-<div wire:poll.2s class="relative mx-auto flex h-screen min-h-screen w-full max-w-[1920px] flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.08),_transparent_32%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] p-3 font-sans text-slate-800 sm:p-4 md:p-6 lg:p-8">
+<div wire:poll class="relative mx-auto flex h-screen min-h-screen w-full max-w-[1920px] flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.08),_transparent_32%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] p-3 font-sans text-slate-800 sm:p-4 md:p-6 lg:p-8">
 
     {{-- HEADER --}}
     <div class="relative z-10 mb-4 flex w-full flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-white/90 p-4 shadow-[0_18px_60px_-28px_rgba(15,23,42,0.35)] backdrop-blur sm:mb-5 sm:p-5 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-6 md:rounded-[2rem] md:p-6 lg:p-8">
@@ -80,7 +80,14 @@
                                     $rank = $index + 1;
                                     // Highlight top 4
                                     $isTop = $rank <= 4;
-                                    $hasScore = ($row['effective_score'] && $row['effective_score']->total_score > 0) || (isset($row['accumulated_score']) && $row['accumulated_score'] > 0);
+                                    $hasScore = ($row['effective_score'] && (
+                                        $row['effective_score']->nilai_akhir > 0 || 
+                                        $row['effective_score']->judge_1 > 0 || 
+                                        $row['effective_score']->judge_2 > 0 || 
+                                        $row['effective_score']->judge_3 > 0 || 
+                                        $row['effective_score']->judge_4 > 0 || 
+                                        $row['effective_score']->judge_5 > 0
+                                    )) || (isset($row['accumulated_score']) && $row['accumulated_score'] > 0);
                                 @endphp
                                 <tr class="{{ $loop->even ? 'bg-slate-50/70' : 'bg-white' }} transition-colors hover:bg-amber-50/40">
                                     {{-- Rank --}}
@@ -119,7 +126,7 @@
                                             <div class="flex flex-col items-center gap-1.5">
                                                 <div class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 md:rounded-2xl md:px-4 md:py-2">
                                                     <span class="text-lg font-black sm:text-2xl md:text-4xl lg:text-5xl {{ $isTop ? 'text-emerald-600' : 'text-slate-500' }}">
-                                                        {{ number_format($row['accumulated_score'] ?? optional($row['effective_score'])->nilai_akhir ?? 0, 1) }}
+                                                        {{ number_format($row['accumulated_score'] ?? optional($row['effective_score'])->effective_score ?? 0, 1) }}
                                                     </span>
                                                 </div>
                                                 @if(isset($row['penyisihan_score']) && $row['penyisihan_score'])

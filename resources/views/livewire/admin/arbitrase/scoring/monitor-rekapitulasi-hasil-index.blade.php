@@ -57,7 +57,6 @@
     <div class="relative z-10 flex-1 overflow-hidden" id="scroll-container" x-data="{
         scrollSpeed: 1,
         pos: 0,
-        direction: 1,
         contentHeight: 0,
         containerHeight: 0,
         init() {
@@ -67,12 +66,10 @@
             setInterval(() => {
                 if (this.contentHeight <= this.containerHeight) return;
                 
-                this.pos += this.scrollSpeed * this.direction;
+                this.pos += this.scrollSpeed;
                 
-                if (this.pos >= this.contentHeight - this.containerHeight + 100) {
-                    this.direction = -1;
-                } else if (this.pos <= -50) {
-                    this.direction = 1;
+                if (this.pos >= this.contentHeight - this.containerHeight) {
+                    this.pos = 0;
                 }
                 
                 this.$refs.content.style.transform = `translateY(-${Math.max(0, this.pos)}px)`;
@@ -100,11 +97,11 @@
                         $maxKey = $keys[count($keys)-1];
                     }
                 @endphp
-                <div class="grid grid-cols-12 gap-4 py-6 border-b border-slate-200 items-center {{ $rank <= 3 && $score->nilai_akhir > 0 ? 'bg-blue-50/50' : '' }}">
+                <div class="grid grid-cols-12 gap-4 py-6 border-b border-slate-200 items-center {{ $rank <= 3 && $score->effective_score > 0 ? 'bg-blue-50/50' : '' }}">
                     {{-- Rank --}}
                     <div class="col-span-1 flex justify-center">
-                        @if($score->nilai_akhir > 0)
-                            <div class="flex h-12 w-12 items-center justify-center rounded-xl text-xl font-black {{ $rank === 1 ? 'bg-yellow-400 text-slate-900 shadow-sm' : ($rank === 2 ? 'bg-slate-200 text-slate-700' : ($rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-400')) }}">
+                        @if($score->effective_score > 0)
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl mx-auto {{ $rank === 1 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/40' : ($rank === 2 ? 'bg-slate-300 text-slate-700' : ($rank === 3 ? 'bg-amber-700 text-white' : 'border-2 border-slate-200 bg-white text-slate-500')) }} text-xl font-black">
                                 {{ $rank }}
                             </div>
                         @else
@@ -150,7 +147,7 @@
                     {{-- Total --}}
                     <div class="col-span-1 text-center">
                         <div class="text-2xl font-black text-blue-700">
-                            {{ number_format($score->nilai_akhir, 1) }}
+                            {{ number_format($score->effective_score, 1) }}
                         </div>
                     </div>
                 </div>
@@ -161,8 +158,8 @@
                 </div>
             @endforelse
             
-            {{-- Padding bottom to ensure last item is visible when bouncing back --}}
-            <div class="h-40"></div>
+            {{-- Padding bottom --}}
+            <div class="h-10"></div>
         </div>
     </div>
 
