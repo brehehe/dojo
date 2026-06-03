@@ -270,24 +270,7 @@
             </div>
         </div>
 
-        <!-- Configurations / Control Bar -->
-        <div class="table-section-prem" style="padding:22px;margin-bottom:24px;position:relative;overflow:hidden;">
-            <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;">
-                <div style="flex: 1; min-width: 150px;">
-                    <label style="display:block;font-size:10.5px;color:var(--smoke);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Simulasi Court</label>
-                    <input type="number" wire:model="courtCount" min="1" max="6" style="width:100%;padding:10px 14px;border:1px solid var(--paper2);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;background:#fff;">
-                </div>
-                <div style="flex: 1; min-width: 150px;">
-                    <label style="display:block;font-size:10.5px;color:var(--smoke);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Simulasi Hari</label>
-                    <input type="number" wire:model="hariCount" min="1" max="3" style="width:100%;padding:10px 14px;border:1px solid var(--paper2);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;background:#fff;">
-                </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <button wire:click="analyze" class="btn-prem-add" style="width:100%;justify-content:center;padding:12px 20px;">
-                        <i class="fas fa-sync-alt" style="margin-right:6px;"></i> Proses &amp; Deteksi Bentrok
-                    </button>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Side-by-Side Area -->
         <div class="main-grid-prem">
@@ -341,31 +324,32 @@
 
             <!-- Right Column -->
             <div style="display:flex;flex-direction:column;gap:24px;">
-                <!-- Multi Athlete Alert -->
-                @if(count($multiAthletes) > 0)
-                    <div class="table-section-prem" style="padding:24px;border-color:rgba(192, 57, 43, 0.2);background:rgba(192, 57, 43, 0.02);">
-                        <h3 style="font-family:'Cinzel',serif;font-size:13.5px;font-weight:700;color:var(--red);margin:0 0 4px;"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i> Atlet Multi-Nomor Terdeteksi ({{ count($multiAthletes) }} Atlet)</h3>
-                        <p style="font-size:11.5px;color:var(--smoke);margin:0 0 16px;">Mereka terdaftar di lebih dari satu nomor pertandingan dan berisiko bentrok jadwal.</p>
+                <!-- Daftar Semua Atlet -->
+                @if(count($allAthletes) > 0)
+                    <div class="table-section-prem" style="padding:24px;border-color:rgba(41, 128, 185, 0.2);background:rgba(41, 128, 185, 0.02);">
+                        <h3 style="font-family:'Cinzel',serif;font-size:13.5px;font-weight:700;color:#2980b9;margin:0 0 4px;"><i class="fas fa-users" style="margin-right:6px;"></i> Daftar Semua Atlet ({{ count($allAthletes) }} Atlet)</h3>
+                        <p style="font-size:11.5px;color:var(--smoke);margin:0 0 16px;">Daftar seluruh atlet beserta nomor pertandingan yang mereka ikuti.</p>
 
-                        <div class="custom-scrollbar" style="overflow-x:auto;max-height:250px;border:1px solid var(--paper2);border-radius:12px;background:#fff;">
+                        <div class="custom-scrollbar" style="overflow-x:auto;max-height:450px;border:1px solid var(--paper2);border-radius:12px;background:#fff;">
                             <table class="premium-table">
                                 <thead>
                                     <tr>
                                         <th style="font-size:10px;padding:10px 12px;text-align:center;width:40px;">No</th>
                                         <th style="font-size:10px;padding:10px 12px;">Nama Atlet</th>
                                         <th style="font-size:10px;padding:10px 12px;text-align:center;">Jumlah</th>
-                                        <th style="font-size:10px;padding:10px 12px;">Daftar Nomor</th>
+                                        <th style="font-size:10px;padding:10px 12px;">Daftar Nomor Pertandingan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($multiAthletes as $index => $a)
+                                    @foreach($allAthletes as $index => $a)
                                         @php
                                             $nomorWithType = [];
                                             foreach ($a['nomorList'] as $idx => $nomor) {
-                                                $nomorWithType[] = $nomor . ' (' . $a['typeList'][$idx] . ')';
+                                                $nomorName = $a['nomorNameList'][$idx] ?? $nomor;
+                                                $nomorWithType[] = $nomorName . ' (' . $a['typeList'][$idx] . ')';
                                             }
                                         @endphp
-                                        <tr wire:key="multi-atlet-{{ $index }}">
+                                        <tr wire:key="atlet-{{ $index }}">
                                             <td style="text-align:center;padding:10px 12px;">
                                                 <span style="font-size:11px;font-weight:700;color:var(--smoke);">{{ $index + 1 }}</span>
                                             </td>
@@ -373,7 +357,13 @@
                                                 <span style="font-size:12.5px;font-weight:700;color:var(--ink);text-transform:uppercase;">{{ $a['nama'] }}</span>
                                             </td>
                                             <td style="text-align:center;padding:10px 12px;">
-                                                <span class="badge" style="background:rgba(192,57,43,0.1);color:var(--red);font-size:10px;padding:2px 6px;">{{ $a['jumlahNomor'] }}</span>
+                                                @if($a['jumlahNomor'] > 1)
+                                                    <span class="badge" style="background:rgba(192,57,43,0.1);color:var(--red);font-size:10px;padding:2px 6px;">{{ $a['jumlahNomor'] }}</span>
+                                                @elseif($a['jumlahNomor'] == 1)
+                                                    <span class="badge" style="background:rgba(39,174,96,0.1);color:#27ae60;font-size:10px;padding:2px 6px;">{{ $a['jumlahNomor'] }}</span>
+                                                @else
+                                                    <span class="badge" style="background:rgba(149,165,166,0.1);color:#7f8c8d;font-size:10px;padding:2px 6px;">0</span>
+                                                @endif
                                             </td>
                                             <td style="font-size:11.5px;color:var(--smoke);padding:10px 12px;line-height:1.4;">
                                                 {{ implode(', ', $nomorWithType) }}
@@ -389,167 +379,13 @@
                         <div style="width:48px;height:48px;background:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.05);margin-bottom:12px;">
                             <i class="fas fa-check-circle" style="font-size:24px;color:#27ae60;"></i>
                         </div>
-                        <h3 style="font-family:'Cinzel',serif;font-size:13.5px;font-weight:700;color:#27ae60;margin:0 0 4px;">Tidak Ada Atlet Multi-Nomor</h3>
-                        <p style="font-size:12px;color:var(--smoke);margin:0;">Semua atlet terdaftar di tepat 1 nomor pertandingan.</p>
+                        <h3 style="font-family:'Cinzel',serif;font-size:13.5px;font-weight:700;color:#27ae60;margin:0 0 4px;">Tidak Ada Atlet</h3>
+                        <p style="font-size:12px;color:var(--smoke);margin:0;">Belum ada atlet yang terdaftar.</p>
                     </div>
                 @endif
-
-                <!-- Ringkasan Semua Atlet -->
-                <div class="table-section-prem" style="padding:24px;">
-                    <h3 style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--ink);margin:0 0 16px;"><i class="fas fa-users-cog" style="color:var(--red);margin-right:6px;"></i> Ringkasan Semua Atlet</h3>
-                    
-                    <div class="custom-scrollbar" style="overflow-x:auto;max-height:300px;border:1px solid var(--paper2);border-radius:12px;background:#fff;">
-                        <table class="premium-table">
-                            <thead>
-                                <tr>
-                                    <th style="font-size:10px;padding:10px 12px;text-align:center;width:40px;">No</th>
-                                    <th style="font-size:10px;padding:10px 12px;">Nama Atlet</th>
-                                    <th style="font-size:10px;padding:10px 12px;text-align:center;">Nomor</th>
-                                    <th style="font-size:10px;padding:10px 12px;">Status Resiko</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $noAll = 1; @endphp
-                                @foreach($multiAthletes as $a)
-                                    <tr wire:key="summary-multi-{{ $noAll }}">
-                                        <td style="text-align:center;padding:10px 12px;">
-                                            <span style="font-size:11px;font-weight:700;color:var(--smoke);">{{ $noAll }}</span>
-                                        </td>
-                                        <td style="padding:10px 12px;">
-                                            <span style="font-size:12.5px;font-weight:700;color:var(--ink);text-transform:uppercase;">{{ $a['nama'] }}</span>
-                                        </td>
-                                        <td style="text-align:center;padding:10px 12px;">
-                                            <span style="font-size:11.5px;font-weight:600;color:var(--ink);">{{ $a['jumlahNomor'] }}</span>
-                                        </td>
-                                        <td style="padding:10px 12px;">
-                                            <span class="badge" style="background:rgba(192,57,43,0.1);color:var(--red);font-size:10px;padding:2px 6px;">
-                                                Multi Nomor
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @php $noAll++; @endphp
-                                @endforeach
-                                @foreach($normalAthletes as $a)
-                                    <tr wire:key="summary-normal-{{ $noAll }}">
-                                        <td style="text-align:center;padding:10px 12px;">
-                                            <span style="font-size:11px;font-weight:700;color:var(--smoke);">{{ $noAll }}</span>
-                                        </td>
-                                        <td style="padding:10px 12px;">
-                                            <span style="font-size:12.5px;color:var(--ink);text-transform:uppercase;">{{ $a['nama'] }}</span>
-                                        </td>
-                                        <td style="text-align:center;padding:10px 12px;">
-                                            <span style="font-size:11.5px;color:var(--smoke);">{{ $a['jumlahNomor'] }}</span>
-                                        </td>
-                                        <td style="padding:10px 12px;">
-                                            <span class="badge" style="background:rgba(39,174,96,0.1);color:#27ae60;font-size:10px;padding:2px 6px;">
-                                                Normal
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @php $noAll++; @endphp
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- Schedule Section -->
-        <div class="table-section-prem" style="padding:24px;">
-            <div style="border-bottom:1px solid var(--paper2);padding-bottom:12px;margin-bottom:20px;">
-                <h3 style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--ink);margin:0 0 4px;"><i class="fas fa-calendar-check" style="color:var(--red);margin-right:6px;"></i> Rekomendasi Jadwal Pertandingan (Anti Bentrok)</h3>
-                <p style="font-size:11.5px;color:var(--smoke);margin:0;">Sistem otomatis mengatur jadwal dengan jeda minimal 30 menit antar pertandingan untuk atlet yang sama.</p>
-            </div>
 
-            @if(count($scheduledMatches) === 0)
-                <div style="padding:48px;text-align:center;color:var(--smoke);border:2px dashed var(--paper2);border-radius:12px;">
-                    <i class="fas fa-calendar-times" style="font-size:24px;display:block;margin-bottom:10px;opacity:0.4;"></i>
-                    <p style="font-size:12.5px;margin:0;font-style:italic;">Belum ada jadwal yang disimulasikan. Pastikan minimal ada 1 nomor pertandingan dengan minimal 2 peserta.</p>
-                </div>
-            @else
-                <!-- Days Tabs -->
-                @php
-                    $days = array_unique(array_column($scheduledMatches, 'day'));
-                    sort($days);
-                @endphp
-                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;background:var(--paper);padding:4px;border-radius:10px;max-width:max-content;">
-                    @foreach($days as $day)
-                        <button wire:click="setActiveDay({{ $day }})"
-                                style="padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;transition:all 0.15s;
-                                {{ $activeDay === $day ? 'background:var(--ink);color:#fff;' : 'background:none;color:var(--smoke);' }}"
-                                onmouseover="if(this.style.background!=='var(--ink)')this.style.background='var(--paper2)'"
-                                onmouseout="if(this.style.background!=='var(--ink)')this.style.background='none'">
-                            📅 Hari {{ $day }}
-                        </button>
-                    @endforeach
-                </div>
-
-                <!-- Court wise schedule columns -->
-                @php
-                    $dayMatches = array_filter($scheduledMatches, function($m) use ($activeDay) {
-                        return $m['day'] === $activeDay;
-                    });
-                    $courts = array_unique(array_column($dayMatches, 'court'));
-                    sort($courts);
-                @endphp
-
-                <div style="display:flex;flex-direction:column;gap:20px;">
-                    @foreach($courts as $courtName)
-                        @php
-                            $courtMatches = array_filter($dayMatches, function($m) use ($courtName) {
-                                return $m['court'] === $courtName;
-                            });
-                            usort($courtMatches, function($a, $b) {
-                                return strcmp($a['time'], $b['time']);
-                            });
-                        @endphp
-
-                        <div style="border:1px solid var(--paper2);border-radius:12px;overflow:hidden;background:#fff;" wire:key="court-block-{{ $courtName }}">
-                            <div style="background:var(--paper);border-bottom:1px solid var(--paper2);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
-                                <span style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--ink);">🏟️ {{ $courtName }}</span>
-                                <span style="background:rgba(192,57,43,0.1);color:var(--red);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">{{ count($courtMatches) }} Match</span>
-                            </div>
-                            <div style="overflow-x:auto;">
-                                <table class="premium-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="font-size:10px;padding:10px 12px;width:80px;">Waktu</th>
-                                            <th style="font-size:10px;padding:10px 12px;width:80px;">ID</th>
-                                            <th style="font-size:10px;padding:10px 12px;">Nama Pertandingan</th>
-                                            <th style="font-size:10px;padding:10px 12px;text-align:center;width:90px;">Tipe</th>
-                                            <th style="font-size:10px;padding:10px 12px;width:100px;">Round</th>
-                                            <th style="font-size:10px;padding:10px 12px;">Peserta</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($courtMatches as $m)
-                                            <tr wire:key="match-row-{{ $m['nomorId'] }}-{{ $m['time'] }}">
-                                                <td style="padding:10px 12px;font-weight:700;color:var(--ink);font-size:12.5px;">{{ $m['time'] }}</td>
-                                                <td style="padding:10px 12px;font-family:monospace;color:var(--red);font-size:11px;">{{ $m['nomorId'] }}</td>
-                                                <td style="padding:10px 12px;font-size:12px;color:var(--ink);font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ $m['nomorName'] }}">
-                                                    {{ $m['nomorName'] }}
-                                                </td>
-                                                <td style="padding:10px 12px;text-align:center;">
-                                                    @if($m['type'] === 'Embu')
-                                                        <span class="badge" style="background:rgba(41,128,185,0.1);color:#2980b9;">🥋 Embu</span>
-                                                    @else
-                                                        <span class="badge" style="background:rgba(212,168,67,0.15);color:#b8860b;">⚡ Randori</span>
-                                                    @endif
-                                                </td>
-                                                <td style="padding:10px 12px;font-size:12px;color:var(--smoke);">{{ $m['roundName'] }}</td>
-                                                <td style="padding:10px 12px;font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;">
-                                                    {{ implode(' vs ', $m['athletes']) }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
     </div>
 </div>

@@ -9,29 +9,31 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class MultiNomorReportExport implements FromView, ShouldAutoSize, WithStyles, WithTitle
+class UnregisteredAthleteReportExport implements FromView, ShouldAutoSize, WithStyles, WithTitle
 {
     public function __construct(
-        protected array $allAthletes
+        protected array $matchData,
+        protected array $unregisteredAthletes
     ) {}
 
     public function view(): View
     {
-        return view('exports.multi-nomor-report-export', [
-            'allAthletes' => $this->allAthletes,
+        return view('exports.unregistered-athlete-report-export', [
+            'matchData' => $this->matchData,
+            'unregisteredAthletes' => $this->unregisteredAthletes,
         ]);
     }
 
     public function title(): string
     {
-        return 'Deteksi & Jadwal Anti Bentrok';
+        return 'Lap. Kontingen & Atlet Kosong';
     }
 
     public function styles(Worksheet $sheet)
     {
         return [
             1 => ['font' => ['bold' => true, 'size' => 14]],
-            2 => ['font' => ['bold' => true, 'size' => 11]],
+            2 => ['font' => ['bold' => true, 'size' => 12]],
         ];
     }
 }

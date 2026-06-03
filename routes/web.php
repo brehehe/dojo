@@ -195,7 +195,8 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/arbitrase/new-arbitrators', NewArbitraseIndex::class)->name('arbitrase.new-arbitrators');
         Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
-        Route::get('/new-multi-nomor-report', NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
+            Route::get('new-multi-nomor-report', App\Livewire\Admin\NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
+            Route::get('new-unregistered-athlete-report', App\Livewire\Admin\NewUnregisteredAthleteReportIndex::class)->name('new-unregistered-athlete-report');
 
         Route::get('/new-scoring', NewScoringIndex::class)->name('new-scoring-index');
         Route::get('/new-scoring/embu/{matchNumber}', NewScoringEmbuIndex::class)->name('new-scoring-embu-index');

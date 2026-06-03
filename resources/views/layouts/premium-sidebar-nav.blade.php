@@ -86,7 +86,7 @@
 
     {{-- Pertandingan --}}
     @hasanyrole('Super Admin|Admin|Pertandingan|Koordinator Lapangan')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-tm-drawing') || request()->routeIs('admin.match-number-merges') || request()->routeIs('admin.new-multi-nomor-report')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-tm-drawing') || request()->routeIs('admin.match-number-merges') || request()->routeIs('admin.new-multi-nomor-report') || request()->routeIs('admin.new-unregistered-athlete-report')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Pertandingan</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -100,6 +100,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.new-multi-nomor-report') ? 'active' : '' }}"
                     href="{{ route('admin.new-multi-nomor-report') }}"><i class="fa-solid fa-file-lines"></i>
                     Deteksi Atlet Multi-Nomor</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-unregistered-athlete-report') ? 'active' : '' }}"
+                    href="{{ route('admin.new-unregistered-athlete-report') }}"><i class="fa-solid fa-file-lines"></i>
+                    Atlet Tidak Terdaftar Nomer Pertandingan</a>
                 <a class="nav-item {{ request()->routeIs('admin.new-tm-drawing') ? 'active' : '' }}"
                     href="{{ route('admin.new-tm-drawing') }}"><i class="fa-solid fa-dice"></i> Drawing TM</a>
             </div>
@@ -221,6 +224,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-embu-index') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-rekapitulasi-embu-index') }}"><i
                         class="fa-solid fa-chart-line"></i> Rekapitulasi Embu</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-unregistered-athlete-report') ? 'active' : '' }}"
+                    href="{{ route('admin.new-unregistered-athlete-report') }}"><i class="fa-solid fa-user-times"></i>
+                    Lap. Kontingen & Atlet Kosong</a>
             </div>
         </div>
     @endhasanyrole
