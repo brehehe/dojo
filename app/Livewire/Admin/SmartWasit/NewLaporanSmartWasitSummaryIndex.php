@@ -7,6 +7,7 @@ use App\Models\Court\Court;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Referee;
+use App\Models\RefereeObservation;
 use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
 use App\Traits\HasRefereeAnalysis;
@@ -133,9 +134,44 @@ class NewLaporanSmartWasitSummaryIndex extends Component
                 ];
             });
 
+        $contingentObservations = [];
+        if ($this->tab === 'observasi') {
+            $obsQuery = RefereeObservation::with(['referee', 'contingent']);
+
+            if (! empty($this->search)) {
+                $obsQuery->where(function ($q) {
+                    $q->where('observer_name', 'ilike', '%'.$this->search.'%')
+                        ->orWhereHas('referee', function ($sub) {
+                            $sub->where('name', 'ilike', '%'.$this->search.'%');
+                        })
+                        ->orWhereHas('contingent', function ($sub) {
+                            $sub->where('name', 'ilike', '%'.$this->search.'%');
+                        });
+                });
+            }
+
+            if (! empty($this->refereeFilter)) {
+                $obsQuery->where('referee_id', $this->refereeFilter);
+            }
+
+            if (! empty($this->courtFilter)) {
+                $courtObj = Court::find($this->courtFilter);
+                if ($courtObj) {
+                    $obsQuery->where('court', $courtObj->name);
+                }
+            }
+
+            if (! empty($this->roundFilter)) {
+                $obsQuery->where('round', $this->roundFilter);
+            }
+
+            $contingentObservations = $obsQuery->latest('created_at')->paginate(15);
+        }
+
         return view('livewire.admin.smart-wasit.new-laporan-smart-wasit-summary-index', [
             'refereeAnalysis' => $refereeAnalysis,
             'assessments' => $assessments,
+            'contingentObservations' => $contingentObservations,
             'ageGroups' => AgeGroup::all(),
             'matchNumbers' => MatchNumber::all(),
             'referees' => Referee::all(),

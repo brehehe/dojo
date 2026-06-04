@@ -82,6 +82,7 @@ use App\Livewire\Admin\NewScoringRandoriIndex;
 use App\Livewire\Admin\NewSessionTimeIndex;
 use App\Livewire\Admin\NewTechnicalMeetingDrawingIndex;
 use App\Livewire\Admin\NewTechniqueIndex;
+use App\Livewire\Admin\NewUnregisteredAthleteReportIndex;
 use App\Livewire\Admin\NewUserIndex;
 use App\Livewire\Admin\NewWeightGroupIndex;
 use App\Livewire\Admin\Profile\AdminProfileIndex;
@@ -89,6 +90,7 @@ use App\Livewire\Admin\Registration\AdminRegistrationIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationShow;
 use App\Livewire\Admin\Reports\AdminAthleteBiodataReport;
 use App\Livewire\Admin\Reports\AdminMatchClassReport;
+use App\Livewire\Admin\Reports\AdminRefereeObservationsIndex;
 use App\Livewire\Admin\Reports\AdminRegistrationByNameReport;
 use App\Livewire\Admin\Reports\AdminRegistrationByNumberReport;
 use App\Livewire\Admin\SmartWasit\AdminLaporanPerbabakIndex;
@@ -111,6 +113,8 @@ use App\Livewire\Contingent\Athletes;
 use App\Livewire\Contingent\Dashboard;
 use App\Livewire\Contingent\LaporanWasit;
 use App\Livewire\Contingent\Officials;
+use App\Livewire\Contingent\RefereeObservationForm;
+use App\Livewire\Contingent\RefereeObservationIndex;
 use App\Livewire\Contingent\RegistrationHistoryDetailIndex;
 use App\Livewire\Contingent\RegistrationHistoryIndex;
 use App\Livewire\Contingent\RekapPertandingan;
@@ -157,6 +161,10 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/registration-history', RegistrationHistoryIndex::class)->name('contingent.registration-history');
     Route::get('contingent/registration-history/{registration}', RegistrationHistoryDetailIndex::class)->name('contingent.registration-history.show');
     Route::get('contingent/rekap-pertandingan', RekapPertandingan::class)->name('contingent.rekap-pertandingan');
+    Route::get('contingent/observasi-wasit', RefereeObservationIndex::class)->name('contingent.observasi-wasit.index');
+    Route::get('contingent/observasi-wasit/create', RefereeObservationForm::class)->name('contingent.observasi-wasit.create');
+    Route::get('contingent/observasi-wasit/{observation}', RefereeObservationForm::class)->name('contingent.observasi-wasit.show');
+    Route::get('contingent/observasi-wasit/{observation}/edit', RefereeObservationForm::class)->name('contingent.observasi-wasit.edit');
 
     Route::post('logout', function () {
         Auth::logout();
@@ -195,8 +203,8 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/arbitrase/new-arbitrators', NewArbitraseIndex::class)->name('arbitrase.new-arbitrators');
         Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
-            Route::get('new-multi-nomor-report', App\Livewire\Admin\NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
-            Route::get('new-unregistered-athlete-report', App\Livewire\Admin\NewUnregisteredAthleteReportIndex::class)->name('new-unregistered-athlete-report');
+        Route::get('new-multi-nomor-report', NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
+        Route::get('new-unregistered-athlete-report', NewUnregisteredAthleteReportIndex::class)->name('new-unregistered-athlete-report');
 
         Route::get('/new-scoring', NewScoringIndex::class)->name('new-scoring-index');
         Route::get('/new-scoring/embu/{matchNumber}', NewScoringEmbuIndex::class)->name('new-scoring-embu-index');
@@ -271,6 +279,7 @@ Route::middleware('auth')->group(function () {
 
         // Athlete Biodata Report (Grid)
         Route::get('/reports/athlete-biodata', AdminAthleteBiodataReport::class)->name('reports.athlete-biodata');
+        Route::get('/reports/contingent-observations', AdminRefereeObservationsIndex::class)->name('reports.contingent-observations');
 
         Route::prefix('technical-meeting')->name('technical-meeting.')->group(function () {
             Route::get('/embu', AdminTechnicalMeetingEmbuIndex::class)->name('embu');

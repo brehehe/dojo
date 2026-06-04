@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\MatchNumber\MatchNumber;
 use Database\Factories\RefereeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'user_id',
@@ -51,5 +51,13 @@ class Referee extends Model
     public function getNameAttribute(): string
     {
         return $this->user->name ?? '-';
+    }
+
+    /**
+     * Get observations submitted by contingents for this referee.
+     */
+    public function observations(): HasMany
+    {
+        return $this->hasMany(RefereeObservation::class);
     }
 }

@@ -270,6 +270,7 @@
             <button wire:click="$set('tab', 'ik')" class="tm-tab-btn {{ $tab === 'ik' ? 'active' : '' }}">Analisis Konsistensi</button>
             <button wire:click="$set('tab', 'iv')" class="tm-tab-btn {{ $tab === 'iv' ? 'active' : '' }}">Analisis Validitas</button>
             <button wire:click="$set('tab', 'detail')" class="tm-tab-btn {{ $tab === 'detail' ? 'active' : '' }}">Detail Penilaian</button>
+            <button wire:click="$set('tab', 'observasi')" class="tm-tab-btn {{ $tab === 'observasi' ? 'active' : '' }}">Observasi Kontingen</button>
         </div>
 
         {{-- CONTENT SECTIONS --}}
@@ -286,6 +287,7 @@
                             <th style="text-align:center">IK</th>
                             <th style="text-align:center">IV</th>
                             <th style="text-align:center">SKW</th>
+                            <th style="text-align:center">Obs. Kontingen (Avg)</th>
                             <th style="text-align:center">Grade</th>
                         </tr>
                     </thead>
@@ -301,6 +303,14 @@
                                 <td align="center" class="val-ik">{{ number_format($rf['ik'], 3) }}</td>
                                 <td align="center" class="val-iv">{{ number_format($rf['iv'], 3) }}</td>
                                 <td align="center" class="val-skw">{{ number_format($rf['skw'], 2) }}</td>
+                                <td align="center">
+                                    @if($rf['obs_count'] > 0)
+                                        <span style="font-weight:700; color:var(--red);">{{ number_format($rf['obs_avg'], 1) }}</span>
+                                        <span style="font-size:10px; color:var(--smoke);">({{ $rf['obs_count'] }} Obs)</span>
+                                    @else
+                                        <span style="color:var(--smoke); font-style:italic;">-</span>
+                                    @endif
+                                </td>
                                 <td align="center"><span class="badge-grade">{{ $rf['grade'] }}</span></td>
                             </tr>
                         @endforeach
@@ -407,6 +417,52 @@
                 <div style="padding:16px;">
                     {{ $assessments->links('livewire.admin.pagination') }}
                 </div>
+            @elseif($tab === 'observasi')
+                <table class="tm-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Court</th>
+                            <th>Wasit</th>
+                            <th>Observer</th>
+                            <th>Kontingen</th>
+                            <th style="text-align:center">Skor Obs</th>
+                            <th style="text-align:center">Kategori</th>
+                            <th style="text-align:center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($contingentObservations as $item)
+                            <tr>
+                                <td style="color:var(--smoke); font-weight:600">{{ $item->observation_date ? $item->observation_date->format('d/m/Y') : '-' }}</td>
+                                <td><span style="font-size:9px; font-weight:800; background:var(--paper); padding:2px 6px; border-radius:4px">{{ $item->court }}</span></td>
+                                <td style="font-weight:700; text-transform:uppercase">{{ $item->referee->name }}</td>
+                                <td style="font-weight:600">{{ $item->observer_name }}</td>
+                                <td style="color:var(--smoke); font-weight:600; text-transform:uppercase">{{ $item->contingent->name ?? '-' }}</td>
+                                <td align="center" style="color:var(--red); font-weight:900; font-size:15px;">{{ number_format($item->total_score, 0) }}</td>
+                                <td align="center">
+                                    <span class="badge-grade" style="background: {{ $item->category === 'SANGAT BAIK' || $item->category === 'BAIK' ? '#27ae60' : ($item->category === 'CUKUP' ? '#f1c40f' : '#e74c3c') }}">
+                                        {{ $item->category }}
+                                    </span>
+                                </td>
+                                <td align="center">
+                                    <a href="{{ route('contingent.observasi-wasit.show', $item->id) }}" class="btn-gen ghost" style="padding: 4px 8px; font-size: 11px;">
+                                        <i class="fas fa-eye"></i> Detail
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" align="center" style="color:var(--smoke); font-style:italic; padding: 24px;">Tidak ada data observasi kontingen ditemukan.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                @if($contingentObservations instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                    <div style="padding:16px;">
+                        {{ $contingentObservations->links('livewire.admin.pagination') }}
+                    </div>
+                @endif
             @endif
         </div>
     </div>

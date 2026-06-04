@@ -292,7 +292,20 @@
                                         <div style="font-weight:700; text-transform:uppercase; font-size:11px; line-height:1.2">
                                             {{ $item->matchNumber->athletes->where('pivot.registration_id', $item->scorable_id)->pluck('name')->join(' & ') }}
                                         </div>
-                                        <div style="font-size:10px; font-weight:800; color:#3498db; text-transform:uppercase; margin-top:2px">Juri: {{ $item->referee->name }}</div>
+                                         <div style="font-size:10px; font-weight:800; color:#3498db; text-transform:uppercase; margin-top:2px">
+                                             Juri: {{ $item->referee->name }}
+                                             @php
+                                                 $obsCount = $item->referee->observations()->count();
+                                             @endphp
+                                             @if($obsCount > 0)
+                                                 @php
+                                                     $obsAvg = $item->referee->observations()->avg('total_score');
+                                                 @endphp
+                                                 <span style="color:#c0392b; font-weight:bold; text-transform:none; margin-left:6px;">
+                                                     <i class="fas fa-eye"></i> {{ $obsCount }} Obs (Avg: {{ number_format($obsAvg, 0) }})
+                                                 </span>
+                                             @endif
+                                         </div>
                                     </div>
                                 </div>
                             </td>

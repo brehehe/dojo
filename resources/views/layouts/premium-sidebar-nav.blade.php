@@ -159,7 +159,7 @@
 
     {{-- Smart Wasit --}}
     @hasanyrole('Super Admin|Admin')
-        <div x-data="{ open: @json(request()->routeIs('admin.smart-wasit.*') || request()->routeIs('admin.referee.*')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.smart-wasit.*') || request()->routeIs('admin.referee.*') || request()->routeIs('admin.reports.contingent-observations')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Wasit</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -188,6 +188,8 @@
                     IV</a>
                 <a class="nav-item {{ request()->routeIs('admin.smart-wasit.perbabak') ? 'active' : '' }}"
                     href="{{ route('admin.smart-wasit.perbabak') }}"><i class="fa-solid fa-list-check"></i> Per Babak</a>
+                <a class="nav-item {{ request()->routeIs('admin.reports.contingent-observations') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.contingent-observations') }}"><i class="fa-solid fa-eye"></i> Observasi Wasit Kontingen</a>
             </div>
         </div>
     @endhasanyrole
@@ -218,6 +220,8 @@
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Penilaian
                     Wasit</a>
+                <a class="nav-item {{ request()->routeIs('admin.reports.contingent-observations') ? 'active' : '' }}"
+                    href="{{ route('admin.reports.contingent-observations') }}"><i class="fa-solid fa-eye"></i> Observasi Wasit Kontingen</a>
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i class="fa-solid fa-chart-simple"></i>
                     Analisis Per Juri</a>
@@ -253,6 +257,8 @@
             <div class="nav-section">Laporan</div>
             <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
                 href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan Wasit</a>
+            <a class="nav-item {{ request()->routeIs('contingent.observasi-wasit.*') ? 'active' : '' }}"
+                href="{{ route('contingent.observasi-wasit.index') }}"><i class="fa-solid fa-eye"></i> Observasi Wasit</a>
             <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
                 href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i class="fa-solid fa-chart-simple"></i>
                 Analisis Per Juri</a>
@@ -294,6 +300,8 @@
                     <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
                         href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan
                         Wasit</a>
+                    <a class="nav-item {{ request()->routeIs('contingent.observasi-wasit.*') ? 'active' : '' }}"
+                        href="{{ route('contingent.observasi-wasit.index') }}"><i class="fa-solid fa-eye"></i> Observasi Wasit</a>
                     <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-wasit-juri') ? 'active' : '' }}"
                         href="{{ route('admin.arbitrase.new-laporan-wasit-juri') }}"><i
                             class="fa-solid fa-chart-simple"></i> Analisis Per Juri</a>

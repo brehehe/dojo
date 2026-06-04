@@ -153,7 +153,14 @@
                     @foreach($refereeAnalysis->sortByDesc('iv') as $rf)
                         <tr>
                             <td style="font-weight:800; color:var(--smoke)">{{ $rank++ }}</td>
-                            <td style="font-weight:700; text-transform:uppercase">{{ $rf['name'] }}</td>
+                            <td style="font-weight:700; text-transform:uppercase">
+                                {{ $rf['name'] }}
+                                @if($rf['obs_count'] > 0)
+                                    <div style="font-size:10px; font-weight:normal; text-transform:none; color:#c0392b; margin-top:2px;">
+                                        <i class="fas fa-eye"></i> {{ $rf['obs_count'] }} Observasi Kontingen (Avg: {{ number_format($rf['obs_avg'], 1) }})
+                                    </div>
+                                @endif
+                            </td>
                             <td align="center" style="color:var(--smoke)">{{ $rf['count'] }}</td>
                             <td align="center" style="color:#e67e22; font-weight:900; font-size:15px">{{ number_format($rf['iv'], 3) }}</td>
                             <td style="font-style:italic; color:var(--smoke)">{{ $rf['iv_interpretation'] }}</td>

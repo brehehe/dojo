@@ -221,6 +221,7 @@
                         <th style="text-align:center">IK</th>
                         <th style="text-align:center">IV</th>
                         <th style="text-align:center">SKW</th>
+                        <th style="text-align:center">Obs. Kontingen (Avg)</th>
                         <th style="text-align:center">Grade</th>
                     </tr>
                 </thead>
@@ -262,6 +263,14 @@
                             <td align="center" style="color:#27ae60; font-weight:800">{{ number_format($rf['ik'], 3) }}</td>
                             <td align="center" style="color:#e67e22; font-weight:800">{{ number_format($rf['iv'], 3) }}</td>
                             <td align="center" style="font-size:16px; font-weight:900; background:#fdfbf7">{{ number_format($rf['skw'], 2) }}</td>
+                            <td align="center">
+                                @if($rf['obs_count'] > 0)
+                                    <span style="font-weight:700; color:var(--red);">{{ number_format($rf['obs_avg'], 1) }}</span>
+                                    <span style="font-size:10px; color:var(--smoke);">({{ $rf['obs_count'] }} Obs)</span>
+                                @else
+                                    <span style="color:var(--smoke); font-style:italic;">-</span>
+                                @endif
+                            </td>
                             <td align="center">
                                 <div style="display:flex; flex-direction:column; align-items:center; gap:2px">
                                     <span class="badge-grade" style="background:{{ $gradeColor }}">{{ $rf['grade'] }}</span>

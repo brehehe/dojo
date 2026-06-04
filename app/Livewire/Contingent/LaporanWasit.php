@@ -116,7 +116,7 @@ class LaporanWasit extends Component
             ->join('courts', 'drawing_match_numbers.court_id', '=', 'courts.id')
             ->select('referee_score_details.*', 'courts.name as court_name')
             ->where('scorable_type', Registration::class)
-            ->whereHas('scorable', function ($q) {
+            ->whereHasMorph('scorable', [Registration::class], function ($q) {
                 $q->where('contingent_id', $this->contingent->id);
             })
             ->where('total_calculated_score', '>', 0);

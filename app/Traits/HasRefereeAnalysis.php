@@ -2,9 +2,12 @@
 
 namespace App\Traits;
 
+use App\Models\Court\Court;
 use App\Models\Referee;
+use App\Models\RefereeObservation;
 use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
+use Illuminate\Support\Facades\DB;
 
 trait HasRefereeAnalysis
 {
@@ -36,12 +39,12 @@ trait HasRefereeAnalysis
 
         if (! empty($filters['matchNumberFilter'])) {
             $matchId = $filters['matchNumberFilter'];
-            $mergeDetails = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+            $mergeDetails = DB::table('match_number_merge_details')
                 ->where('match_number_id', $matchId)
                 ->first();
 
             if ($mergeDetails) {
-                $ids = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                $ids = DB::table('match_number_merge_details')
                     ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
                     ->pluck('match_number_id')
                     ->toArray();
@@ -74,7 +77,7 @@ trait HasRefereeAnalysis
         }
 
         if (! empty($filters['contingentId'])) {
-            $query->whereHas('scorable', function ($q) use ($filters) {
+            $query->whereHasMorph('scorable', [Registration::class], function ($q) use ($filters) {
                 $q->where('contingent_id', $filters['contingentId']);
             });
         }
@@ -166,6 +169,20 @@ trait HasRefereeAnalysis
                 default => 'Kurang Konsisten',
             };
 
+            // Contingent Observations stats
+            $obsQuery = RefereeObservation::where('referee_id', $rf->id);
+            if (! empty($filters['courtFilter'])) {
+                $courtObj = Court::find($filters['courtFilter']);
+                if ($courtObj) {
+                    $obsQuery->where('court', $courtObj->name);
+                }
+            }
+            if (! empty($filters['roundFilter'])) {
+                $obsQuery->where('round', $filters['roundFilter']);
+            }
+            $obsCount = $obsQuery->count();
+            $obsAvg = $obsQuery->avg('total_score') ?: 0;
+
             $analysis[] = [
                 'name' => $rf->name,
                 'count' => count($scores),
@@ -185,6 +202,8 @@ trait HasRefereeAnalysis
                 'max' => ! empty($scores) ? max($scores) : 0,
                 'std_dev' => round($sigma, 3),
                 'primary_court' => $rfDetails->first()?->court_name ?? 'N/A',
+                'obs_count' => $obsCount,
+                'obs_avg' => round($obsAvg, 2),
             ];
         }
 
