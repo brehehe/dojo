@@ -56,6 +56,12 @@ test('can load data from database and analyze conflict', function () {
     $contingent = Contingent::factory()->create();
     $registration = Registration::create(['contingent_id' => $contingent->id]);
 
+    $registration->athletes()->attach([
+        $athleteA->id,
+        $athleteB->id,
+        $athleteC->id,
+    ]);
+
     $mn1->athletes()->attach([
         $athleteA->id => ['registration_id' => $registration->id],
         $athleteB->id => ['registration_id' => $registration->id],
@@ -68,7 +74,17 @@ test('can load data from database and analyze conflict', function () {
     Livewire::actingAs($user)
         ->test(NewMultiNomorReportIndex::class)
         ->assertSet('totalAtlet', 3)
-        ->assertHasNoErrors();
+        ->assertSee($contingent->name)
+        ->assertHasNoErrors()
+        ->assertViewHas('allAthletes', function ($allAthletes) use ($contingent) {
+            foreach ($allAthletes as $athlete) {
+                if ($athlete['contingent'] !== $contingent->name) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
 });
 
 test('can download excel report', function () {
@@ -106,6 +122,12 @@ test('can download excel report', function () {
 
     $contingent = Contingent::factory()->create();
     $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $registration->athletes()->attach([
+        $athleteA->id,
+        $athleteB->id,
+        $athleteC->id,
+    ]);
 
     $mn1->athletes()->attach([
         $athleteA->id => ['registration_id' => $registration->id],

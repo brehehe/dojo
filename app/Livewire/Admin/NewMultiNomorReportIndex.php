@@ -17,7 +17,7 @@ class NewMultiNomorReportIndex extends Component
     public $multiAthletes = [];
 
     public $normalAthletes = [];
-    
+
     public $allAthletes = [];
 
     public $totalAtlet = 0;
@@ -88,7 +88,7 @@ class NewMultiNomorReportIndex extends Component
             }
         }
 
-        $allDbAthletes = \App\Models\Athlete::pluck('name')->toArray();
+        $allDbAthletes = Athlete::pluck('name')->toArray();
         foreach ($allDbAthletes as $dbAtletName) {
             $dbAtletName = trim($dbAtletName);
             if (! isset($atletMap[$dbAtletName])) {
@@ -101,6 +101,12 @@ class NewMultiNomorReportIndex extends Component
             }
         }
 
+        $athletes = Athlete::all();
+        $contingentMap = [];
+        foreach ($athletes as $athlete) {
+            $contingentMap[strtolower(trim($athlete->name))] = $athlete->contingent?->name ?? '-';
+        }
+
         $this->normalAthletes = [];
         $this->multiAthletes = [];
         $this->allAthletes = [];
@@ -108,6 +114,7 @@ class NewMultiNomorReportIndex extends Component
             $jumlahNomorBerbeda = count($data['nomorList']);
             $atletInfo = [
                 'nama' => $nama,
+                'contingent' => $contingentMap[strtolower(trim($nama))] ?? '-',
                 'jumlahNomor' => $jumlahNomorBerbeda,
                 'totalMuncul' => $data['count'],
                 'nomorList' => $data['nomorList'],

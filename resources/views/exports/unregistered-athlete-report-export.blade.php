@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr>
-            <th colspan="3" style="text-align: center; font-weight: bold; font-size: 14px;">LAPORAN KONTINGEN & ATLET KOSONG</th>
+            <th colspan="3" style="text-align: center; font-weight: bold; font-size: 14px;">LAPORAN KONTINGEN &amp; ATLET KOSONG</th>
         </tr>
         <tr>
             <th colspan="3" style="text-align: center; font-weight: bold; font-size: 12px;">Distribusi Atlet per Kontingen pada setiap Nomor Pertandingan</th>
@@ -13,12 +13,12 @@
     <tbody>
         <!-- TABEL 1: NOMOR PERTANDINGAN -->
         <tr>
-            <td colspan="3" style="font-weight: bold; background-color: #3b82f6; color: #ffffff;">DAFTAR NOMOR PERTANDINGAN & KONTINGEN PESERTA</td>
+            <td colspan="3" style="font-weight: bold; background-color: #3b82f6; color: #ffffff;">DAFTAR NOMOR PERTANDINGAN &amp; KONTINGEN PESERTA</td>
         </tr>
         <tr>
             <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6; text-align: center;">ID</th>
             <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6; width: 40px;">Nomor Pertandingan</th>
-            <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6; width: 50px;">Kontingen & Atlet</th>
+            <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6; width: 50px;">Kontingen &amp; Atlet</th>
         </tr>
         @foreach($matchData as $match)
             <tr>

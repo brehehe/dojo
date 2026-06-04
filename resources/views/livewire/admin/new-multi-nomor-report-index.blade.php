@@ -336,6 +336,7 @@
                                     <tr>
                                         <th style="font-size:10px;padding:10px 12px;text-align:center;width:40px;">No</th>
                                         <th style="font-size:10px;padding:10px 12px;">Nama Atlet</th>
+                                        <th style="font-size:10px;padding:10px 12px;">Kontingen</th>
                                         <th style="font-size:10px;padding:10px 12px;text-align:center;">Jumlah</th>
                                         <th style="font-size:10px;padding:10px 12px;">Daftar Nomor Pertandingan</th>
                                     </tr>
@@ -355,6 +356,9 @@
                                             </td>
                                             <td style="padding:10px 12px;">
                                                 <span style="font-size:12.5px;font-weight:700;color:var(--ink);text-transform:uppercase;">{{ $a['nama'] }}</span>
+                                            </td>
+                                            <td style="padding:10px 12px;">
+                                                <span style="font-size:12px;color:var(--ink);">{{ $a['contingent'] }}</span>
                                             </td>
                                             <td style="text-align:center;padding:10px 12px;">
                                                 @if($a['jumlahNomor'] > 1)
