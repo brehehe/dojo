@@ -45,8 +45,8 @@ test('can load data from database for unregistered athlete report', function () 
     $registration = Registration::create(['contingent_id' => $contingent->id]);
 
     $registration->athletes()->attach([
-        $athleteA->id,
-        $athleteB->id,
+        $athleteA->id => ['age_group' => 'Pemula'],
+        $athleteB->id => ['age_group' => 'Pemula'],
     ]);
 
     $mn1->athletes()->attach([
@@ -56,8 +56,17 @@ test('can load data from database for unregistered athlete report', function () 
     Livewire::actingAs($user)
         ->test(NewUnregisteredAthleteReportIndex::class)
         ->assertHasNoErrors()
+        ->assertSet('totalAthletes', 2)
+        ->assertSet('totalRegisteredAthletes', 1)
+        ->assertSet('totalUnregisteredAthletes', 1)
+        ->assertSet('ageGroupStats', [
+            'Pemula' => 2,
+            'Remaja A' => 0,
+            'Remaja B' => 0,
+            'Dewasa' => 0,
+        ])
         ->assertViewHas('matchData', function ($matchData) {
-            return count($matchData) === 1 && $matchData[0]['name'] === 'Embu Tandoku';
+            return count($matchData) === 1 && $matchData[0]['name'] === 'Embu Tandoku' && $matchData[0]['total_athletes'] === 1;
         })
         ->assertViewHas('unregisteredAthletes', function ($unregisteredAthletes) {
             return count($unregisteredAthletes) === 1 && $unregisteredAthletes[0]['name'] === 'Athlete B';

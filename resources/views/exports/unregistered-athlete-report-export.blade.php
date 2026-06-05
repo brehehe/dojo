@@ -31,9 +31,9 @@
                     @if(empty($match['contingents']))
                         Belum ada peserta terdaftar
                     @else
-                        @foreach($match['contingents'] as $contingentName => $athletes)
-                            [{{ $contingentName }}]
-                            @foreach($athletes as $athleteName)
+                        @foreach($match['contingents'] as $c)
+                            [{{ $c['name'] }}]
+                            @foreach($c['athletes'] as $athleteName)
                                 - {{ $athleteName }}
                             @endforeach
                             

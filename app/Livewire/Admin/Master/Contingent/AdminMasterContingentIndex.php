@@ -4,7 +4,6 @@ namespace App\Livewire\Admin\Master\Contingent;
 
 use App\Models\Contingent;
 use App\Models\Registration;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -32,11 +31,16 @@ class AdminMasterContingentIndex extends Component
 
     public function deleteContingent($id)
     {
-        $contingent = Contingent::withCount(['registrations as athletes_count' => function ($q) {
-            $q->select(DB::raw('count(*)'))->join('registration_athlete', 'registrations.id', '=', 'registration_athlete.registration_id');
-        }])->findOrFail($id);
+        $contingent = Contingent::addSelect([
+            'athletes_count' => Registration::whereColumn('contingent_id', 'contingents.id')
+                ->join('registration_athlete', 'registrations.id', '=', 'registration_athlete.registration_id')
+                ->selectRaw('count(*)'),
+            'officials_count' => Registration::whereColumn('contingent_id', 'contingents.id')
+                ->join('registration_official', 'registrations.id', '=', 'registration_official.registration_id')
+                ->selectRaw('count(*)'),
+        ])->findOrFail($id);
 
-        if ($contingent->athletes_count > 0) {
+        if ($contingent->athletes_count > 0 || $contingent->officials_count > 0) {
             $this->dispatch('swal', title: 'Gagal!', text: 'Kontingen ini masih memiliki atlet atau official terdaftar.', icon: 'error');
 
             return;
