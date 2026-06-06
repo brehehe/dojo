@@ -789,12 +789,34 @@ class NewScoringEmbuIndex extends Component
         $court = $courtId ? Court::find($courtId) : null;
         $activeDrawingId = $court?->active_drawing_id;
 
+        $assignedArbitrase = null;
+        $assignedReferees = collect();
+
+        if ($firstDrawing) {
+            $assignedArbitrase = ScheduleReferee::with('referee.user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->whereNull('court_id')
+                ->where('judge_index', 0)
+                ->first();
+
+            $assignedReferees = ScheduleReferee::with('referee.user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('judge_index', '>', 0)
+                ->orderBy('judge_index')
+                ->get();
+        }
+
         return view('livewire.admin.new-scoring-embu-index', [
             'registrations' => $registrations,
             'firstDrawing' => $firstDrawing,
             'availablePools' => $availablePools,
             'tiedIds' => $tiedIds,
             'activeDrawingId' => $activeDrawingId,
+            'assignedArbitrase' => $assignedArbitrase,
+            'assignedReferees' => $assignedReferees,
         ]);
     }
 

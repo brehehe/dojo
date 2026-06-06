@@ -517,6 +517,34 @@
         </div>
     </div>
 
+    @php
+        $courtId = $this->getCourtId();
+    @endphp
+    @if($courtId)
+        <div style="background:#fff; border:1px solid var(--paper2); border-radius:16px; padding:16px 20px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--smoke); text-transform:uppercase; letter-spacing:0.1em; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-desktop" style="color:var(--red);"></i> Monitor Lapangan (Shortcut)
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
+                <a href="{{ route('admin.arbitrase.scoring.monitor', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                    <i class="fas fa-bullhorn" style="margin-right:6px;"></i> Panggilan
+                </a>
+                <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.match', $matchNumber->id) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                    <i class="fas fa-tv" style="margin-right:6px;"></i> Hasil
+                </a>
+                <a href="{{ route('admin.arbitrase.scoring.monitor-timer.court', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                    <i class="fas fa-stopwatch" style="margin-right:6px;"></i> Timer
+                </a>
+                <a href="{{ route('admin.arbitrase.scoring.monitor-rekapitulasi-hasil.court', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                    <i class="fas fa-list-ol" style="margin-right:6px;"></i> Rekapitulasi
+                </a>
+                <a href="{{ route('admin.arbitrase.scoring.monitor-referee.court', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                    <i class="fas fa-user-tie" style="margin-right:6px;"></i> Wasit
+                </a>
+            </div>
+        </div>
+    @endif
+
     @if (!empty($needsRepair))
         <div
             style="background:#fcf3cf; border:1px solid #f1c40f; border-radius:16px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
@@ -617,13 +645,10 @@
                             if (this.running) {
                                 this.time += 30;
                                 let s = Math.floor(this.time / 1000);
-                                if (s === 90 && !this.playedIntervals.has(90)) {
-                                    window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                                    this.playedIntervals.add(90);
-                                }
                                 if (s === 120 && !this.playedIntervals.has(120)) {
                                     window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
                                     this.playedIntervals.add(120);
+                                    $wire.pauseTimer();
                                 }
                                 if (s > this.lastTickSecond) {
                                     window.playTimerTick ? window.playTimerTick(1000, 0.05) : null;
@@ -852,6 +877,734 @@
                                 </tr>
                             </tfoot>
                         </table>
+                    </div>
+                </div>
+
+                {{-- TANDA TANGAN PENILAI & OFFICIALS --}}
+                <div class="mt-6 border-t border-slate-200 pt-6 mb-6">
+                    <div class="text-[13px] font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fas fa-signature text-rose-500"></i> Pengesahan & Tanda Tangan Hasil Pertandingan
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{-- ROW 1 LEFT: ARBITRASE --}}
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Arbitrase</label>
+                            <input type="text" wire:model="sigArbitraseName" list="assigned-arbitrase-list" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Arbitrase...">
+                            <datalist id="assigned-arbitrase-list">
+                                @if ($assignedArbitrase)
+                                    <option value="{{ $assignedArbitrase->referee?->user?->name }}">
+                                @endif
+                            </datalist>
+
+                            <div x-data="{
+                                signature: @entangle('sigArbitraseData'),
+                                isDrawing: false,
+                                ctx: null,
+                                canvas: null,
+                                init() {
+                                    this.canvas = this.$refs.canvas;
+                                    this.ctx = this.canvas.getContext('2d');
+                                    const preventDefault = (e) => { if (e.target === this.canvas) e.preventDefault(); };
+                                    this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                                    this.resizeCanvas();
+                                    if (this.signature) this.loadSignature(this.signature);
+                                    window.addEventListener('resize', () => this.resizeCanvas());
+                                    this.$watch('signature', (value) => {
+                                        if (!value) this.clearCanvas();
+                                        else if (value !== this.canvas.toDataURL()) this.loadSignature(value);
+                                    });
+                                },
+                                resizeCanvas() {
+                                    if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                                    const temp = this.canvas.toDataURL();
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    this.ctx.strokeStyle = '#000000';
+                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineCap = 'round';
+                                    this.ctx.lineJoin = 'round';
+                                    if (temp && temp !== 'data:,') {
+                                        const img = new Image();
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.src = temp;
+                                    }
+                                },
+                                getMousePos(e) {
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                },
+                                startDrawing(e) {
+                                    this.isDrawing = true;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.beginPath();
+                                    this.ctx.moveTo(pos.x, pos.y);
+                                },
+                                draw(e) {
+                                    if (!this.isDrawing) return;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.lineTo(pos.x, pos.y);
+                                    this.ctx.stroke();
+                                },
+                                stopDrawing() {
+                                    if (!this.isDrawing) return;
+                                    this.isDrawing = false;
+                                    this.save();
+                                },
+                                clearCanvas() {
+                                    if (!this.canvas) return;
+                                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                    this.signature = null;
+                                },
+                                save() {
+                                    const dataUrl = this.canvas.toDataURL('image/png');
+                                    const blank = document.createElement('canvas');
+                                    blank.width = this.canvas.width;
+                                    blank.height = this.canvas.height;
+                                    if (dataUrl === blank.toDataURL('image/png')) {
+                                        this.signature = null;
+                                    } else {
+                                        this.signature = dataUrl;
+                                    }
+                                },
+                                loadSignature(dataUrl) {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const rect = this.canvas.getBoundingClientRect();
+                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                    };
+                                    img.src = dataUrl;
+                                }
+                            }" class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center bg-slate-100 px-3 py-1.5 rounded-t-lg border border-slate-200 border-b-0">
+                                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tanda Tangan Arbitrase</span>
+                                    <button type="button" @click="clearCanvas()" class="text-[10px] font-black text-red-500 hover:text-red-700 uppercase flex items-center gap-1">
+                                        <i class="fas fa-eraser"></i> Hapus
+                                    </button>
+                                </div>
+                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                    <canvas x-ref="canvas" 
+                                            class="absolute inset-0 w-full h-full cursor-crosshair"
+                                            @mousedown="startDrawing($event)"
+                                            @mousemove="draw($event)"
+                                            @mouseup="stopDrawing()"
+                                            @mouseleave="stopDrawing()"
+                                            @touchstart="startDrawing($event)"
+                                            @touchmove="draw($event)"
+                                            @touchend="stopDrawing()">
+                                    </canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ROW 1 RIGHT: KOORDINATOR --}}
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Koordinator</label>
+                            <input type="text" wire:model="sigKoordinatorName" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Koordinator...">
+
+                            <div x-data="{
+                                signature: @entangle('sigKoordinatorData'),
+                                isDrawing: false,
+                                ctx: null,
+                                canvas: null,
+                                init() {
+                                    this.canvas = this.$refs.canvas;
+                                    this.ctx = this.canvas.getContext('2d');
+                                    const preventDefault = (e) => { if (e.target === this.canvas) e.preventDefault(); };
+                                    this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                                    this.resizeCanvas();
+                                    if (this.signature) this.loadSignature(this.signature);
+                                    window.addEventListener('resize', () => this.resizeCanvas());
+                                    this.$watch('signature', (value) => {
+                                        if (!value) this.clearCanvas();
+                                        else if (value !== this.canvas.toDataURL()) this.loadSignature(value);
+                                    });
+                                },
+                                resizeCanvas() {
+                                    if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                                    const temp = this.canvas.toDataURL();
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    this.ctx.strokeStyle = '#000000';
+                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineCap = 'round';
+                                    this.ctx.lineJoin = 'round';
+                                    if (temp && temp !== 'data:,') {
+                                        const img = new Image();
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.src = temp;
+                                    }
+                                },
+                                getMousePos(e) {
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                },
+                                startDrawing(e) {
+                                    this.isDrawing = true;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.beginPath();
+                                    this.ctx.moveTo(pos.x, pos.y);
+                                },
+                                draw(e) {
+                                    if (!this.isDrawing) return;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.lineTo(pos.x, pos.y);
+                                    this.ctx.stroke();
+                                },
+                                stopDrawing() {
+                                    if (!this.isDrawing) return;
+                                    this.isDrawing = false;
+                                    this.save();
+                                },
+                                clearCanvas() {
+                                    if (!this.canvas) return;
+                                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                    this.signature = null;
+                                },
+                                save() {
+                                    const dataUrl = this.canvas.toDataURL('image/png');
+                                    const blank = document.createElement('canvas');
+                                    blank.width = this.canvas.width;
+                                    blank.height = this.canvas.height;
+                                    if (dataUrl === blank.toDataURL('image/png')) {
+                                        this.signature = null;
+                                    } else {
+                                        this.signature = dataUrl;
+                                    }
+                                },
+                                loadSignature(dataUrl) {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const rect = this.canvas.getBoundingClientRect();
+                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                    };
+                                    img.src = dataUrl;
+                                }
+                            }" class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center bg-slate-100 px-3 py-1.5 rounded-t-lg border border-slate-200 border-b-0">
+                                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tanda Tangan Koordinator</span>
+                                    <button type="button" @click="clearCanvas()" class="text-[10px] font-black text-red-500 hover:text-red-700 uppercase flex items-center gap-1">
+                                        <i class="fas fa-eraser"></i> Hapus
+                                    </button>
+                                </div>
+                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                    <canvas x-ref="canvas" 
+                                            class="absolute inset-0 w-full h-full cursor-crosshair"
+                                            @mousedown="startDrawing($event)"
+                                            @mousemove="draw($event)"
+                                            @mouseup="stopDrawing()"
+                                            @mouseleave="stopDrawing()"
+                                            @touchstart="startDrawing($event)"
+                                            @touchmove="draw($event)"
+                                            @touchend="stopDrawing()">
+                                    </canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ROW 2 LEFT: WASIT --}}
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Wasit</label>
+                            <input type="text" wire:model="sigWasitName" list="assigned-wasit-list" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Wasit...">
+                            <datalist id="assigned-wasit-list">
+                                @foreach ($assignedReferees as $sr)
+                                    <option value="{{ $sr->referee?->user?->name }}">
+                                @endforeach
+                            </datalist>
+
+                            <div x-data="{
+                                signature: @entangle('sigWasitData'),
+                                isDrawing: false,
+                                ctx: null,
+                                canvas: null,
+                                init() {
+                                    this.canvas = this.$refs.canvas;
+                                    this.ctx = this.canvas.getContext('2d');
+                                    const preventDefault = (e) => { if (e.target === this.canvas) e.preventDefault(); };
+                                    this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                                    this.resizeCanvas();
+                                    if (this.signature) this.loadSignature(this.signature);
+                                    window.addEventListener('resize', () => this.resizeCanvas());
+                                    this.$watch('signature', (value) => {
+                                        if (!value) this.clearCanvas();
+                                        else if (value !== this.canvas.toDataURL()) this.loadSignature(value);
+                                    });
+                                },
+                                resizeCanvas() {
+                                    if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                                    const temp = this.canvas.toDataURL();
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    this.ctx.strokeStyle = '#000000';
+                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineCap = 'round';
+                                    this.ctx.lineJoin = 'round';
+                                    if (temp && temp !== 'data:,') {
+                                        const img = new Image();
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.src = temp;
+                                    }
+                                },
+                                getMousePos(e) {
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                },
+                                startDrawing(e) {
+                                    this.isDrawing = true;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.beginPath();
+                                    this.ctx.moveTo(pos.x, pos.y);
+                                },
+                                draw(e) {
+                                    if (!this.isDrawing) return;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.lineTo(pos.x, pos.y);
+                                    this.ctx.stroke();
+                                },
+                                stopDrawing() {
+                                    if (!this.isDrawing) return;
+                                    this.isDrawing = false;
+                                    this.save();
+                                },
+                                clearCanvas() {
+                                    if (!this.canvas) return;
+                                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                    this.signature = null;
+                                },
+                                save() {
+                                    const dataUrl = this.canvas.toDataURL('image/png');
+                                    const blank = document.createElement('canvas');
+                                    blank.width = this.canvas.width;
+                                    blank.height = this.canvas.height;
+                                    if (dataUrl === blank.toDataURL('image/png')) {
+                                        this.signature = null;
+                                    } else {
+                                        this.signature = dataUrl;
+                                    }
+                                },
+                                loadSignature(dataUrl) {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const rect = this.canvas.getBoundingClientRect();
+                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                    };
+                                    img.src = dataUrl;
+                                }
+                            }" class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center bg-slate-100 px-3 py-1.5 rounded-t-lg border border-slate-200 border-b-0">
+                                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tanda Tangan Wasit</span>
+                                    <button type="button" @click="clearCanvas()" class="text-[10px] font-black text-red-500 hover:text-red-700 uppercase flex items-center gap-1">
+                                        <i class="fas fa-eraser"></i> Hapus
+                                    </button>
+                                </div>
+                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                    <canvas x-ref="canvas" 
+                                            class="absolute inset-0 w-full h-full cursor-crosshair"
+                                            @mousedown="startDrawing($event)"
+                                            @mousemove="draw($event)"
+                                            @mouseup="stopDrawing()"
+                                            @mouseleave="stopDrawing()"
+                                            @touchstart="startDrawing($event)"
+                                            @touchmove="draw($event)"
+                                            @touchend="stopDrawing()">
+                                    </canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ROW 2 RIGHT: PANITERA (CAN BE MULTIPLE) --}}
+                        <div x-data="{ paniteras: @entangle('sigPanitera') }" class="flex flex-col gap-3">
+                            <div class="flex justify-between items-center">
+                                <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Panitera</label>
+                                <button type="button" wire:click="addPanitera" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors">
+                                    <i class="fas fa-plus"></i> Tambah Panitera
+                                </button>
+                            </div>
+                            @foreach ($sigPanitera as $idx => $p)
+                                <div wire:key="panitera-slot-{{ $idx }}-{{ $p['id'] ?? $idx }}" class="flex flex-col gap-2 p-3 bg-slate-100/50 rounded-xl border border-slate-200">
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-[10px] font-black text-slate-600 uppercase tracking-wider">Panitera #{{ $idx + 1 }}</div>
+                                        @if (count($sigPanitera) > 1)
+                                            <button type="button" wire:click="removePanitera({{ $idx }})" class="text-[9px] font-black text-red-500 hover:text-red-700 uppercase flex items-center gap-1 transition-colors">
+                                                <i class="fas fa-trash"></i> Hapus
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <input type="text" wire:model="sigPanitera.{{ $idx }}.name" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Panitera...">
+
+                                    <div x-data="{
+                                        isDrawing: false,
+                                        ctx: null,
+                                        canvas: null,
+                                        init() {
+                                            this.canvas = this.$refs.canvas;
+                                            this.ctx = this.canvas.getContext('2d');
+                                            const preventDefault = (e) => { if (e.target === this.canvas) e.preventDefault(); };
+                                            this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                                            this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                                            this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                                            this.resizeCanvas();
+                                            if (this.paniteras[{{ $idx }}] && this.paniteras[{{ $idx }}].signature) {
+                                                this.loadSignature(this.paniteras[{{ $idx }}].signature);
+                                            }
+                                            window.addEventListener('resize', () => this.resizeCanvas());
+                                            this.$watch('paniteras', (newVal) => {
+                                                if (newVal && newVal[{{ $idx }}]) {
+                                                    const sig = newVal[{{ $idx }}].signature;
+                                                    if (!sig) {
+                                                        this.clearCanvasOnly();
+                                                    } else if (sig !== this.canvas.toDataURL()) {
+                                                        this.loadSignature(sig);
+                                                    }
+                                                }
+                                            }, { deep: true });
+                                        },
+                                        resizeCanvas() {
+                                            if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                                            const temp = this.canvas.toDataURL();
+                                            const rect = this.canvas.getBoundingClientRect();
+                                            this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                                            this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                                            this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                            this.ctx.strokeStyle = '#000000';
+                                            this.ctx.lineWidth = 2.5;
+                                            this.ctx.lineCap = 'round';
+                                            this.ctx.lineJoin = 'round';
+                                            if (temp && temp !== 'data:,') {
+                                                const img = new Image();
+                                                img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                                img.src = temp;
+                                            }
+                                        },
+                                        getMousePos(e) {
+                                            const rect = this.canvas.getBoundingClientRect();
+                                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                            return { x: clientX - rect.left, y: clientY - rect.top };
+                                        },
+                                        startDrawing(e) {
+                                            this.isDrawing = true;
+                                            const pos = this.getMousePos(e);
+                                            this.ctx.beginPath();
+                                            this.ctx.moveTo(pos.x, pos.y);
+                                        },
+                                        draw(e) {
+                                            if (!this.isDrawing) return;
+                                            const pos = this.getMousePos(e);
+                                            this.ctx.lineTo(pos.x, pos.y);
+                                            this.ctx.stroke();
+                                        },
+                                        stopDrawing() {
+                                            if (!this.isDrawing) return;
+                                            this.isDrawing = false;
+                                            this.save();
+                                        },
+                                        clearCanvasOnly() {
+                                            if (!this.canvas) return;
+                                            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                        },
+                                        clearCanvas() {
+                                            this.clearCanvasOnly();
+                                            if (this.paniteras[{{ $idx }}]) {
+                                                this.paniteras[{{ $idx }}].signature = null;
+                                            }
+                                        },
+                                        save() {
+                                            const dataUrl = this.canvas.toDataURL('image/png');
+                                            const blank = document.createElement('canvas');
+                                            blank.width = this.canvas.width;
+                                            blank.height = this.canvas.height;
+                                            if (this.paniteras[{{ $idx }}]) {
+                                                if (dataUrl === blank.toDataURL('image/png')) {
+                                                    this.paniteras[{{ $idx }}].signature = null;
+                                                } else {
+                                                    this.paniteras[{{ $idx }}].signature = dataUrl;
+                                                }
+                                            }
+                                        },
+                                        loadSignature(dataUrl) {
+                                            const img = new Image();
+                                            img.onload = () => {
+                                                const rect = this.canvas.getBoundingClientRect();
+                                                this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                                this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                            };
+                                            img.src = dataUrl;
+                                        }
+                                    }" class="flex flex-col gap-2">
+                                        <div class="flex justify-between items-center bg-white px-3 py-1 border border-slate-200 border-b-0 rounded-t-lg">
+                                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-wider">Tanda Tangan Panitera</span>
+                                            <button type="button" @click="clearCanvas()" class="text-[9px] font-black text-red-500 hover:text-red-700 uppercase flex items-center gap-1">
+                                                <i class="fas fa-eraser"></i> Hapus
+                                            </button>
+                                        </div>
+                                        <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 190px;" wire:ignore>
+                                            <canvas x-ref="canvas" 
+                                                    class="absolute inset-0 w-full h-full cursor-crosshair"
+                                                    @mousedown="startDrawing($event)"
+                                                    @mousemove="draw($event)"
+                                                    @mouseup="stopDrawing()"
+                                                    @mouseleave="stopDrawing()"
+                                                    @touchstart="startDrawing($event)"
+                                                    @touchmove="draw($event)"
+                                                    @touchend="stopDrawing()">
+                                            </canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- ROW 3 LEFT: MANAJER PITA MERAH --}}
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[11px] font-black text-rose-500 uppercase tracking-widest">Manajer Pita Merah (AKA)</label>
+                            <div class="text-[11px] font-bold text-slate-600 mb-1">
+                                Atlet: {{ $activeMatch['data']['athlete1']['name'] ?? '—' }} ({{ $activeMatch['data']['athlete1']['contingent'] ?? '—' }})
+                            </div>
+                            <input type="text" wire:model="sigManagerRedName" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manajer Pita Merah...">
+
+                            <div x-data="{
+                                signature: @entangle('sigManagerRedData'),
+                                isDrawing: false,
+                                ctx: null,
+                                canvas: null,
+                                init() {
+                                    this.canvas = this.$refs.canvas;
+                                    this.ctx = this.canvas.getContext('2d');
+                                    const preventDefault = (e) => { if (e.target === this.canvas) e.preventDefault(); };
+                                    this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                                    this.resizeCanvas();
+                                    if (this.signature) this.loadSignature(this.signature);
+                                    window.addEventListener('resize', () => this.resizeCanvas());
+                                    this.$watch('signature', (value) => {
+                                        if (!value) this.clearCanvas();
+                                        else if (value !== this.canvas.toDataURL()) this.loadSignature(value);
+                                    });
+                                },
+                                resizeCanvas() {
+                                    if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                                    const temp = this.canvas.toDataURL();
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    this.ctx.strokeStyle = '#000000';
+                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineCap = 'round';
+                                    this.ctx.lineJoin = 'round';
+                                    if (temp && temp !== 'data:,') {
+                                        const img = new Image();
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.src = temp;
+                                    }
+                                },
+                                getMousePos(e) {
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                },
+                                startDrawing(e) {
+                                    this.isDrawing = true;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.beginPath();
+                                    this.ctx.moveTo(pos.x, pos.y);
+                                },
+                                draw(e) {
+                                    if (!this.isDrawing) return;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.lineTo(pos.x, pos.y);
+                                    this.ctx.stroke();
+                                },
+                                stopDrawing() {
+                                    if (!this.isDrawing) return;
+                                    this.isDrawing = false;
+                                    this.save();
+                                },
+                                clearCanvas() {
+                                    if (!this.canvas) return;
+                                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                    this.signature = null;
+                                },
+                                save() {
+                                    const dataUrl = this.canvas.toDataURL('image/png');
+                                    const blank = document.createElement('canvas');
+                                    blank.width = this.canvas.width;
+                                    blank.height = this.canvas.height;
+                                    if (dataUrl === blank.toDataURL('image/png')) {
+                                        this.signature = null;
+                                    } else {
+                                        this.signature = dataUrl;
+                                    }
+                                },
+                                loadSignature(dataUrl) {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const rect = this.canvas.getBoundingClientRect();
+                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                    };
+                                    img.src = dataUrl;
+                                }
+                            }" class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center bg-rose-50 px-3 py-1.5 rounded-t-lg border border-rose-200 border-b-0">
+                                    <span class="text-[10px] font-black text-rose-600 uppercase tracking-wider">Tanda Tangan Manajer Merah</span>
+                                    <button type="button" @click="clearCanvas()" class="text-[10px] font-black text-rose-600 hover:text-rose-800 uppercase flex items-center gap-1">
+                                        <i class="fas fa-eraser"></i> Hapus
+                                    </button>
+                                </div>
+                                <div class="border border-dashed border-rose-200 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                    <canvas x-ref="canvas" 
+                                            class="absolute inset-0 w-full h-full cursor-crosshair"
+                                            @mousedown="startDrawing($event)"
+                                            @mousemove="draw($event)"
+                                            @mouseup="stopDrawing()"
+                                            @mouseleave="stopDrawing()"
+                                            @touchstart="startDrawing($event)"
+                                            @touchmove="draw($event)"
+                                            @touchend="stopDrawing()">
+                                    </canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ROW 3 RIGHT: MANAJER PITA PUTIH --}}
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[11px] font-black text-blue-500 uppercase tracking-widest">Manajer Pita Putih (SHIRO)</label>
+                            <div class="text-[11px] font-bold text-slate-600 mb-1">
+                                Atlet: {{ $activeMatch['data']['athlete2']['name'] ?? '—' }} ({{ $activeMatch['data']['athlete2']['contingent'] ?? '—' }})
+                            </div>
+                            <input type="text" wire:model="sigManagerWhiteName" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manajer Pita Putih...">
+
+                            <div x-data="{
+                                signature: @entangle('sigManagerWhiteData'),
+                                isDrawing: false,
+                                ctx: null,
+                                canvas: null,
+                                init() {
+                                    this.canvas = this.$refs.canvas;
+                                    this.ctx = this.canvas.getContext('2d');
+                                    const preventDefault = (e) => { if (e.target === this.canvas) e.preventDefault(); };
+                                    this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                                    this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                                    this.resizeCanvas();
+                                    if (this.signature) this.loadSignature(this.signature);
+                                    window.addEventListener('resize', () => this.resizeCanvas());
+                                    this.$watch('signature', (value) => {
+                                        if (!value) this.clearCanvas();
+                                        else if (value !== this.canvas.toDataURL()) this.loadSignature(value);
+                                    });
+                                },
+                                resizeCanvas() {
+                                    if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                                    const temp = this.canvas.toDataURL();
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    this.ctx.strokeStyle = '#000000';
+                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineCap = 'round';
+                                    this.ctx.lineJoin = 'round';
+                                    if (temp && temp !== 'data:,') {
+                                        const img = new Image();
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.src = temp;
+                                    }
+                                },
+                                getMousePos(e) {
+                                    const rect = this.canvas.getBoundingClientRect();
+                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                },
+                                startDrawing(e) {
+                                    this.isDrawing = true;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.beginPath();
+                                    this.ctx.moveTo(pos.x, pos.y);
+                                },
+                                draw(e) {
+                                    if (!this.isDrawing) return;
+                                    const pos = this.getMousePos(e);
+                                    this.ctx.lineTo(pos.x, pos.y);
+                                    this.ctx.stroke();
+                                },
+                                stopDrawing() {
+                                    if (!this.isDrawing) return;
+                                    this.isDrawing = false;
+                                    this.save();
+                                },
+                                clearCanvas() {
+                                    if (!this.canvas) return;
+                                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                    this.signature = null;
+                                },
+                                save() {
+                                    const dataUrl = this.canvas.toDataURL('image/png');
+                                    const blank = document.createElement('canvas');
+                                    blank.width = this.canvas.width;
+                                    blank.height = this.canvas.height;
+                                    if (dataUrl === blank.toDataURL('image/png')) {
+                                        this.signature = null;
+                                    } else {
+                                        this.signature = dataUrl;
+                                    }
+                                },
+                                loadSignature(dataUrl) {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        const rect = this.canvas.getBoundingClientRect();
+                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                    };
+                                    img.src = dataUrl;
+                                }
+                            }" class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center bg-blue-50 px-3 py-1.5 rounded-t-lg border border-blue-200 border-b-0">
+                                    <span class="text-[10px] font-black text-blue-600 uppercase tracking-wider">Tanda Tangan Manajer Putih</span>
+                                    <button type="button" @click="clearCanvas()" class="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase flex items-center gap-1">
+                                        <i class="fas fa-eraser"></i> Hapus
+                                    </button>
+                                </div>
+                                <div class="border border-dashed border-blue-200 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                    <canvas x-ref="canvas" 
+                                            class="absolute inset-0 w-full h-full cursor-crosshair"
+                                            @mousedown="startDrawing($event)"
+                                            @mousemove="draw($event)"
+                                            @mouseup="stopDrawing()"
+                                            @mouseleave="stopDrawing()"
+                                            @touchstart="startDrawing($event)"
+                                            @touchmove="draw($event)"
+                                            @touchend="stopDrawing()">
+                                    </canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1154,7 +1907,7 @@
                     </div>
 
                     @if (count($juaraMap) >= 2)
-                        <button wire:click="generateResults"
+                        <button wire:click="confirmChampion"
                             class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
                             <i class="fas fa-save text-[13px]"></i> Simpan Juara Ke Laporan
                         </button>
@@ -1227,7 +1980,34 @@
         @endif
 
     @endif
-    <div class="officials-grid">
+    <div class="officials-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+        <div class="tm-card official-card" style="border-left-color: #f59e0b;">
+            <div class="official-label">
+                <i class="fas fa-gavel"></i> Dewan Arbitrase
+            </div>
+            <div class="official-val">
+                {{ $assignedArbitrase?->referee?->user?->name ?? 'Belum ditugaskan' }}
+            </div>
+            <div class="official-sub">Lisensi: {{ $assignedArbitrase?->referee?->license_number ?? '-' }}</div>
+        </div>
+        
+        <div class="tm-card official-card" style="border-left-color: #10b981;">
+            <div class="official-label">
+                <i class="fas fa-user-shield"></i> Dewan Hakim / Wasit Lapangan
+            </div>
+            <div class="official-val">
+                @if ($assignedReferees->isNotEmpty())
+                    <ol class="official-list" style="list-style-type: decimal; padding-left: 16px;">
+                        @foreach ($assignedReferees as $sr)
+                            <li>{{ $sr->referee?->user?->name }} <span style="font-size:10px; font-weight:normal; color:var(--smoke);"> (Juri {{ $sr->judge_index }})</span></li>
+                        @endforeach
+                    </ol>
+                @else
+                    Belum ditugaskan
+                @endif
+            </div>
+        </div>
+
         <div class="tm-card official-card">
             <div class="official-label">
                 <i class="fas fa-user-tie"></i> Koordinator Pertandingan

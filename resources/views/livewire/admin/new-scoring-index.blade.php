@@ -479,11 +479,23 @@
 
                     <div style="min-height: 50px; margin-bottom: 10px;">
                         @if ($isActive && $adMatch)
-                            <div class="court-match-name">
-                                <span
-                                    class="draw-badge {{ $adType === 'randori' ? 'randori' : 'embu' }}">{{ $adType ?? '?' }}</span>
-                                <span
-                                    style="flex:1; overflow:hidden; text-overflow:ellipsis;">{{ $adMatch->name }}</span>
+                            <div class="court-match-name" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; flex:1;">
+                                    <span
+                                        class="draw-badge {{ $adType === 'randori' ? 'randori' : 'embu' }}">{{ $adType ?? '?' }}</span>
+                                    <span
+                                        style="overflow:hidden; text-overflow:ellipsis;" title="{{ $adMatch->name }}">{{ $adMatch->name }}</span>
+                                </div>
+                                <div style="display:flex; gap:4px; flex-shrink:0;">
+                                    <a href="{{ route('admin.new-scoring-' . $adType . '-index', $adMatch->id) }}?round={{ $ad?->round ?? '' }}&pool_id={{ $adPool?->id ?? '' }}"
+                                        class="btn-gen primary" style="padding:2px 6px; font-size:10px; height:22px; display:inline-flex; align-items:center; justify-content:center;" title="Input Nilai">
+                                        <i class="fas fa-edit" style="font-size:10px;"></i>
+                                    </a>
+                                    <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.match', $adMatch->id) }}?round={{ $ad?->round ?? '' }}&pool_id={{ $adPool?->id ?? '' }}"
+                                        target="_blank" class="btn-gen ghost" style="padding:2px 6px; font-size:10px; height:22px; display:inline-flex; align-items:center; justify-content:center;" title="Monitor Hasil">
+                                        <i class="fas fa-tv" style="font-size:10px;"></i>
+                                    </a>
+                                </div>
                             </div>
                             @if ($adContingent)
                                 <div class="court-match-contingent"><i class="fas fa-shield-alt"

@@ -542,6 +542,34 @@
             </div>
         </div>
 
+        @php
+            $courtId = $this->getCourtId();
+        @endphp
+        @if($courtId)
+            <div style="background:#fff; border:1px solid var(--paper2); border-radius:16px; padding:16px 20px; margin-bottom:20px; display:flex; flex-direction:column; gap:12px;">
+                <div style="font-size:10px; font-weight:700; color:var(--smoke); text-transform:uppercase; letter-spacing:0.1em; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-desktop" style="color:var(--red);"></i> Monitor Lapangan (Shortcut)
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
+                    <a href="{{ route('admin.arbitrase.scoring.monitor', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                        <i class="fas fa-bullhorn" style="margin-right:6px;"></i> Panggilan
+                    </a>
+                    <a href="{{ route('admin.arbitrase.scoring.monitor-hasil.match', $matchNumber->id) }}?round={{ urlencode($currentRound ?? '') }}&pool_id={{ $selectedPoolId ?? '' }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                        <i class="fas fa-tv" style="margin-right:6px;"></i> Hasil
+                    </a>
+                    <a href="{{ route('admin.arbitrase.scoring.monitor-timer.court', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                        <i class="fas fa-stopwatch" style="margin-right:6px;"></i> Timer
+                    </a>
+                    <a href="{{ route('admin.arbitrase.scoring.monitor-rekapitulasi-hasil.court', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                        <i class="fas fa-list-ol" style="margin-right:6px;"></i> Rekapitulasi
+                    </a>
+                    <a href="{{ route('admin.arbitrase.scoring.monitor-referee.court', $courtId) }}" target="_blank" class="btn-gen ghost" style="padding:10px; font-size:11px; justify-content:center; text-decoration:none;">
+                        <i class="fas fa-user-tie" style="margin-right:6px;"></i> Wasit
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <div class="round-indicator">
             <div class="round-step {{ $currentRound === 'Penyisihan' ? 'active' : '' }}">
                 <i class="fas fa-filter"></i> 1. Penyisihan
@@ -954,9 +982,6 @@
                             </div>
                             @if ($isActive)
                                 <div style="margin-top:8px; display:flex; gap:8px; justify-content:center;">
-                                    <button wire:click="finishMatch({{ $item['id'] }}, 0)" class="btn-gen success"
-                                        style="flex:1;"><i class="fas fa-flag-checkered"></i> Selesai
-                                        (Simpan)</button>
                                     <button wire:click="dismissParticipant()" class="btn-gen danger"
                                         style="flex:1;"><i class="fas fa-rectangle-xmark"></i> Tutup Form
                                         Wasit</button>
@@ -1037,7 +1062,34 @@
         @php
             $officials = $firstDrawing->metadata['officials'] ?? null;
         @endphp
-        <div class="officials-grid">
+        <div class="officials-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+            <div class="tm-card official-card" style="border-left-color: #f59e0b;">
+                <div class="official-label">
+                    <i class="fas fa-gavel"></i> Dewan Arbitrase
+                </div>
+                <div class="official-val">
+                    {{ $assignedArbitrase?->referee?->user?->name ?? 'Belum ditugaskan' }}
+                </div>
+                <div class="official-sub">Lisensi: {{ $assignedArbitrase?->referee?->license_number ?? '-' }}</div>
+            </div>
+            
+            <div class="tm-card official-card" style="border-left-color: #10b981;">
+                <div class="official-label">
+                    <i class="fas fa-user-shield"></i> Dewan Hakim / Wasit Lapangan
+                </div>
+                <div class="official-val">
+                    @if ($assignedReferees->isNotEmpty())
+                        <ol class="official-list" style="list-style-type: decimal; padding-left: 16px;">
+                            @foreach ($assignedReferees as $sr)
+                                <li>{{ $sr->referee?->user?->name }} <span style="font-size:10px; font-weight:normal; color:var(--smoke);"> (Juri {{ $sr->judge_index }})</span></li>
+                            @endforeach
+                        </ol>
+                    @else
+                        Belum ditugaskan
+                    @endif
+                </div>
+            </div>
+
             <div class="tm-card official-card">
                 <div class="official-label">
                     <i class="fas fa-user-tie"></i> Koordinator Pertandingan

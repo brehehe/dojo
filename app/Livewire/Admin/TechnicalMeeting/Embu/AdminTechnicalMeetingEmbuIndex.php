@@ -651,9 +651,8 @@ class AdminTechnicalMeetingEmbuIndex extends Component
             $matchEntries = [];
             foreach ($matchAthletesRaw->groupBy('registration_id') as $regId => $regAthletes) {
                 $chunks = $regAthletes->chunk($maxAthletes);
-                $hasMultiple = $chunks->count() > 1;
                 foreach ($chunks as $chunkIndex => $chunk) {
-                    $contingentDisplayName = $chunk->first()->contingent . ($hasMultiple ? ' (' . ($chunkIndex + 1) . ')' : '');
+                    $contingentDisplayName = $chunk->first()->contingent;
                     foreach ($chunk as $ath) {
                         $techIds = $ath->technique_ids ? json_decode($ath->technique_ids, true) : [];
                         $matchEntries[] = [
@@ -663,7 +662,7 @@ class AdminTechnicalMeetingEmbuIndex extends Component
                             'registration_id' => $ath->registration_id,
                             'readable_techniques' => array_map(function ($id) use ($allTechniqueNames) {
                                 return $allTechniqueNames[$id] ?? 'Unknown #'.$id;
-                            }, $techIds)
+                            }, $techIds),
                         ];
                     }
                 }

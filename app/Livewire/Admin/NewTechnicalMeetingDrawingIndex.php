@@ -49,6 +49,22 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
     public string $searchPanitera = '';
 
+    public string $newKoorName = '';
+
+    public string $newKoorEmail = '';
+
+    public string $newKoorPassword = 'password123';
+
+    public bool $showAddKoorForm = false;
+
+    public string $newPaniteraName = '';
+
+    public string $newPaniteraEmail = '';
+
+    public string $newPaniteraPassword = 'password123';
+
+    public bool $showAddPaniteraForm = false;
+
     public function selectMatch($id): void
     {
         $this->filterMatchNumberId = $id;
@@ -227,7 +243,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $this->dispatch('swal', [
                     'icon' => 'warning',
                     'title' => 'Peserta Minim',
-                    'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalAthletes.' entri dari '.$uniqueContingentCount.' kontingen.'
+                    'text' => 'Minimal harus ada 3 peserta/entri untuk melakukan drawing. Saat ini hanya ada '.$totalAthletes.' entri dari '.$uniqueContingentCount.' kontingen.',
                 ]);
             }
 
@@ -466,7 +482,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
     public function resetAllDrawings(): void
     {
         set_time_limit(0);
-        
+
         DrawingMatchNumber::query()->delete();
         MatchNumber::whereNotNull('drawing_generated_at')
             ->update(['drawing_data' => null, 'drawing_generated_at' => null]);
@@ -487,7 +503,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
     public function generateEmbuDrawing(bool $showSwal = true)
     {
         if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
-            return false; 
+            return false;
         }
 
         $this->isGenerating = true;
@@ -784,8 +800,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
                 foreach ($existingDrawingInSession as $d) {
                     $m = $d->metadata ?? [];
-                    if (!isset($m['start_time']) || !isset($m['end_time'])) continue;
-                    
+                    if (! isset($m['start_time']) || ! isset($m['end_time'])) {
+                        continue;
+                    }
+
                     $start = Carbon::parse($m['start_time']);
                     $end = Carbon::parse($m['end_time']);
                     $athletes = $d->registration ? $d->registration->athletes->pluck('id')->toArray() : [];
@@ -813,7 +831,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         $courtMatches = $existingDrawingInSession->where('court_id', $court->id);
                         foreach ($courtMatches as $cm) {
                             $m = $cm->metadata ?? [];
-                            if (!isset($m['start_time']) || !isset($m['end_time'])) continue;
+                            if (! isset($m['start_time']) || ! isset($m['end_time'])) {
+                                continue;
+                            }
 
                             $cmStart = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
                             $cmEnd = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
@@ -966,34 +986,18 @@ class NewTechnicalMeetingDrawingIndex extends Component
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName]);
         }
-
-        // Ensure at least 1 Koordinator Lapangan
-        if (User::role('Koordinator Lapangan')->count() < 1) {
-            $koor = User::factory()->create([
-                'name' => 'Koor. Lapangan Dummy',
-                'email' => 'koor_lapangan_'.uniqid().'@example.com',
-                'password' => Hash::make('password'),
-            ]);
-            $koor->assignRole('Koordinator Lapangan');
-        }
-
-        // Ensure at least 4 Panitera
-        $currentPanitera = User::role('Panitera')->count();
-        if ($currentPanitera < 4) {
-            for ($i = 0; $i < (4 - $currentPanitera); $i++) {
-                $panitera = User::factory()->create([
-                    'name' => 'Panitera Dummy '.($currentPanitera + $i + 1),
-                    'email' => 'panitera_'.uniqid().'@example.com',
-                    'password' => Hash::make('password'),
-                ]);
-                $panitera->assignRole('Panitera');
-            }
-        }
     }
 
     public function openEditModal(?int $poolId = null): void
     {
         $this->editPoolId = $poolId;
+
+        $this->showAddKoorForm = false;
+        $this->showAddPaniteraForm = false;
+        $this->newKoorName = '';
+        $this->newKoorEmail = '';
+        $this->newPaniteraName = '';
+        $this->newPaniteraEmail = '';
 
         $query = DrawingMatchNumber::where('match_number_id', $this->filterMatchNumberId);
         if ($poolId) {
@@ -1041,9 +1045,65 @@ class NewTechnicalMeetingDrawingIndex extends Component
         ]);
     }
 
+    public function addKoorUser(): void
+    {
+        $this->validate([
+            'newKoorName' => 'required|string|max:255',
+            'newKoorEmail' => 'required|email|unique:users,email',
+        ]);
+
+        $user = User::create([
+            'name' => $this->newKoorName,
+            'email' => $this->newKoorEmail,
+            'password' => Hash::make($this->newKoorPassword),
+        ]);
+        $user->assignRole('Koordinator Lapangan');
+
+        $this->editKoorName = $user->name;
+
+        $this->newKoorName = '';
+        $this->newKoorEmail = '';
+        $this->showAddKoorForm = false;
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Berhasil',
+            'text' => 'Koordinator Lapangan baru berhasil ditambahkan.',
+        ]);
+    }
+
+    public function addPaniteraUser(): void
+    {
+        $this->validate([
+            'newPaniteraName' => 'required|string|max:255',
+            'newPaniteraEmail' => 'required|email|unique:users,email',
+        ]);
+
+        $user = User::create([
+            'name' => $this->newPaniteraName,
+            'email' => $this->newPaniteraEmail,
+            'password' => Hash::make($this->newPaniteraPassword),
+        ]);
+        $user->assignRole('Panitera');
+
+        $this->editPaniteraNames[] = $user->name;
+
+        $this->newPaniteraName = '';
+        $this->newPaniteraEmail = '';
+        $this->showAddPaniteraForm = false;
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Berhasil',
+            'text' => 'Panitera baru berhasil ditambahkan.',
+        ]);
+    }
+
     // ── RENDER ───────────────────────────────────────────────
     public function render()
     {
+        $likeOperator = DB::connection()->getDriverName() === 'sqlite' ? 'like' : 'ilike';
+
         $ageGroupIds = MatchNumber::where('draft_type', $this->draftType)
             ->has('athletes')->pluck('age_group_id')->unique()->filter();
 
@@ -1060,7 +1120,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->orderBy('id');
 
         if ($this->searchMatchNumber) {
-            $matchNumbersQuery->where('name', 'ilike', '%'.$this->searchMatchNumber.'%');
+            $matchNumbersQuery->where('name', $likeOperator, '%'.$this->searchMatchNumber.'%');
         }
 
         if ($this->filterAgeGroupId) {
@@ -1076,11 +1136,12 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $mergeQuery->where('age_group_id', $this->filterAgeGroupId);
         }
         if ($this->searchMatchNumber) {
-            $mergeQuery->where('name', 'ilike', '%'.$this->searchMatchNumber.'%');
+            $mergeQuery->where('name', $likeOperator, '%'.$this->searchMatchNumber.'%');
         }
-        $filterMerges = $mergeQuery->get()->map(function($m) {
+        $filterMerges = $mergeQuery->get()->map(function ($m) {
             $mergedNames = $m->matchNumbers->pluck('name')->join(', ');
-            $m->display_name = ($m->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+            $m->display_name = ($m->name ?: 'Merged Group').' ('.$mergedNames.')';
+
             return $m;
         });
 
@@ -1114,7 +1175,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
                 // Calculate consolidated display name
                 $mergedNames = $merge->matchNumbers->pluck('name')->join(', ');
-                $selectedMatch->display_name = ($merge->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+                $selectedMatch->display_name = ($merge->name ?: 'Merged Group').' ('.$mergedNames.')';
 
                 $rawAthletes = DB::table('athlete_match_number')
                     ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
@@ -1129,10 +1190,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $entryData = [];
                 foreach ($rawAthletes->groupBy('registration_id') as $regId => $regAthletes) {
                     $chunks = $regAthletes->chunk($maxAthletes);
-                    $hasMultiple = $chunks->count() > 1;
                     foreach ($chunks as $chunkIndex => $chunk) {
-                        $displayName = $chunk->first()->contingent_name.($hasMultiple ? ' ('.($chunkIndex + 1).')' : '');
-                        $entryData[$displayName] = $chunk;
+                        $entryKey = $regId.'_'.$chunkIndex;
+                        $entryData[$entryKey] = $chunk;
                     }
                 }
                 $matchAthletes = collect($entryData);
@@ -1161,10 +1221,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $entryData = [];
                 foreach ($rawAthletes->groupBy('registration_id') as $regId => $regAthletes) {
                     $chunks = $regAthletes->chunk($maxAthletes);
-                    $hasMultiple = $chunks->count() > 1;
                     foreach ($chunks as $chunkIndex => $chunk) {
-                        $displayName = $chunk->first()->contingent_name.($hasMultiple ? ' ('.($chunkIndex + 1).')' : '');
-                        $entryData[$displayName] = $chunk;
+                        $entryKey = $regId.'_'.$chunkIndex;
+                        $entryData[$entryKey] = $chunk;
                     }
                 }
                 $matchAthletes = collect($entryData);
@@ -1258,7 +1317,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'courts' => Court::orderBy('order')->get(),
             'sessionTimes' => SessionTime::orderBy('start_time')->get(),
             'koorUsers' => User::role('Koordinator Lapangan')->orderBy('name')->get(),
-            'paniteraUsers' => User::role('Panitera')->where('name', 'ilike', '%'.$this->searchPanitera.'%')->orderBy('name')->get(),
+            'paniteraUsers' => User::role('Panitera')->where('name', $likeOperator, '%'.$this->searchPanitera.'%')->orderBy('name')->get(),
             'stats' => [
                 'total' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->count(),
                 'drawn' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNotNull('drawing_generated_at')->count(),

@@ -71,6 +71,8 @@ class RegistrationForm extends Component
             'current_weight' => '',
             'weight_group_id' => '',
             'age_group' => '',
+            'join_other_age_group' => false,
+            'event_age_group' => '',
             'rank' => 'Kyu 6',
             'dojo_origin' => '',
             'city' => '',
@@ -204,7 +206,31 @@ class RegistrationForm extends Component
                     $this->officials = $draft['officials'];
                 }
                 if (isset($draft['athletes']) && count($draft['athletes']) > 0) {
-                    $this->athletes = $draft['athletes'];
+                    $this->athletes = array_map(function ($ath) {
+                        $ath['join_other_age_group'] = $ath['join_other_age_group'] ?? false;
+                        $ath['event_age_group'] = $ath['event_age_group'] ?? '';
+
+                        // Auto-detect cross-age-group match numbers for legacy drafts
+                        $joinedOtherAgeGroup = $ath['join_other_age_group'];
+                        $eventAgeGroupId = $ath['event_age_group'];
+                        $athAgeGroupId = $ath['age_group'];
+                        if ($athAgeGroupId && ! is_numeric($athAgeGroupId)) {
+                            $athAgeGroupId = AgeGroup::where('name', $athAgeGroupId)->value('id') ?? $athAgeGroupId;
+                        }
+                        foreach (['event1', 'event2', 'event3'] as $fld) {
+                            if (! empty($ath[$fld])) {
+                                $matchObj = MatchNumber::find($ath[$fld]);
+                                if ($matchObj && $matchObj->age_group_id != $athAgeGroupId) {
+                                    $joinedOtherAgeGroup = true;
+                                    $eventAgeGroupId = $matchObj->age_group_id;
+                                }
+                            }
+                        }
+                        $ath['join_other_age_group'] = $joinedOtherAgeGroup;
+                        $ath['event_age_group'] = $eventAgeGroupId;
+
+                        return $ath;
+                    }, $draft['athletes']);
                 }
                 if (isset($draft['matchTechniques'])) {
                     $this->matchTechniques = $draft['matchTechniques'];
@@ -258,6 +284,8 @@ class RegistrationForm extends Component
                 'current_weight' => $ath->pivot->weight,
                 'weight_group_id' => $ath->pivot->weight_group_id,
                 'age_group' => $this->ageGroups->firstWhere('name', $ath->pivot->age_group)?->id ?? $ath->pivot->age_group,
+                'join_other_age_group' => false,
+                'event_age_group' => '',
                 'rank' => $ath->pivot->rank,
                 'dojo_origin' => $ath->pivot->dojo_origin,
                 'city' => $ath->pivot->city,
@@ -270,14 +298,30 @@ class RegistrationForm extends Component
             ];
 
             // Map match numbers to event1, event2, event3
+            $joinedOtherAgeGroup = false;
+            $eventAgeGroupId = '';
+            $athAgeGroupId = $athData['age_group'];
+            if ($athAgeGroupId && ! is_numeric($athAgeGroupId)) {
+                $athAgeGroupId = AgeGroup::where('name', $athAgeGroupId)->value('id') ?? $athAgeGroupId;
+            }
+
             foreach ($matchNumbers as $i => $mn) {
                 $field = 'event'.($i + 1);
                 if ($i < 3) {
                     $athData[$field] = $mn->match_number_id;
                     $matchKey = $this->getMatchKey($mn->match_number_id, $index);
                     $this->matchTechniques[$matchKey] = json_decode($mn->technique_ids, true) ?? [];
+
+                    // Detect if this match number belongs to a different age group
+                    $matchObj = MatchNumber::find($mn->match_number_id);
+                    if ($matchObj && $matchObj->age_group_id != $athAgeGroupId) {
+                        $joinedOtherAgeGroup = true;
+                        $eventAgeGroupId = $matchObj->age_group_id;
+                    }
                 }
             }
+            $athData['join_other_age_group'] = $joinedOtherAgeGroup;
+            $athData['event_age_group'] = $eventAgeGroupId;
 
             // Fill empty events
             for ($i = count($matchNumbers); $i < 3; $i++) {
@@ -367,6 +411,17 @@ class RegistrationForm extends Component
             'athletes.*.bpjs_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'athletes.*.identity_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'athletes.*.existing_photo_path' => 'nullable|string',
+            'athletes.*.join_other_age_group' => 'nullable|boolean',
+            'athletes.*.event_age_group' => [
+                function ($attribute, $value, $fail) {
+                    $index = explode('.', $attribute)[1];
+                    $joinOther = $this->athletes[$index]['join_other_age_group'] ?? false;
+                    if ($joinOther && empty($value)) {
+                        $fail('Kelompok Usia Tandingan wajib dipilih jika Gabung Kelompok Usia Lain diaktifkan.');
+                    }
+                },
+                'nullable',
+            ],
             'athletes.*.photo' => [
                 // Only require a new upload if there is no existing photo stored in the DB
                 function ($attribute, $value, $fail) {
@@ -406,6 +461,7 @@ class RegistrationForm extends Component
             $attributes["athletes.{$index}.nik"] = "{$prefix} NIK";
             $attributes["athletes.{$index}.nik_kenshi"] = "{$prefix} NIK Kenshi";
             $attributes["athletes.{$index}.age_group"] = "{$prefix} Kelompok Usia";
+            $attributes["athletes.{$index}.event_age_group"] = "{$prefix} Kelompok Usia Tandingan";
             $attributes["athletes.{$index}.rank"] = "{$prefix} Tingkatan (Rank)";
             $attributes["athletes.{$index}.dojo_origin"] = "{$prefix} Asal Dojo";
             $attributes["athletes.{$index}.bpjs_number"] = "{$prefix} Nomor BPJS";
@@ -497,8 +553,9 @@ class RegistrationForm extends Component
         }
         $match = MatchNumber::find($matchId);
         if ($match && $match->max_athletes == 1) {
-            return $athleteIndex . '_' . $matchId;
+            return $athleteIndex.'_'.$matchId;
         }
+
         return $matchId;
     }
 
@@ -567,6 +624,7 @@ class RegistrationForm extends Component
                         break;
                     }
                 }
+
                 return [
                     'athlete_index' => $currentAthleteIndex,
                     'athlete_name' => $athlete['name'] ?: 'Atlet #'.($currentAthleteIndex + 1),
@@ -654,6 +712,8 @@ class RegistrationForm extends Component
             'current_weight' => '',
             'weight_group_id' => '',
             'age_group' => '',
+            'join_other_age_group' => false,
+            'event_age_group' => '',
             'rank' => 'Kyu 6',
             'dojo_origin' => '',
             'city' => '',
@@ -679,6 +739,13 @@ class RegistrationForm extends Component
 
     public function getEventOptions($ageGroupId, $gender, $currentAthleteIndex = null, $currentField = null)
     {
+        if ($currentAthleteIndex !== null) {
+            $athlete = $this->athletes[$currentAthleteIndex] ?? null;
+            if ($athlete && ($athlete['join_other_age_group'] ?? false) && ! empty($athlete['event_age_group'])) {
+                $ageGroupId = $athlete['event_age_group'];
+            }
+        }
+
         if (empty($ageGroupId)) {
             return [];
         }

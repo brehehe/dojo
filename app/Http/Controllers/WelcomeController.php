@@ -21,11 +21,13 @@ class WelcomeController extends Controller
             ->get();
 
         // Live stats from DB
-        $stats = [
-            'peserta' => Athlete::count() ?: '500+',
-            'nomor' => MatchNumber::count() ?: '30+',
-            'kontingen' => Contingent::count() ?: '20+',
-        ];
+        $stats = cache()->remember('welcome_stats', 600, function () {
+            return [
+                'peserta' => Athlete::count() ?: '500+',
+                'nomor' => MatchNumber::count() ?: '30+',
+                'kontingen' => Contingent::count() ?: '20+',
+            ];
+        });
 
         return view('welcome.1', compact('techniquesByLevel', 'stats'));
     }

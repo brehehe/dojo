@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\MatchNumber\MatchNumber;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,6 +20,7 @@ class RefereeScoreDetail extends Model
         'details',
         'total_calculated_score',
         'notes',
+        'signature',
     ];
 
     protected $casts = [
@@ -28,7 +30,7 @@ class RefereeScoreDetail extends Model
 
     public function matchNumber()
     {
-        return $this->belongsTo(\App\Models\MatchNumber\MatchNumber::class);
+        return $this->belongsTo(MatchNumber::class);
     }
 
     public function referee()

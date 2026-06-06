@@ -1110,6 +1110,104 @@
                 max-width: 280px;
                 margin-inline: auto;
             }
+
+            /* ── DIGITAL SIGNATURE ── */
+            .ref-sig-wrap {
+                background: #fff;
+                border-radius: 14px;
+                border: 1px solid var(--paper2);
+                margin-bottom: 14px;
+                overflow: hidden;
+            }
+
+            .ref-sig-hdr {
+                padding: 10px 14px;
+                border-bottom: 1px solid var(--paper2);
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--smoke);
+                text-transform: uppercase;
+                letter-spacing: .12em;
+                background: var(--paper);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .ref-sig-hdr-title {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .ref-sig-body {
+                padding: 14px;
+                position: relative;
+                background: #fdfdfd;
+            }
+
+            .ref-sig-canvas-container {
+                position: relative;
+                width: 100%;
+                height: 380px;
+                background: #ffffff;
+                border: 1.5px dashed #b8c9dd;
+                border-radius: 10px;
+                overflow: hidden;
+                touch-action: none;
+            }
+
+            .ref-sig-canvas-container::before {
+                content: '';
+                position: absolute;
+                left: 10%;
+                right: 10%;
+                bottom: 40px;
+                border-bottom: 1px dashed rgba(36, 54, 75, 0.15);
+                pointer-events: none;
+            }
+
+            .ref-sig-canvas-container::after {
+                content: 'Tanda Tangan di Sini';
+                position: absolute;
+                left: 50%;
+                bottom: 15px;
+                transform: translateX(-50%);
+                font-size: 12px;
+                color: rgba(36, 54, 75, 0.35);
+                font-family: 'DM Sans', sans-serif;
+                pointer-events: none;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+            }
+
+            .ref-sig-canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+                cursor: crosshair;
+            }
+
+            .ref-sig-clear-btn {
+                padding: 6px 12px;
+                background: #f1f5f9;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--ink);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                transition: all 0.15s;
+                border-style: solid;
+            }
+
+            .ref-sig-clear-btn:hover {
+                background: #e2e8f0;
+                border-color: #94a3b8;
+            }
         </style>
     @endpush
     @push('scripts')
@@ -1579,19 +1677,170 @@
                         <textarea wire:model="notes" class="ref-notes-textarea" rows="3" placeholder="Ketik catatan di sini..."></textarea>
                     </div>
 
-                    {{-- Actions --}}
-                    <div class="ref-actions">
-                        <button wire:click="resetForm" class="ref-btn-reset">
-                            <i class="fa-solid fa-rotate-left"></i> Reset
-                        </button>
-                        <button wire:click="submitScore" class="ref-btn-submit">
-                            <span wire:loading.remove wire:target="submitScore">
-                                <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
-                            </span>
-                            <span wire:loading wire:target="submitScore">
-                                <i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...
-                            </span>
-                        </button>
+                    {{-- Digital Signature & Actions Wrapper --}}
+                    <div x-data="{
+                        localSignature: '{{ $signature }}' || null,
+                        activeId: @entangle('currentActiveIdentifier'),
+                        isDrawing: false,
+                        ctx: null,
+                        canvas: null,
+                        init() {
+                            this.canvas = this.$refs.canvas;
+                            this.ctx = this.canvas.getContext('2d');
+                            
+                            // Prevent scrolling on touch devices
+                            const preventDefault = (e) => {
+                                if (e.target === this.canvas) {
+                                    e.preventDefault();
+                                }
+                            };
+                            this.canvas.addEventListener('touchstart', preventDefault, { passive: false });
+                            this.canvas.addEventListener('touchmove', preventDefault, { passive: false });
+                            this.canvas.addEventListener('touchend', preventDefault, { passive: false });
+                            
+                            this.resizeCanvas();
+                            
+                            // If we have an initial signature, draw it
+                            if (this.localSignature) {
+                                this.loadSignature(this.localSignature);
+                            }
+
+                            window.addEventListener('resize', () => this.resizeCanvas());
+                            
+                            this.$watch('activeId', (value) => {
+                                this.clear();
+                            });
+                            
+                            window.addEventListener('signature-loaded', (e) => {
+                                if (e.detail && e.detail.signature) {
+                                    this.localSignature = e.detail.signature;
+                                    this.loadSignature(e.detail.signature);
+                                } else {
+                                    this.clear();
+                                }
+                            });
+                            
+                            window.addEventListener('form-reset', () => {
+                                this.clear();
+                            });
+                        },
+                        resizeCanvas() {
+                            if (!this.canvas || this.canvas.offsetWidth === 0) return;
+                            
+                            // Save current canvas content
+                            const temp = this.canvas.toDataURL();
+                            
+                            const rect = this.canvas.getBoundingClientRect();
+                            this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+                            this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+                            this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                            
+                            this.ctx.strokeStyle = '#000000';
+                            this.ctx.lineWidth = 3;
+                            this.ctx.lineCap = 'round';
+                            this.ctx.lineJoin = 'round';
+                            
+                            if (temp && temp !== 'data:,') {
+                                const img = new Image();
+                                img.onload = () => {
+                                    this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                };
+                                img.src = temp;
+                            }
+                        },
+                        getMousePos(e) {
+                            const rect = this.canvas.getBoundingClientRect();
+                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            return {
+                                x: clientX - rect.left,
+                                y: clientY - rect.top
+                            };
+                        },
+                        startDrawing(e) {
+                            this.isDrawing = true;
+                            const pos = this.getMousePos(e);
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(pos.x, pos.y);
+                        },
+                        draw(e) {
+                            if (!this.isDrawing) return;
+                            const pos = this.getMousePos(e);
+                            this.ctx.lineTo(pos.x, pos.y);
+                            this.ctx.stroke();
+                        },
+                        stopDrawing() {
+                            if (!this.isDrawing) return;
+                            this.isDrawing = false;
+                            this.save();
+                        },
+                        clear() {
+                            if (!this.canvas) return;
+                            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                            this.localSignature = null;
+                        },
+                        save() {
+                            const dataUrl = this.canvas.toDataURL('image/png');
+                            const blank = document.createElement('canvas');
+                            blank.width = this.canvas.width;
+                            blank.height = this.canvas.height;
+                            if (dataUrl === blank.toDataURL('image/png')) {
+                                this.localSignature = null;
+                            } else {
+                                this.localSignature = dataUrl;
+                            }
+                        },
+                        loadSignature(dataUrl) {
+                            const img = new Image();
+                            img.onload = () => {
+                                const rect = this.canvas.getBoundingClientRect();
+                                this.ctx.clearRect(0, 0, rect.width, rect.height);
+                                this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                            };
+                            img.src = dataUrl;
+                        }
+                    }">
+                        {{-- Digital Signature --}}
+                        <div class="ref-sig-wrap">
+                            <div class="ref-sig-hdr">
+                                <span class="ref-sig-hdr-title">
+                                    <i class="fa-solid fa-signature"></i>
+                                    Tanda Tangan Digital (Wajib)
+                                </span>
+                                <button type="button" @click="clear()" class="ref-sig-clear-btn">
+                                    <i class="fa-solid fa-eraser"></i> Hapus
+                                </button>
+                            </div>
+                            <div class="ref-sig-body">
+                                <div class="ref-sig-canvas-container" wire:ignore>
+                                    <canvas x-ref="canvas" 
+                                            class="ref-sig-canvas"
+                                            @mousedown="startDrawing($event)"
+                                            @mousemove="draw($event)"
+                                            @mouseup="stopDrawing()"
+                                            @mouseleave="stopDrawing()"
+                                            @touchstart="startDrawing($event)"
+                                            @touchmove="draw($event)"
+                                            @touchend="stopDrawing()">
+                                    </canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="ref-actions">
+                            <button wire:click="resetForm" class="ref-btn-reset">
+                                <i class="fa-solid fa-rotate-left"></i> Reset
+                            </button>
+                            <button type="button" @click="$wire.submitScore(localSignature)" class="ref-btn-submit">
+                                <span wire:loading.remove wire:target="submitScore">
+                                    <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
+                                </span>
+                                <span wire:loading wire:target="submitScore">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             @else

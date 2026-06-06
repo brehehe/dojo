@@ -12,6 +12,7 @@ use Livewire\Component;
 class AdminMatchNumberVerifiedIndex extends Component
 {
     public $search = '';
+
     public $allTechniques;
 
     public function mount()
@@ -23,8 +24,8 @@ class AdminMatchNumberVerifiedIndex extends Component
     {
         // Fetch all match numbers that have verified athletes
         $matchNumbers = MatchNumber::with(['ageGroup'])
-            ->when($this->search, function($query) {
-                $query->where('name', 'ilike', '%' . $this->search . '%');
+            ->when($this->search, function ($query) {
+                $query->where('name', 'ilike', '%'.$this->search.'%');
             })
             ->get();
 
@@ -36,9 +37,9 @@ class AdminMatchNumberVerifiedIndex extends Component
                 ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
                 ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                 ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
-                ->join('registration_athlete', function($join) {
+                ->join('registration_athlete', function ($join) {
                     $join->on('athlete_match_number.athlete_id', '=', 'registration_athlete.athlete_id')
-                         ->on('athlete_match_number.registration_id', '=', 'registration_athlete.registration_id');
+                        ->on('athlete_match_number.registration_id', '=', 'registration_athlete.registration_id');
                 })
                 ->where('athlete_match_number.match_number_id', $matchNumber->id)
                 ->where('registrations.status', 'verified')
@@ -67,22 +68,21 @@ class AdminMatchNumberVerifiedIndex extends Component
             // Group athletes by contingent and entry
             $contingents = [];
             $maxAthletes = $matchNumber->max_athletes ?: 1;
-            
+
             foreach ($athletes->groupBy('contingent_id') as $cId => $regAthletes) {
                 $chunks = $regAthletes->chunk($maxAthletes);
-                $hasMultiple = $chunks->count() > 1;
-                
+
                 foreach ($chunks as $chunkIndex => $chunk) {
-                    $entryKey = $cId . '_' . $chunkIndex;
-                    $contingentName = $chunk->first()->contingent_name . ($hasMultiple ? ' (' . ($chunkIndex + 1) . ')' : '');
-                    
+                    $entryKey = $cId.'_'.$chunkIndex;
+                    $contingentName = $chunk->first()->contingent_name;
+
                     $techniques = json_decode($chunk->first()->technique_ids ?? '[]', true);
-                    $techNames = array_map(fn($id) => $this->allTechniques[$id] ?? 'Unknown', $techniques);
+                    $techNames = array_map(fn ($id) => $this->allTechniques[$id] ?? 'Unknown', $techniques);
 
                     $contingents[$entryKey] = [
                         'name' => $contingentName,
                         'techniques' => $techNames,
-                        'athletes' => $chunk->map(fn($ath) => [
+                        'athletes' => $chunk->map(fn ($ath) => [
                             'name' => $ath->athlete_name,
                             'nik' => $ath->nik,
                             'kyu' => $ath->kyu,
@@ -93,14 +93,14 @@ class AdminMatchNumberVerifiedIndex extends Component
                             'age' => $ath->age,
                             'gender' => $ath->athlete_gender,
                             'birth_date' => $ath->birth_date ? date('d/m/Y', strtotime($ath->birth_date)) : null,
-                        ])->toArray()
+                        ])->toArray(),
                     ];
                 }
             }
 
             $data[] = [
                 'match' => $matchNumber,
-                'contingents' => $contingents
+                'contingents' => $contingents,
             ];
         }
 

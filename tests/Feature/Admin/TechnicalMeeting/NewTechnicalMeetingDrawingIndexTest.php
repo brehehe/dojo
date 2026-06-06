@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -20,6 +21,8 @@ beforeEach(function () {
         'order' => 1,
         'price' => 0,
     ]);
+    Role::findOrCreate('Koordinator Lapangan', 'web');
+    Role::findOrCreate('Panitera', 'web');
 });
 
 function createMockRandoriEntries(MatchNumber $match, int $count)
@@ -60,7 +63,7 @@ it('shows warning when participants are less than 3 in randori', function () {
         'order' => 1,
         'age_group_id' => $this->ageGroup->id,
     ]);
-    
+
     createMockRandoriEntries($match, 2);
 
     Livewire::actingAs($this->admin)
@@ -68,4 +71,45 @@ it('shows warning when participants are less than 3 in randori', function () {
         ->set('filterMatchNumberId', $match->id)
         ->call('generateRandoriDrawing')
         ->assertDispatched('swal');
+});
+
+it('can quickly register a new koordinator lapangan user', function () {
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->set('newKoorName', 'New Koor')
+        ->set('newKoorEmail', 'newkoor@example.com')
+        ->call('addKoorUser')
+        ->assertSet('editKoorName', 'New Koor')
+        ->assertSet('newKoorName', '')
+        ->assertSet('newKoorEmail', '')
+        ->assertSet('showAddKoorForm', false)
+        ->assertDispatched('swal');
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'New Koor',
+        'email' => 'newkoor@example.com',
+    ]);
+
+    $user = User::where('email', 'newkoor@example.com')->first();
+    expect($user->hasRole('Koordinator Lapangan'))->toBeTrue();
+});
+
+it('can quickly register a new panitera user', function () {
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->set('newPaniteraName', 'New Panitera')
+        ->set('newPaniteraEmail', 'newpanitera@example.com')
+        ->call('addPaniteraUser')
+        ->assertSet('newPaniteraName', '')
+        ->assertSet('newPaniteraEmail', '')
+        ->assertSet('showAddPaniteraForm', false)
+        ->assertDispatched('swal');
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'New Panitera',
+        'email' => 'newpanitera@example.com',
+    ]);
+
+    $user = User::where('email', 'newpanitera@example.com')->first();
+    expect($user->hasRole('Panitera'))->toBeTrue();
 });

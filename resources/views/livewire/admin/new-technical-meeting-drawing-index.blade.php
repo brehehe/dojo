@@ -1053,7 +1053,10 @@
                         </div>
                         <div class="tm-card-body">
                             <div class="participant-list">
-                                @foreach ($matchAthletes as $contName => $aths)
+                                @foreach ($matchAthletes as $entryKey => $aths)
+                                    @php
+                                        $contName = $aths->first()->contingent_name ?? 'Unknown';
+                                    @endphp
                                     <div class="p-cont-card">
                                         <div class="p-cont-name">
                                             <div class="p-cont-ava">{{ substr($contName, 0, 1) }}</div>
@@ -1374,32 +1377,64 @@
                             </select>
                         </div>
                     </div>
-                    <div><label
-                            style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Koordinator
-                            Lapangan</label>
-                        <select wire:model="editKoorName" class="tm-filter-sel">
-                            <option value="">— Pilih Koordinator —</option>
-                            @foreach ($koorUsers as $user)
-                                <option value="{{ $user->name }}">{{ $user->name }}</option>
-                            @endforeach
-                        </select>
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin:0;">Koordinator Lapangan</label>
+                            <button type="button" wire:click="$toggle('showAddKoorForm')" style="background:none; border:none; color:var(--red); font-size:11px; font-weight:600; cursor:pointer; padding:0; display:flex; align-items:center; gap:4px;">
+                                <i class="fa-solid {{ $showAddKoorForm ? 'fa-minus' : 'fa-plus' }}"></i>
+                                {{ $showAddKoorForm ? 'Batal' : 'Tambah Baru' }}
+                            </button>
+                        </div>
+                        @if ($showAddKoorForm)
+                            <div style="background:var(--paper); border:1px solid var(--paper2); border-radius:12px; padding:12px; margin-bottom:12px; display:flex; flex-direction:column; gap:10px;">
+                                <div style="font-weight:600; font-size:12px; color:var(--ink);">Tambah Koordinator Baru</div>
+                                <input type="text" wire:model="newKoorName" placeholder="Nama Koordinator" style="width:100%; padding:8px 12px; border:1px solid var(--paper2); border-radius:8px; font-size:12.5px;">
+                                @error('newKoorName') <span style="color:var(--red); font-size:11px;">{{ $message }}</span> @enderror
+                                <input type="email" wire:model="newKoorEmail" placeholder="Email (Unik)" style="width:100%; padding:8px 12px; border:1px solid var(--paper2); border-radius:8px; font-size:12.5px;">
+                                @error('newKoorEmail') <span style="color:var(--red); font-size:11px;">{{ $message }}</span> @enderror
+                                <button type="button" wire:click="addKoorUser" style="align-self:flex-end; padding:6px 12px; background:var(--red); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer;">Simpan & Pilih</button>
+                            </div>
+                        @else
+                            <select wire:model="editKoorName" class="tm-filter-sel">
+                                <option value="">— Pilih Koordinator —</option>
+                                @foreach ($koorUsers as $user)
+                                    <option value="{{ $user->name }}">{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
-                    <div><label
-                            style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin-bottom:8px;">Panitera
-                            (Pilih 4)</label>
-                        <div style="position:relative; margin-bottom:8px;"><input type="text"
-                                wire:model.live.debounce.300ms="searchPanitera" placeholder="Cari nama panitera..."
-                                style="width:100%; padding:10px 12px; border:1px solid var(--paper2); border-radius:10px; font-size:12.5px;">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--smoke); margin:0;">Panitera (Pilih 4)</label>
+                            <button type="button" wire:click="$toggle('showAddPaniteraForm')" style="background:none; border:none; color:var(--red); font-size:11px; font-weight:600; cursor:pointer; padding:0; display:flex; align-items:center; gap:4px;">
+                                <i class="fa-solid {{ $showAddPaniteraForm ? 'fa-minus' : 'fa-plus' }}"></i>
+                                {{ $showAddPaniteraForm ? 'Batal' : 'Tambah Baru' }}
+                            </button>
                         </div>
-                        <div
-                            style="max-height:150px; overflow-y:auto; border:1px solid var(--paper2); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
-                            @foreach ($paniteraUsers as $user)
-                                <label
-                                    style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input
-                                        type="checkbox" wire:model="editPaniteraNames"
-                                        value="{{ $user->name }}"><span>{{ $user->name }}</span></label>
-                            @endforeach
-                        </div>
+                        @if ($showAddPaniteraForm)
+                            <div style="background:var(--paper); border:1px solid var(--paper2); border-radius:12px; padding:12px; margin-bottom:12px; display:flex; flex-direction:column; gap:10px;">
+                                <div style="font-weight:600; font-size:12px; color:var(--ink);">Tambah Panitera Baru</div>
+                                <input type="text" wire:model="newPaniteraName" placeholder="Nama Panitera" style="width:100%; padding:8px 12px; border:1px solid var(--paper2); border-radius:8px; font-size:12.5px;">
+                                @error('newPaniteraName') <span style="color:var(--red); font-size:11px;">{{ $message }}</span> @enderror
+                                <input type="email" wire:model="newPaniteraEmail" placeholder="Email (Unik)" style="width:100%; padding:8px 12px; border:1px solid var(--paper2); border-radius:8px; font-size:12.5px;">
+                                @error('newPaniteraEmail') <span style="color:var(--red); font-size:11px;">{{ $message }}</span> @enderror
+                                <button type="button" wire:click="addPaniteraUser" style="align-self:flex-end; padding:6px 12px; background:var(--red); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer;">Simpan & Pilih</button>
+                            </div>
+                        @else
+                            <div style="position:relative; margin-bottom:8px;"><input type="text"
+                                    wire:model.live.debounce.300ms="searchPanitera" placeholder="Cari nama panitera..."
+                                    style="width:100%; padding:10px 12px; border:1px solid var(--paper2); border-radius:10px; font-size:12.5px;">
+                            </div>
+                            <div
+                                style="max-height:150px; overflow-y:auto; border:1px solid var(--paper2); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+                                @foreach ($paniteraUsers as $user)
+                                    <label
+                                        style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;"><input
+                                            type="checkbox" wire:model="editPaniteraNames"
+                                            value="{{ $user->name }}"><span>{{ $user->name }}</span></label>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <div

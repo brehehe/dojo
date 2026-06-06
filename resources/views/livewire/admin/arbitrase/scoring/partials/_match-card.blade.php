@@ -211,14 +211,11 @@
                                             this.time += 30; 
                                             let currentSecond = Math.floor(this.time / 1000);
                                             
-                                            // Interval buzzers: 90s and 120s
-                                            if (currentSecond === 90 && !this.playedIntervals.has(90)) {
-                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
-                                                this.playedIntervals.add(90);
-                                            }
+                                            // Interval buzzers: 120s
                                             if (currentSecond === 120 && !this.playedIntervals.has(120)) {
                                                 window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
                                                 this.playedIntervals.add(120);
+                                                $wire.pauseTimer();
                                             }
 
                                             if (currentSecond > this.lastTickSecond) {

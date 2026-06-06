@@ -111,7 +111,7 @@
 
     {{-- Sistem Arbitrase --}}
     @hasanyrole('Super Admin|Admin|Arbitrase|Perwasitan')
-        <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-arbitrators') || request()->routeIs('admin.master.new-referees') || request()->routeIs('admin.new-generate-referee')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-arbitrators') || request()->routeIs('admin.master.new-referees') || request()->routeIs('admin.new-generate-referee') || request()->routeIs('admin.new-koordinator') || request()->routeIs('admin.new-panitera')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Arbitrase</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -126,6 +126,12 @@
                 <a class="nav-item {{ request()->routeIs('admin.new-generate-referee') ? 'active' : '' }}"
                     href="{{ route('admin.new-generate-referee') }}"><i class="fa-solid fa-users-gear"></i> Penugasan
                     Wasit</a>
+                @hasanyrole('Super Admin|Admin')
+                    <a class="nav-item {{ request()->routeIs('admin.new-koordinator') ? 'active' : '' }}"
+                        href="{{ route('admin.new-koordinator') }}"><i class="fa-solid fa-user-tie"></i> Data Koordinator Lapangan</a>
+                    <a class="nav-item {{ request()->routeIs('admin.new-panitera') ? 'active' : '' }}"
+                        href="{{ route('admin.new-panitera') }}"><i class="fa-solid fa-users-rectangle"></i> Data Panitera</a>
+                @endhasanyrole
             </div>
         </div>
     @endhasanyrole
@@ -228,9 +234,12 @@
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-rekapitulasi-embu-index') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-rekapitulasi-embu-index') }}"><i
                         class="fa-solid fa-chart-line"></i> Rekapitulasi Embu</a>
-                <a class="nav-item {{ request()->routeIs('admin.new-unregistered-athlete-report') ? 'active' : '' }}"
+                <a class="nav-item {{ request()->routeIs('admin.laporan-rekap-penilaian*') ? 'active' : '' }}"
+                    href="{{ route('admin.laporan-rekap-penilaian') }}"><i
+                        class="fa-solid fa-file-signature"></i> Rekap Penilaian (PDF)</a>
+                {{--<a class="nav-item {{ request()->routeIs('admin.new-unregistered-athlete-report') ? 'active' : '' }}"
                     href="{{ route('admin.new-unregistered-athlete-report') }}"><i class="fa-solid fa-user-times"></i>
-                    Lap. Kontingen & Atlet Kosong</a>
+                    Lap. Kontingen & Atlet Kosong</a>--}}
             </div>
         </div>
     @endhasanyrole

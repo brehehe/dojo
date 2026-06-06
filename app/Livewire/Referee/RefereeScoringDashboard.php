@@ -75,6 +75,8 @@ class RefereeScoringDashboard extends Component
 
     public bool $isFormOpen = false;
 
+    public $signature = null;
+
     public function getIsTabletModeProperty()
     {
         return Auth::user()->judge_index && Auth::user()->court_id;
@@ -409,6 +411,8 @@ class RefereeScoringDashboard extends Component
                 $this->randoriItems = array_merge($this->randoriItems, $existing->details);
             }
             $this->notes = $existing->notes;
+            $this->signature = $existing->signature;
+            $this->dispatch('signature-loaded', ['signature' => $this->signature]);
             $this->calculateTotal();
         } else {
             $this->resetForm();
@@ -427,10 +431,12 @@ class RefereeScoringDashboard extends Component
             'shiro' => ['mujoken' => '', 'ippon' => '', 'wazaari' => '', 'batsu5' => '', 'batsu10' => '', 'yusei' => ''],
         ];
         $this->notes = '';
+        $this->signature = null;
         $this->totalScore = 0;
         $this->totalAka = 0;
         $this->totalShiro = 0;
         $this->calculateTotal();
+        $this->dispatch('form-reset');
     }
 
     public function updated($propertyName, $value)
@@ -491,8 +497,12 @@ class RefereeScoringDashboard extends Component
         }
     }
 
-    public function submitScore()
+    public function submitScore($signatureData = null)
     {
+        if ($signatureData) {
+            $this->signature = $signatureData;
+        }
+
         if (! $this->activeMatch || ! $this->referee) {
             return;
         }
@@ -531,6 +541,16 @@ class RefereeScoringDashboard extends Component
                 'icon' => 'error',
                 'title' => 'Gagal Menyimpan',
                 'text' => 'Posisi juri Anda tidak terdefinisi.',
+            ]);
+
+            return;
+        }
+
+        if (! $this->signature) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Tanda Tangan Diperlukan',
+                'text' => 'Silakan tanda tangan terlebih dahulu pada kolom yang disediakan.',
             ]);
 
             return;
@@ -604,6 +624,7 @@ class RefereeScoringDashboard extends Component
                     'details' => $details,
                     'total_calculated_score' => $this->totalScore,
                     'notes' => $this->notes,
+                    'signature' => $this->signature,
                 ]
             );
 

@@ -55,10 +55,11 @@
 
     {{-- SCROLLING CONTENT --}}
     <div class="relative z-10 flex-1 overflow-hidden" id="scroll-container" x-data="{
-        scrollSpeed: 1,
+        scrollSpeed: 0.4,
         pos: 0,
         contentHeight: 0,
         containerHeight: 0,
+        pauseTicks: 0,
         init() {
             this.containerHeight = $el.offsetHeight;
             this.contentHeight = this.$refs.content.offsetHeight;
@@ -66,10 +67,22 @@
             setInterval(() => {
                 if (this.contentHeight <= this.containerHeight) return;
                 
+                if (this.pauseTicks > 0) {
+                    this.pauseTicks--;
+                    return;
+                }
+                
+                if (this.pos === 0) {
+                    this.pauseTicks = 100; // Pause for ~3 seconds at the top
+                    this.pos = 0.001;
+                    return;
+                }
+                
                 this.pos += this.scrollSpeed;
                 
                 if (this.pos >= this.contentHeight - this.containerHeight) {
                     this.pos = 0;
+                    this.pauseTicks = 100; // Pause for ~3 seconds after resetting to top
                 }
                 
                 this.$refs.content.style.transform = `translateY(-${Math.max(0, this.pos)}px)`;

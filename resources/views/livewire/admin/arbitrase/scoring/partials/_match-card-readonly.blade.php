@@ -21,9 +21,9 @@
     }
 @endphp
 
-<div class="relative w-64 md:w-72 lg:w-80 {{ $isActive ? 'z-20' : '' }}">
+<div class="relative w-48 sm:w-56 md:w-64 lg:w-72 {{ $isActive ? 'z-20' : '' }}">
     {{-- Match label badge --}}
-    <div class="absolute -top-3 left-3 z-10 px-1.5 py-0.5 bg-white text-slate-500 text-[11px] md:text-xs lg:text-sm font-black rounded-lg border border-slate-200 uppercase tracking-wide shadow-sm">
+    <div class="absolute -top-2.5 left-2 z-10 px-1.5 py-0.5 bg-white text-slate-500 text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-black rounded-lg border border-slate-200 uppercase tracking-wide shadow-sm">
         @if($isGf)
             Grand Final
         @else
@@ -33,11 +33,11 @@
 
     {{-- Active badge --}}
     @if($isActive)
-        <div class="absolute -top-3 right-3 z-20 px-3 py-0.5 bg-blue-500 text-white text-[11px] md:text-xs lg:text-sm font-black rounded-lg uppercase shadow-lg shadow-blue-500/40 animate-pulse flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full"></span> ACTIVE
+        <div class="absolute -top-2.5 right-2 z-20 px-2 py-0.5 bg-blue-500 text-white text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-black rounded-lg uppercase shadow-lg shadow-blue-500/40 animate-pulse flex items-center gap-1">
+            <span class="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full"></span> ACTIVE
         </div>
     @elseif($isDone)
-        <div class="absolute -top-3 right-3 z-10 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] md:text-xs lg:text-sm font-black rounded-lg uppercase shadow-sm">
+        <div class="absolute -top-2.5 right-2 z-10 px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-black rounded-lg uppercase shadow-sm">
             Selesai
         </div>
     @endif
@@ -46,61 +46,62 @@
     <div class="bg-white rounded-2xl border-2 {{ $borderClass }} shadow-md overflow-hidden transition-all">
         @if(!$hasSomeAthlete)
             {{-- Empty / TBD --}}
-            <div class="px-3 py-6 flex flex-col items-center justify-center gap-1">
-                <i class="fas fa-clock text-slate-300 text-3xl"></i>
-                <span class="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wide mt-2">Menunggu...</span>
+            <div class="px-2 py-4 sm:px-3 sm:py-6 flex flex-col items-center justify-center gap-1">
+                <i class="fas fa-clock text-slate-300 text-2xl sm:text-3xl"></i>
+                <span class="text-[10px] sm:text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wide mt-2">Menunggu...</span>
             </div>
         @else
             {{-- Athlete 1 (Merah/AKA) --}}
-            <div class="px-3 py-3 md:py-4 border-b border-slate-100 flex items-center gap-3
+            <div class="px-2.5 py-2.5 sm:px-3 sm:py-3 md:py-4 border-b border-slate-100 flex items-center gap-2 sm:gap-3
                 {{ $isDone && $winnerNode === 'athlete1' ? 'bg-rose-50' : '' }}">
-                <div class="w-2 h-10 md:h-12 rounded-full flex-shrink-0
+                <div class="w-1.5 sm:w-2 h-8 sm:h-10 md:h-12 rounded-full shrink-0
                     {{ $isDone && $winnerNode === 'athlete1' ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-rose-200' }}">
                 </div>
                 <div class="flex-1 min-w-0">
                     @if($a1)
-                        <div class="text-sm md:text-base font-black uppercase tracking-tight truncate
+                        <div class="text-xs sm:text-sm md:text-base font-black uppercase tracking-tight truncate
                             {{ $isDone && $winnerNode === 'athlete1' ? 'text-slate-800' : 'text-slate-600' }}">
                             {{ $a1['name'] }}
                         </div>
                         @if($a1['contingent'] ?? null)
-                            <div class="text-xs md:text-sm font-bold text-slate-400 truncate mt-0.5">{{ $a1['contingent'] }}</div>
+                            <div class="text-[10px] sm:text-xs md:text-sm font-bold text-slate-400 truncate mt-0.5">{{ $a1['contingent'] }}</div>
                         @endif
                     @else
                         <div class="text-sm md:text-base text-slate-300 italic font-bold">TBD</div>
                     @endif
                 </div>
                 @if($isDone && $winnerNode === 'athlete1')
-                    <span class="text-[11px] md:text-xs font-black bg-rose-100 text-rose-600 border border-rose-200 px-2 py-1 rounded-lg flex-shrink-0 shadow-sm">W</span>
+                    <span class="text-[10px] sm:text-[11px] md:text-xs font-black bg-rose-100 text-rose-600 border border-rose-200 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg shrink-0 shadow-sm">W</span>
                 @endif
             </div>
 
             {{-- VS --}}
-            <div class="py-1 bg-slate-50 border-y border-slate-100 flex items-center justify-center text-xs md:text-sm font-black text-slate-300 tracking-widest uppercase shadow-inner">vs</div>
+            <div class="py-0.5 sm:py-1 bg-slate-50 border-y border-slate-100 flex items-center justify-center text-[10px] sm:text-xs md:text-sm font-black text-slate-300 tracking-widest uppercase shadow-inner">vs</div>
 
             {{-- Athlete 2 (Putih/SHIRO) --}}
-            <div class="px-3 py-3 md:py-4 flex items-center gap-3
+            <div class="px-2.5 py-2.5 sm:px-3 sm:py-3 md:py-4 flex items-center gap-2 sm:gap-3
                 {{ $isDone && $winnerNode === 'athlete2' ? 'bg-indigo-50' : '' }}">
-                <div class="w-2 h-10 md:h-12 rounded-full flex-shrink-0
+                <div class="w-1.5 sm:w-2 h-8 sm:h-10 md:h-12 rounded-full shrink-0
                     {{ $isDone && $winnerNode === 'athlete2' ? 'bg-indigo-500 shadow-sm shadow-indigo-500/50' : 'bg-indigo-200' }}">
                 </div>
                 <div class="flex-1 min-w-0">
                     @if($a2)
-                        <div class="text-sm md:text-base font-black uppercase tracking-tight truncate
+                        <div class="text-xs sm:text-sm md:text-base font-black uppercase tracking-tight truncate
                             {{ $isDone && $winnerNode === 'athlete2' ? 'text-slate-800' : 'text-slate-600' }}">
                             {{ $a2['name'] }}
                         </div>
                         @if($a2['contingent'] ?? null)
-                            <div class="text-xs md:text-sm font-bold text-slate-400 truncate mt-0.5">{{ $a2['contingent'] }}</div>
+                            <div class="text-[10px] sm:text-xs md:text-sm font-bold text-slate-400 truncate mt-0.5">{{ $a2['contingent'] }}</div>
                         @endif
                     @else
                         <div class="text-sm md:text-base text-slate-300 italic font-bold">TBD</div>
                     @endif
                 </div>
                 @if($isDone && $winnerNode === 'athlete2')
-                    <span class="text-[11px] md:text-xs font-black bg-indigo-100 text-indigo-600 border border-indigo-200 px-2 py-1 rounded-lg flex-shrink-0 shadow-sm">W</span>
+                    <span class="text-[10px] sm:text-[11px] md:text-xs font-black bg-indigo-100 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg shrink-0 shadow-sm">W</span>
                 @endif
             </div>
         @endif
     </div>
 </div>
+

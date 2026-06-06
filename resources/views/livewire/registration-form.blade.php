@@ -701,6 +701,31 @@
                                                 <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p>
                                             @enderror
 
+                                            {{-- Bypass Toggle --}}
+                                            <div style="margin-top:8px; display:flex; align-items:center; gap:6px;">
+                                                <input type="checkbox" id="join_other_age_group_{{ $index }}" 
+                                                       wire:model.live="athletes.{{ $index }}.join_other_age_group" 
+                                                       style="cursor:pointer; width:16px; height:16px;">
+                                                <label for="join_other_age_group_{{ $index }}" style="margin:0; font-size:12px; cursor:pointer; font-weight:700; color:#e67e22;">
+                                                    Gabung Kelompok Usia Lain (Bypass)
+                                                </label>
+                                            </div>
+
+                                            @if($athlete['join_other_age_group'] ?? false)
+                                                <div style="margin-top:8px; padding: 10px; background: rgba(230, 126, 34, 0.05); border: 1px dashed rgba(230, 126, 34, 0.3); border-radius: 12px;">
+                                                    <label style="font-size:11px; font-weight:bold; color:var(--ink); margin-bottom: 4px; display:block;">Pilih Kelompok Usia Tandingan <span class="required">*</span></label>
+                                                    <select wire:model.live="athletes.{{ $index }}.event_age_group" class="form-input-custom" style="font-size:12px; height:36px; padding: 4px 8px;">
+                                                        <option value="">-- Pilih Kelompok Tandingan --</option>
+                                                        @foreach ($ageGroups as $group)
+                                                            <option value="{{ $group->id }}">{{ $group->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('athletes.' . $index . '.event_age_group')
+                                                        <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                            @endif
+
                                             @php
                                                 $selectedAgeGroup = $ageGroups->firstWhere('id', $athlete['age_group']);
                                             @endphp

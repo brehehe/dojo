@@ -55,10 +55,13 @@ use App\Livewire\Admin\NewCourtIndex;
 use App\Livewire\Admin\NewDashboardIndex;
 use App\Livewire\Admin\NewEmbuResultIndex;
 use App\Livewire\Admin\NewGenerateRefereeIndex;
+use App\Livewire\Admin\NewKoordinatorIndex;
 use App\Livewire\Admin\NewKyuLevelIndex;
 use App\Livewire\Admin\NewLaporanHasilIndex;
 use App\Livewire\Admin\NewLaporanRekapitulasiEmbu;
 use App\Livewire\Admin\NewLaporanRekapitulasiRandori;
+use App\Livewire\Admin\NewLaporanRekapPenilaianDetail;
+use App\Livewire\Admin\NewLaporanRekapPenilaianIndex;
 use App\Livewire\Admin\NewLaporanSkorIndex;
 use App\Livewire\Admin\NewLaporanWasitIndex;
 use App\Livewire\Admin\NewLaporanWasitJuriIndex;
@@ -66,6 +69,7 @@ use App\Livewire\Admin\NewMatchNumberIndex;
 use App\Livewire\Admin\NewMultiNomorReportIndex;
 use App\Livewire\Admin\NewOfficialForm;
 use App\Livewire\Admin\NewOfficialIndex;
+use App\Livewire\Admin\NewPaniteraIndex;
 use App\Livewire\Admin\NewPaymentMethodIndex;
 use App\Livewire\Admin\NewPoolIndex;
 use App\Livewire\Admin\NewRefereeIndex;
@@ -171,7 +175,7 @@ Route::middleware('auth')->group(function () {
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     })->name('logout');
 
     Route::prefix('admin')->name('admin.')->group(function () {
@@ -197,6 +201,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/new-tm-drawing', NewTechnicalMeetingDrawingIndex::class)->name('new-tm-drawing');
         Route::get('/match-number-merges', NewMatchNumberMergeIndex::class)->name('match-number-merges');
         Route::get('/new-users', NewUserIndex::class)->name('new-users');
+        Route::get('/new-koordinator', NewKoordinatorIndex::class)->name('new-koordinator');
+        Route::get('/new-panitera', NewPaniteraIndex::class)->name('new-panitera');
         Route::get('/master/new-referees', NewRefereeIndex::class)->name('master.new-referees');
         Route::get('/arbitrase/new-referees', function () {
             return redirect()->route('admin.master.new-referees');
@@ -205,6 +211,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
         Route::get('new-multi-nomor-report', NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
         Route::get('new-unregistered-athlete-report', NewUnregisteredAthleteReportIndex::class)->name('new-unregistered-athlete-report');
+        Route::get('laporan-rekap-penilaian', NewLaporanRekapPenilaianIndex::class)->name('laporan-rekap-penilaian');
+        Route::get('laporan-rekap-penilaian/{matchNumber}/cetak', NewLaporanRekapPenilaianDetail::class)->name('laporan-rekap-penilaian.cetak');
 
         Route::get('/new-scoring', NewScoringIndex::class)->name('new-scoring-index');
         Route::get('/new-scoring/embu/{matchNumber}', NewScoringEmbuIndex::class)->name('new-scoring-embu-index');

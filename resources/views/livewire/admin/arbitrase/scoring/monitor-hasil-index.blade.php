@@ -1,35 +1,35 @@
 <div wire:poll class="relative mx-auto flex h-screen min-h-screen w-full max-w-[1920px] flex-col overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.08),_transparent_32%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] p-3 font-sans text-slate-800 sm:p-4 md:p-6 lg:p-8">
 
     {{-- HEADER --}}
-    <div class="relative z-10 mb-4 flex w-full flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-white/90 p-4 shadow-[0_18px_60px_-28px_rgba(15,23,42,0.35)] backdrop-blur sm:mb-5 sm:p-5 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-6 md:rounded-[2rem] md:p-6 lg:p-8">
-        <div class="flex items-center gap-3 sm:gap-4">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 shadow-lg shadow-amber-500/25 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-20 lg:w-20">
-                <i class="fas fa-trophy text-xl text-white drop-shadow-md sm:text-2xl md:text-3xl lg:text-4xl"></i>
+    <div class="relative z-10 mb-3 flex w-full flex-col gap-3 rounded-2xl border border-white/70 bg-white/90 p-3 shadow-[0_12px_40px_-20px_rgba(15,23,42,0.3)] backdrop-blur sm:mb-4 sm:p-4 md:mb-4 md:flex-row md:items-center md:justify-between md:gap-4 md:rounded-[1.5rem] lg:p-5">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 shadow-md shadow-amber-500/20 sm:h-12 sm:w-12 md:h-14 md:w-14 lg:h-16 lg:w-16">
+                <i class="fas fa-trophy text-lg text-white drop-shadow-md sm:text-xl md:text-2xl lg:text-3xl"></i>
             </div>
             <div class="min-w-0">
-                <h1 class="flex flex-wrap items-center gap-2 text-lg font-black tracking-tight text-slate-900 sm:gap-3 sm:text-xl md:text-3xl lg:text-4xl">
+                <h1 class="flex flex-wrap items-center gap-1.5 text-base font-black tracking-tight text-slate-900 sm:gap-2 sm:text-lg md:text-2xl lg:text-3xl">
                     MONITOR HASIL
                     @if($match && $match->draft_type === 'randori')
-                        <span class="rounded-lg border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] uppercase tracking-[0.24em] text-rose-600 sm:text-xs md:rounded-xl md:px-3 md:py-1 md:text-[15px] lg:text-lg">RANDORI</span>
+                        <span class="rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[8px] uppercase tracking-[0.2em] text-rose-600 sm:text-[9px] md:rounded-lg md:px-2 md:py-0.5 md:text-xs lg:text-sm">RANDORI</span>
                     @elseif($match && $match->draft_type === 'embu')
-                        <span class="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] uppercase tracking-[0.24em] text-emerald-600 sm:text-xs md:rounded-xl md:px-3 md:py-1 md:text-[15px] lg:text-lg">EMBU</span>
+                        <span class="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[8px] uppercase tracking-[0.2em] text-emerald-600 sm:text-[9px] md:rounded-lg md:px-2 md:py-0.5 md:text-xs lg:text-sm">EMBU</span>
                     @endif
                 </h1>
                 @if($match)
-                    <p class="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 sm:text-sm md:text-[15px] lg:text-lg">
+                    <p class="mt-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 sm:text-xs md:text-sm lg:text-[15px]">
                         {{ $match->mergeDetail?->merge?->name ?? $match->name }}
-                        @if($match->ageGroup) <span class="text-slate-300 mx-2">•</span> <span class="text-slate-500">{{ $match->ageGroup->name }}</span> @endif
+                        @if($match->ageGroup) <span class="text-slate-300 mx-1.5">•</span> <span class="text-slate-500">{{ $match->ageGroup->name }}</span> @endif
                     </p>
                 @endif
             </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 text-center sm:px-5 md:min-w-[220px] md:text-right">
+        <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-center sm:px-4 md:min-w-[180px] md:text-right">
             @if($court)
-                <h2 class="text-2xl font-black tracking-tight text-amber-500 sm:text-3xl md:text-4xl lg:text-5xl">{{ $court->name }}</h2>
-                <p class="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400 sm:text-xs md:text-sm lg:text-[15px]">Update Otomatis</p>
+                <h2 class="text-lg font-black tracking-tight text-amber-500 sm:text-xl md:text-2xl lg:text-3xl">{{ $court->name }}</h2>
+                <p class="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[9px] md:text-xs lg:text-xs">Update Otomatis</p>
             @else
-                <h2 class="text-xl font-black text-amber-500 md:text-2xl lg:text-3xl">Live View</h2>
+                <h2 class="text-md font-black text-amber-500 md:text-lg lg:text-xl">Live View</h2>
             @endif
         </div>
     </div>
@@ -191,10 +191,10 @@
                                 </h3>
                             </div>
 
-                            <div class="flex items-start gap-12 relative z-10">
+                            <div class="flex items-start gap-4 sm:gap-6 md:gap-8 lg:gap-12 relative z-10">
                                 @foreach($ubRounds as $roundIdx => $roundMatches)
-                                    <div class="flex flex-col gap-6 justify-center" style="min-width: 280px; min-height: 100%;">
-                                        <div class="text-center mb-6 sticky top-0 bg-slate-50/90 py-2 rounded font-black text-sm md:text-[15px] lg:text-base text-slate-500 tracking-widest uppercase">
+                                    <div class="flex flex-col gap-4 sm:gap-6 justify-center min-w-[192px] sm:min-w-[224px] md:min-w-[256px] lg:min-w-[288px]" style="min-height: 100%;">
+                                        <div class="text-center mb-4 sticky top-0 bg-slate-50/90 py-1.5 rounded font-black text-xs sm:text-sm md:text-[15px] lg:text-base text-slate-500 tracking-widest uppercase">
                                             @if($roundIdx === count($ubRounds) - 1)
                                                 Final UB
                                             @elseif($hasPrelim && $roundIdx === 0)
@@ -232,8 +232,8 @@
 
                                 {{-- GRAND FINAL COLUMN --}}
                                 @if($gfMatch)
-                                    <div class="flex flex-col gap-6 justify-center" style="min-width: 320px; margin-left: 2rem;">
-                                        <div class="text-center mb-6 sticky top-0 bg-slate-50/90 py-2 rounded font-black text-sm md:text-[15px] lg:text-base text-amber-600 tracking-widest uppercase">
+                                    <div class="flex flex-col gap-4 sm:gap-6 justify-center min-w-[192px] sm:min-w-[224px] md:min-w-[256px] lg:min-w-[288px] ml-4 sm:ml-6 md:ml-8 lg:ml-12">
+                                        <div class="text-center mb-4 sticky top-0 bg-slate-50/90 py-1.5 rounded font-black text-xs sm:text-sm md:text-[15px] lg:text-base text-amber-600 tracking-widest uppercase">
                                             Grand Final
                                         </div>
                                         @php
@@ -241,7 +241,7 @@
                                             $gfResult = $randoriResults[$gfNodeKey] ?? null;
                                             $gfWinnerNode = $gfResult?->winner;
                                         @endphp
-                                        <div class="relative group mt-auto mb-auto bg-amber-50 rounded-2xl border-2 border-amber-200 shadow-md shadow-amber-500/10 scale-110 origin-left">
+                                        <div class="relative group mt-auto mb-auto bg-amber-50 rounded-2xl border-2 border-amber-200 shadow-md shadow-amber-500/10 scale-105 md:scale-110 origin-left">
                                             @include('livewire.admin.arbitrase.scoring.partials._match-card-readonly', [
                                                 'm' => $gfMatch,
                                                 'roundIdx' => 0,
@@ -268,10 +268,10 @@
                                     </h3>
                                 </div>
 
-                                <div class="flex items-start gap-12 relative z-10">
+                                <div class="flex items-start gap-4 sm:gap-6 md:gap-8 lg:gap-12 relative z-10">
                                     @foreach($lbRounds as $roundIdx => $roundMatches)
-                                        <div class="flex flex-col gap-6 justify-center" style="min-width: 280px; min-height: 100%;">
-                                            <div class="text-center mb-6 sticky top-0 bg-slate-50/90 py-2 rounded font-black text-sm md:text-[15px] lg:text-base text-slate-500 tracking-widest uppercase">
+                                        <div class="flex flex-col gap-4 sm:gap-6 justify-center min-w-[192px] sm:min-w-[224px] md:min-w-[256px] lg:min-w-[288px]" style="min-height: 100%;">
+                                            <div class="text-center mb-4 sticky top-0 bg-slate-50/90 py-1.5 rounded font-black text-xs sm:text-sm md:text-[15px] lg:text-base text-slate-500 tracking-widest uppercase">
                                                 @if($roundIdx === count($lbRounds) - 1)
                                                     Final LB
                                                 @else

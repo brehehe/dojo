@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\MatchNumberMerge;
 use App\Models\RandoriMatchResult;
 use App\Models\ScheduleReferee;
 use App\Models\TournamentResult;
@@ -18,9 +19,9 @@ use Livewire\Component;
 class NewScoringRandoriIndex extends Component
 {
     public MatchNumber $matchNumber;
-    
+
     public $merge = null;
-    
+
     public $displayName = '';
 
     public $drawingData = [];
@@ -53,18 +54,40 @@ class NewScoringRandoriIndex extends Component
 
     public $matchNumberIds = [];
 
+    public $sigArbitraseName = '';
+
+    public $sigArbitraseData = null;
+
+    public $sigKoordinatorName = '';
+
+    public $sigKoordinatorData = null;
+
+    public $sigWasitName = '';
+
+    public $sigWasitData = null;
+
+    public $sigPanitera = [];
+
+    public $sigManagerRedName = '';
+
+    public $sigManagerRedData = null;
+
+    public $sigManagerWhiteName = '';
+
+    public $sigManagerWhiteData = null;
+
     public function mount(MatchNumber $matchNumber)
     {
         try {
             $this->matchNumber = $matchNumber;
-            
+
             // Check if this match is part of a merge
             $mergeDetails = DB::table('match_number_merge_details')
                 ->where('match_number_id', $matchNumber->id)
                 ->first();
 
             if ($mergeDetails) {
-                $this->merge = \App\Models\MatchNumberMerge::find($mergeDetails->match_number_merge_id);
+                $this->merge = MatchNumberMerge::find($mergeDetails->match_number_merge_id);
                 $this->matchNumberIds = DB::table('match_number_merge_details')
                     ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
                     ->pluck('match_number_id')
@@ -238,7 +261,9 @@ class NewScoringRandoriIndex extends Component
 
         foreach ($results as $result) {
             $parts = explode('_', $result->bracket_node);
-            if (count($parts) < 3) continue;
+            if (count($parts) < 3) {
+                continue;
+            }
 
             $bracket = $parts[0];
             $roundIdx = (int) $parts[1];
@@ -254,7 +279,9 @@ class NewScoringRandoriIndex extends Component
                 continue;
             }
 
-            if (! $match) continue;
+            if (! $match) {
+                continue;
+            }
 
             $winnerSlot = $result->winner_color;
             $loserSlot = $winnerSlot === 'athlete1' ? 'athlete2' : 'athlete1';
@@ -262,7 +289,9 @@ class NewScoringRandoriIndex extends Component
             $winnerData = $match[$winnerSlot] ?? null;
             $loserData = $match[$loserSlot] ?? null;
 
-            if (! $winnerData) continue;
+            if (! $winnerData) {
+                continue;
+            }
 
             $match['winner'] = $winnerSlot;
             $match['winner_data'] = $winnerData;
@@ -304,7 +333,7 @@ class NewScoringRandoriIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Bracket Diperbaiki',
-            'text' => 'Routing diperbaiki & ' . $fixed . ' hasil di-replay ulang.',
+            'text' => 'Routing diperbaiki & '.$fixed.' hasil di-replay ulang.',
         ]);
     }
 
@@ -449,7 +478,9 @@ class NewScoringRandoriIndex extends Component
     public function openMatchModal(string $bracket, int $roundIdx, int $matchIdx)
     {
         $match = $this->getMatchData($bracket, $roundIdx, $matchIdx);
-        if (! $match || (! $match['athlete1'] && ! $match['athlete2'])) return;
+        if (! $match || (! $match['athlete1'] && ! $match['athlete2'])) {
+            return;
+        }
 
         $this->activeMatch = ['bracket' => $bracket, 'round' => $roundIdx, 'match' => $matchIdx, 'data' => $match];
         $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
@@ -467,12 +498,88 @@ class NewScoringRandoriIndex extends Component
 
         $this->scoringAka = $metadata['scoringAka'] ?? ['mujoken_kachi' => 0, 'ippon' => 0, 'waza_ari' => 0, 'hasil_batsu_5' => 0, 'hasil_batsu_10' => 0, 'yusei_kachi' => 0];
         $this->scoringShiro = $metadata['scoringShiro'] ?? ['mujoken_kachi' => 0, 'ippon' => 0, 'waza_ari' => 0, 'hasil_batsu_5' => 0, 'hasil_batsu_10' => 0, 'yusei_kachi' => 0];
+
+        $sigs = $metadata['signatures'] ?? [];
+
+        $firstDrawing = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->first();
+        $officials = $firstDrawing?->metadata['officials'] ?? null;
+
+        $arbitraseName = '';
+        $firstWasitName = '';
+        if ($firstDrawing) {
+            $arbitraseReferee = ScheduleReferee::with('referee.user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->whereNull('court_id')
+                ->where('judge_index', 0)
+                ->first();
+            $arbitraseName = $arbitraseReferee?->referee?->user?->name ?? '';
+
+            $wasitReferee = ScheduleReferee::with('referee.user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('judge_index', '>', 0)
+                ->orderBy('judge_index')
+                ->first();
+            $firstWasitName = $wasitReferee?->referee?->user?->name ?? '';
+        }
+
+        $this->sigArbitraseName = $sigs['arbitrase']['name'] ?? ($arbitraseName ?: '');
+        $this->sigArbitraseData = $sigs['arbitrase']['signature'] ?? null;
+
+        $this->sigKoordinatorName = $sigs['koordinator']['name'] ?? ($officials['koordinator_lapangan'] ?? '');
+        $this->sigKoordinatorData = $sigs['koordinator']['signature'] ?? null;
+
+        $this->sigWasitName = $sigs['wasit']['name'] ?? ($firstWasitName ?: '');
+        $this->sigWasitData = $sigs['wasit']['signature'] ?? null;
+
+        $this->sigPanitera = [];
+        $savedPanitera = $sigs['panitera'] ?? [];
+        $configuredPanitera = $officials['panitera'] ?? [];
+        if (! is_array($configuredPanitera)) {
+            $configuredPanitera = $configuredPanitera ? [$configuredPanitera] : [];
+        }
+
+        if (count($savedPanitera) > 0) {
+            $this->sigPanitera = [];
+            foreach ($savedPanitera as $p) {
+                $this->sigPanitera[] = [
+                    'id' => $p['id'] ?? uniqid(),
+                    'name' => $p['name'] ?? '',
+                    'signature' => $p['signature'] ?? null,
+                ];
+            }
+        } else {
+            foreach ($configuredPanitera as $pName) {
+                $this->sigPanitera[] = [
+                    'id' => uniqid(),
+                    'name' => $pName,
+                    'signature' => null,
+                ];
+            }
+            if (empty($this->sigPanitera)) {
+                $this->sigPanitera[] = [
+                    'id' => uniqid(),
+                    'name' => '',
+                    'signature' => null,
+                ];
+            }
+        }
+
+        $this->sigManagerRedName = $sigs['manager_red']['name'] ?? '';
+        $this->sigManagerRedData = $sigs['manager_red']['signature'] ?? null;
+
+        $this->sigManagerWhiteName = $sigs['manager_white']['name'] ?? '';
+        $this->sigManagerWhiteData = $sigs['manager_white']['signature'] ?? null;
     }
 
     public function openGrandFinalModal()
     {
         $gf = $this->drawingData['grand_final'] ?? null;
-        if (! $gf || (! $gf['athlete1'] && ! $gf['athlete2'])) return;
+        if (! $gf || (! $gf['athlete1'] && ! $gf['athlete2'])) {
+            return;
+        }
 
         $this->activeMatch = ['bracket' => 'gf', 'round' => 0, 'match' => 0, 'data' => $gf];
         $existing = RandoriMatchResult::whereIn('match_number_id', $this->matchNumberIds)->where('bracket_node', 'gf_0_0')->first();
@@ -493,21 +600,94 @@ class NewScoringRandoriIndex extends Component
 
     public function resetDetailedScoring()
     {
-        $this->scoreRed = 0; $this->scoreBlue = 0;
+        $this->scoreRed = 0;
+        $this->scoreBlue = 0;
         $this->scoringAka = ['mujoken_kachi' => 0, 'ippon' => 0, 'waza_ari' => 0, 'hasil_batsu_5' => 0, 'hasil_batsu_10' => 0, 'yusei_kachi' => 0];
         $this->scoringShiro = ['mujoken_kachi' => 0, 'ippon' => 0, 'waza_ari' => 0, 'hasil_batsu_5' => 0, 'hasil_batsu_10' => 0, 'yusei_kachi' => 0];
+
+        $this->sigArbitraseName = '';
+        $this->sigArbitraseData = null;
+        $this->sigKoordinatorName = '';
+        $this->sigKoordinatorData = null;
+        $this->sigWasitName = '';
+        $this->sigWasitData = null;
+        $this->sigPanitera = [];
+        $this->sigManagerRedName = '';
+        $this->sigManagerRedData = null;
+        $this->sigManagerWhiteName = '';
+        $this->sigManagerWhiteData = null;
+    }
+
+    public function addPanitera()
+    {
+        $this->sigPanitera[] = [
+            'id' => uniqid(),
+            'name' => '',
+            'signature' => null,
+        ];
+    }
+
+    public function removePanitera(int $index)
+    {
+        if (isset($this->sigPanitera[$index])) {
+            unset($this->sigPanitera[$index]);
+            $this->sigPanitera = array_values($this->sigPanitera);
+        }
     }
 
     private function calculateTotals()
     {
         $weights = ['mujoken_kachi' => 15, 'ippon' => 10, 'waza_ari' => 5, 'hasil_batsu_5' => -5, 'hasil_batsu_10' => -10, 'yusei_kachi' => 5];
-        $this->scoreRed = 0; foreach ($this->scoringAka as $t => $c) $this->scoreRed += $c * ($weights[$t] ?? 0);
-        $this->scoreBlue = 0; foreach ($this->scoringShiro as $t => $c) $this->scoreBlue += $c * ($weights[$t] ?? 0);
+        $this->scoreRed = 0;
+        foreach ($this->scoringAka as $t => $c) {
+            $this->scoreRed += $c * ($weights[$t] ?? 0);
+        }
+        $this->scoreBlue = 0;
+        foreach ($this->scoringShiro as $t => $c) {
+            $this->scoreBlue += $c * ($weights[$t] ?? 0);
+        }
     }
 
     public function submitScoring()
     {
-        if (! $this->activeMatch) return;
+        if (! $this->activeMatch) {
+            return;
+        }
+
+        // Validate signatures
+        if (empty($this->sigArbitraseName) || empty($this->sigArbitraseData)) {
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Tanda Tangan Kurang', 'text' => 'Nama dan Tanda tangan Arbitrase wajib diisi.']);
+
+            return;
+        }
+        if (empty($this->sigKoordinatorName) || empty($this->sigKoordinatorData)) {
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Tanda Tangan Kurang', 'text' => 'Nama dan Tanda tangan Koordinator wajib diisi.']);
+
+            return;
+        }
+        if (empty($this->sigWasitName) || empty($this->sigWasitData)) {
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Tanda Tangan Kurang', 'text' => 'Nama dan Tanda tangan Wasit wajib diisi.']);
+
+            return;
+        }
+        foreach ($this->sigPanitera as $idx => $p) {
+            if (empty($p['name']) || empty($p['signature'])) {
+                $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Tanda Tangan Kurang', 'text' => 'Nama dan Tanda tangan Panitera ke-'.($idx + 1).' wajib diisi.']);
+
+                return;
+            }
+        }
+        if (empty($this->sigManagerRedName) || empty($this->sigManagerRedData)) {
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Tanda Tangan Kurang', 'text' => 'Nama dan Tanda tangan Manajer Pita Merah wajib diisi.']);
+
+            return;
+        }
+        if (empty($this->sigManagerWhiteName) || empty($this->sigManagerWhiteData)) {
+            $this->dispatch('swal', ['icon' => 'warning', 'title' => 'Tanda Tangan Kurang', 'text' => 'Nama dan Tanda tangan Manajer Pita Putih wajib diisi.']);
+
+            return;
+        }
+
         if ($this->scoreRed > $this->scoreBlue) {
             $this->selectWinner($this->activeMatch['bracket'], $this->activeMatch['round'], $this->activeMatch['match'], 'athlete1');
         } elseif ($this->scoreBlue > $this->scoreRed) {
@@ -520,35 +700,57 @@ class NewScoringRandoriIndex extends Component
     public function selectWinner(string $bracket, int $roundIdx, int $matchIdx, string $winnerSlot)
     {
         $data = $this->matchNumber->drawing_data;
-        if ($bracket === 'ub') $match = $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
-        elseif ($bracket === 'lb') $match = $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
-        elseif ($bracket === 'gf') $match = $data['grand_final'] ?? null;
-        else return;
+        if ($bracket === 'ub') {
+            $match = $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+        } elseif ($bracket === 'lb') {
+            $match = $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+        } elseif ($bracket === 'gf') {
+            $match = $data['grand_final'] ?? null;
+        } else {
+            return;
+        }
 
-        if (! $match) return;
+        if (! $match) {
+            return;
+        }
         $winnerData = $match[$winnerSlot] ?? null;
         $loserSlot = $winnerSlot === 'athlete1' ? 'athlete2' : 'athlete1';
         $loserData = $match[$loserSlot] ?? null;
 
-        if (! $winnerData) return;
+        if (! $winnerData) {
+            return;
+        }
         $match['winner'] = $winnerSlot;
         $match['winner_data'] = $winnerData;
 
-        if ($bracket === 'ub') $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
-        elseif ($bracket === 'lb') $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
-        elseif ($bracket === 'gf') $data['grand_final'] = $match;
+        if ($bracket === 'ub') {
+            $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
+        } elseif ($bracket === 'lb') {
+            $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
+        } elseif ($bracket === 'gf') {
+            $data['grand_final'] = $match;
+        }
 
         if ($match['winner_next'] ?? null) {
-            if ($match['winner_next']['bracket'] === 'ranked') $data['juara'][$match['winner_next']['rank']] = $winnerData;
-            else $data = $this->placeAthlete($data, $match['winner_next'], $winnerData);
+            if ($match['winner_next']['bracket'] === 'ranked') {
+                $data['juara'][$match['winner_next']['rank']] = $winnerData;
+            } else {
+                $data = $this->placeAthlete($data, $match['winner_next'], $winnerData);
+            }
         }
 
         if ($loserData && ($match['loser_next'] ?? null)) {
-            if ($match['loser_next']['bracket'] === 'lb') $data = $this->placeAthlete($data, $match['loser_next'], $loserData);
-            elseif ($match['loser_next']['bracket'] === 'ranked') $data['juara'][$match['loser_next']['rank']] = $loserData;
+            if ($match['loser_next']['bracket'] === 'lb') {
+                $data = $this->placeAthlete($data, $match['loser_next'], $loserData);
+            } elseif ($match['loser_next']['bracket'] === 'ranked') {
+                $data['juara'][$match['loser_next']['rank']] = $loserData;
+            }
         }
 
-        if ($bracket === 'gf') { $data['juara'][1] = $winnerData; $data['juara'][2] = $loserData; }
+        if ($bracket === 'gf') {
+            $data['juara'][1] = $winnerData;
+            $data['juara'][2] = $loserData;
+        }
 
         $data = $this->propagateBracketByes($data);
 
@@ -564,34 +766,68 @@ class NewScoringRandoriIndex extends Component
                 'metadata' => json_encode([
                     'scoringAka' => $this->scoringAka,
                     'scoringShiro' => $this->scoringShiro,
-                ])
+                    'signatures' => [
+                        'arbitrase' => [
+                            'name' => $this->sigArbitraseName,
+                            'signature' => $this->sigArbitraseData,
+                        ],
+                        'koordinator' => [
+                            'name' => $this->sigKoordinatorName,
+                            'signature' => $this->sigKoordinatorData,
+                        ],
+                        'wasit' => [
+                            'name' => $this->sigWasitName,
+                            'signature' => $this->sigWasitData,
+                        ],
+                        'panitera' => $this->sigPanitera,
+                        'manager_red' => [
+                            'name' => $this->sigManagerRedName,
+                            'signature' => $this->sigManagerRedData,
+                        ],
+                        'manager_white' => [
+                            'name' => $this->sigManagerWhiteName,
+                            'signature' => $this->sigManagerWhiteData,
+                        ],
+                    ],
+                ]),
             ]
         );
 
         MatchNumber::whereIn('id', $this->matchNumberIds)->update(['drawing_data' => $data, 'active_bracket_node' => null]);
-        $this->drawingData = $data; $this->activeMatch = null; $this->resetDetailedScoring(); $this->stopTimer(); $this->showModal = false;
+        $this->drawingData = $data;
+        $this->activeMatch = null;
+        $this->resetDetailedScoring();
+        $this->stopTimer();
+        $this->showModal = false;
         $this->dispatch('swal', ['icon' => 'success', 'title' => 'Pemenang Dicatat!']);
     }
 
     private function placeAthlete(array $data, array $next, array $athleteData): array
     {
-        $b = $next['bracket']; $slot = $next['slot'] ?? 'athlete1';
-        if ($b === 'ub') $data['upper_bracket']['rounds'][$next['round']][$next['match']][$slot] = $athleteData;
-        elseif ($b === 'lb') $data['lower_bracket']['rounds'][$next['round']][$next['match']][$slot] = $athleteData;
-        elseif ($b === 'gf') $data['grand_final'][$slot] = $athleteData;
+        $b = $next['bracket'];
+        $slot = $next['slot'] ?? 'athlete1';
+        if ($b === 'ub') {
+            $data['upper_bracket']['rounds'][$next['round']][$next['match']][$slot] = $athleteData;
+        } elseif ($b === 'lb') {
+            $data['lower_bracket']['rounds'][$next['round']][$next['match']][$slot] = $athleteData;
+        } elseif ($b === 'gf') {
+            $data['grand_final'][$slot] = $athleteData;
+        }
 
         // Update DrawingMatchNumber untuk Jadwal
-        $nodeKey = $b.'_'.$next['round'].'_'.$next['match'];
+        $round = $next['round'] ?? 0;
+        $matchVal = $next['match'] ?? 0;
+        $nodeKey = $b.'_'.$round.'_'.$matchVal;
         $side = $slot === 'athlete1' ? 'RED' : 'BLUE';
 
-        $drawings = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->get();
-        
+        $drawings = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->get();
+
         foreach ($drawings as $d) {
             $meta = $d->metadata;
             if (is_string($meta)) {
                 $meta = json_decode($meta, true);
             }
-            
+
             if (($meta['node_key'] ?? null) === $nodeKey && ($meta['side'] ?? null) === $side) {
                 $d->registration_id = $athleteData['registration_id'] ?? null;
                 $meta['athlete_id'] = $athleteData['id'] ?? null;
@@ -650,7 +886,7 @@ class NewScoringRandoriIndex extends Component
                             if ($winnerData) {
                                 $next = $match['winner_next'];
                                 $target = $this->getAthleteInSlot($data, $next);
-                                if (!$target || $target['id'] !== $winnerData['id']) {
+                                if (! $target || $target['id'] !== $winnerData['id']) {
                                     $data = $this->placeAthlete($data, $next, $winnerData);
                                     $changed = true;
                                 }
@@ -685,7 +921,7 @@ class NewScoringRandoriIndex extends Component
                             if ($winnerData) {
                                 $next = $match['winner_next'];
                                 $target = $this->getAthleteInSlot($data, $next);
-                                if (!$target || $target['id'] !== $winnerData['id']) {
+                                if (! $target || $target['id'] !== $winnerData['id']) {
                                     $data = $this->placeAthlete($data, $next, $winnerData);
                                     $changed = true;
                                 }
@@ -695,6 +931,7 @@ class NewScoringRandoriIndex extends Component
                 }
             }
         }
+
         return $data;
     }
 
@@ -702,17 +939,26 @@ class NewScoringRandoriIndex extends Component
     {
         $b = $next['bracket'];
         $slot = $next['slot'] ?? 'athlete1';
-        if ($b === 'ub') return $data['upper_bracket']['rounds'][$next['round']][$next['match']][$slot] ?? null;
-        if ($b === 'lb') return $data['lower_bracket']['rounds'][$next['round']][$next['match']][$slot] ?? null;
-        if ($b === 'gf') return $data['grand_final'][$slot] ?? null;
+        if ($b === 'ub') {
+            return $data['upper_bracket']['rounds'][$next['round']][$next['match']][$slot] ?? null;
+        }
+        if ($b === 'lb') {
+            return $data['lower_bracket']['rounds'][$next['round']][$next['match']][$slot] ?? null;
+        }
+        if ($b === 'gf') {
+            return $data['grand_final'][$slot] ?? null;
+        }
+
         return null;
     }
 
-    private function getCourtId()
+    public function getCourtId()
     {
         $d = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->first();
+
         return $d?->court_id;
     }
+
     public function confirmChampion()
     {
         $data = $this->drawingData;
@@ -732,8 +978,14 @@ class NewScoringRandoriIndex extends Component
                 'title' => 'Belum Ada Juara',
                 'text' => 'Tentukan pemenang Grand Final terlebih dahulu.',
             ]);
+
             return;
         }
+
+        // Save it back to drawing_data
+        $data['juara'] = $juara;
+        $this->matchNumber->update(['drawing_data' => $data]);
+        $this->drawingData = $data;
 
         // Delete old results for this match to avoid unique constraint violations on (match_id, rank)
         TournamentResult::whereIn('match_number_id', $this->matchNumberIds)->delete();
@@ -743,7 +995,7 @@ class NewScoringRandoriIndex extends Component
                 continue; // Only Juara 1 & 2 for Randori
             }
 
-            if (!$athlete || !isset($athlete['id']) || $athlete['id'] === 'BYE') {
+            if (! $athlete || ! isset($athlete['id']) || $athlete['id'] === 'BYE') {
                 continue;
             }
 
@@ -813,6 +1065,7 @@ class NewScoringRandoriIndex extends Component
     public function getTimerState()
     {
         $id = $this->getCourtId();
+
         return $id ? Cache::get("court_{$id}_timer") : null;
     }
 
@@ -830,15 +1083,100 @@ class NewScoringRandoriIndex extends Component
         $txt = "Pertandingan selanjutnya: {$info}. Di sudut Merah, {$a1} dari {$c1}. Di sudut Putih, {$a2} dari {$c2}. Mohon segera bersiap.";
         $this->dispatch('play-announcer', ['text' => $txt]);
     }
+
+    public function clearAllCourts(): void
+    {
+        $allCourts = Court::all();
+
+        // Reset all courts
+        foreach ($allCourts as $court) {
+            $court->update([
+                'active_match_id' => null,
+                'active_registration_id' => null,
+                'active_bracket_node' => null,
+                'active_drawing_id' => null,
+            ]);
+
+            // Clear timer cache for each court
+            Cache::forget("court_{$court->id}_timer");
+        }
+
+        // Reset all match numbers active states
+        MatchNumber::query()->update([
+            'active_registration_id' => null,
+            'active_bracket_node' => null,
+        ]);
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Semua Lapangan & Match Di-reset',
+            'text' => 'Seluruh status aktif telah dibersihkan secara serentak.',
+        ]);
+    }
+
     public function render()
     {
         if ($this->merge) {
             $mergedNames = MatchNumber::whereIn('id', $this->matchNumberIds)->pluck('name')->join(', ');
-            $this->displayName = ($this->merge->name ?: 'Merged Group') . " (" . $mergedNames . ")";
+            $this->displayName = ($this->merge->name ?: 'Merged Group').' ('.$mergedNames.')';
         } else {
             $this->displayName = $this->matchNumber->name;
         }
 
-        return view('livewire.admin.new-scoring-randori-index');
+        $firstDrawing = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)->first();
+        $officials = $firstDrawing?->metadata['officials'] ?? null;
+
+        $assignedArbitrase = null;
+        $assignedReferees = collect();
+
+        if ($firstDrawing) {
+            $assignedArbitrase = ScheduleReferee::with('referee.user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->whereNull('court_id')
+                ->where('judge_index', 0)
+                ->first();
+
+            $assignedReferees = ScheduleReferee::with('referee.user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('judge_index', '>', 0)
+                ->orderBy('judge_index')
+                ->get();
+        }
+
+        // Fetch saved tournament results (champions)
+        $savedResults = TournamentResult::whereIn('match_number_id', $this->matchNumberIds)
+            ->orderBy('rank')
+            ->get();
+
+        $juaraMap = [];
+        foreach ($savedResults as $res) {
+            $juaraMap[$res->rank] = [
+                'name' => $res->athlete_names,
+                'contingent' => $res->contingent_name,
+                'registration_id' => $res->registration_id,
+            ];
+        }
+
+        // If the database has no saved results, fall back to what's in drawing_data
+        if (empty($juaraMap)) {
+            $juaraMap = $this->drawingData['juara'] ?? [];
+            if (empty($juaraMap)) {
+                $gf = $this->drawingData['grand_final'] ?? null;
+                if ($gf && ($gf['winner'] ?? null)) {
+                    $juaraMap[1] = $gf['winner_data'];
+                    $juaraMap[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
+                }
+            }
+        }
+
+        return view('livewire.admin.new-scoring-randori-index', [
+            'officials' => $officials,
+            'assignedArbitrase' => $assignedArbitrase,
+            'assignedReferees' => $assignedReferees,
+            'juara' => $juaraMap,
+        ]);
     }
 }
