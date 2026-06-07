@@ -33,11 +33,11 @@
         </div>
     </div>
 
-    {{-- Main Timer Component --}}
     <div wire:ignore class="relative z-10 w-full flex flex-col items-center justify-center flex-1" x-data="{
              time: 0,
              running: false,
              countdown: 0,
+             playedIntervals: new Set(),
              async sync() {
                  let state = await $wire.getTimerState();
                  if (!state) return;
@@ -47,8 +47,8 @@
                  // Play buzzer when timer newly starts
                  if (this.running && !wasRunning && (!state.elapsed_ms || state.elapsed_ms < 1000)) {
                      try {
-                         let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
-                         audio.play().catch(e => console.warn(e));
+                          let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                          audio.play().catch(e => console.warn(e));
                      } catch(e) {}
                  }
                  
@@ -78,6 +78,10 @@
                      this.countdown = 0;
                      this.time = state.elapsed_ms || 0;
                  }
+
+                 if (!this.running && this.time < 500) {
+                     this.playedIntervals.clear();
+                 }
              },
              init() {
                  // Fetch absolute state from server every 1s
@@ -89,6 +93,30 @@
                  setInterval(() => {
                      if (this.running) {
                          this.time += 30; // 30ms interval
+                         let currentSecond = Math.floor(this.time / 1000);
+                         let maxAthletes = {{ $court->activeMatch->max_athletes ?? 2 }};
+                         let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
+
+                         if (maxAthletes === 1) {
+                             if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
+                                 (currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                 (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                 this.playedIntervals.add(currentSecond);
+                                 try {
+                                     let audio = new Audio(buzzerSound);
+                                     audio.play().catch(e => console.warn(e));
+                                 } catch(e) {}
+                             }
+                         } else {
+                             if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                 (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                 this.playedIntervals.add(currentSecond);
+                                 try {
+                                     let audio = new Audio(buzzerSound);
+                                     audio.play().catch(e => console.warn(e));
+                                 } catch(e) {}
+                             }
+                         }
                      } else if (this.countdown > 0) {
                          // local countdown calculation based on system time (sync handles absolute)
                      }

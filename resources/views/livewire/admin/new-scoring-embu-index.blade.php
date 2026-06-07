@@ -854,6 +854,10 @@
                         if (this.countdown > 0 && this.countdown !== oldCountdown) {
                             // Siap and countdown removed
                         }
+
+                        if (!this.running && this.time < 500) {
+                            this.playedIntervals.clear();
+                        }
                     },
                     init() {
                         this.sync();
@@ -861,14 +865,22 @@
                             if (this.running) {
                                 this.time += 30;
                                 let currentSecond = Math.floor(this.time / 1000);
+                                let maxAthletes = {{ $matchNumber->max_athletes ?? 2 }};
+                                let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
                 
-                                if (currentSecond === 90 && !this.playedIntervals.has(90)) {
-                                    window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                                    this.playedIntervals.add(90);
-                                }
-                                if (currentSecond === 120 && !this.playedIntervals.has(120)) {
-                                    window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
-                                    this.playedIntervals.add(120);
+                                if (maxAthletes === 1) {
+                                    if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
+                                        (currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                        (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                        window.playBuzzer ? window.playBuzzer(buzzerSound) : null;
+                                        this.playedIntervals.add(currentSecond);
+                                    }
+                                } else {
+                                    if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                        (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                        window.playBuzzer ? window.playBuzzer(buzzerSound) : null;
+                                        this.playedIntervals.add(currentSecond);
+                                    }
                                 }
                 
                                 if (currentSecond > this.lastTickSecond) {
