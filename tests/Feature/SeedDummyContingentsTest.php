@@ -2,10 +2,9 @@
 
 use App\Models\Athlete;
 use App\Models\Contingent;
-use App\Models\Registration;
-use App\Models\MatchNumber\MatchNumber;
 use App\Models\Group\AgeGroup;
-use Illuminate\Support\Facades\DB;
+use App\Models\MatchNumber\MatchNumber;
+use App\Models\Registration;
 
 test('it fails if surabaya a does not exist', function () {
     $this->artisan('app:seed-dummy-contingents')
@@ -16,10 +15,10 @@ test('it fails if surabaya a does not exist', function () {
 test('it seeds dummy data for other contingents', function () {
     // Create Surabaya A
     Contingent::create(['name' => 'Surabaya A', 'kab_kota' => 'Surabaya', 'leader_name' => 'Ketua Surabaya A']);
-    
+
     // Create another contingent
     $contingentB = Contingent::create(['name' => 'Surabaya B', 'kab_kota' => 'Surabaya', 'leader_name' => 'Ketua Surabaya B']);
-    
+
     // Create Age Group
     $ageGroup = AgeGroup::create(['name' => 'Pemula', 'price' => 400000, 'order' => 1]);
 
@@ -52,10 +51,10 @@ test('it seeds dummy data for other contingents', function () {
 test('it resets dummy data but keeps surabaya a', function () {
     // Create Surabaya A
     $surabayaA = Contingent::create(['name' => 'Surabaya A', 'kab_kota' => 'Surabaya', 'leader_name' => 'Ketua Surabaya A']);
-    
+
     // Create another contingent
     $contingentB = Contingent::create(['name' => 'Surabaya B', 'kab_kota' => 'Surabaya', 'leader_name' => 'Ketua Surabaya B']);
-    
+
     // Create Age Group
     $ageGroup = AgeGroup::create(['name' => 'Pemula', 'price' => 400000, 'order' => 1]);
 

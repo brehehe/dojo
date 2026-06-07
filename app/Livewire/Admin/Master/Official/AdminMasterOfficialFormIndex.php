@@ -12,12 +12,16 @@ use Livewire\Component;
 class AdminMasterOfficialFormIndex extends Component
 {
     public $officialId = null;
+
     public $isEdit = false;
 
     // Form Fields
     public $contingent_id;
+
     public $name;
+
     public $phone;
+
     public $role = 'Official';
 
     public function mount($official = null)
@@ -32,7 +36,7 @@ class AdminMasterOfficialFormIndex extends Component
             $this->name = $officialModel->name;
             $this->phone = $officialModel->phone;
             $this->role = $officialModel->role;
-            
+
             // Get latest contingent and role attribution
             $latestReg = $officialModel->latestRegistration();
             if ($latestReg) {
@@ -66,7 +70,7 @@ class AdminMasterOfficialFormIndex extends Component
             $registration = Contingent::find($this->contingent_id)->registrations()->latest()->first();
             if ($registration) {
                 $official->registrations()->syncWithoutDetaching([
-                    $registration->id => ['role' => $this->role]
+                    $registration->id => ['role' => $this->role],
                 ]);
             }
 

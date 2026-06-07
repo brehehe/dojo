@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exports\AthleteExport;
 use App\Models\Athlete;
 use App\Models\Contingent;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 class NewAthleteIndex extends Component
 {
@@ -50,8 +52,8 @@ class NewAthleteIndex extends Component
 
     public function export()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\AthleteExport($this->search, $this->filterContingent, $this->filterGender),
+        return Excel::download(
+            new AthleteExport($this->search, $this->filterContingent, $this->filterGender),
             'data-atlet.xlsx'
         );
     }

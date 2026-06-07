@@ -3,8 +3,8 @@
 namespace App\Exports;
 
 use App\Models\Contingent;
-use App\Models\MatchNumber\MatchNumber;
 use App\Models\Group\AgeGroup;
+use App\Models\MatchNumber\MatchNumber;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -14,14 +14,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RegistrationByNumberExport implements FromView, ShouldAutoSize, WithStyles
 {
-    public function __construct(protected int $contingentId)
-    {
-    }
+    public function __construct(protected int $contingentId) {}
 
     public function view(): View
     {
         $contingent = Contingent::findOrFail($this->contingentId);
-        
+
         // Get verified registrations ID for this contingent
         $registrationIds = DB::table('registrations')
             ->where('contingent_id', $this->contingentId)

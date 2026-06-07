@@ -38,8 +38,8 @@ class TournamentDummySeeder extends Seeder
 
             // Buat User khusus untuk Court ini
             $user = User::create([
-                'name' => 'Petugas ' . $court->name,
-                'email' => 'court' . $i . '@gmail.com',
+                'name' => 'Petugas '.$court->name,
+                'email' => 'court'.$i.'@gmail.com',
                 'password' => bcrypt('password'),
                 'court_id' => $court->id,
                 'email_verified_at' => now(),
@@ -153,18 +153,20 @@ class TournamentDummySeeder extends Seeder
                     $allContingents = $matchInfo['contingents'];
                     $numGenders = count($targetGenders);
                     $contingentChunks = [];
-                    
+
                     if ($numGenders > 1) {
                         // Distribute evenly, e.g. 8 -> 3, 3, 2
                         $chunkSize = ceil(count($allContingents) / $numGenders);
-                        $contingentChunks = array_chunk($allContingents, (int)$chunkSize);
+                        $contingentChunks = array_chunk($allContingents, (int) $chunkSize);
                     } else {
                         $contingentChunks = [$allContingents];
                     }
 
                     foreach ($targetGenders as $idx => $g) {
                         $currentMatchContingents = $contingentChunks[$idx] ?? [];
-                        if (empty($currentMatchContingents)) continue;
+                        if (empty($currentMatchContingents)) {
+                            continue;
+                        }
 
                         $draftType = str_contains($lowerName, 'randori') ? 'randori' : 'embu';
                         $maxAthletes = 1;

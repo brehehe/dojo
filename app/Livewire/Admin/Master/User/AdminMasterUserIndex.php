@@ -1,13 +1,14 @@
 <?php
+
 namespace App\Livewire\Admin\Master\User;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 #[Layout('layouts.admin')]
 class AdminMasterUserIndex extends Component
@@ -20,9 +21,19 @@ class AdminMasterUserIndex extends Component
     }
 
     public $search = '';
-    public $name, $email, $password, $selectedRole;
+
+    public $name;
+
+    public $email;
+
+    public $password;
+
+    public $selectedRole;
+
     public $perPage = 5;
+
     public $userIdBeingEdited;
+
     public $showingUserModal = false;
 
     protected $queryString = ['search', 'perPage'];
@@ -61,7 +72,7 @@ class AdminMasterUserIndex extends Component
             'selectedRole' => 'required|exists:roles,name',
         ];
 
-        if (!$this->userIdBeingEdited) {
+        if (! $this->userIdBeingEdited) {
             $rules['password'] = 'required|min:8';
         } else {
             $rules['password'] = 'nullable|min:8';
@@ -116,6 +127,7 @@ class AdminMasterUserIndex extends Component
                 'text' => 'Anda tidak bisa menghapus akun sendiri.',
                 'icon' => 'error',
             ]);
+
             return;
         }
 
@@ -132,8 +144,8 @@ class AdminMasterUserIndex extends Component
     {
         $users = User::with('roles')
             ->where(function ($query) {
-                $query->where('name', 'ilike', '%' . $this->search . '%')
-                    ->orWhere('email', 'ilike', '%' . $this->search . '%');
+                $query->where('name', 'ilike', '%'.$this->search.'%')
+                    ->orWhere('email', 'ilike', '%'.$this->search.'%');
             })
             ->latest();
 

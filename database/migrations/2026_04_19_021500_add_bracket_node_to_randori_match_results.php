@@ -16,13 +16,13 @@ return new class extends Migration
         });
 
         // Migrate existing data
-        \DB::table('randori_match_results')->whereNotNull('bracket_node_index')
+        DB::table('randori_match_results')->whereNotNull('bracket_node_index')
             ->get()
             ->each(function ($row) {
-                \DB::table('randori_match_results')
+                DB::table('randori_match_results')
                     ->where('id', $row->id)
                     ->update([
-                        'bracket_node' => 'ub_' . $row->bracket_node_index,
+                        'bracket_node' => 'ub_'.$row->bracket_node_index,
                         'bracket_section' => 'ub',
                     ]);
             });

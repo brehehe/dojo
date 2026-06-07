@@ -62,9 +62,9 @@ class NewCourtIndex extends Component
 
                 $user = User::updateOrCreate([
                     'court_id' => $model->id,
-                ],[
-                    'name' => 'Petugas ' . $model->name,
-                    'email' => 'court' . $model->id . '@gmail.com',
+                ], [
+                    'name' => 'Petugas '.$model->name,
+                    'email' => 'court'.$model->id.'@gmail.com',
                     'password' => bcrypt('password'), // Password default
                     'email_verified_at' => now(),
                 ]);
@@ -80,8 +80,8 @@ class NewCourtIndex extends Component
                 $court = Court::create(['name' => $this->name]);
 
                 $user = User::create([
-                    'name' => 'Petugas ' . $court->name,
-                    'email' => 'court' . $court->id . '@gmail.com',
+                    'name' => 'Petugas '.$court->name,
+                    'email' => 'court'.$court->id.'@gmail.com',
                     'password' => bcrypt('password'), // Password default
                     'court_id' => $court->id,
                     'email_verified_at' => now(),

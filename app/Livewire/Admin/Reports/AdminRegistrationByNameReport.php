@@ -2,18 +2,20 @@
 
 namespace App\Livewire\Admin\Reports;
 
-use App\Models\Contingent;
 use App\Exports\RegistrationByNameExport;
-use Livewire\Component;
-use Livewire\Attributes\Layout;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Contingent;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.admin')]
 class AdminRegistrationByNameReport extends Component
 {
     public $contingentId;
+
     public $search = '';
+
     public $statusFilter = 'all'; // all, P, O
 
     public function download()
@@ -23,14 +25,14 @@ class AdminRegistrationByNameReport extends Component
         ]);
 
         $contingent = Contingent::find($this->contingentId);
-        $filename = 'Registration_By_Name_' . str_replace(' ', '_', $contingent->name) . '_' . date('Ymd_His') . '.xlsx';
+        $filename = 'Registration_By_Name_'.str_replace(' ', '_', $contingent->name).'_'.date('Ymd_His').'.xlsx';
 
         return Excel::download(new RegistrationByNameExport($this->contingentId), $filename);
     }
 
     public function getParticipantsProperty()
     {
-        if (!$this->contingentId) {
+        if (! $this->contingentId) {
             return collect();
         }
 
@@ -53,7 +55,7 @@ class AdminRegistrationByNameReport extends Component
                     DB::raw("'P' as status_code")
                 );
             if ($this->search) {
-                $query->where('athletes.name', 'ilike', '%' . $this->search . '%');
+                $query->where('athletes.name', 'ilike', '%'.$this->search.'%');
             }
             $athletes = $query->get();
         }
@@ -66,20 +68,21 @@ class AdminRegistrationByNameReport extends Component
                 ->select(
                     'officials.name',
                     DB::raw("'' as gender"),
-                    DB::raw("NULL as birth_date"),
+                    DB::raw('NULL as birth_date'),
                     DB::raw("'' as tingkat"),
                     'registration_official.role as info',
                     DB::raw("'O' as status_code")
                 );
             if ($this->search) {
-                $query->where('officials.name', 'ilike', '%' . $this->search . '%');
+                $query->where('officials.name', 'ilike', '%'.$this->search.'%');
             }
             $officials = $query->get();
         }
 
         return $officials->concat($athletes)->sortBy(function ($item) {
             $statusRank = ($item->status_code === 'O') ? '0' : '1';
-            return $statusRank . $item->name;
+
+            return $statusRank.$item->name;
         });
     }
 

@@ -52,7 +52,7 @@ class MatchNumberSeeder extends Seeder
             ]);
 
             foreach (['Laki-laki', 'Perempuan'] as $genderId) {
-                if (!isset($groupData[$genderId])) {
+                if (! isset($groupData[$genderId])) {
                     continue;
                 }
 

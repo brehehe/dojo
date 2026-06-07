@@ -4,7 +4,6 @@ namespace App\Livewire\Admin\Master\Contingent;
 
 use App\Models\Contingent;
 use App\Models\Registration;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;

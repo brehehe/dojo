@@ -1,10 +1,12 @@
 <?php
+
 include 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
 use App\Models\ScheduleReferee;
+use Illuminate\Contracts\Console\Kernel;
 
 $courtId = 1;
 $rundownId = 1;
@@ -16,7 +18,7 @@ $refs = ScheduleReferee::where('court_id', $courtId)
     ->where('judge_index', '>', 0)
     ->orderBy('judge_index')
     ->pluck('referee_id')
-    ->map(fn($id) => (string)$id)
+    ->map(fn ($id) => (string) $id)
     ->toArray();
 
 print_r($refs);

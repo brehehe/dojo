@@ -82,3 +82,57 @@ test('can download excel report for unregistered athlete report', function () {
 
     $response->assertStatus(200);
 });
+
+test('can filter data by gender and search query', function () {
+    $user = User::factory()->create();
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+
+    $mn1 = MatchNumber::create([
+        'name' => 'Embu Putra',
+        'gender' => 'Male',
+        'draft_type' => 'embu',
+        'age_group_id' => $ageGroup->id,
+    ]);
+
+    $mn2 = MatchNumber::create([
+        'name' => 'Embu Putri',
+        'gender' => 'Female',
+        'draft_type' => 'embu',
+        'age_group_id' => $ageGroup->id,
+    ]);
+
+    $athleteA = Athlete::factory()->create([
+        'name' => 'John Doe',
+        'gender' => 'Male',
+    ]);
+    $athleteB = Athlete::factory()->create([
+        'name' => 'Jane Smith',
+        'gender' => 'Female',
+    ]);
+
+    $contingent = Contingent::factory()->create();
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $registration->athletes()->attach([
+        $athleteA->id => ['age_group' => 'Pemula'],
+        $athleteB->id => ['age_group' => 'Pemula'],
+    ]);
+
+    // John is registered in Embu Putra, Jane is unregistered
+    $mn1->athletes()->attach([
+        $athleteA->id => ['registration_id' => $registration->id],
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(NewUnregisteredAthleteReportIndex::class)
+        ->assertSet('totalAthletes', 2)
+        ->assertSet('totalUnregisteredAthletes', 1)
+        ->set('genderFilter', 'Female')
+        ->assertSet('totalAthletes', 1)
+        ->assertSet('totalUnregisteredAthletes', 1)
+        ->set('searchQuery', 'Jane')
+        ->assertSet('totalUnregisteredAthletes', 1)
+        ->set('searchQuery', 'XYZNonExistent')
+        ->assertSet('totalUnregisteredAthletes', 0);
+});

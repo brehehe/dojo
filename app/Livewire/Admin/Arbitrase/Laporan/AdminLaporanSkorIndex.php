@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Arbitrase\Laporan;
 
+use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
@@ -61,7 +62,7 @@ class AdminLaporanSkorIndex extends Component
         $mergeDetails = DB::table('match_number_merge_details')
             ->where('match_number_id', $matchNumber->id)
             ->first();
-        
+
         if ($mergeDetails) {
             $matchNumberIds = DB::table('match_number_merge_details')
                 ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
@@ -71,7 +72,7 @@ class AdminLaporanSkorIndex extends Component
             $matchNumberIds = [$matchNumber->id];
         }
 
-        $scores = \App\Models\EmbuScore::whereIn('match_number_id', $matchNumberIds)
+        $scores = EmbuScore::whereIn('match_number_id', $matchNumberIds)
             ->with(['registration.athletes', 'registration.contingent'])
             ->where('tiebreak_round', 0)
             ->get();
@@ -122,7 +123,7 @@ class AdminLaporanSkorIndex extends Component
         $mergeDetails = DB::table('match_number_merge_details')
             ->where('match_number_id', $matchNumber->id)
             ->first();
-        
+
         if ($mergeDetails) {
             $matchNumberIds = DB::table('match_number_merge_details')
                 ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
@@ -244,21 +245,27 @@ class AdminLaporanSkorIndex extends Component
             ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
             ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
             ->select('match_numbers.*', 'match_number_merges.name as merge_group_name', 'match_number_merge_details.match_number_merge_id')
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('match_number_merge_details.match_number_merge_id')
-                  ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+                    ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
             });
 
         if ($this->search) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('match_numbers.name', 'ilike', '%'.$this->search.'%')
-                  ->orWhere('match_number_merges.name', 'ilike', '%'.$this->search.'%');
+                    ->orWhere('match_number_merges.name', 'ilike', '%'.$this->search.'%');
             });
         }
 
-        if ($this->draftTypeFilter) $query->where('match_numbers.draft_type', $this->draftTypeFilter);
-        if ($this->ageGroupFilter) $query->where('match_numbers.age_group_id', $this->ageGroupFilter);
-        if ($this->genderFilter) $query->where('match_numbers.gender', $this->genderFilter);
+        if ($this->draftTypeFilter) {
+            $query->where('match_numbers.draft_type', $this->draftTypeFilter);
+        }
+        if ($this->ageGroupFilter) {
+            $query->where('match_numbers.age_group_id', $this->ageGroupFilter);
+        }
+        if ($this->genderFilter) {
+            $query->where('match_numbers.gender', $this->genderFilter);
+        }
 
         $matchNumbers = $query->orderBy('match_numbers.draft_type')
             ->orderBy('match_numbers.age_group_id')
@@ -273,8 +280,8 @@ class AdminLaporanSkorIndex extends Component
                     ->where('match_number_merge_details.match_number_merge_id', $matchNumber->match_number_merge_id)
                     ->pluck('match_numbers.name')
                     ->join(', ');
-                
-                $matchNumber->display_name = ($matchNumber->merge_group_name ?: 'Merged Group') . " (" . $mergedNames . ")";
+
+                $matchNumber->display_name = ($matchNumber->merge_group_name ?: 'Merged Group').' ('.$mergedNames.')';
             } else {
                 $matchNumber->display_name = $matchNumber->name;
             }

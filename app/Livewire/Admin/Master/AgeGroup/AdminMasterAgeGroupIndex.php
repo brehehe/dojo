@@ -24,6 +24,7 @@ class AdminMasterAgeGroupIndex extends Component
 
     // User Fields
     public $name;
+
     public $price = 0;
 
     public $showingAgeGroupModal = false;
@@ -103,7 +104,7 @@ class AdminMasterAgeGroupIndex extends Component
 
     public function render()
     {
-        $ageGroups = AgeGroup::orWhere('name', 'ilike', '%' . $this->search . '%')
+        $ageGroups = AgeGroup::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? AgeGroup::count() : $this->perPage);
 

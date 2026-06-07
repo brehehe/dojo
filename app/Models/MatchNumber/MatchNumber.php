@@ -6,8 +6,8 @@ use App\Models\Athlete;
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
+use App\Models\MatchNumberMergeDetail;
 use App\Models\RandoriMatchResult;
-use App\Models\Referee;
 use App\Models\TournamentResult;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -70,7 +70,7 @@ class MatchNumber extends Model
 
     public function mergeDetail()
     {
-        return $this->hasOne(\App\Models\MatchNumberMergeDetail::class);
+        return $this->hasOne(MatchNumberMergeDetail::class);
     }
 
     public function getGenderIndoAttribute(): string

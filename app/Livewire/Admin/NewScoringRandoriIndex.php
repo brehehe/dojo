@@ -7,6 +7,7 @@ use App\Models\DrawingMatchNumber;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\MatchNumberMerge;
 use App\Models\RandoriMatchResult;
+use App\Models\SchedulePanitera;
 use App\Models\ScheduleReferee;
 use App\Models\TournamentResult;
 use Illuminate\Support\Facades\Auth;
@@ -1128,6 +1129,8 @@ class NewScoringRandoriIndex extends Component
 
         $assignedArbitrase = null;
         $assignedReferees = collect();
+        $assignedKoordinators = collect();
+        $assignedPaniteras = collect();
 
         if ($firstDrawing) {
             $assignedArbitrase = ScheduleReferee::with('referee.user')
@@ -1143,6 +1146,22 @@ class NewScoringRandoriIndex extends Component
                 ->where('court_id', $firstDrawing->court_id)
                 ->where('judge_index', '>', 0)
                 ->orderBy('judge_index')
+                ->get();
+
+            $assignedKoordinators = SchedulePanitera::with('user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('role_type', 'koordinator')
+                ->orderBy('slot_index')
+                ->get();
+
+            $assignedPaniteras = SchedulePanitera::with('user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('role_type', 'panitera')
+                ->orderBy('slot_index')
                 ->get();
         }
 
@@ -1176,6 +1195,8 @@ class NewScoringRandoriIndex extends Component
             'officials' => $officials,
             'assignedArbitrase' => $assignedArbitrase,
             'assignedReferees' => $assignedReferees,
+            'assignedKoordinators' => $assignedKoordinators,
+            'assignedPaniteras' => $assignedPaniteras,
             'juara' => $juaraMap,
         ]);
     }

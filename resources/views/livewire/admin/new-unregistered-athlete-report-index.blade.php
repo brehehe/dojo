@@ -80,12 +80,31 @@
             </div>
         </div>
 
+        {{-- FILTER BAR --}}
+        <div style="background:#fff; border:1px solid var(--paper2); border-radius:16px; padding:16px 20px; margin-bottom:20px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+            <div style="flex: 1; min-width: 200px; position: relative;">
+                <label style="display:block; font-size:9px; font-weight:700; color:var(--smoke); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Cari Nama Atlet / Kontingen / Nomor</label>
+                <div style="position: relative;">
+                    <input type="text" wire:model.live="searchQuery" placeholder="Ketik pencarian..." style="width:100%; padding:10px 12px 10px 36px; border:1px solid var(--paper2); border-radius:10px; font-size:13px; color:var(--ink); outline:none; background:var(--paper);">
+                    <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--smoke); font-size:13px;"></i>
+                </div>
+            </div>
+            <div style="width: 200px; min-width: 150px;">
+                <label style="display:block; font-size:9px; font-weight:700; color:var(--smoke); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Jenis Kelamin</label>
+                <select wire:model.live="genderFilter" style="width:100%; padding:10px 12px; border:1px solid var(--paper2); border-radius:10px; font-size:13px; color:var(--ink); outline:none; background:var(--paper); cursor:pointer;">
+                    <option value="">Semua Jenis Kelamin</option>
+                    <option value="Male">Laki-laki (Male)</option>
+                    <option value="Female">Perempuan (Female)</option>
+                </select>
+            </div>
+        </div>
+
         {{-- STATS GRID --}}
         <div class="stats-grid-a">
             <div class="stat-card-a gold">
                 <div class="st-icon gold"><i class="fas fa-users"></i></div>
                 <div class="st-val">{{ $totalAthletes }}</div>
-                <div class="st-lbl">Total Semua Atlet</div>
+                <div class="st-lbl">Total Atlet Sesuai Filter</div>
             </div>
             <div class="stat-card-a blue">
                 <div class="st-icon blue"><i class="fas fa-running"></i></div>
@@ -193,6 +212,7 @@
                         <tr>
                             <th style="width: 50px; text-align: center;">No</th>
                             <th>Nama Atlet</th>
+                            <th>Jenis Kelamin</th>
                             <th>Kontingen</th>
                             <th style="text-align: center;">Status</th>
                         </tr>
@@ -202,6 +222,21 @@
                             <tr>
                                 <td style="text-align: center; font-weight: 700; color: var(--smoke);">{{ $index + 1 }}</td>
                                 <td style="font-weight: 700; color: var(--ink); text-transform: uppercase;">{{ $athlete['name'] }}</td>
+                                <td>
+                                    @if($athlete['gender'] === 'Laki-laki')
+                                        <span class="badge" style="background:rgba(41,128,185,0.1);color:#2980b9;">
+                                            <i class="fas fa-mars" style="margin-right:4px;"></i> Laki-laki
+                                        </span>
+                                    @elseif($athlete['gender'] === 'Perempuan')
+                                        <span class="badge" style="background:rgba(233,30,99,0.1);color:#e91e63;">
+                                            <i class="fas fa-venus" style="margin-right:4px;"></i> Perempuan
+                                        </span>
+                                    @else
+                                        <span class="badge" style="background:rgba(149,165,166,0.1);color:#7f8c8d;">
+                                            {{ $athlete['gender'] }}
+                                        </span>
+                                    @endif
+                                </td>
                                 <td style="color: var(--smoke); font-size: 12.5px;">
                                     <i class="fas fa-flag" style="color:var(--red);font-size:10px;margin-right:4px;"></i> {{ $athlete['contingent'] }}
                                 </td>
@@ -211,7 +246,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" style="text-align: center; padding: 32px; color: var(--smoke); font-style: italic;">
+                                <td colspan="5" style="text-align: center; padding: 32px; color: var(--smoke); font-style: italic;">
                                     <i class="fas fa-check-circle" style="color:#27ae60;font-size:24px;margin-bottom:10px;display:block;"></i>
                                     Semua atlet telah terdaftar di minimal 1 nomor pertandingan.
                                 </td>

@@ -25,14 +25,54 @@ class NewUnregisteredAthleteReportIndex extends Component
 
     public array $ageGroupStats = [];
 
+    public string $genderFilter = '';
+
+    public string $searchQuery = '';
+
+    protected $queryString = [
+        'genderFilter' => ['except' => ''],
+        'searchQuery' => ['except' => ''],
+    ];
+
     public function mount(): void
+    {
+        $this->loadData();
+    }
+
+    public function updatedGenderFilter(): void
+    {
+        $this->loadData();
+    }
+
+    public function updatedSearchQuery(): void
     {
         $this->loadData();
     }
 
     public function loadData(): void
     {
-        $matchNumbers = MatchNumber::with(['ageGroup', 'athletes.registrations.contingent', 'athletes.contingents'])->orderBy('id')->get();
+        $likeOperator = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
+        $matchNumbersQuery = MatchNumber::with(['ageGroup', 'athletes.registrations.contingent', 'athletes.contingents'])->orderBy('id');
+
+        if ($this->genderFilter) {
+            $matchNumbersQuery->where('gender', $this->genderFilter);
+        }
+
+        if ($this->searchQuery) {
+            $search = strtolower($this->searchQuery);
+            $matchNumbersQuery->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, '%'.$search.'%')
+                    ->orWhereHas('athletes', function ($sq) use ($search, $likeOperator) {
+                        $sq->where('name', $likeOperator, '%'.$search.'%')
+                            ->orWhereHas('contingents', function ($ssq) use ($search, $likeOperator) {
+                                $ssq->where('name', $likeOperator, '%'.$search.'%');
+                            });
+                    });
+            });
+        }
+
+        $matchNumbers = $matchNumbersQuery->get();
         $this->matchData = [];
 
         foreach ($matchNumbers as $mn) {
@@ -43,6 +83,13 @@ class NewUnregisteredAthleteReportIndex extends Component
                 foreach ($mn->athletes as $athlete) {
                     $contingent = $athlete->contingent;
                     $contingentName = $contingent ? $contingent->name : 'Tanpa Kontingen';
+
+                    if ($this->searchQuery) {
+                        $search = strtolower($this->searchQuery);
+                        if (! str_contains(strtolower($athlete->name), $search) && ! str_contains(strtolower($contingentName), $search)) {
+                            continue;
+                        }
+                    }
 
                     $contingents[] = [
                         'name' => $contingentName,
@@ -61,6 +108,13 @@ class NewUnregisteredAthleteReportIndex extends Component
                     $contingent = $athlete->contingent;
                     $contingentName = $contingent ? $contingent->name : 'Tanpa Kontingen';
 
+                    if ($this->searchQuery) {
+                        $search = strtolower($this->searchQuery);
+                        if (! str_contains(strtolower($athlete->name), $search) && ! str_contains(strtolower($contingentName), $search)) {
+                            continue;
+                        }
+                    }
+
                     if (! isset($grouped[$contingentName])) {
                         $grouped[$contingentName] = [];
                     }
@@ -77,6 +131,12 @@ class NewUnregisteredAthleteReportIndex extends Component
                 }
             }
 
+            if ($this->searchQuery && empty($contingents)) {
+                if (! str_contains(strtolower($mn->name), strtolower($this->searchQuery))) {
+                    continue;
+                }
+            }
+
             $this->matchData[] = [
                 'id' => $mn->id,
                 'name' => $mn->name,
@@ -86,7 +146,23 @@ class NewUnregisteredAthleteReportIndex extends Component
             ];
         }
 
-        $allAthletes = Athlete::with(['registrations.contingent', 'contingents', 'matchNumbers'])->get();
+        $athletesQuery = Athlete::with(['registrations.contingent', 'contingents', 'matchNumbers']);
+
+        if ($this->genderFilter) {
+            $athletesQuery->where('gender', $this->genderFilter);
+        }
+
+        if ($this->searchQuery) {
+            $search = strtolower($this->searchQuery);
+            $athletesQuery->where(function ($q) use ($search, $likeOperator) {
+                $q->where('name', $likeOperator, '%'.$search.'%')
+                    ->orWhereHas('contingents', function ($sq) use ($search, $likeOperator) {
+                        $sq->where('name', $likeOperator, '%'.$search.'%');
+                    });
+            });
+        }
+
+        $allAthletes = $athletesQuery->get();
         $this->unregisteredAthletes = [];
 
         foreach ($allAthletes as $athlete) {
@@ -96,18 +172,31 @@ class NewUnregisteredAthleteReportIndex extends Component
                 $this->unregisteredAthletes[] = [
                     'name' => trim($athlete->name),
                     'contingent' => $contingentName,
+                    'gender' => $athlete->gender_indo,
                 ];
             }
         }
 
-        $this->totalAthletes = count($allAthletes);
+        $this->totalAthletes = $this->genderFilter
+            ? Athlete::where('gender', $this->genderFilter)->count()
+            : Athlete::count();
         $this->totalUnregisteredAthletes = count($this->unregisteredAthletes);
         $this->totalRegisteredAthletes = $this->totalAthletes - $this->totalUnregisteredAthletes;
 
-        $stats = DB::table('registration_athlete')
+        $statsQuery = DB::table('registration_athlete')
             ->select('age_group', DB::raw('count(distinct athlete_id) as total_athletes'))
-            ->groupBy('age_group')
-            ->get()
+            ->groupBy('age_group');
+
+        if ($this->genderFilter) {
+            $statsQuery->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('athletes')
+                    ->whereColumn('athletes.id', 'registration_athlete.athlete_id')
+                    ->where('gender', $this->genderFilter);
+            });
+        }
+
+        $stats = $statsQuery->get()
             ->pluck('total_athletes', 'age_group')
             ->toArray();
 

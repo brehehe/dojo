@@ -3,8 +3,8 @@
 namespace App\Exports;
 
 use App\Models\Athlete;
-use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
@@ -24,7 +24,7 @@ class AthleteExport implements FromQuery, WithHeadings, WithMapping
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('name', 'ilike', '%'.$this->search.'%')
-                      ->orWhere('nik', 'ilike', '%'.$this->search.'%');
+                        ->orWhere('nik', 'ilike', '%'.$this->search.'%');
                 });
             })
             ->when($this->filterContingent, function ($query) {
@@ -62,8 +62,8 @@ class AthleteExport implements FromQuery, WithHeadings, WithMapping
     public function map($athlete): array
     {
         $contingent = $athlete->contingent;
-        $latestReg  = $athlete->latestRegistration();
-        
+        $latestReg = $athlete->latestRegistration();
+
         $categories = collect();
         if ($latestReg) {
             $categories = $athlete->categories()
@@ -72,21 +72,21 @@ class AthleteExport implements FromQuery, WithHeadings, WithMapping
         }
 
         return [
-            "'" . $athlete->nik,
-            "'" . $athlete->nik_kenshi,
+            "'".$athlete->nik,
+            "'".$athlete->nik_kenshi,
             $athlete->name,
             $athlete->gender === 'L' ? 'Laki-laki' : ($athlete->gender === 'P' ? 'Perempuan' : $athlete->gender),
             $athlete->birth_place,
             $athlete->birth_date ? $athlete->birth_date->format('Y-m-d') : '-',
             $athlete->blood_type,
-            "'" . $athlete->phone,
+            "'".$athlete->phone,
             $athlete->address,
             $athlete->dojo_origin,
             $contingent ? $contingent->name : 'Tanpa Kontingen',
             $athlete->weight ?? '-',
             $athlete->kyu ?? '-',
             $categories->pluck('name')->join(', '),
-            "'" . $athlete->bpjs_number,
+            "'".$athlete->bpjs_number,
             $athlete->bpjs_status,
         ];
     }

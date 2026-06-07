@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('registration_athlete', 'weight_group_id')) {
+        if (! Schema::hasColumn('registration_athlete', 'weight_group_id')) {
             Schema::table('registration_athlete', function (Blueprint $table) {
                 $table->foreignId('weight_group_id')->nullable()->after('athlete_id')->constrained('weight_groups')->nullOnDelete();
             });

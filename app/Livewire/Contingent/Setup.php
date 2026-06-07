@@ -11,9 +11,13 @@ use Livewire\Component;
 class Setup extends Component
 {
     public string $contingent_name = '';
+
     public string $contingent_city = '';
+
     public string $leader_name = '';
+
     public string $leader_phone = '';
+
     public string $address = '';
 
     public function mount()

@@ -19,7 +19,7 @@ class GalleryFactory extends Factory
     {
         return [
             'title' => $this->faker->words(3, true),
-            'image_url' => 'https://picsum.photos/seed/' . rand(1, 100) . '/600/600',
+            'image_url' => 'https://picsum.photos/seed/'.rand(1, 100).'/600/600',
             'category' => $this->faker->randomElement(['Highlight', 'Competition', 'Awarding']),
         ];
     }

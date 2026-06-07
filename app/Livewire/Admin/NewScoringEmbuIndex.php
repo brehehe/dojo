@@ -9,6 +9,7 @@ use App\Models\EmbuScore;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\MatchNumberMerge;
 use App\Models\Registration;
+use App\Models\SchedulePanitera;
 use App\Models\ScheduleReferee;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -171,6 +172,16 @@ class NewScoringEmbuIndex extends Component
             return;
         }
 
+        if (! $drawing->registration) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Babak Final Belum Tergenerate',
+                'text' => 'Peserta lolos babak final belum digenerate.',
+            ]);
+
+            return;
+        }
+
         $registrationId = $drawing->registration_id;
 
         // Update active_registration_id di match number (untuk referensi wasit)
@@ -196,7 +207,7 @@ class NewScoringEmbuIndex extends Component
                 })->pluck('name')->implode(', ');
             }
 
-            $contingent = $drawing->registration->contingent->name;
+            $contingent = $drawing->registration->contingent->name ?? '—';
             $matchName = $this->merge->name ?? $drawing->matchNumber->name;
             $courtName = $drawing->court->name;
             $poolName = $drawing->pool ? ' Pool '.$drawing->pool->name : '';
@@ -791,6 +802,8 @@ class NewScoringEmbuIndex extends Component
 
         $assignedArbitrase = null;
         $assignedReferees = collect();
+        $assignedKoordinators = collect();
+        $assignedPaniteras = collect();
 
         if ($firstDrawing) {
             $assignedArbitrase = ScheduleReferee::with('referee.user')
@@ -807,6 +820,22 @@ class NewScoringEmbuIndex extends Component
                 ->where('judge_index', '>', 0)
                 ->orderBy('judge_index')
                 ->get();
+
+            $assignedKoordinators = SchedulePanitera::with('user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('role_type', 'koordinator')
+                ->orderBy('slot_index')
+                ->get();
+
+            $assignedPaniteras = SchedulePanitera::with('user')
+                ->where('rundown_id', $firstDrawing->rundown_id)
+                ->where('session_time_id', $firstDrawing->session_time_id)
+                ->where('court_id', $firstDrawing->court_id)
+                ->where('role_type', 'panitera')
+                ->orderBy('slot_index')
+                ->get();
         }
 
         return view('livewire.admin.new-scoring-embu-index', [
@@ -817,6 +846,8 @@ class NewScoringEmbuIndex extends Component
             'activeDrawingId' => $activeDrawingId,
             'assignedArbitrase' => $assignedArbitrase,
             'assignedReferees' => $assignedReferees,
+            'assignedKoordinators' => $assignedKoordinators,
+            'assignedPaniteras' => $assignedPaniteras,
         ]);
     }
 

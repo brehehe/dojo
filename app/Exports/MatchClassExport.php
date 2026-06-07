@@ -10,18 +10,17 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColumnWidths
+class MatchClassExport implements FromView, ShouldAutoSize, WithColumnWidths, WithStyles
 {
-    public function __construct(protected int $contingentId)
-    {
-    }
+    public function __construct(protected int $contingentId) {}
 
     public function view(): View
     {
         $contingent = Contingent::findOrFail($this->contingentId);
-        
+
         // Fetch verified registration IDs for the contingent
         $registrationIds = DB::table('registrations')
             ->where('contingent_id', $this->contingentId)
@@ -34,7 +33,7 @@ class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColu
             ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
             ->leftJoin('registration_athlete', function ($join) {
                 $join->on('athlete_match_number.registration_id', '=', 'registration_athlete.registration_id')
-                     ->on('athlete_match_number.athlete_id', '=', 'registration_athlete.athlete_id');
+                    ->on('athlete_match_number.athlete_id', '=', 'registration_athlete.athlete_id');
             })
             ->whereIn('athlete_match_number.registration_id', $registrationIds)
             ->select(
@@ -54,7 +53,7 @@ class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColu
         // Resolve techniques for each group
         $finalData = $grouped->map(function ($items) {
             $first = $items->first();
-            
+
             // Decipher technique_ids
             $techniqueIds = [];
             if ($first->technique_ids) {
@@ -65,13 +64,13 @@ class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColu
                     $techniqueIds = explode(',', $first->technique_ids);
                 }
             }
-            
+
             $list = [];
-            if (!empty($techniqueIds)) {
+            if (! empty($techniqueIds)) {
                 $uniqueTechniques = Technique::whereIn('id', $techniqueIds)->get()->keyBy('id');
                 foreach ($techniqueIds as $i => $id) {
                     if (isset($uniqueTechniques[$id])) {
-                        $list[] = ($i + 1) . '. ' . $uniqueTechniques[$id]->name;
+                        $list[] = ($i + 1).'. '.$uniqueTechniques[$id]->name;
                     }
                 }
             }
@@ -79,7 +78,7 @@ class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColu
             return [
                 'match_name' => $first->match_name,
                 'athletes' => $items->values()->all(),
-                'techniques' => $list
+                'techniques' => $list,
             ];
         });
 
@@ -95,9 +94,9 @@ class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColu
             1 => ['font' => ['bold' => true]],
             'D' => [
                 'alignment' => [
-                    'wrapText' => true, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP
-                ]
+                    'wrapText' => true,
+                    'vertical' => Alignment::VERTICAL_TOP,
+                ],
             ],
         ];
     }
@@ -108,7 +107,7 @@ class MatchClassExport implements FromView, ShouldAutoSize, WithStyles, WithColu
             'A' => 10,
             'B' => 45,
             'C' => 15,
-            'D' => 60,            
+            'D' => 60,
         ];
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Gallery;
 use Illuminate\Database\Seeder;
 
 class GallerySeeder extends Seeder
@@ -12,6 +12,6 @@ class GallerySeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\Gallery::factory(12)->create();
+        Gallery::factory(12)->create();
     }
 }

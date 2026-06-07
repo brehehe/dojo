@@ -3,9 +3,9 @@
 namespace App\Livewire\Contingent;
 
 use App\Models\EmbuScore;
-use App\Models\RandoriMatchResult;
-use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\RandoriMatchResult;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -17,9 +17,11 @@ class RekapPertandingan extends Component
     use WithPagination;
 
     public string $tab = 'embu';
+
     public string $search = '';
+
     public string $matchNumberFilter = '';
-    
+
     public $contingent;
 
     protected $queryString = [
@@ -31,7 +33,7 @@ class RekapPertandingan extends Component
     public function mount()
     {
         $user = Auth::user();
-        if (!$user->contingent()->exists()) {
+        if (! $user->contingent()->exists()) {
             return redirect()->route('contingent.setup');
         }
         $this->contingent = $user->contingent;
@@ -54,13 +56,13 @@ class RekapPertandingan extends Component
 
         return view('livewire.contingent.rekap-pertandingan', array_merge($data, [
             'matchNumbers' => MatchNumber::where('draft_type', $this->tab)->orderBy('name')->get(),
-        ]))->title('Rekap Pertandingan - ' . $this->contingent->name);
+        ]))->title('Rekap Pertandingan - '.$this->contingent->name);
     }
 
     protected function getEmbuData()
     {
         $query = EmbuScore::with(['matchNumber.ageGroup', 'matchNumber.athletes', 'registration.contingent'])
-            ->whereHas('registration', function($q) {
+            ->whereHas('registration', function ($q) {
                 $q->where('contingent_id', $this->contingent->id);
             });
 
@@ -86,7 +88,7 @@ class RekapPertandingan extends Component
     {
         // For Randori, we check randori_match_results and filter by contingent name in drawing_data
         $query = RandoriMatchResult::with(['matchNumber.ageGroup'])
-            ->whereHas('matchNumber', function($q) {
+            ->whereHas('matchNumber', function ($q) {
                 $q->where('draft_type', 'randori');
             });
 
@@ -97,7 +99,7 @@ class RekapPertandingan extends Component
         $allResults = $query->latest()->get();
         $contingentName = $this->contingent->name;
 
-        $filteredResults = $allResults->filter(function($res) use ($contingentName) {
+        $filteredResults = $allResults->filter(function ($res) use ($contingentName) {
             $drawingData = $res->matchNumber->drawing_data ?? [];
             $nodeParts = explode('_', $res->bracket_node);
             $bracket = $nodeParts[0];
@@ -113,7 +115,9 @@ class RekapPertandingan extends Component
                 $matchInfo = $drawingData['grand_final'] ?? null;
             }
 
-            if (!$matchInfo) return false;
+            if (! $matchInfo) {
+                return false;
+            }
 
             $akaContingent = $matchInfo['athlete1']['contingent'] ?? '';
             $shiroContingent = $matchInfo['athlete2']['contingent'] ?? '';
@@ -133,17 +137,17 @@ class RekapPertandingan extends Component
                     'name' => $matchInfo['athlete1']['name'] ?? '-',
                     'contingent' => $akaContingent,
                     'is_winner' => $res->winner_color === 'athlete1',
-                    'is_mine' => $akaContingent === $contingentName
+                    'is_mine' => $akaContingent === $contingentName,
                 ];
                 $res->processed_shiro = [
                     'name' => $matchInfo['athlete2']['name'] ?? '-',
                     'contingent' => $shiroContingent,
                     'is_winner' => $res->winner_color === 'athlete2',
-                    'is_mine' => $shiroContingent === $contingentName
+                    'is_mine' => $shiroContingent === $contingentName,
                 ];
                 $res->round_label = $this->getRoundLabel($res->bracket_node, $res->matchNumber);
                 $res->pool_name = $matchInfo['pool'] ?? ($matchInfo['pool_id'] ?? 'A');
-                
+
                 return true;
             }
 
@@ -153,7 +157,7 @@ class RekapPertandingan extends Component
         // Paginate the collection manually
         $page = request()->get('randoriPage', 1);
         $perPage = 20;
-        $results = new \Illuminate\Pagination\LengthAwarePaginator(
+        $results = new LengthAwarePaginator(
             $filteredResults->forPage($page, $perPage),
             $filteredResults->count(),
             $perPage,

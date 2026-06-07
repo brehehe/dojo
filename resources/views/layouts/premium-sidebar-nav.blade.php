@@ -111,7 +111,7 @@
 
     {{-- Sistem Arbitrase --}}
     @hasanyrole('Super Admin|Admin|Arbitrase|Perwasitan')
-        <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-arbitrators') || request()->routeIs('admin.master.new-referees') || request()->routeIs('admin.new-generate-referee') || request()->routeIs('admin.new-koordinator') || request()->routeIs('admin.new-panitera')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.arbitrase.new-arbitrators') || request()->routeIs('admin.master.new-referees') || request()->routeIs('admin.new-generate-referee') || request()->routeIs('admin.new-generate-panitera') || request()->routeIs('admin.new-koordinator') || request()->routeIs('admin.new-panitera')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Arbitrase</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -126,6 +126,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.new-generate-referee') ? 'active' : '' }}"
                     href="{{ route('admin.new-generate-referee') }}"><i class="fa-solid fa-users-gear"></i> Penugasan
                     Wasit</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-generate-panitera') ? 'active' : '' }}"
+                    href="{{ route('admin.new-generate-panitera') }}"><i class="fa-solid fa-user-gear"></i> Penugasan
+                    Panitera</a>
                 @hasanyrole('Super Admin|Admin')
                     <a class="nav-item {{ request()->routeIs('admin.new-koordinator') ? 'active' : '' }}"
                         href="{{ route('admin.new-koordinator') }}"><i class="fa-solid fa-user-tie"></i> Data Koordinator Lapangan</a>

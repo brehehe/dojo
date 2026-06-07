@@ -54,6 +54,7 @@ use App\Livewire\Admin\NewContingentIndex;
 use App\Livewire\Admin\NewCourtIndex;
 use App\Livewire\Admin\NewDashboardIndex;
 use App\Livewire\Admin\NewEmbuResultIndex;
+use App\Livewire\Admin\NewGeneratePaniteraIndex;
 use App\Livewire\Admin\NewGenerateRefereeIndex;
 use App\Livewire\Admin\NewKoordinatorIndex;
 use App\Livewire\Admin\NewKyuLevelIndex;
@@ -209,6 +210,7 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/arbitrase/new-arbitrators', NewArbitraseIndex::class)->name('arbitrase.new-arbitrators');
         Route::get('/new-generate-referee', NewGenerateRefereeIndex::class)->name('new-generate-referee');
+        Route::get('/new-generate-panitera', NewGeneratePaniteraIndex::class)->name('new-generate-panitera');
         Route::get('new-multi-nomor-report', NewMultiNomorReportIndex::class)->name('new-multi-nomor-report');
         Route::get('new-unregistered-athlete-report', NewUnregisteredAthleteReportIndex::class)->name('new-unregistered-athlete-report');
         Route::get('laporan-rekap-penilaian', NewLaporanRekapPenilaianIndex::class)->name('laporan-rekap-penilaian');

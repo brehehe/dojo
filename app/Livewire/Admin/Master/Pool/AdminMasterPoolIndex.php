@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin\Master\Pool;
 
 use App\Models\Pool\Pool;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -66,7 +65,6 @@ class AdminMasterPoolIndex extends Component
 
         $this->validate($rules);
 
-
         DB::transaction(function () {
             if ($this->poolIdBeingEdited) {
                 $pool = Pool::findOrFail($this->poolIdBeingEdited);
@@ -100,7 +98,7 @@ class AdminMasterPoolIndex extends Component
 
     public function render()
     {
-        $pools = Pool::orWhere('name', 'ilike', '%' . $this->search . '%')
+        $pools = Pool::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Pool::count() : $this->perPage);
 

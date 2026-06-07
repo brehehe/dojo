@@ -52,17 +52,19 @@
 
         <!-- TABEL 2: ATLET KOSONG -->
         <tr>
-            <td colspan="3" style="font-weight: bold; background-color: #ef4444; color: #ffffff;">DAFTAR ATLET BELUM TERDAFTAR DI NOMOR PERTANDINGAN</td>
+            <td colspan="4" style="font-weight: bold; background-color: #ef4444; color: #ffffff;">DAFTAR ATLET BELUM TERDAFTAR DI NOMOR PERTANDINGAN</td>
         </tr>
         <tr>
             <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6; text-align: center;">No</th>
             <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6;">Nama Atlet</th>
+            <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6;">Jenis Kelamin</th>
             <th style="border: 1px solid #000; font-weight: bold; background-color: #f3f4f6;">Kontingen</th>
         </tr>
         @foreach($unregisteredAthletes as $index => $athlete)
             <tr>
                 <td style="border: 1px solid #000; text-align: center;">{{ $index + 1 }}</td>
                 <td style="border: 1px solid #000;">{{ strtoupper($athlete['name']) }}</td>
+                <td style="border: 1px solid #000; text-align: center;">{{ $athlete['gender'] ?? '-' }}</td>
                 <td style="border: 1px solid #000;">{{ $athlete['contingent'] }}</td>
             </tr>
         @endforeach

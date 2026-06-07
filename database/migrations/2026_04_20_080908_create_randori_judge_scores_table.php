@@ -16,12 +16,12 @@ return new class extends Migration
             $table->foreignId('match_number_id')->constrained()->onDelete('cascade');
             $table->string('bracket_node')->comment('e.g., ub_0_0');
             $table->tinyInteger('judge_index')->comment('1 to 5');
-            
+
             // Aka (Red) Scores
             $table->integer('waza_ari_aka')->default(0);
             $table->integer('ippon_aka')->default(0);
             $table->integer('hansoku_aka')->default(0);
-            
+
             // Shiro (White) Scores
             $table->integer('waza_ari_shiro')->default(0);
             $table->integer('ippon_shiro')->default(0);

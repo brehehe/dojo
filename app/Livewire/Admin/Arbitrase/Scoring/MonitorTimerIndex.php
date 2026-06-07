@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
 use App\Models\Court\Court;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -17,10 +18,10 @@ class MonitorTimerIndex extends Component
 
     public function getTimerState()
     {
-        return \Illuminate\Support\Facades\Cache::get("court_{$this->court->id}_timer", [
+        return Cache::get("court_{$this->court->id}_timer", [
             'status' => 'stopped',
             'elapsed_ms' => 0,
-            'started_at_ms' => null
+            'started_at_ms' => null,
         ]);
     }
 
@@ -29,6 +30,7 @@ class MonitorTimerIndex extends Component
     {
         $this->court->refresh();
         $this->court->load(['activeMatch.ageGroup', 'activeDrawing.registration.contingent']);
+
         return view('livewire.admin.arbitrase.scoring.monitor-timer-index');
     }
 }

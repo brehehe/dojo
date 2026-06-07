@@ -690,7 +690,7 @@
                         <h2>{{ $selectedMatch->name }}</h2>
                         <p>{{ $selectedMatch->ageGroup->name ?? '-' }}
                             @if (isset($selectedMatch->gender))
-                                · {{ in_array($selectedMatch->gender, ['L', 'Male']) ? 'Putra' : 'Putri' }}
+                                · {{ match ($selectedMatch->gender) { 'L', 'Male' => 'Putra', 'P', 'Female' => 'Putri', 'Mix', 'Campuran' => 'Campuran', default => $selectedMatch->gender } }}
                             @endif
                             · {{ $matchAthletes->count() }} kontingen</p>
                     </div>
@@ -825,7 +825,7 @@
                                     <div class="name">{{ $mn->name }}</div>
                                     <div class="cnt">{{ $mn->ageGroup->name ?? '-' }}
                                         @if (isset($mn->gender))
-                                            · {{ in_array($mn->gender, ['L', 'Male']) ? 'Putra' : 'Putri' }}
+                                            · {{ match ($mn->gender) { 'L', 'Male' => 'Putra', 'P', 'Female' => 'Putri', 'Mix', 'Campuran' => 'Campuran', default => $mn->gender } }}
                                         @endif
                                         · <span
                                             style="color:var(--red); font-weight:700;">{{ $contingentCounts[$mn->id] ?? 0 }}
@@ -1035,7 +1035,7 @@
                             <div class="info">
                                 <h3>{{ $selectedMatch->display_name }}</h3>
                                 <p>{{ $selectedMatch->ageGroup->name ?? '-' }} @if (isset($selectedMatch->gender))
-                                        · {{ in_array($selectedMatch->gender, ['L', 'Male']) ? 'Putra' : 'Putri' }}
+                                        · {{ match ($selectedMatch->gender) { 'L', 'Male' => 'Putra', 'P', 'Female' => 'Putri', 'Mix', 'Campuran' => 'Campuran', default => $selectedMatch->gender } }}
                                     @endif · {{ $matchAthletes->count() }} kontingen</p>
                             </div>
                             @php

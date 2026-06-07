@@ -63,13 +63,24 @@ class AdminLaporanRekapitulasiEmbu extends Component
     public function callParticipant($registrationId, $matchNumberId, $roundLabel)
     {
         $matchNumber = MatchNumber::findOrFail($matchNumberId);
-        $matchNumber->update(['active_registration_id' => $registrationId]);
 
         $drawing = DrawingMatchNumber::with(['court', 'registration.contingent', 'registration.athletes'])
             ->where('match_number_id', $matchNumberId)
             ->where('registration_id', $registrationId)
             ->where('round', $roundLabel)
             ->first();
+
+        if (! $drawing || ! $drawing->registration) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Gagal Memanggil',
+                'text' => 'Bagan/Drawing ini belum memiliki peserta yang tergenerate.',
+            ]);
+
+            return;
+        }
+
+        $matchNumber->update(['active_registration_id' => $registrationId]);
 
         if ($drawing && $drawing->court) {
             $drawing->court->update([
@@ -82,7 +93,8 @@ class AdminLaporanRekapitulasiEmbu extends Component
             // Filter athletes specifically for this match
             $athletes = $matchNumber->athletes->where('pivot.registration_id', $registrationId)->pluck('name')->join(' dan ');
 
-            $text = "Panggilan untuk peserta nomor undian {$drawing->sequence_number}, dari kontingen {$drawing->registration->contingent->name}, atas nama {$athletes}. Silahkan memasuki lapangan {$drawing->court->name}.";
+            $contingent = $drawing->registration->contingent->name ?? '—';
+            $text = "Panggilan untuk peserta nomor undian {$drawing->sequence_number}, dari kontingen {$contingent}, atas nama {$athletes}. Silahkan memasuki lapangan {$drawing->court->name}.";
 
             $this->dispatch('announce', ['text' => $text]);
 

@@ -1094,7 +1094,17 @@
                 <div class="official-label">
                     <i class="fas fa-user-tie"></i> Koordinator Pertandingan
                 </div>
-                <div class="official-val">{{ $officials['koordinator_lapangan'] ?? '-' }}</div>
+                <div class="official-val">
+                    @if ($assignedKoordinators->isNotEmpty())
+                        <ul class="official-list" style="list-style-type: none; padding-left: 0;">
+                            @foreach ($assignedKoordinators as $ak)
+                                <li>{{ $ak->user->name }}</li>
+                            @endforeach
+                        </ul>
+                    @else
+                        {{ $officials['koordinator_lapangan'] ?? '-' }}
+                    @endif
+                </div>
                 <div class="official-sub">NIP. -</div>
             </div>
             <div class="tm-card official-card" style="border-left-color: var(--ink);">
@@ -1102,14 +1112,22 @@
                     <i class="fas fa-users"></i> Para Panitera
                 </div>
                 <div class="official-val">
-                    @if (isset($officials['panitera']) && is_array($officials['panitera']))
-                        <ul class="official-list">
-                            @foreach ($officials['panitera'] as $p)
-                                <li>{{ $p }}</li>
+                    @if ($assignedPaniteras->isNotEmpty())
+                        <ul class="official-list" style="list-style-type: none; padding-left: 0;">
+                            @foreach ($assignedPaniteras as $ap)
+                                <li>{{ $ap->user->name }}</li>
                             @endforeach
                         </ul>
                     @else
-                        {{ $officials['panitera'] ?? '-' }}
+                        @if (isset($officials['panitera']) && is_array($officials['panitera']))
+                            <ul class="official-list">
+                                @foreach ($officials['panitera'] as $p)
+                                    <li>{{ $p }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            {{ $officials['panitera'] ?? '-' }}
+                        @endif
                     @endif
                 </div>
             </div>

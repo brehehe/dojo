@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
 use App\Models\Court\Court;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -18,10 +19,10 @@ class MonitorCourtIndex extends Component
 
     public function getTimerState()
     {
-        return \Illuminate\Support\Facades\Cache::get("court_{$this->courtId}_timer", [
+        return Cache::get("court_{$this->courtId}_timer", [
             'status' => 'stopped',
             'elapsed_ms' => 0,
-            'started_at_ms' => null
+            'started_at_ms' => null,
         ]);
     }
 

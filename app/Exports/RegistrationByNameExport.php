@@ -12,14 +12,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RegistrationByNameExport implements FromView, ShouldAutoSize, WithStyles
 {
-    public function __construct(protected int $contingentId)
-    {
-    }
+    public function __construct(protected int $contingentId) {}
 
     public function view(): View
     {
         $contingent = Contingent::findOrFail($this->contingentId);
-        
+
         $registrationIds = DB::table('registrations')
             ->where('contingent_id', $this->contingentId)
             ->where('status', 'verified')
@@ -47,7 +45,7 @@ class RegistrationByNameExport implements FromView, ShouldAutoSize, WithStyles
             ->select(
                 'officials.name',
                 DB::raw("'' as gender"),
-                DB::raw("NULL as birth_date"),
+                DB::raw('NULL as birth_date'),
                 DB::raw("'' as tingkat"),
                 'registration_official.role as info',
                 DB::raw("'O' as status_code"),
@@ -58,7 +56,8 @@ class RegistrationByNameExport implements FromView, ShouldAutoSize, WithStyles
         // Merge and Sort: Officials first (O), then Athletes (P), then by Name
         $participants = $officials->concat($athletes)->sortBy(function ($item) {
             $statusRank = ($item->status_code === 'O') ? '0' : '1';
-            return $statusRank . $item->name;
+
+            return $statusRank.$item->name;
         });
 
         return view('exports.registration-by-name-export', [

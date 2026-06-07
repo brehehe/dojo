@@ -61,7 +61,7 @@ class AdminMasterAthleteIndex extends Component
             ->when(auth()->user()->hasRole('Contingent'), function ($query) {
                 $query->whereHas('contingents', function ($q) {
                     $q->where('contingent_id', auth()->user()->contingent?->id)
-                      ->where('athlete_contingent.is_primary', true);
+                        ->where('athlete_contingent.is_primary', true);
                 });
             })
             ->latest()

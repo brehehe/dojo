@@ -436,9 +436,9 @@ class NewScoringIndex extends Component
                 'drawing_match_numbers.pool_id',
                 'drawing_match_numbers.session_time_id',
                 'drawing_match_numbers.rundown_id',
-                \Illuminate\Support\Facades\DB::raw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END"),
+                DB::raw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END"),
                 'drawing_match_numbers.draft_type',
-                \Illuminate\Support\Facades\DB::raw("COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)")
+                DB::raw('COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)')
             )
             ->with([
                 'matchNumber.ageGroup',

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\KyuLevel;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class KyuLevelSeeder extends Seeder
@@ -18,14 +18,14 @@ class KyuLevelSeeder extends Seeder
 
         $levels = [
             'Kyu 5', 'Kyu 4', 'Kyu 3', 'Kyu 2', 'Kyu 1',
-            'Dan 1', 'Dan 2'
+            'Dan 1', 'Dan 2',
         ];
 
         foreach ($levels as $index => $level) {
             KyuLevel::create([
                 'name' => $level,
                 'color' => 'Standard', // Default color for now
-                'order' => $index + 1
+                'order' => $index + 1,
             ]);
         }
     }

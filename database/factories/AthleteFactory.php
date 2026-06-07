@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Athlete;
-use App\Models\Contingent;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

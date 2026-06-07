@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Athlete;
 use App\Models\Contingent;
-use App\Models\Registration;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\Registration;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -25,9 +25,10 @@ class SeedDummyContingents extends Command
 
         // Find Surabaya A contingent
         $surabayaA = Contingent::where('name', 'Surabaya A')->first();
-        
-        if (!$surabayaA) {
+
+        if (! $surabayaA) {
             $this->error('Contingent Surabaya A not found. Please run DummySeeder first.');
+
             return 1;
         }
 
@@ -35,12 +36,14 @@ class SeedDummyContingents extends Command
             $this->info('Resetting dummy data (keeping Surabaya A)...');
             $this->resetData($surabayaA->id);
             $this->info('✅ Reset completed.');
+
             return 0;
         }
 
         $this->info('Seeding dummy data for other contingents...');
         $this->seedData($surabayaA->id);
         $this->info('✅ Seeding completed.');
+
         return 0;
     }
 
@@ -65,7 +68,7 @@ class SeedDummyContingents extends Command
                     ->where('contingent_id', $surabayaAId)
                     ->exists();
 
-                if (!$belongsToSurabayaA) {
+                if (! $belongsToSurabayaA) {
                     $athlete->contingents()->detach();
                     $athlete->delete();
                 }
@@ -88,14 +91,16 @@ class SeedDummyContingents extends Command
     {
         $contingents = Contingent::where('id', '!=', $surabayaAId)->get();
         $matchNumbers = MatchNumber::all();
-        
+
         if ($matchNumbers->isEmpty()) {
             $this->error('No MatchNumbers found. Please run DummySeeder first.');
+
             return;
         }
 
         if ($contingents->count() < 4) {
             $this->error('Not enough contingents to seed 4 per match number.');
+
             return;
         }
 
@@ -116,7 +121,7 @@ class SeedDummyContingents extends Command
                         'final_amount' => 1000000,
                         'unique_code' => rand(100, 999),
                         'payment_method' => 'Transfer',
-                        'referral_code' => 'DUMMY-' . strtoupper(Str::random(5)),
+                        'referral_code' => 'DUMMY-'.strtoupper(Str::random(5)),
                         'status' => 'pending',
                         'sim_perkemi_confirm' => true,
                     ]

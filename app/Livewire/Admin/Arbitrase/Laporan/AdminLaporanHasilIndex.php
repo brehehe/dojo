@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Arbitrase\Laporan;
 
 use App\Models\EmbuChampion;
+use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\TournamentResult;
@@ -234,9 +235,9 @@ class AdminLaporanHasilIndex extends Component
             $juara = [];
             foreach ($confirmed as $champ) {
                 // Try to get specific athletes for this match+reg
-                $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
+                $athletes = $champ->matchNumber?->athletes?->filter(fn ($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
                 $athleteNames = $athletes->pluck('name')->join(' & ');
-                
+
                 // Fallback to all registration athletes if not specific
                 if (empty($athleteNames)) {
                     $athleteNames = $champ->registration?->athletes?->unique('id')->pluck('name')->join(' & ') ?? '-';
@@ -251,6 +252,7 @@ class AdminLaporanHasilIndex extends Component
                     'accumulated_score' => (float) $champ->accumulated_score,
                 ];
             }
+
             return $juara;
         }
 
@@ -264,10 +266,10 @@ class AdminLaporanHasilIndex extends Component
 
     private function computeMergedEmbuJuara(array $matchNumberIds): array
     {
-        $hasFinal = \App\Models\EmbuScore::whereIn('match_number_id', $matchNumberIds)->where('round_label', 'Final')->exists();
+        $hasFinal = EmbuScore::whereIn('match_number_id', $matchNumberIds)->where('round_label', 'Final')->exists();
         $round = $hasFinal ? 'Final' : 'Penyisihan';
 
-        $scores = \App\Models\EmbuScore::with(['registration.athletes', 'registration.contingent'])
+        $scores = EmbuScore::with(['registration.athletes', 'registration.contingent'])
             ->whereIn('match_number_id', $matchNumberIds)
             ->where('round_label', $round)
             ->where('tiebreak_round', 0)
@@ -278,7 +280,7 @@ class AdminLaporanHasilIndex extends Component
         }
 
         if ($round === 'Final') {
-            $penyisihanMap = \App\Models\EmbuScore::whereIn('match_number_id', $matchNumberIds)
+            $penyisihanMap = EmbuScore::whereIn('match_number_id', $matchNumberIds)
                 ->where('round_label', 'Penyisihan')
                 ->where('tiebreak_round', 0)
                 ->get()
@@ -289,6 +291,7 @@ class AdminLaporanHasilIndex extends Component
                 $score->penyisihan_val = $pScore ? (float) $pScore->nilai_akhir : 0;
                 $score->final_val = (float) $score->nilai_akhir;
                 $score->accumulated = $score->penyisihan_val + $score->final_val;
+
                 return $score;
             })->sort(function ($a, $b) {
                 if ($a->accumulated !== $b->accumulated) {
@@ -296,6 +299,7 @@ class AdminLaporanHasilIndex extends Component
                 }
                 $j1A = (float) ($a->final_val ? $a->judge_1 : ($a->penyisihan_val ? $a->judge_1 : 0));
                 $j1B = (float) ($b->final_val ? $b->judge_1 : ($b->penyisihan_val ? $b->judge_1 : 0));
+
                 return $j1B <=> $j1A;
             })->values();
         } else {
@@ -303,6 +307,7 @@ class AdminLaporanHasilIndex extends Component
                 $score->penyisihan_val = (float) $score->nilai_akhir;
                 $score->final_val = 0;
                 $score->accumulated = $score->penyisihan_val;
+
                 return $score;
             })->sort(function ($a, $b) {
                 if ($a->accumulated !== $b->accumulated) {
@@ -310,6 +315,7 @@ class AdminLaporanHasilIndex extends Component
                 }
                 $j1A = (float) $a->judge_1;
                 $j1B = (float) $b->judge_1;
+
                 return $j1B <=> $j1A;
             })->values();
         }
@@ -317,7 +323,9 @@ class AdminLaporanHasilIndex extends Component
         $juara = [];
         foreach ($ranked as $idx => $score) {
             $rankNum = $idx + 1;
-            if ($rankNum > 4) break;
+            if ($rankNum > 4) {
+                break;
+            }
 
             $reg = $score->registration;
             $juara[$rankNum] = [
@@ -416,7 +424,9 @@ class AdminLaporanHasilIndex extends Component
 
         foreach ($matchNumberIds as $mid) {
             $mn = ($mid == $matchNumber->id) ? $matchNumber : MatchNumber::find($mid);
-            if (!$mn) continue;
+            if (! $mn) {
+                continue;
+            }
 
             foreach ($juara as $rank => $data) {
                 TournamentResult::create([
@@ -501,24 +511,25 @@ class AdminLaporanHasilIndex extends Component
         $ageGroups = AgeGroup::orderBy('order')->get();
         $allMatchNumbers = MatchNumber::leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
             ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('match_number_merge_details.match_number_merge_id')
-                  ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+                    ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
             })
             ->select('match_numbers.*', 'match_number_merges.name as merge_group_name', 'match_number_merge_details.match_number_merge_id')
             ->orderBy('match_numbers.name')
             ->get()
-            ->map(function($m) {
+            ->map(function ($m) {
                 if ($m->match_number_merge_id) {
-                    $mergedNames = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                    $mergedNames = DB::table('match_number_merge_details')
                         ->join('match_numbers', 'match_number_merge_details.match_number_id', '=', 'match_numbers.id')
                         ->where('match_number_merge_details.match_number_merge_id', $m->match_number_merge_id)
                         ->pluck('match_numbers.name')
                         ->join(', ');
-                    $m->display_name = ($m->merge_group_name ?: 'Merged Group') . " (" . $mergedNames . ")";
+                    $m->display_name = ($m->merge_group_name ?: 'Merged Group').' ('.$mergedNames.')';
                 } else {
                     $m->display_name = $m->name;
                 }
+
                 return $m;
             });
 
@@ -526,25 +537,37 @@ class AdminLaporanHasilIndex extends Component
             ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
             ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
             ->select('match_numbers.*', 'match_number_merges.name as merge_group_name', 'match_number_merge_details.match_number_merge_id')
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('match_number_merge_details.match_number_merge_id')
-                  ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+                    ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
             });
 
         if ($this->search) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('match_numbers.name', 'ilike', '%'.$this->search.'%')
-                  ->orWhere('match_number_merges.name', 'ilike', '%'.$this->search.'%');
+                    ->orWhere('match_number_merges.name', 'ilike', '%'.$this->search.'%');
             });
         }
 
-        if ($this->draftTypeFilter) $query->where('match_numbers.draft_type', $this->draftTypeFilter);
-        if ($this->ageGroupFilter) $query->where('match_numbers.age_group_id', $this->ageGroupFilter);
-        if ($this->matchNumberFilter) $query->where('match_numbers.id', $this->matchNumberFilter);
-        if ($this->genderFilter) $query->where('match_numbers.gender', $this->genderFilter);
+        if ($this->draftTypeFilter) {
+            $query->where('match_numbers.draft_type', $this->draftTypeFilter);
+        }
+        if ($this->ageGroupFilter) {
+            $query->where('match_numbers.age_group_id', $this->ageGroupFilter);
+        }
+        if ($this->matchNumberFilter) {
+            $query->where('match_numbers.id', $this->matchNumberFilter);
+        }
+        if ($this->genderFilter) {
+            $query->where('match_numbers.gender', $this->genderFilter);
+        }
 
-        if ($this->hasWinnersFilter === 'yes') $query->has('tournamentResults');
-        if ($this->hasWinnersFilter === 'no') $query->doesntHave('tournamentResults');
+        if ($this->hasWinnersFilter === 'yes') {
+            $query->has('tournamentResults');
+        }
+        if ($this->hasWinnersFilter === 'no') {
+            $query->doesntHave('tournamentResults');
+        }
 
         $matchNumbers = $query->orderBy('match_numbers.draft_type')
             ->orderBy('match_numbers.age_group_id')
@@ -555,15 +578,15 @@ class AdminLaporanHasilIndex extends Component
         $matchNumbers->getCollection()->transform(function ($matchNumber) {
             $matchNumber->computed_juara = $this->getJuaraForMatch($matchNumber);
             $matchNumber->saved_results = $matchNumber->tournamentResults->keyBy('rank');
-            
+
             if ($matchNumber->match_number_merge_id) {
                 $mergedNames = DB::table('match_number_merge_details')
                     ->join('match_numbers', 'match_number_merge_details.match_number_id', '=', 'match_numbers.id')
                     ->where('match_number_merge_details.match_number_merge_id', $matchNumber->match_number_merge_id)
                     ->pluck('match_numbers.name')
                     ->join(', ');
-                
-                $matchNumber->display_name = ($matchNumber->merge_group_name ?: 'Merged Group') . " (" . $mergedNames . ")";
+
+                $matchNumber->display_name = ($matchNumber->merge_group_name ?: 'Merged Group').' ('.$mergedNames.')';
             } else {
                 $matchNumber->display_name = $matchNumber->name;
             }

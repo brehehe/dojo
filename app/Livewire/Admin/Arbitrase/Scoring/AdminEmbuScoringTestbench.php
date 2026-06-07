@@ -6,7 +6,10 @@ use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\Referee;
+use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
+use App\Models\ScheduleReferee;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -121,9 +124,9 @@ class AdminEmbuScoringTestbench extends Component
 
             if ($existingScore) {
                 $this->denda = (float) ($existingScore->denda ?? 0);
-                
+
                 // Load detailed breakdown from RefereeScoreDetail
-                $details = \App\Models\RefereeScoreDetail::where('match_number_id', $this->selectedMatchId)
+                $details = RefereeScoreDetail::where('match_number_id', $this->selectedMatchId)
                     ->where('scorable_type', Registration::class)
                     ->where('scorable_id', $registrationId)
                     ->get();
@@ -132,11 +135,11 @@ class AdminEmbuScoringTestbench extends Component
                     // Try to find detail for this judge index (assuming 1-based index in testbench maps to judge_index)
                     // Note: In real scenarios referee_id is used, but for testbench we often map by judge_index
                     $detail = $details->where('judge_index', $j)->first();
-                    
+
                     if ($detail && is_array($detail->details)) {
                         foreach ($detail->details as $k => $v) {
                             if (isset($this->judgeScores[$j][$k])) {
-                                $this->judgeScores[$j][$k] = (float)$v;
+                                $this->judgeScores[$j][$k] = (float) $v;
                             }
                         }
                     } else {
@@ -244,7 +247,7 @@ class AdminEmbuScoringTestbench extends Component
 
         $schedules = collect();
         if ($drawing && $drawing->court_id) {
-            $schedules = \App\Models\ScheduleReferee::where('court_id', $drawing->court_id)
+            $schedules = ScheduleReferee::where('court_id', $drawing->court_id)
                 ->where('session_time_id', $drawing->session_time_id)
                 ->where('rundown_id', $drawing->rundown_id)
                 ->get()
@@ -252,14 +255,16 @@ class AdminEmbuScoringTestbench extends Component
         }
 
         // Fallback referees if schedules are empty (to prevent not-null error in testbench)
-        $fallbackReferees = \App\Models\Referee::limit(5)->pluck('id');
+        $fallbackReferees = Referee::limit(5)->pluck('id');
 
         foreach (range(1, 5) as $j) {
-            $refereeId = $schedules->get($j)?->referee_id ?? $fallbackReferees[$j-1] ?? $fallbackReferees->first();
-            
-            if (!$refereeId) continue; // Should not happen if there are referees in DB
+            $refereeId = $schedules->get($j)?->referee_id ?? $fallbackReferees[$j - 1] ?? $fallbackReferees->first();
 
-            \App\Models\RefereeScoreDetail::updateOrCreate(
+            if (! $refereeId) {
+                continue;
+            } // Should not happen if there are referees in DB
+
+            RefereeScoreDetail::updateOrCreate(
                 [
                     'match_number_id' => $this->selectedMatchId,
                     'scorable_type' => Registration::class,
@@ -322,6 +327,7 @@ class AdminEmbuScoringTestbench extends Component
                 if ($a->nilai_akhir != $b->nilai_akhir) {
                     return $b->nilai_akhir <=> $a->nilai_akhir; // Descending
                 }
+
                 return $b->judge_1 <=> $a->judge_1; // Tie-break: Judge 1 Descending
             })->values();
         } else {
@@ -335,15 +341,16 @@ class AdminEmbuScoringTestbench extends Component
             $sorted = $scores->sort(function ($a, $b) use ($penyisihanScores) {
                 $pA = $penyisihanScores[$a->registration_id] ?? null;
                 $pB = $penyisihanScores[$b->registration_id] ?? null;
-                
+
                 $totalA = $a->nilai_akhir + ($pA ? $pA->nilai_akhir : 0);
                 $totalB = $b->nilai_akhir + ($pB ? $pB->nilai_akhir : 0);
 
                 if ($totalA != $totalB) {
                     return $totalB <=> $totalA; // Descending
                 }
+
                 // If tied, use Judge 1 from current (Final) round
-                return $b->judge_1 <=> $a->judge_1; 
+                return $b->judge_1 <=> $a->judge_1;
             })->values();
         }
 
@@ -413,6 +420,7 @@ class AdminEmbuScoringTestbench extends Component
                 if ($rankA != $rankB) {
                     return $rankA <=> $rankB;
                 }
+
                 return ($b['score']?->nilai_akhir ?? 0) <=> ($a['score']?->nilai_akhir ?? 0);
             })->values();
         }

@@ -17,7 +17,7 @@ class ContingentDetail extends Component
 
     public function confirm()
     {
-        if (!auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Pendaftaran'])) {
+        if (! auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Pendaftaran'])) {
             abort(403);
         }
 
@@ -32,7 +32,7 @@ class ContingentDetail extends Component
 
     public function reject()
     {
-        if (!auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Pendaftaran'])) {
+        if (! auth()->user()->hasAnyRole(['Super Admin', 'Admin', 'Pendaftaran'])) {
             abort(403);
         }
 

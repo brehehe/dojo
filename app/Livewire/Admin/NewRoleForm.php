@@ -30,7 +30,7 @@ class NewRoleForm extends Component
 
     public function save()
     {
-       $this->validate([
+        $this->validate([
             'name' => [
                 'required',
                 'string',

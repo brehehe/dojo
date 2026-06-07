@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Contingent;
 use App\Models\KyuLevel;
 use Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -264,7 +265,7 @@ class AdminMasterAthleteFormIndex extends Component
             $masterData['identity_document_path'] = $this->identity_document->store('athletes/documents', 'public');
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($masterData, $pivotData) {
+        DB::transaction(function () use ($masterData, $pivotData) {
             if ($this->isEdit) {
                 $athlete = Athlete::findOrFail($this->athleteId);
                 $oldContingentId = $athlete->contingent?->id;
@@ -274,10 +275,10 @@ class AdminMasterAthleteFormIndex extends Component
                 if ($oldContingentId != $this->contingent_id) {
                     // Update current primary to false
                     $athlete->contingents()->wherePivot('is_primary', true)->updateExistingPivot($oldContingentId, ['is_primary' => false]);
-                    
+
                     // Add/Update new primary
                     $athlete->contingents()->syncWithoutDetaching([
-                        $this->contingent_id => ['is_primary' => true, 'joined_at' => now()]
+                        $this->contingent_id => ['is_primary' => true, 'joined_at' => now()],
                     ]);
 
                     // Record history
@@ -289,7 +290,7 @@ class AdminMasterAthleteFormIndex extends Component
                 } else {
                     // Just ensure primary is set if for some reason it wasn't
                     $athlete->contingents()->syncWithoutDetaching([
-                        $this->contingent_id => ['is_primary' => true]
+                        $this->contingent_id => ['is_primary' => true],
                     ]);
                 }
 
@@ -306,7 +307,7 @@ class AdminMasterAthleteFormIndex extends Component
 
                 // Initial membership
                 $athlete->contingents()->attach([
-                    $this->contingent_id => ['is_primary' => true, 'joined_at' => now()]
+                    $this->contingent_id => ['is_primary' => true, 'joined_at' => now()],
                 ]);
 
                 // Record initial history

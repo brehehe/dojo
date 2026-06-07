@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin\Master\PaymentMethod;
 
 use App\Models\PaymentMethod\PaymentMethod;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -129,7 +128,7 @@ class AdminMasterPaymentIndex extends Component
 
     public function render()
     {
-        $paymentMethods = PaymentMethod::orWhere('name', 'ilike', '%' . $this->search . '%')
+        $paymentMethods = PaymentMethod::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? PaymentMethod::count() : $this->perPage);
 

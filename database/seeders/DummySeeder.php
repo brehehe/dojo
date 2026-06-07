@@ -29,12 +29,12 @@ class DummySeeder extends Seeder
         Athlete::truncate();
         Contingent::truncate();
         User::role('Contingent')->delete();
-        
+
         // Clear master data to ensure fresh seeding
         WeightGroup::truncate();
         AgeGroup::truncate();
         MatchNumber::truncate();
-        
+
         DB::statement('SET session_replication_role = \'origin\';');
 
         for ($i = 1; $i <= 3; $i++) {
@@ -45,8 +45,8 @@ class DummySeeder extends Seeder
 
             // Buat User khusus untuk Court ini
             $user = User::create([
-                'name' => 'Petugas ' . $court->name,
-                'email' => 'court' . $i . '@gmail.com',
+                'name' => 'Petugas '.$court->name,
+                'email' => 'court'.$i.'@gmail.com',
                 'password' => bcrypt('password'),
                 'court_id' => $court->id,
                 'email_verified_at' => now(),
@@ -97,7 +97,7 @@ class DummySeeder extends Seeder
 
         foreach ($tournamentData as $ageName => $sections) {
             $ageGroup = $ageGroups->get($ageName);
-            
+
             foreach ($sections as $genderKey => $matches) {
                 $gender = match ($genderKey) {
                     'Putra' => 'Male',
@@ -108,7 +108,7 @@ class DummySeeder extends Seeder
                 foreach ($matches as $matchInfo) {
                     $matchName = $matchInfo['name'];
                     $lowerName = strtolower($matchName);
-                    
+
                     // Detect if name contains multiple genders to split
                     $targetGenders = [];
                     if (str_contains($lowerName, 'putra/putri/campuran')) {
@@ -132,21 +132,21 @@ class DummySeeder extends Seeder
                         // Clean up name and append gender suffix if splitting
                         $cleanName = $matchName;
                         if (count($targetGenders) > 1) {
-                            $genderSuffix = match($g) {
+                            $genderSuffix = match ($g) {
                                 'Male' => ' (Putra)',
                                 'Female' => ' (Putri)',
                                 'Mix' => ' (Campuran)',
                                 default => ''
                             };
-                            $cleanName = preg_replace('/\s*putra\/putri(\/campuran)?/i', '', $matchName) . $genderSuffix;
+                            $cleanName = preg_replace('/\s*putra\/putri(\/campuran)?/i', '', $matchName).$genderSuffix;
                         }
 
                         MatchNumber::create([
                             'name' => $cleanName,
                             'age_group_id' => $ageGroup->id,
                             'gender' => $g,
-                            'match_id' => count($targetGenders) > 1 
-                                ? ($matchInfo['match_id'] . '-' . substr($g, 0, 1)) 
+                            'match_id' => count($targetGenders) > 1
+                                ? ($matchInfo['match_id'].'-'.substr($g, 0, 1))
                                 : ($matchInfo['match_id'] ?? null),
                             'draft_type' => $draftType,
                             'max_athletes' => $maxAthletes,
@@ -177,8 +177,8 @@ class DummySeeder extends Seeder
 
         foreach ($contingentsToSeed as $cData) {
             $cName = $cData['name'];
-            $email = $cData['username'] . '@smart-perkemi.id';
-            
+            $email = $cData['username'].'@smart-perkemi.id';
+
             // Create User
             $user = User::create([
                 'name' => $cName,
@@ -193,7 +193,7 @@ class DummySeeder extends Seeder
                 'user_id' => $user->id,
                 'name' => $cName,
                 'kab_kota' => $cName,
-                'leader_name' => 'Ketua ' . $cName,
+                'leader_name' => 'Ketua '.$cName,
                 'leader_phone' => null,
                 'email' => null,
                 'address' => null,
@@ -213,12 +213,12 @@ class DummySeeder extends Seeder
 
         foreach ($adminRoles as $roleName) {
             $username = strtolower(str_replace(' ', '', $roleName));
-            $email = $username . '@smart-perkemi.id';
+            $email = $username.'@smart-perkemi.id';
 
             $user = User::updateOrCreate(
                 ['email' => $email],
                 [
-                    'name' => $roleName . ' User',
+                    'name' => $roleName.' User',
                     'password' => Hash::make($username),
                 ]
             );

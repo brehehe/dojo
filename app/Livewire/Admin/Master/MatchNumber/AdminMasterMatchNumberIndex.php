@@ -25,6 +25,7 @@ class AdminMasterMatchNumberIndex extends Component
 
     // User Fields
     public $name;
+
     public $gender;
 
     public $age_group_id = null;
@@ -38,10 +39,13 @@ class AdminMasterMatchNumberIndex extends Component
     public $matchNumberIdBeingEdited = null;
 
     public $filterAgeGroup = '';
+
     public $filterDraftType = '';
 
     public $showingAthletesModal = false;
+
     public $selectedMatchNumber = null;
+
     public $registeredAthletes = [];
 
     protected $queryString = [
@@ -142,14 +146,14 @@ class AdminMasterMatchNumberIndex extends Component
     public function showAthletes($matchNumberId)
     {
         $this->selectedMatchNumber = MatchNumber::with('ageGroup')->findOrFail($matchNumberId);
-        
+
         // Load athletes through the pivot table
         $this->registeredAthletes = DB::table('athlete_match_number')
             ->join('athletes', 'athlete_match_number.athlete_id', '=', 'athletes.id')
-            ->join('registration_athlete', function($join) {
+            ->join('registration_athlete', function ($join) {
                 // Link to registration_athlete to get the specific contingent and other info
                 $join->on('athlete_match_number.athlete_id', '=', 'registration_athlete.athlete_id')
-                     ->on('athlete_match_number.registration_id', '=', 'registration_athlete.registration_id');
+                    ->on('athlete_match_number.registration_id', '=', 'registration_athlete.registration_id');
             })
             ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
             ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
@@ -171,7 +175,7 @@ class AdminMasterMatchNumberIndex extends Component
     {
         $matchNumbers = MatchNumber::query()
             ->when($this->search, function ($query) {
-                $query->where('name', 'ilike', '%' . $this->search . '%');
+                $query->where('name', 'ilike', '%'.$this->search.'%');
             })
             ->when($this->filterAgeGroup, function ($query) {
                 $query->where('age_group_id', $this->filterAgeGroup);

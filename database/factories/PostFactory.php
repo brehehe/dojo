@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Post;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Post>
@@ -18,11 +19,12 @@ class PostFactory extends Factory
     public function definition(): array
     {
         $title = $this->faker->sentence();
+
         return [
             'title' => $title,
-            'slug' => \Illuminate\Support\Str::slug($title),
+            'slug' => Str::slug($title),
             'content' => $this->faker->paragraphs(3, true),
-            'image_url' => 'https://picsum.photos/seed/' . rand(1, 100) . '/800/400',
+            'image_url' => 'https://picsum.photos/seed/'.rand(1, 100).'/800/400',
             'published_at' => now(),
         ];
     }

@@ -14,13 +14,13 @@ class ContingentSeeder extends Seeder
     {
         // 1. Clear existing contingent and their users to start fresh
         DB::statement('SET session_replication_role = \'replica\';');
-        
+
         // Optionally truncate related tables if you want a clean slate for contingents
-        // But the user only asked to seed contingents. 
+        // But the user only asked to seed contingents.
         // We delete users with role 'Contingent' and truncate Contingent table.
         Contingent::truncate();
         User::role('Contingent')->delete();
-        
+
         DB::statement('SET session_replication_role = \'origin\';');
 
         $this->command->info('Seeding contingent master data from image list...');
@@ -46,8 +46,8 @@ class ContingentSeeder extends Seeder
 
         foreach ($contingentsToSeed as $cData) {
             $cName = $cData['name'];
-            $email = $cData['username'] . '@smart-perkemi.id';
-            
+            $email = $cData['username'].'@smart-perkemi.id';
+
             // Create User
             $user = User::create([
                 'name' => $cName,
@@ -62,7 +62,7 @@ class ContingentSeeder extends Seeder
                 'user_id' => $user->id,
                 'name' => $cName,
                 'kab_kota' => $cName,
-                'leader_name' => 'Ketua ' . $cName,
+                'leader_name' => 'Ketua '.$cName,
                 'leader_phone' => null,
                 'email' => null,
                 'address' => null,

@@ -13,7 +13,9 @@ class AdminRegistrationIndex extends Component
     use WithPagination;
 
     public $search = '';
+
     public $status = '';
+
     public $perPage = 5;
 
     protected $queryString = ['search', 'status', 'perPage'];
@@ -44,9 +46,9 @@ class AdminRegistrationIndex extends Component
     {
         $registrations = Registration::with('contingent')
             ->when($this->search, function ($query) {
-                $query->where('referral_code', 'ilike', '%' . $this->search . '%')
+                $query->where('referral_code', 'ilike', '%'.$this->search.'%')
                     ->orWhereHas('contingent', function ($q) {
-                        $q->where('name', 'ilike', '%' . $this->search . '%');
+                        $q->where('name', 'ilike', '%'.$this->search.'%');
                     });
             })
             ->when($this->status, function ($query) {

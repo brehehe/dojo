@@ -31,8 +31,18 @@ class AnnouncerIndex extends Component
             'pool',
         ])->findOrFail($id);
 
+        if (! $drawing->registration) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Peserta Belum Tergenerate',
+                'text' => 'Bagan/Drawing ini belum memiliki peserta yang tergenerate.',
+            ]);
+
+            return;
+        }
+
         $athletes = $drawing->registration->athletes->pluck('name')->implode(', ');
-        $contingent = $drawing->registration->contingent->name;
+        $contingent = $drawing->registration->contingent->name ?? '—';
         $matchName = $drawing->matchNumber->name;
         $courtName = $drawing->court ? $drawing->court->name : 'lapangan yang ditentukan';
         $poolName = $drawing->pool ? ' Pool '.$drawing->pool->name : '';

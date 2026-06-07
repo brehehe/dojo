@@ -49,8 +49,8 @@ class AdminMasterOfficialIndex extends Component
     public function render()
     {
         $officials = Official::when($this->search, function ($query) {
-            $query->where('name', 'ilike', '%' . $this->search . '%')
-                ->orWhere('phone', 'ilike', '%' . $this->search . '%');
+            $query->where('name', 'ilike', '%'.$this->search.'%')
+                ->orWhere('phone', 'ilike', '%'.$this->search.'%');
         })
             ->when($this->filterContingent, function ($query) {
                 $query->where('contingent_id', $this->filterContingent);

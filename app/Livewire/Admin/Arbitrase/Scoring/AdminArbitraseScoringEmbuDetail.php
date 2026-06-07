@@ -78,15 +78,25 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
     public function callParticipant($registrationId)
     {
-        // Update active_registration_id di match number (untuk referensi wasit)
-        $this->matchNumber->update(['active_registration_id' => $registrationId]);
-
         // Cari drawing yang SPESIFIK untuk registrasi ini di round yang aktif
         $drawing = DrawingMatchNumber::with(['court', 'pool', 'registration.contingent', 'registration.athletes'])
             ->where('match_number_id', $this->matchNumber->id)
             ->where('registration_id', $registrationId)
             ->where('round', $this->currentRound)
             ->first();
+
+        if (! $drawing || ! $drawing->registration) {
+            $this->dispatch('swal', [
+                'icon' => 'warning',
+                'title' => 'Babak Final Belum Tergenerate',
+                'text' => 'Peserta lolos babak final belum digenerate.',
+            ]);
+
+            return;
+        }
+
+        // Update active_registration_id di match number (untuk referensi wasit)
+        $this->matchNumber->update(['active_registration_id' => $registrationId]);
 
         // Hanya update court yang memang assigned ke registrasi ini
         if ($drawing && $drawing->court) {
@@ -102,7 +112,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 ->wherePivot('registration_id', $registrationId)
                 ->pluck('name')
                 ->implode(', ');
-            $contingent = $drawing->registration->contingent->name;
+            $contingent = $drawing->registration->contingent->name ?? '—';
             $matchName = $this->matchNumber->name;
             $courtName = $drawing->court->name;
             $poolName = $drawing->pool ? ' Pool '.$drawing->pool->name : '';

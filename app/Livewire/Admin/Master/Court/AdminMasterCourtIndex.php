@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin\Master\Court;
 
 use App\Models\Court\Court;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -66,7 +65,6 @@ class AdminMasterCourtIndex extends Component
 
         $this->validate($rules);
 
-
         DB::transaction(function () {
             if ($this->courtIdBeingEdited) {
                 $court = Court::findOrFail($this->courtIdBeingEdited);
@@ -100,7 +98,7 @@ class AdminMasterCourtIndex extends Component
 
     public function render()
     {
-        $courts = Court::orWhere('name', 'ilike', '%' . $this->search . '%')
+        $courts = Court::orWhere('name', 'ilike', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage === 'all' ? Court::count() : $this->perPage);
 

@@ -16,14 +16,14 @@ return new class extends Migration
             $table->foreignId('match_number_id')->constrained()->onDelete('cascade');
             $table->foreignId('referee_id')->constrained()->onDelete('cascade');
             $table->integer('judge_index'); // 1-5
-            
+
             // Polymorphic to handle Embu (Registration) and Randori (Match Result)
-            $table->morphs('scorable'); 
-            
+            $table->morphs('scorable');
+
             $table->json('details'); // Stores GOHO, JUHO, Ekspresi etc.
             $table->decimal('total_calculated_score', 8, 2)->default(0);
             $table->text('notes')->nullable();
-            
+
             $table->timestamps();
         });
     }

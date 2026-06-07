@@ -18,7 +18,7 @@ return new class extends Migration
             $table->boolean('is_primary')->default(true);
             $table->timestamp('joined_at')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['athlete_id', 'contingent_id']);
         });
     }

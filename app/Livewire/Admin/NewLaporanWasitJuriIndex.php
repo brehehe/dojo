@@ -11,6 +11,7 @@ use App\Models\Referee;
 use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
 use App\Models\Rundown\Rundown;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -90,12 +91,12 @@ class NewLaporanWasitJuriIndex extends Component
         }
         if (! empty($this->matchNumberFilter)) {
             $matchId = $this->matchNumberFilter;
-            $mergeDetails = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+            $mergeDetails = DB::table('match_number_merge_details')
                 ->where('match_number_id', $matchId)
                 ->first();
 
             if ($mergeDetails) {
-                $ids = \Illuminate\Support\Facades\DB::table('match_number_merge_details')
+                $ids = DB::table('match_number_merge_details')
                     ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
                     ->pluck('match_number_id')
                     ->toArray();
@@ -172,9 +173,9 @@ class NewLaporanWasitJuriIndex extends Component
             'matchNumbers' => MatchNumber::where('draft_type', 'embu')
                 ->when(! empty($this->ageGroupFilter), fn ($q) => $q->where('age_group_id', $this->ageGroupFilter))
                 ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
-                ->where(function($q) {
+                ->where(function ($q) {
                     $q->whereNull('match_number_merge_details.match_number_merge_id')
-                      ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
+                        ->orWhereRaw('match_numbers.id = (SELECT MIN(m2.match_number_id) FROM match_number_merge_details m2 WHERE m2.match_number_merge_id = match_number_merge_details.match_number_merge_id)');
                 })
                 ->orderBy('match_numbers.name')
                 ->select('match_numbers.*')
