@@ -112,3 +112,50 @@ test('new scoring randori index timer functions can start, pause, and stop timer
         ->call('stopTimer')
         ->assertHasNoErrors();
 });
+
+test('new scoring randori index finishMatch runs without errors and does not dispatch swal or auto-submit', function () {
+    $user = User::factory()->create();
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+
+    $matchNumber = MatchNumber::create([
+        'name' => 'Randori Male under 50kg',
+        'gender' => 'Male',
+        'draft_type' => 'randori',
+        'age_group_id' => $ageGroup->id,
+        'drawing_data' => [
+            'bracket_type' => 'double_elimination',
+            'bracket_size' => 4,
+            'total_athletes' => 2,
+            'upper_bracket' => [
+                'rounds' => [
+                    [
+                        [
+                            'athlete1' => ['id' => 1, 'name' => 'Athlete 1', 'registration_id' => 10, 'contingent' => 'C1'],
+                            'athlete2' => ['id' => 2, 'name' => 'Athlete 2', 'registration_id' => 11, 'contingent' => 'C2'],
+                            'winner' => null,
+                            'winner_data' => null,
+                            'winner_next' => ['bracket' => 'gf', 'slot' => 'athlete1'],
+                            'loser_next' => ['bracket' => 'eliminated'],
+                        ],
+                    ],
+                ],
+            ],
+            'lower_bracket' => [
+                'rounds' => [],
+            ],
+            'grand_final' => [
+                'athlete1' => null,
+                'athlete2' => null,
+                'winner' => null,
+                'winner_data' => null,
+            ],
+            'juara' => [],
+        ],
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(NewScoringRandoriIndex::class, ['matchNumber' => $matchNumber])
+        ->call('finishMatch')
+        ->assertHasNoErrors()
+        ->assertNotDispatched('swal');
+});

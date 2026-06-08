@@ -323,7 +323,7 @@ class NewScoringEmbuIndex extends Component
         // Save the penalty to the score model immediately
         $score = EmbuScore::firstOrCreate(
             [
-                'match_number_id' => $drawing->match_number_id ?? $this->matchNumber->id,
+                'match_number_id' => $drawing ? $drawing->match_number_id : $this->matchNumber->id,
                 'registration_id' => $registrationId,
                 'round_label' => $this->currentRound,
             ],
@@ -393,10 +393,10 @@ class NewScoringEmbuIndex extends Component
 
         EmbuScore::updateOrCreate(
             [
-                'match_number_id' => $drawing->match_number_id ?? $this->matchNumber->id,
+                'match_number_id' => $drawing ? $drawing->match_number_id : $this->matchNumber->id,
                 'registration_id' => $this->activeRegistrationId,
                 'round_label' => $this->currentRound,
-                'drawing_id' => $drawing->id ?? null,
+                'drawing_id' => $drawing ? $drawing->id : null,
             ],
             array_merge($this->scores, [
                 'total_score' => $total,

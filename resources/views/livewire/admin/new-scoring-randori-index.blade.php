@@ -645,8 +645,10 @@
                             if (this.running) {
                                 this.time += 30;
                                 let s = Math.floor(this.time / 1000);
-                                if (s === 120 && !this.playedIntervals.has(120)) {
-                                    window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                                if (s >= 120 && !this.playedIntervals.has(120)) {
+                                    this.time = 120000;
+                                    this.running = false;
+                                    window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                                     this.playedIntervals.add(120);
                                     $wire.pauseTimer();
                                 }
@@ -660,18 +662,23 @@
                     },
                     start() {
                         if (!this.running && this.countdown === 0) {
-                            window.playBuzzerDouble ? window.playBuzzerDouble('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                            window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                             $wire.startTimer();
                         }
                     },
                     pause() {
-                        window.playBuzzerSingle ? window.playBuzzerSingle('/music/freesound_community-buzzerwav-14908.mp3') : null;
                         $wire.pauseTimer();
                     },
-                    stop() { $wire.stopTimer(); },
+                    stop() {
+                        this.time = 0;
+                        this.running = false;
+                        $wire.stopTimer();
+                    },
                     finish() {
-                        $wire.pauseTimer();
-                        window.playBuzzerDouble ? window.playBuzzerDouble('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                        this.time = 0;
+                        this.running = false;
+                        $wire.stopTimer();
+                        window.playBuzzerDouble ? window.playBuzzerDouble('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                         $wire.finishMatch();
                     }
                 }"
@@ -2213,6 +2220,7 @@
 
         function formatAnnouncerText(text) {
             return text
+                .toLowerCase()
                 .replace(/\./g, '. ')
                 .replace(/,/g, ', ')
                 .replace(/-/g, ' ')

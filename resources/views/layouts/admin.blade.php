@@ -219,6 +219,7 @@
 
         function formatAnnouncerText(text) {
             return text
+                .toLowerCase()
                 .replace(/\./g, '. ')
                 .replace(/,/g, ', ')
                 .replace(/-/g, ' ')

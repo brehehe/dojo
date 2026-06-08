@@ -865,10 +865,10 @@
                             if (this.running) {
                                 this.time += 30;
                                 let currentSecond = Math.floor(this.time / 1000);
-                                let maxAthletes = {{ $matchNumber->max_athletes ?? 2 }};
+                                let isTandoku = {{ (str_contains(strtolower($matchNumber->name), 'tandoku') || $matchNumber->max_athletes == 1) ? 'true' : 'false' }};
                                 let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
                 
-                                if (maxAthletes === 1) {
+                                if (isTandoku) {
                                     if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
                                         (currentSecond === 90 && !this.playedIntervals.has(90)) ||
                                         (currentSecond === 120 && !this.playedIntervals.has(120))) {
@@ -895,19 +895,26 @@
                     },
                     start() {
                         if (!this.running && this.countdown === 0) {
-                            window.playBuzzerDouble ? window.playBuzzerDouble('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                            this.running = true;
+                            window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                             $wire.startTimer();
                         }
                     },
                     pause() {
-                        window.playBuzzerSingle ? window.playBuzzerSingle('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                        this.running = false;
+                        window.playBuzzerSingle ? window.playBuzzerSingle('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                         $wire.pauseTimer();
                     },
-                    stop() { $wire.stopTimer(); },
+                    stop() {
+                        this.time = 0;
+                        this.running = false;
+                        $wire.stopTimer();
+                    },
                     finish() {
                         let capturedTime = this.time;
+                        this.running = false;
                         $wire.pauseTimer();
-                        window.playBuzzerDouble ? window.playBuzzerDouble('/music/freesound_community-buzzerwav-14908.mp3') : null;
+                        window.playBuzzerDouble ? window.playBuzzerDouble('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                         $wire.finishMatch(this.registrationId, capturedTime);
                     }
                 }">
@@ -1300,6 +1307,7 @@
 
             function formatAnnouncerText(text) {
                 return text
+                    .toLowerCase()
                     .replace(/\./g, '. ')
                     .replace(/,/g, ', ')
                     .replace(/-/g, ' ')

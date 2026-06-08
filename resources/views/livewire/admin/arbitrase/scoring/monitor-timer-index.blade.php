@@ -51,6 +51,14 @@
                           audio.play().catch(e => console.warn(e));
                      } catch(e) {}
                  }
+
+                 // Play buzzer when timer is stopped/finished (but not when just paused)
+                 if (!this.running && wasRunning && state.status === 'stopped') {
+                     try {
+                          let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                          audio.play().catch(e => console.warn(e));
+                     } catch(e) {}
+                 }
                  
                  if (state.status === 'countdown') {
                      let now = Date.now();
@@ -94,27 +102,40 @@
                      if (this.running) {
                          this.time += 30; // 30ms interval
                          let currentSecond = Math.floor(this.time / 1000);
-                         let maxAthletes = {{ $court->activeMatch->max_athletes ?? 2 }};
+                         let isRandori = {{ ($court->activeMatch && ($court->activeMatch->draft_type === 'randori' || str_contains(strtolower($court->activeMatch->name), 'randori'))) ? 'true' : 'false' }};
+                         let isTandoku = {{ ($court->activeMatch && (str_contains(strtolower($court->activeMatch->name), 'tandoku') || $court->activeMatch->max_athletes == 1)) ? 'true' : 'false' }};
                          let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
 
-                         if (maxAthletes === 1) {
-                             if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
-                                 (currentSecond === 90 && !this.playedIntervals.has(90)) ||
-                                 (currentSecond === 120 && !this.playedIntervals.has(120))) {
-                                 this.playedIntervals.add(currentSecond);
+                         if (isRandori) {
+                             if (currentSecond >= 120 && !this.playedIntervals.has(120)) {
+                                 this.time = 120000;
+                                 this.running = false;
+                                 this.playedIntervals.add(120);
                                  try {
                                      let audio = new Audio(buzzerSound);
                                      audio.play().catch(e => console.warn(e));
                                  } catch(e) {}
                              }
                          } else {
-                             if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
-                                 (currentSecond === 120 && !this.playedIntervals.has(120))) {
-                                 this.playedIntervals.add(currentSecond);
-                                 try {
-                                     let audio = new Audio(buzzerSound);
-                                     audio.play().catch(e => console.warn(e));
-                                 } catch(e) {}
+                             if (isTandoku) {
+                                 if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
+                                     (currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                     (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                     this.playedIntervals.add(currentSecond);
+                                     try {
+                                         let audio = new Audio(buzzerSound);
+                                         audio.play().catch(e => console.warn(e));
+                                     } catch(e) {}
+                                 }
+                             } else {
+                                 if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                     (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                     this.playedIntervals.add(currentSecond);
+                                     try {
+                                         let audio = new Audio(buzzerSound);
+                                         audio.play().catch(e => console.warn(e));
+                                     } catch(e) {}
+                                 }
                              }
                          }
                      } else if (this.countdown > 0) {

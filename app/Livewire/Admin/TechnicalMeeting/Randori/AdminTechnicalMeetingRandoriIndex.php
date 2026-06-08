@@ -4,12 +4,17 @@ namespace App\Livewire\Admin\TechnicalMeeting\Randori;
 
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
+use App\Models\EmbuChampion;
+use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Pool\Pool;
+use App\Models\RandoriJudgeScore;
 use App\Models\RandoriMatchResult;
+use App\Models\RefereeScoreDetail;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
+use App\Models\TournamentResult;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -526,6 +531,12 @@ class AdminTechnicalMeetingRandoriIndex extends Component
     public function resetDrawing(int $matchId): void
     {
         DrawingMatchNumber::where('match_number_id', $matchId)->delete();
+        EmbuScore::where('match_number_id', $matchId)->delete();
+        RandoriJudgeScore::where('match_number_id', $matchId)->delete();
+        RefereeScoreDetail::where('match_number_id', $matchId)->delete();
+        EmbuChampion::where('match_number_id', $matchId)->delete();
+        RandoriMatchResult::where('match_number_id', $matchId)->delete();
+        TournamentResult::where('match_number_id', $matchId)->delete();
 
         MatchNumber::findOrFail($matchId)->update([
             'drawing_data' => null,

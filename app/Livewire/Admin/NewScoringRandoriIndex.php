@@ -1072,7 +1072,7 @@ class NewScoringRandoriIndex extends Component
 
     public function finishMatch()
     {
-        $this->submitScoring();
+        //
     }
 
     private function dispatchAnnouncer(array $match, string $info)

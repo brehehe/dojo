@@ -72,9 +72,9 @@ it('generates 2 babak format for 9 or less entries', function () {
     expect($match->drawing_data)->not->toBeNull()
         ->and($match->drawing_data['format'])->toBe('2_babak')
         ->and($match->drawing_data['total_entries'])->toBe(9)
-        ->and($match->drawing_data['pools'])->toHaveKey('PENYISIHAN');
+        ->and($match->drawing_data['pools'])->toHaveKey('POOL 1');
 
-    $this->assertCount(9, $match->drawing_data['pools']['PENYISIHAN']);
+    $this->assertCount(9, $match->drawing_data['pools']['POOL 1']);
 });
 
 it('generates 2 pools for 10 to 11 entries', function () {
@@ -97,11 +97,11 @@ it('generates 2 pools for 10 to 11 entries', function () {
         ->and($match->drawing_data['format'])->toBe('pool')
         ->and($match->drawing_data['pool_count'])->toBe(2)
         ->and($match->drawing_data['total_entries'])->toBe(10)
-        ->and($match->drawing_data['pools'])->toHaveKeys(['A', 'B']);
+        ->and($match->drawing_data['pools'])->toHaveKeys(['POOL A', 'POOL B']);
 
     // Round robin distribution: Pool A gets 5, Pool B gets 5
-    $this->assertCount(5, $match->drawing_data['pools']['A']);
-    $this->assertCount(5, $match->drawing_data['pools']['B']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL A']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL B']);
 });
 
 it('generates 3 pools for 12 to 17 entries', function () {
@@ -124,12 +124,12 @@ it('generates 3 pools for 12 to 17 entries', function () {
         ->and($match->drawing_data['format'])->toBe('pool')
         ->and($match->drawing_data['pool_count'])->toBe(3)
         ->and($match->drawing_data['total_entries'])->toBe(15)
-        ->and($match->drawing_data['pools'])->toHaveKeys(['A', 'B', 'C']);
+        ->and($match->drawing_data['pools'])->toHaveKeys(['POOL A', 'POOL B', 'POOL C']);
 
     // Round robin distribution for 15: 5 per pool
-    $this->assertCount(5, $match->drawing_data['pools']['A']);
-    $this->assertCount(5, $match->drawing_data['pools']['B']);
-    $this->assertCount(5, $match->drawing_data['pools']['C']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL A']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL B']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL C']);
 });
 
 it('generates 4 pools for 18 or more entries', function () {
@@ -152,13 +152,13 @@ it('generates 4 pools for 18 or more entries', function () {
         ->and($match->drawing_data['format'])->toBe('pool')
         ->and($match->drawing_data['pool_count'])->toBe(4)
         ->and($match->drawing_data['total_entries'])->toBe(20)
-        ->and($match->drawing_data['pools'])->toHaveKeys(['A', 'B', 'C', 'D']);
+        ->and($match->drawing_data['pools'])->toHaveKeys(['POOL A', 'POOL B', 'POOL C', 'POOL D']);
 
     // Round robin distribution for 20: 5 per pool
-    $this->assertCount(5, $match->drawing_data['pools']['A']);
-    $this->assertCount(5, $match->drawing_data['pools']['B']);
-    $this->assertCount(5, $match->drawing_data['pools']['C']);
-    $this->assertCount(5, $match->drawing_data['pools']['D']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL A']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL B']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL C']);
+    $this->assertCount(5, $match->drawing_data['pools']['POOL D']);
 });
 
 it('resets drawing', function () {
