@@ -28,8 +28,9 @@ function createMockEmbuEntries(MatchNumber $match, int $count)
         $contingent = Contingent::factory()->create(['user_id' => 1]); // Assume user_id = 1 for simplicity of factory
         $registration = Registration::create([
             'contingent_id' => $contingent->id,
-            'status' => 'approved',
+            'status' => 'verified',
             'payment_status' => 'paid',
+            'athlete_status' => 'verified',
         ]);
 
         // Embu implies 2 athletes per registration typically, but let's just create 1 for drawing verification

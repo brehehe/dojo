@@ -96,9 +96,12 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
         $maxAthletes = $match->max_athletes ?: 1;
         $registrationsQuery = DB::table('athlete_match_number')
+            ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
+            ->where('registrations.status', 'verified')
+            ->where('registrations.athlete_status', 'verified')
             ->where('match_number_id', $matchId)
-            ->select('registration_id', DB::raw('count(*) as athlete_count'))
-            ->groupBy('registration_id')
+            ->select('athlete_match_number.registration_id', DB::raw('count(*) as athlete_count'))
+            ->groupBy('athlete_match_number.registration_id')
             ->get();
 
         $allEntries = collect();
@@ -648,6 +651,8 @@ class AdminTechnicalMeetingEmbuIndex extends Component
                 ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                 ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
                 ->where('athlete_match_number.match_number_id', $match->id)
+                ->where('registrations.status', 'verified')
+                ->where('registrations.athlete_status', 'verified')
                 ->select(
                     'athletes.name',
                     'registration_athlete.kyu as rank',

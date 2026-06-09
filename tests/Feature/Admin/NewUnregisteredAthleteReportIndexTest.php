@@ -25,10 +25,19 @@ test('can load data from database for unregistered athlete report', function () 
 
     $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
 
+    // Non-eksebisi embu match number
     $mn1 = MatchNumber::create([
         'name' => 'Embu Tandoku',
         'gender' => 'Male',
         'draft_type' => 'embu',
+        'age_group_id' => $ageGroup->id,
+    ]);
+
+    // Eksebisi randori match number
+    $mn2 = MatchNumber::create([
+        'name' => 'Randori 55Kg eksebisi',
+        'gender' => 'Male',
+        'draft_type' => 'randori',
         'age_group_id' => $ageGroup->id,
     ]);
 
@@ -41,24 +50,41 @@ test('can load data from database for unregistered athlete report', function () 
         'gender' => 'Male',
     ]);
 
-    $contingent = Contingent::factory()->create();
-    $registration = Registration::create(['contingent_id' => $contingent->id]);
+    $contingentA = Contingent::factory()->create();
+    $contingentB = Contingent::factory()->create();
+    $registrationA = Registration::create(['contingent_id' => $contingentA->id]);
+    $registrationB = Registration::create(['contingent_id' => $contingentB->id]);
 
-    $registration->athletes()->attach([
+    $registrationA->athletes()->attach([
         $athleteA->id => ['age_group' => 'Pemula'],
+    ]);
+    $registrationB->athletes()->attach([
         $athleteB->id => ['age_group' => 'Pemula'],
     ]);
 
     $mn1->athletes()->attach([
-        $athleteA->id => ['registration_id' => $registration->id],
+        $athleteA->id => ['registration_id' => $registrationA->id],
+        $athleteB->id => ['registration_id' => $registrationB->id],
+    ]);
+
+    $mn2->athletes()->attach([
+        $athleteA->id => ['registration_id' => $registrationA->id],
     ]);
 
     Livewire::actingAs($user)
         ->test(NewUnregisteredAthleteReportIndex::class)
         ->assertHasNoErrors()
         ->assertSet('totalAthletes', 2)
-        ->assertSet('totalRegisteredAthletes', 1)
-        ->assertSet('totalUnregisteredAthletes', 1)
+        ->assertSet('totalRegisteredAthletes', 2)
+        ->assertSet('totalUnregisteredAthletes', 0)
+        ->assertSet('totalMatchesWithAthletes', 2)
+        ->assertSet('totalMatchesWithoutAthletes', 0)
+        ->assertSet('totalEksebisi', 1)
+        ->assertSet('totalNonEksebisi', 2)
+        ->assertSet('totalEmbuEksebisi', 0)
+        ->assertSet('totalEmbuNonEksebisi', 2)
+        ->assertSet('totalRandoriEksebisi', 1)
+        ->assertSet('totalRandoriNonEksebisi', 0)
         ->assertSet('ageGroupStats', [
             'Pemula' => 2,
             'Remaja A' => 0,
@@ -66,10 +92,14 @@ test('can load data from database for unregistered athlete report', function () 
             'Dewasa' => 0,
         ])
         ->assertViewHas('matchData', function ($matchData) {
-            return count($matchData) === 1 && $matchData[0]['name'] === 'Embu Tandoku' && $matchData[0]['total_athletes'] === 1;
+            return count($matchData) === 2
+                && $matchData[0]['name'] === 'Embu Tandoku'
+                && $matchData[0]['has_duplicate_contingent'] === true
+                && $matchData[1]['name'] === 'Randori 55Kg eksebisi'
+                && $matchData[1]['has_duplicate_contingent'] === false;
         })
         ->assertViewHas('unregisteredAthletes', function ($unregisteredAthletes) {
-            return count($unregisteredAthletes) === 1 && $unregisteredAthletes[0]['name'] === 'Athlete B';
+            return count($unregisteredAthletes) === 0;
         });
 });
 

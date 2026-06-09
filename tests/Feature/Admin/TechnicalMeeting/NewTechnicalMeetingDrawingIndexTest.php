@@ -36,8 +36,9 @@ function createMockRandoriEntries(MatchNumber $match, int $count)
         $contingent = Contingent::factory()->create(['user_id' => 1]); // Assume user_id = 1
         $registration = Registration::create([
             'contingent_id' => $contingent->id,
-            'status' => 'approved',
+            'status' => 'verified',
             'payment_status' => 'paid',
+            'athlete_status' => 'verified',
         ]);
 
         $athlete = Athlete::factory()->create();
@@ -465,4 +466,107 @@ it('schedules Embu finals on the same day as its preliminaries, while Randori fi
     foreach ($randoriFinals as $d) {
         expect($d->rundown_id)->toBe($day2->id); // Pushed to Day 2!
     }
+});
+
+it('generates all drawings following the priority sequence and packs them compactly without empty slots', function () {
+    // 1. Setup Court, 2 Rundowns (Day 1 & Day 2), SessionTime
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+
+    $day1 = Rundown::create([
+        'name' => 'Hari 1',
+        'date' => '2026-06-15',
+        'type' => 'pertandingan',
+        'order' => 1,
+    ]);
+
+    $day2 = Rundown::create([
+        'name' => 'Hari 2',
+        'date' => '2026-06-16',
+        'type' => 'pertandingan',
+        'order' => 2,
+    ]);
+
+    $session = SessionTime::create([
+        'name' => 'Sesi Pagi',
+        'start_time' => '07:30:00',
+        'end_time' => '12:00:00', // 270 mins total capacity on Day 1
+    ]);
+
+    // Create age groups: Pemula, Remaja A, Dewasa
+    $pemulaGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1, 'price' => 0]);
+    $remajaAGroup = AgeGroup::create(['name' => 'Remaja A', 'order' => 2, 'price' => 0]);
+    $dewasaGroup = AgeGroup::create(['name' => 'Dewasa', 'order' => 3, 'price' => 0]);
+
+    // 1. Embu Pemula Pasangan (should be priority 2 inside Embu Pemula)
+    $embuPemulaPasangan = MatchNumber::create([
+        'name' => 'Embu Pasangan Pemula',
+        'draft_type' => 'embu',
+        'max_athletes' => 2,
+        'order' => 1,
+        'age_group_id' => $pemulaGroup->id,
+    ]);
+    createMockRandoriEntries($embuPemulaPasangan, 4); // 4 entries -> 1 pool = 40 mins. Final: 4 finalists = 40 mins. Total 80 mins.
+
+    // 2. Embu Pemula Tandoku (should be priority 1 inside Embu Pemula)
+    $embuPemulaTandoku = MatchNumber::create([
+        'name' => 'Embu Tandoku Pemula',
+        'draft_type' => 'embu',
+        'max_athletes' => 1,
+        'order' => 2,
+        'age_group_id' => $pemulaGroup->id,
+    ]);
+    createMockRandoriEntries($embuPemulaTandoku, 4); // 4 entries -> 1 pool = 40 mins. Final: 4 finalists = 40 mins. Total 80 mins.
+
+    // 3. Embu Remaja A Tandoku (should be after Pemula)
+    $embuRemajaATandoku = MatchNumber::create([
+        'name' => 'Embu Tandoku Remaja A',
+        'draft_type' => 'embu',
+        'max_athletes' => 1,
+        'order' => 3,
+        'age_group_id' => $remajaAGroup->id,
+    ]);
+    createMockRandoriEntries($embuRemajaATandoku, 3); // 3 entries -> 1 pool = 30 mins. Final: 3 finalists = 30 mins. Total 60 mins.
+
+    // 4. Randori Dewasa
+    $randoriDewasa = MatchNumber::create([
+        'name' => 'Randori Dewasa',
+        'draft_type' => 'randori',
+        'gender' => 'L',
+        'order' => 4,
+        'age_group_id' => $dewasaGroup->id,
+    ]);
+    createMockRandoriEntries($randoriDewasa, 4); // 4 entries -> double elimination. Prelims: 5 matches = 50 mins. Finals: 1 match = 10 mins. Total 60 mins.
+
+    // Run generateAllDrawings
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->call('generateAllDrawings')
+        ->assertDispatched('swal');
+
+    $embuPemulaTandokuPrelim = DrawingMatchNumber::where('match_number_id', $embuPemulaTandoku->id)->where('round', 'Penyisihan')->first();
+    expect($embuPemulaTandokuPrelim->metadata['start_time'])->toBe('07:30');
+    expect($embuPemulaTandokuPrelim->rundown_id)->toBe($day1->id);
+
+    $embuPemulaPasanganPrelim = DrawingMatchNumber::where('match_number_id', $embuPemulaPasangan->id)->where('round', 'Penyisihan')->first();
+    expect($embuPemulaPasanganPrelim->metadata['start_time'])->toBe('08:10');
+    expect($embuPemulaPasanganPrelim->rundown_id)->toBe($day1->id);
+
+    $embuRemajaATandokuPrelim = DrawingMatchNumber::where('match_number_id', $embuRemajaATandoku->id)->where('round', 'Penyisihan')->first();
+    expect($embuRemajaATandokuPrelim->metadata['start_time'])->toBe('08:50');
+    expect($embuRemajaATandokuPrelim->rundown_id)->toBe($day1->id);
+
+    $embuPemulaTandokuFinal = DrawingMatchNumber::where('match_number_id', $embuPemulaTandoku->id)->where('round', 'Final')->first();
+    expect($embuPemulaTandokuFinal->metadata['start_time'])->toBe('09:40');
+    expect($embuPemulaTandokuFinal->rundown_id)->toBe($day1->id);
+
+    $embuPemulaPasanganFinal = DrawingMatchNumber::where('match_number_id', $embuPemulaPasangan->id)->where('round', 'Final')->first();
+    expect($embuPemulaPasanganFinal->metadata['start_time'])->toBe('10:20');
+    expect($embuPemulaPasanganFinal->rundown_id)->toBe($day1->id);
+
+    $embuRemajaATandokuFinal = DrawingMatchNumber::where('match_number_id', $embuRemajaATandoku->id)->where('round', 'Final')->first();
+    expect($embuRemajaATandokuFinal->metadata['start_time'])->toBe('11:00');
+    expect($embuRemajaATandokuFinal->rundown_id)->toBe($day1->id);
+
+    $randoriDewasaPrelim = DrawingMatchNumber::where('match_number_id', $randoriDewasa->id)->where('round', 'like', 'Penyisihan%')->first();
+    expect($randoriDewasaPrelim->rundown_id)->toBe($day2->id); // Pushed to Day 2!
 });

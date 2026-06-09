@@ -76,6 +76,7 @@ use App\Livewire\Admin\NewPoolIndex;
 use App\Livewire\Admin\NewRefereeIndex;
 use App\Livewire\Admin\NewRegistrationIndex;
 use App\Livewire\Admin\NewRegistrationShow;
+use App\Livewire\Admin\NewRegistrationVerificationIndex;
 use App\Livewire\Admin\NewRekapitulasiEmbuDetailIndex;
 use App\Livewire\Admin\NewRekapitulasiEmbuIndex;
 use App\Livewire\Admin\NewRoleForm;
@@ -115,6 +116,7 @@ use App\Livewire\Admin\TechnicalMeeting\Randori\AdminTechnicalMeetingRandoriInde
 use App\Livewire\Auth\NewLoginIndex;
 use App\Livewire\Auth\Register;
 use App\Livewire\Contingent\Athletes;
+use App\Livewire\Contingent\AthleteVerificationIndex;
 use App\Livewire\Contingent\Dashboard;
 use App\Livewire\Contingent\LaporanWasit;
 use App\Livewire\Contingent\Officials;
@@ -165,13 +167,14 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/laporan-wasit', LaporanWasit::class)->name('contingent.laporan-wasit');
     Route::get('contingent/registration-history', RegistrationHistoryIndex::class)->name('contingent.registration-history');
     Route::get('contingent/registration-history/{registration}', RegistrationHistoryDetailIndex::class)->name('contingent.registration-history.show');
+    Route::get('contingent/athlete-verification', AthleteVerificationIndex::class)->name('contingent.athlete-verification');
     Route::get('contingent/rekap-pertandingan', RekapPertandingan::class)->name('contingent.rekap-pertandingan');
     Route::get('contingent/observasi-wasit', RefereeObservationIndex::class)->name('contingent.observasi-wasit.index');
     Route::get('contingent/observasi-wasit/create', RefereeObservationForm::class)->name('contingent.observasi-wasit.create');
     Route::get('contingent/observasi-wasit/{observation}', RefereeObservationForm::class)->name('contingent.observasi-wasit.show');
     Route::get('contingent/observasi-wasit/{observation}/edit', RefereeObservationForm::class)->name('contingent.observasi-wasit.edit');
 
-    Route::post('logout', function () {
+    Route::match(['get', 'post'], 'logout', function () {
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
@@ -185,6 +188,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/new-dashboard', NewDashboardIndex::class)->name('new-dashboard');
         Route::get('/new-registrations', NewRegistrationIndex::class)->name('new-registrations');
         Route::get('/new-registrations/{registration}', NewRegistrationShow::class)->name('new-registrations.show');
+        Route::get('/new-registration-verification', NewRegistrationVerificationIndex::class)->name('new-registration-verification');
         Route::get('/new-athletes', NewAthleteIndex::class)->name('new-athletes');
         Route::get('/new-athletes/create', NewAthleteCreate::class)->name('new-athletes.create');
         Route::get('/new-athletes/{athlete}', NewAthleteShow::class)->name('new-athletes.show');

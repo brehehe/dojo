@@ -110,10 +110,41 @@ class NewGenerateRefereeIndex extends Component
                 return;
             }
 
+            // Get selected referee models to check their certification levels
+            $selectedModels = Referee::whereIn('id', $this->selectedReferees)->get();
+            $wasitUtama = $selectedModels->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+            $others = $selectedModels->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA');
+
+            // Enforce Wasit Utama only if there are Wasit Utama in the system
+            $hasSystemWasitUtama = Referee::where('certification_level', 'WASIT UTAMA')->exists();
+
+            if ($hasSystemWasitUtama && $wasitUtama->isEmpty()) {
+                $this->addError('referees', 'Minimal 1 Wasit Utama harus dipilih untuk menjadi Wasit Pertama.');
+
+                return;
+            }
+
+            // Reorder so that a Wasit Utama is first (judge_index = 1)
+            $orderedIds = [];
+            if ($wasitUtama->isNotEmpty()) {
+                $firstUtama = $wasitUtama->first();
+                $orderedIds[] = $firstUtama->id;
+
+                $remainingUtama = $wasitUtama->slice(1);
+                foreach ($remainingUtama as $r) {
+                    $orderedIds[] = $r->id;
+                }
+                foreach ($others as $r) {
+                    $orderedIds[] = $r->id;
+                }
+            } else {
+                $orderedIds = $this->selectedReferees;
+            }
+
             DB::beginTransaction();
             try {
                 ScheduleReferee::where('rundown_id', $rId)->where('session_time_id', $sId)->where('court_id', $cId)->where('judge_index', '>', 0)->delete();
-                foreach ($this->selectedReferees as $index => $refereeId) {
+                foreach ($orderedIds as $index => $refereeId) {
                     ScheduleReferee::create([
                         'rundown_id' => $rId,
                         'session_time_id' => $sId,
@@ -139,6 +170,10 @@ class NewGenerateRefereeIndex extends Component
         $arbitraseIds = Referee::whereHas('user', function ($q) {
             $q->role('Arbitrase');
         })->pluck('id')->toArray();
+
+        $wasitUtamaIds = Referee::whereHas('user', function ($q) {
+            $q->role('Perwasitan');
+        })->where('certification_level', 'WASIT UTAMA')->pluck('id')->toArray();
 
         $refereeIds = Referee::whereHas('user', function ($q) {
             $q->role('Perwasitan');
@@ -193,13 +228,22 @@ class NewGenerateRefereeIndex extends Component
                     ->count();
 
                 if ($existing < 5) {
-                    $randomIds = collect($refereeIds)->random(5)->toArray();
+                    if (! empty($wasitUtamaIds)) {
+                        $randomUtamaId = collect($wasitUtamaIds)->random();
+                        $otherRefereePool = array_values(array_diff($refereeIds, [$randomUtamaId]));
+                        $randomOtherIds = collect($otherRefereePool)->random(4)->toArray();
+
+                        $panelIds = array_merge([$randomUtamaId], $randomOtherIds);
+                    } else {
+                        $panelIds = collect($refereeIds)->random(5)->toArray();
+                    }
+
                     ScheduleReferee::where('rundown_id', $shift->rundown_id)
                         ->where('session_time_id', $shift->session_time_id)
                         ->where('court_id', $courtId)
                         ->where('judge_index', '>', 0)
                         ->delete();
-                    foreach ($randomIds as $index => $refereeId) {
+                    foreach ($panelIds as $index => $refereeId) {
                         ScheduleReferee::create([
                             'rundown_id' => $shift->rundown_id,
                             'session_time_id' => $shift->session_time_id,

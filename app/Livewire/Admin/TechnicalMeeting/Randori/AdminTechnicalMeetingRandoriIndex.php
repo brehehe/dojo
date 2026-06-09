@@ -79,6 +79,8 @@ class AdminTechnicalMeetingRandoriIndex extends Component
             ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
             ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
             ->where('athlete_match_number.match_number_id', $matchId)
+            ->where('registrations.status', 'verified')
+            ->where('registrations.athlete_status', 'verified')
             ->select('athletes.id', 'athletes.name', 'athlete_match_number.registration_id', 'contingents.name as contingent_name')
             ->distinct()
             ->get();
@@ -700,6 +702,8 @@ class AdminTechnicalMeetingRandoriIndex extends Component
                 ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                 ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
                 ->where('athlete_match_number.match_number_id', $match->id)
+                ->where('registrations.status', 'verified')
+                ->where('registrations.athlete_status', 'verified')
                 ->select(
                     'athletes.name',
                     'registration_athlete.kyu as rank',

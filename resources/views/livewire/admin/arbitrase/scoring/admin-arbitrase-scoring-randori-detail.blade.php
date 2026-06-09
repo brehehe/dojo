@@ -522,11 +522,6 @@
                                                 if (this.countdown === 2) {
                                                     window.speakCountdown('Siap');
                                                 }
-                                                
-                                                // Play start buzzer at countdown 1
-                                                if (this.countdown === 1) {
-                                                    window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
-                                                }
                                             }
                                         },
                                         init() {

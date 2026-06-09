@@ -229,6 +229,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                 ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
                 ->whereIn('athlete_match_number.match_number_id', $matchNumberIds)
+                ->where('registrations.status', 'verified')
+                ->where('registrations.athlete_status', 'verified')
                 ->select('athletes.id', 'athletes.name', 'athlete_match_number.registration_id', 'contingents.name as contingent_name', 'athlete_match_number.match_number_id')
                 ->distinct()
                 ->get();
@@ -400,6 +402,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         'court_id' => $court?->id,
                         'session_time_id' => $sessionTime?->id,
                         'rundown_id' => $rundown?->id,
+                        'schedule_date' => $rundown?->date,
                         'round' => $roundName,
                         'sequence_number' => $matchSeq,
                         'draft_type' => 'randori',
@@ -426,6 +429,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         'court_id' => $court?->id,
                         'session_time_id' => $sessionTime?->id,
                         'rundown_id' => $rundown?->id,
+                        'schedule_date' => $rundown?->date,
                         'round' => $roundName,
                         'sequence_number' => $matchSeq,
                         'draft_type' => 'randori',
@@ -538,6 +542,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         'court_id' => $court?->id,
                         'session_time_id' => $sessionTime?->id,
                         'rundown_id' => $rundown?->id,
+                        'schedule_date' => $rundown?->date,
                         'round' => $roundName,
                         'sequence_number' => $matchSeq,
                         'draft_type' => 'randori',
@@ -564,6 +569,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         'court_id' => $court?->id,
                         'session_time_id' => $sessionTime?->id,
                         'rundown_id' => $rundown?->id,
+                        'schedule_date' => $rundown?->date,
                         'round' => $roundName,
                         'sequence_number' => $matchSeq,
                         'draft_type' => 'randori',
@@ -609,46 +615,71 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $matches = MatchNumber::whereNull('drawing_generated_at')
             ->has('athletes')
-            ->get()
-            ->sortBy(fn ($m) => $m->draft_type === 'embu' ? 0 : 1);
+            ->get();
+
+        // Sort matches: Embu first, then Randori. Inside, sort by Age Group and Subtype.
+        $matches = $matches->sort(function ($a, $b) {
+            $aType = $a->draft_type === 'embu' ? 0 : 1;
+            $bType = $b->draft_type === 'embu' ? 0 : 1;
+            if ($aType !== $bType) {
+                return $aType <=> $bType;
+            }
+
+            $ageOrder = [
+                'Pemula' => 0,
+                'Remaja A' => 1,
+                'Remaja B' => 2,
+                'Dewasa' => 3,
+            ];
+            $aAge = $ageOrder[$a->ageGroup->name ?? ''] ?? 99;
+            $bAge = $ageOrder[$b->ageGroup->name ?? ''] ?? 99;
+            if ($aAge !== $bAge) {
+                return $aAge <=> $bAge;
+            }
+
+            if ($a->draft_type === 'embu') {
+                $aName = $a->name;
+                $bName = $b->name;
+                $aSub = str_contains($aName, 'Tandoku') ? 0 : (str_contains($aName, 'Pasangan') ? 1 : (str_contains($aName, 'Beregu') ? 2 : 3));
+                $bSub = str_contains($bName, 'Tandoku') ? 0 : (str_contains($bName, 'Pasangan') ? 1 : (str_contains($bName, 'Beregu') ? 2 : 3));
+                if ($aSub !== $bSub) {
+                    return $aSub <=> $bSub;
+                }
+            }
+
+            return $a->id <=> $b->id;
+        });
+
+        $embuMatches = $matches->filter(fn ($m) => $m->draft_type === 'embu');
+        $randoriMatches = $matches->filter(fn ($m) => $m->draft_type === 'randori');
 
         $success = 0;
         $skipped = 0;
 
-        // Pass 1: Generate Penyisihan (Preliminaries) for all categories
-        foreach ($matches as $match) {
+        // 1. Generate Embu Penyisihan
+        foreach ($embuMatches as $match) {
             $this->filterMatchNumberId = $match->id;
-
             try {
-                if ($match->draft_type === 'randori') {
-                    $result = $this->generateRandoriDrawing(false, 'Penyisihan');
-                } else {
-                    $result = $this->generateEmbuDrawing(false, 'Penyisihan');
-                }
-
+                $result = $this->generateEmbuDrawing(false, 'Penyisihan');
                 if ($result === false) {
                     $skipped++;
                 } else {
                     $success++;
                 }
-
             } catch (\Throwable $e) {
                 $skipped++;
-                logger()->error('Failed generating Penyisihan for match '.$match->id.': '.$e->getMessage());
+                logger()->error('Failed generating Penyisihan for Embu match '.$match->id.': '.$e->getMessage());
             }
         }
 
-        // Calculate minFinalStartTime based on the maximum end time of any preliminary match
-        $latestPenyisihanEndTime = null;
-
-        $matchNumberIds = $matches->pluck('id')->toArray();
-        $scheduledPrelims = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
-            ->where(function ($query) {
-                $query->where('round', 'like', 'Penyisihan%');
-            })
+        // 2. Calculate minFinalStartTime for Embu Finals
+        $latestEmbuPrelimEndTime = null;
+        $embuMatchIds = $embuMatches->pluck('id')->toArray();
+        $scheduledEmbuPrelims = DrawingMatchNumber::whereIn('match_number_id', $embuMatchIds)
+            ->where('round', 'Penyisihan')
             ->get();
 
-        foreach ($scheduledPrelims as $item) {
+        foreach ($scheduledEmbuPrelims as $item) {
             $meta = $item->metadata ?? [];
             if (empty($meta['end_time']) || empty($item->schedule_date)) {
                 continue;
@@ -656,35 +687,88 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $dateStr = Carbon::parse($item->schedule_date)->format('Y-m-d');
             $endTimeStr = $dateStr.' '.$meta['end_time'].':00';
             $endTime = Carbon::parse($endTimeStr);
-            if ($latestPenyisihanEndTime === null || $endTime->gt($latestPenyisihanEndTime)) {
-                $latestPenyisihanEndTime = $endTime;
+            if ($latestEmbuPrelimEndTime === null || $endTime->gt($latestEmbuPrelimEndTime)) {
+                $latestEmbuPrelimEndTime = $endTime;
             }
         }
 
-        // Minimum 15-minute break aligned to 10-minute grid boundary
-        $minFinalStartTime = null;
-        if ($latestPenyisihanEndTime !== null) {
-            $earliestFinalTime = $latestPenyisihanEndTime->copy()->addMinutes(15);
+        $minEmbuFinalStartTime = null;
+        if ($latestEmbuPrelimEndTime !== null) {
+            $earliestFinalTime = $latestEmbuPrelimEndTime->copy()->addMinutes(15);
             $minute = (int) $earliestFinalTime->format('i');
             $remainder = $minute % 10;
             if ($remainder !== 0) {
                 $earliestFinalTime->addMinutes(10 - $remainder);
             }
-            $minFinalStartTime = $earliestFinalTime;
+            $minEmbuFinalStartTime = $earliestFinalTime;
         }
 
-        // Pass 2: Generate Final (Finals) for all categories
-        foreach ($matches as $match) {
+        // 3. Generate Embu Finals
+        foreach ($embuMatches as $match) {
             $this->filterMatchNumberId = $match->id;
-
             try {
-                if ($match->draft_type === 'randori') {
-                    $this->generateRandoriDrawing(false, 'Final', $minFinalStartTime);
+                $this->generateEmbuDrawing(false, 'Final', $minEmbuFinalStartTime);
+            } catch (\Throwable $e) {
+                logger()->error('Failed generating Final for Embu match '.$match->id.': '.$e->getMessage());
+            }
+        }
+
+        // 4. Generate Randori Penyisihan
+        foreach ($randoriMatches as $match) {
+            $this->filterMatchNumberId = $match->id;
+            try {
+                $result = $this->generateRandoriDrawing(false, 'Penyisihan');
+                if ($result === false) {
+                    $skipped++;
                 } else {
-                    $this->generateEmbuDrawing(false, 'Final', $minFinalStartTime);
+                    $success++;
                 }
             } catch (\Throwable $e) {
-                logger()->error('Failed generating Final for match '.$match->id.': '.$e->getMessage());
+                $skipped++;
+                logger()->error('Failed generating Penyisihan for Randori match '.$match->id.': '.$e->getMessage());
+            }
+        }
+
+        // 5. Calculate minFinalStartTime for Randori Finals
+        $latestRandoriPrelimEndTime = null;
+        $randoriMatchIds = $randoriMatches->pluck('id')->toArray();
+        $scheduledRandoriPrelims = DrawingMatchNumber::whereIn('match_number_id', $randoriMatchIds)
+            ->where(function ($query) {
+                $query->where('round', 'like', 'Penyisihan%');
+            })
+            ->get();
+
+        foreach ($scheduledRandoriPrelims as $item) {
+            $meta = $item->metadata ?? [];
+            if (empty($meta['end_time']) || empty($item->schedule_date)) {
+                continue;
+            }
+            $dateStr = Carbon::parse($item->schedule_date)->format('Y-m-d');
+            $endTimeStr = $dateStr.' '.$meta['end_time'].':00';
+            $endTime = Carbon::parse($endTimeStr);
+            if ($latestRandoriPrelimEndTime === null || $endTime->gt($latestRandoriPrelimEndTime)) {
+                $latestRandoriPrelimEndTime = $endTime;
+            }
+        }
+
+        $minRandoriFinalStartTime = null;
+        if ($latestRandoriPrelimEndTime !== null) {
+            $earliestFinalTime = $latestRandoriPrelimEndTime->copy()->addMinutes(15);
+            $minute = (int) $earliestFinalTime->format('i');
+            $remainder = $minute % 10;
+            if ($remainder !== 0) {
+                $earliestFinalTime->addMinutes(10 - $remainder);
+            }
+            $minRandoriFinalStartTime = $earliestFinalTime;
+        }
+
+        // 6. Generate Randori Finals
+        foreach ($randoriMatches as $match) {
+            $this->filterMatchNumberId = $match->id;
+            try {
+                $this->generateRandoriDrawing(false, 'Final', $minRandoriFinalStartTime);
+            } catch (\Throwable $e) {
+                logger()->error('Failed generating Final for Randori match '.$match->id.': '.$e->getMessage());
             }
         }
 
@@ -694,7 +778,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Generate Selesai',
-            'text' => $success.' kategori berhasil di-generate (Penyisihan dulu baru Final).',
+            'text' => $success.' kategori berhasil di-generate (Embu dulu baru Randori, Penyisihan lalu Final).',
         ]);
     }
 
@@ -741,13 +825,17 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $matchNumberIds = [$matchId];
         }
 
-        $maxAthletes = $match->max_athletes ?: 1;
+        // Fetch all merge match numbers to know their max_athletes
+        $matchNumbers = MatchNumber::whereIn('id', $matchNumberIds)->get();
 
         // Get all registrations across all included match numbers
         $registrationsQuery = DB::table('athlete_match_number')
+            ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
+            ->where('registrations.status', 'verified')
+            ->where('registrations.athlete_status', 'verified')
             ->whereIn('match_number_id', $matchNumberIds)
-            ->select('registration_id', 'match_number_id', DB::raw('count(*) as athlete_count'))
-            ->groupBy('registration_id', 'match_number_id')
+            ->select('athlete_match_number.registration_id', 'athlete_match_number.match_number_id', DB::raw('count(*) as athlete_count'))
+            ->groupBy('athlete_match_number.registration_id', 'athlete_match_number.match_number_id')
             ->get();
 
         $allEntries = collect();
@@ -758,7 +846,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 ->orderBy('id')
                 ->pluck('athlete_id');
 
-            $chunks = $athleteIds->chunk($maxAthletes);
+            $matchObj = $matchNumbers->firstWhere('id', $reg->match_number_id);
+            $currentMax = $matchObj->max_athletes ?? 1;
+
+            $chunks = $athleteIds->chunk($currentMax);
 
             foreach ($chunks as $chunk) {
                 $allEntries->push((object) [
@@ -1438,10 +1529,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         // Get entry counts for each match number to display in sidebar
         $rawAthleteCounts = DB::table('athlete_match_number')
+            ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
+            ->where('registrations.status', 'verified')
+            ->where('registrations.athlete_status', 'verified')
             ->whereIn('match_number_id', $filterMatchNumbers->pluck('id'))
-            ->select('match_number_id', DB::raw('count(*) as count'))
-            ->groupBy('match_number_id')
-            ->pluck('count', 'match_number_id');
+            ->select('athlete_match_number.match_number_id', DB::raw('count(*) as count'))
+            ->groupBy('athlete_match_number.match_number_id')
+            ->pluck('count', 'athlete_match_number.match_number_id');
 
         $contingentCounts = [];
         foreach ($filterMatchNumbers as $match) {
@@ -1473,17 +1567,29 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                     ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
                     ->whereIn('athlete_match_number.match_number_id', $matchNumberIds)
-                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id')
+                    ->where('registrations.status', 'verified')
+                    ->where('registrations.athlete_status', 'verified')
+                    ->select(
+                        'athletes.name as athlete_name',
+                        'contingents.name as contingent_name',
+                        'athlete_match_number.registration_id',
+                        'athlete_match_number.match_number_id'
+                    )
                     ->orderBy('contingents.name')
                     ->orderBy('athlete_match_number.id')
                     ->get();
 
                 $entryData = [];
-                foreach ($rawAthletes->groupBy('registration_id') as $regId => $regAthletes) {
-                    $chunks = $regAthletes->chunk($maxAthletes);
-                    foreach ($chunks as $chunkIndex => $chunk) {
-                        $entryKey = $regId.'_'.$chunkIndex;
-                        $entryData[$entryKey] = $chunk;
+                foreach ($rawAthletes->groupBy(['registration_id', 'match_number_id']) as $regId => $byMatch) {
+                    foreach ($byMatch as $matchId => $regAthletes) {
+                        $matchObj = $merge->matchNumbers->firstWhere('id', $matchId);
+                        $currentMax = $matchObj->max_athletes ?? 1;
+
+                        $chunks = $regAthletes->chunk($currentMax);
+                        foreach ($chunks as $chunkIndex => $chunk) {
+                            $entryKey = $regId.'_'.$matchId.'_'.$chunkIndex;
+                            $entryData[$entryKey] = $chunk;
+                        }
                     }
                 }
                 $matchAthletes = collect($entryData);
@@ -1504,6 +1610,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
                     ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
                     ->where('athlete_match_number.match_number_id', $this->filterMatchNumberId)
+                    ->where('registrations.status', 'verified')
+                    ->where('registrations.athlete_status', 'verified')
                     ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id')
                     ->orderBy('contingents.name')
                     ->orderBy('athlete_match_number.id')

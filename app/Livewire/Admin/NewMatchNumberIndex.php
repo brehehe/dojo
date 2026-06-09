@@ -207,9 +207,25 @@ class NewMatchNumberIndex extends Component
         $matchNumbers = $query->latest()->paginate($this->perPage === 'all' ? MatchNumber::count() : $this->perPage);
         $ageGroups = AgeGroup::all();
 
+        $likeOperator = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+        $notLikeOperator = DB::connection()->getDriverName() === 'pgsql' ? 'not ilike' : 'not like';
+
+        $totalEksebisi = MatchNumber::where('name', $likeOperator, '%eksebisi%')->count();
+        $totalNonEksebisi = MatchNumber::where('name', $notLikeOperator, '%eksebisi%')->count();
+        $totalEmbuEksebisi = MatchNumber::where('draft_type', 'embu')->where('name', $likeOperator, '%eksebisi%')->count();
+        $totalEmbuNonEksebisi = MatchNumber::where('draft_type', 'embu')->where('name', $notLikeOperator, '%eksebisi%')->count();
+        $totalRandoriEksebisi = MatchNumber::where('draft_type', 'randori')->where('name', $likeOperator, '%eksebisi%')->count();
+        $totalRandoriNonEksebisi = MatchNumber::where('draft_type', 'randori')->where('name', $notLikeOperator, '%eksebisi%')->count();
+
         return view('livewire.admin.new-match-number-index', [
             'matchNumbers' => $matchNumbers,
             'ageGroups' => $ageGroups,
+            'totalEksebisi' => $totalEksebisi,
+            'totalNonEksebisi' => $totalNonEksebisi,
+            'totalEmbuEksebisi' => $totalEmbuEksebisi,
+            'totalEmbuNonEksebisi' => $totalEmbuNonEksebisi,
+            'totalRandoriEksebisi' => $totalRandoriEksebisi,
+            'totalRandoriNonEksebisi' => $totalRandoriNonEksebisi,
         ])->layout('layouts.premium', ['title' => 'Master Nomor Pertandingan']);
     }
 }

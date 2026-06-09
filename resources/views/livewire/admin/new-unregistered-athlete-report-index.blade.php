@@ -11,6 +11,8 @@
         /* ── STAT CARDS ── */
         .stats-grid-a { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; max-width: 900px; }
         .stats-grid-a-sub { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; max-width: 1200px; }
+        .stats-grid-a-six { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 22px; }
+        .stats-grid-a-two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 22px; max-width: 600px; }
         .stat-card-a {
             background: #fff; border-radius: 16px; padding: 18px 20px;
             border: 1px solid var(--paper2); position: relative; overflow: hidden;
@@ -44,22 +46,32 @@
         .premium-table td { padding: 16px; border-bottom: 1px solid var(--paper2); vertical-align: top; }
         .premium-table tr:last-child td { border-bottom: none; }
         .premium-table tr:hover { background: rgba(248, 245, 240, 0.5); }
+        .row-has-duplicate { background-color: #fef9c3 !important; }
+        .row-has-duplicate:hover { background-color: #fef08a !important; }
+        .row-no-duplicate { background-color: #dcfce7 !important; }
+        .row-no-duplicate:hover { background-color: #bbf7d0 !important; }
         .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
         .contingent-item { margin-bottom: 16px; }
         .contingent-item:last-child { margin-bottom: 0; }
         .contingent-title { font-weight: 700; color: var(--ink); font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
         .athlete-list { margin: 0; padding-left: 24px; list-style-type: disc; color: var(--smoke); font-size: 12.5px; line-height: 1.5; }
 
+        @media (max-width: 1200px) {
+            .stats-grid-a-six { grid-template-columns: repeat(3, 1fr); }
+        }
         @media (max-width: 992px) {
             .stats-grid-a-sub { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 768px) {
             .stats-grid-a { grid-template-columns: repeat(2, 1fr); }
+            .stats-grid-a-six { grid-template-columns: repeat(2, 1fr); }
             .prem-page-a { padding: 16px; }
         }
         @media (max-width: 480px) {
             .stats-grid-a { grid-template-columns: 1fr; }
             .stats-grid-a-sub { grid-template-columns: 1fr; }
+            .stats-grid-a-six { grid-template-columns: 1fr; }
+            .stats-grid-a-two { grid-template-columns: 1fr; }
         }
     </style>
     @endpush
@@ -118,6 +130,64 @@
             </div>
         </div>
 
+        {{-- STATUS NOMOR PERTANDINGAN GRID --}}
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 11px; color: var(--smoke); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-list-check" style="color:var(--red);"></i> Status Nomor Pertandingan Sesuai Filter
+            </div>
+            <div class="stats-grid-a-two">
+                <div class="stat-card-a green">
+                    <div class="st-icon green"><i class="fas fa-check-circle"></i></div>
+                    <div class="st-val">{{ $totalMatchesWithAthletes }}</div>
+                    <div class="st-lbl">Ada Peserta</div>
+                </div>
+                <div class="stat-card-a red">
+                    <div class="st-icon red"><i class="fas fa-times-circle"></i></div>
+                    <div class="st-val">{{ $totalMatchesWithoutAthletes }}</div>
+                    <div class="st-lbl">Tidak Ada Peserta</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- EKSEBISI & NON EKSEBISI GRID --}}
+        {{--<div style="margin-bottom: 24px;">
+            <div style="font-size: 11px; color: var(--smoke); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-chart-pie" style="color:var(--red);"></i> Kategori Eksebisi &amp; Non Eksebisi (Atlet Terdaftar)
+            </div>
+            <div class="stats-grid-a-six">
+                <div class="stat-card-a gold">
+                    <div class="st-icon gold"><i class="fas fa-award"></i></div>
+                    <div class="st-val">{{ $totalEksebisi }}</div>
+                    <div class="st-lbl">Eksebisi</div>
+                </div>
+                <div class="stat-card-a blue">
+                    <div class="st-icon blue"><i class="fas fa-medal"></i></div>
+                    <div class="st-val">{{ $totalNonEksebisi }}</div>
+                    <div class="st-lbl">Non Eksebisi</div>
+                </div>
+                <div class="stat-card-a green">
+                    <div class="st-icon green"><i class="fas fa-shield-alt"></i></div>
+                    <div class="st-val">{{ $totalEmbuEksebisi }}</div>
+                    <div class="st-lbl">Embu Eksebisi</div>
+                </div>
+                <div class="stat-card-a orange">
+                    <div class="st-icon orange"><i class="fas fa-scroll"></i></div>
+                    <div class="st-val">{{ $totalEmbuNonEksebisi }}</div>
+                    <div class="st-lbl">Embu Non Eksebisi</div>
+                </div>
+                <div class="stat-card-a red">
+                    <div class="st-icon red"><i class="fas fa-fist-raised"></i></div>
+                    <div class="st-val">{{ $totalRandoriEksebisi }}</div>
+                    <div class="st-lbl">Randori Eksebisi</div>
+                </div>
+                <div class="stat-card-a orange">
+                    <div class="st-icon orange"><i class="fas fa-user-shield"></i></div>
+                    <div class="st-val">{{ $totalRandoriNonEksebisi }}</div>
+                    <div class="st-lbl">Randori Non Eksebisi</div>
+                </div>
+            </div>
+        </div>--}}
+
         {{-- KELOMPOK UMUR GRID --}}
         <div style="margin-bottom: 24px;">
             <div style="font-size: 11px; color: var(--smoke); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
@@ -162,7 +232,7 @@
                     </thead>
                     <tbody>
                         @forelse($matchData as $match)
-                            <tr>
+                            <tr class="{{ $match['has_duplicate_contingent'] ? 'row-has-duplicate' : 'row-no-duplicate' }}">
                                 <td style="text-align: center; font-weight: 700; color: var(--smoke);">{{ $match['id'] }}</td>
                                 <td>
                                     <div style="font-weight: 700; color: var(--ink); font-size: 13.5px; margin-bottom: 6px;">{{ $match['name'] }}</div>

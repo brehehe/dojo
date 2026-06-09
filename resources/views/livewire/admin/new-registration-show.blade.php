@@ -124,6 +124,30 @@
     .det-right { display: flex; flex-direction: column; gap: 18px; }
     .det-right-inner { padding: 14px 22px; }
 
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-card { background: #fff; border-radius: 16px; width: 100%; max-width: 580px; border: 1px solid var(--paper2); box-shadow: 0 20px 50px rgba(0,0,0,.15); overflow: hidden; animation: slideUp .25s ease-out; }
+    .modal-header { padding: 16px 20px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h3 { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; margin: 0; color: var(--gold-lt); }
+    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-height: 480px; overflow-y: auto; }
+    .modal-footer { padding: 14px 20px; background: var(--paper); border-top: 1px solid var(--paper2); display: flex; justify-content: flex-end; gap: 8px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.span-2 { grid-column: span 2; }
+    .form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--smoke); letter-spacing: .05em; }
+    .form-group input, .form-group select { padding: 8px 12px; border: 1px solid var(--paper2); border-radius: 8px; font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; background: #fff; color: var(--ink); }
+    .form-group input:focus, .form-group select:focus { border-color: var(--ink); }
+
+    .btn-prem { padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-prem.primary { background: var(--ink); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+    .btn-prem.primary:hover { background: #000; }
+    .btn-prem.secondary { background: var(--paper2); color: var(--ink); }
+    .btn-prem.secondary:hover { background: var(--paper); }
+    .btn-prem.success { background: #27ae60; color: #fff; box-shadow: 0 4px 12px rgba(39,174,96,.25); }
+    .btn-prem.success:hover { background: #1e8449; }
+
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 1100px) { .det-grid { grid-template-columns: 1fr; } }
     @media (max-width: 640px)  { .det-page { padding: 14px; } }
@@ -305,6 +329,52 @@
                     </div>
                 </div>
 
+                {{-- Daftar Atlet --}}
+                <div class="det-card">
+                    <div class="det-card-head" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:9px;">
+                            <div class="card-icon" style="background:rgba(243,156,18,.1);color:#e67e22;">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <h3>Daftar Atlet
+                                <span style="font-family:'DM Sans';font-size:11px;color:var(--smoke);font-weight:400;margin-left:6px;">
+                                    ({{ $registration->athletes->count() }} orang)
+                                </span>
+                            </h3>
+                        </div>
+                        <button wire:click="openAddAthlete" class="btn-verify" style="padding: 6px 12px; font-size: 11px; background: #e67e22; color: white; border: none; border-radius: 8px;">
+                            <i class="fa-solid fa-user-plus"></i> Tambah Atlet
+                        </button>
+                    </div>
+                    <div style="padding:14px 0 6px;">
+                        @forelse($registration->athletes as $ath)
+                        <div class="official-card" style="align-items: center; justify-content: space-between; display: flex; gap: 10px; margin-bottom: 8px;">
+                            <div>
+                                <div class="official-name">{{ $ath->name }}</div>
+                                <div class="official-role" style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+                                    <span class="badge" style="background: var(--paper2); padding: 2px 6px; border-radius: 4px; font-size: 10px;">{{ $ath->pivot->age_group }}</span>
+                                    <span class="badge" style="background: var(--paper2); padding: 2px 6px; border-radius: 4px; font-size: 10px;">{{ $ath->pivot->rank }}</span>
+                                    <span class="badge" style="background: var(--paper2); padding: 2px 6px; border-radius: 4px; font-size: 10px;">{{ $ath->gender_indo }}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button wire:click="openEditAthlete({{ $ath->id }})" class="btn-verify" style="padding: 6px 10px; font-size: 11px; background: #3498db; color: white;">
+                                    <i class="fa-solid fa-pencil"></i> Edit
+                                </button>
+                                <button wire:confirm="Apakah Anda yakin ingin menghapus atlet {{ $ath->name }} dari pendaftaran ini? Tindakan ini juga akan menghapusnya dari seluruh nomor pertandingan pendaftaran ini." wire:click="deleteAthlete({{ $ath->id }})" class="btn-reject" style="padding: 6px 10px; font-size: 11px; border-color: rgba(192,57,43,.4); color: var(--red);">
+                                    <i class="fa-solid fa-trash"></i> Hapus
+                                </button>
+                            </div>
+                        </div>
+                        @empty
+                        <div style="padding:28px;text-align:center;color:var(--smoke);font-size:12px;">
+                            <i class="fa-solid fa-users-slash" style="font-size:22px;display:block;margin-bottom:8px;opacity:.4;"></i>
+                            Tidak ada atlet yang terdaftar
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+
                 {{-- Nomor Pertandingan --}}
                 <div class="det-card">
                     <div class="det-card-head">
@@ -321,15 +391,22 @@
                     <div style="padding:16px 22px 8px;">
                         @forelse($groupedMatches as $data)
                         <div class="match-card">
-                            <div class="match-card-head">
-                                <div class="match-num">{{ $loop->iteration }}</div>
-                                <div class="match-info">
-                                    <h4>{{ $data['details']->name }}
-                                        {{ $data['details']->ageGroup?->name }}
-                                        {{ $data['details']->gender_indo }}
-                                    </h4>
-                                    <p>{{ ucfirst($data['details']->draft_type ?? '-') }}</p>
+                            <div class="match-card-head" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div class="match-num">{{ $loop->iteration }}</div>
+                                    <div class="match-info">
+                                        <h4>{{ $data['details']->name }}
+                                            {{ $data['details']->ageGroup?->name }}
+                                            {{ $data['details']->gender_indo }}
+                                        </h4>
+                                        <p>{{ ucfirst($data['details']->draft_type ?? '-') }}</p>
+                                    </div>
                                 </div>
+                                @if(($data['details']->draft_type ?? '') == 'embu')
+                                <button wire:click="openEditTechniques({{ $data['details']->id }})" class="btn-verify" style="padding: 6px 12px; font-size: 11px; background: #9b59b6; color: white; border: none; border-radius: 8px;">
+                                    <i class="fa-solid fa-list-check"></i> Edit Teknik
+                                </button>
+                                @endif
                             </div>
                             <div style="overflow-x:auto;">
                                 <table class="match-table">
@@ -409,4 +486,180 @@
             </div>
         </div>
     </div>
+
+    {{-- EDIT/ADD MODAL FOR ATHLETE --}}
+    @if($editingAthleteId || $isAddingAthlete)
+    <div class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>{{ $isAddingAthlete ? 'Tambah Atlet Baru' : 'Edit Data Atlet / Kenshi' }}</h3>
+                <button wire:click="$this->isAddingAthlete ? $set('isAddingAthlete', false) : $set('editingAthleteId', null)" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group span-2">
+                    <label>Nama Lengkap</label>
+                    <input type="text" wire:model="editName">
+                    @error('editName') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>NIK (16 Digit)</label>
+                    <input type="text" wire:model="editNik" maxlength="16">
+                    @error('editNik') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>NIK Kenshi (SIM Perkemi)</label>
+                    <input type="text" wire:model="editNikKenshi">
+                    @error('editNikKenshi') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Jenis Kelamin</label>
+                    <select wire:model.live="editGender">
+                        <option value="Male">Laki-laki</option>
+                        <option value="Female">Perempuan</option>
+                    </select>
+                    @error('editGender') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Berat Badan (Kg)</label>
+                    <input type="number" step="0.1" wire:model="editWeight">
+                    @error('editWeight') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Tingkatan / Kyu</label>
+                    <input type="text" wire:model="editRank" placeholder="Contoh: Kyu 5, Kyu 1, Dan I">
+                    @error('editRank') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Kelompok Usia (Kategori Usia)</label>
+                    <select wire:model="editAgeGroup">
+                        <option value="">-- Pilih Kelompok Usia --</option>
+                        @foreach($this->ageGroupsList as $group)
+                            <option value="{{ $group }}">{{ $group }}</option>
+                        @endforeach
+                    </select>
+                    @error('editAgeGroup') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Asal Dojo</label>
+                    <input type="text" wire:model="editDojo">
+                    @error('editDojo') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Nomor BPJS</label>
+                    <input type="text" wire:model="editBpjsNumber">
+                    @error('editBpjsNumber') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+                <div class="form-group">
+                    <label>Status BPJS</label>
+                    <select wire:model="editBpjsStatus">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Non-Aktif">Non-Aktif</option>
+                    </select>
+                    @error('editBpjsStatus') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- EVENT SELECTIONS --}}
+                <div class="form-group span-2" style="margin-top:10px;border-top:1px solid var(--paper);padding-top:10px;">
+                    <label style="color:var(--red);font-weight:700;">Kategori Pertandingan yang Diikuti</label>
+                    <span style="font-size:11px;color:var(--smoke);margin-bottom:8px;">Pilih kategori pertandingan yang sesuai dengan gender dan kelompok usia.</span>
+                </div>
+                <div class="form-group span-2">
+                    <label>Kategori 1</label>
+                    <select wire:model="editEvent1">
+                        <option value="">-- Pilih Kategori --</option>
+                        @foreach($this->availableEvents as $ev)
+                            <option value="{{ $ev['id'] }}">{{ $ev['name'] }} ({{ $ev['gender'] === 'Male' ? 'Putra' : ($ev['gender'] === 'Female' ? 'Putri' : 'Mix') }} - {{ ucfirst($ev['draft_type']) }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group span-2">
+                    <label>Kategori 2</label>
+                    <select wire:model="editEvent2">
+                        <option value="">-- Pilih Kategori --</option>
+                        @foreach($this->availableEvents as $ev)
+                            <option value="{{ $ev['id'] }}">{{ $ev['name'] }} ({{ $ev['gender'] === 'Male' ? 'Putra' : ($ev['gender'] === 'Female' ? 'Putri' : 'Mix') }} - {{ ucfirst($ev['draft_type']) }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group span-2">
+                    <label>Kategori 3</label>
+                    <select wire:model="editEvent3">
+                        <option value="">-- Pilih Kategori --</option>
+                        @foreach($this->availableEvents as $ev)
+                            <option value="{{ $ev['id'] }}">{{ $ev['name'] }} ({{ $ev['gender'] === 'Male' ? 'Putra' : ($ev['gender'] === 'Female' ? 'Putri' : 'Mix') }} - {{ ucfirst($ev['draft_type']) }})</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button wire:click="$this->isAddingAthlete ? $set('isAddingAthlete', false) : $set('editingAthleteId', null)" class="btn-prem secondary">Batal</button>
+                <button wire:click="saveAthlete" class="btn-prem primary">
+                    <i class="fa-solid fa-save"></i> {{ $isAddingAthlete ? 'Tambah Atlet' : 'Simpan & Reset Verifikasi' }}
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- EDIT MODAL FOR TECHNIQUES --}}
+    @if($editingMatchNumberId)
+    <div class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Komposisi Teknik</h3>
+                <button wire:click="$set('editingMatchNumberId', null)" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;">&times;</button>
+            </div>
+            <div class="modal-body" style="grid-template-columns: 1fr; gap: 12px;">
+                <div class="form-group" style="border-bottom:1px solid var(--paper2);padding-bottom:10px;margin-bottom:10px;">
+                    <label>Tambah Teknik Baru</label>
+                    <div style="display:flex; gap:8px; margin-top:4px;">
+                        <select wire:model="newTechniqueId" style="flex:1; padding: 8px; border: 1px solid var(--paper2); border-radius: 8px; background: #fff; color: var(--ink);">
+                            <option value="">-- Pilih Teknik --</option>
+                            @foreach($allTechniques as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" wire:click="addTechnique" class="btn-prem primary" style="padding:0 18px; height: 38px;">Tambah</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Urutan Komposisi Teknik</label>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+                        @forelse($selectedTechniqueIds as $tIdx => $tId)
+                        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--paper); padding:8px 12px; border-radius:8px; border:1px solid var(--paper2);" wire:key="tech-item-{{ $tIdx }}">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="width:20px; height:20px; border-radius:50%; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold;">
+                                    {{ $tIdx + 1 }}
+                                </div>
+                                <span style="font-size:13px; font-weight:600;">{{ $allTechniques[$tId] ?? '-' }}</span>
+                            </div>
+                            <div style="display:flex; gap:4px;">
+                                <button type="button" wire:click="moveTechniqueUp({{ $tIdx }})" class="act-btn" @if($tIdx == 0) disabled style="opacity:0.3; cursor:default;" @endif>
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+                                <button type="button" wire:click="moveTechniqueDown({{ $tIdx }})" class="act-btn" @if($tIdx == count($selectedTechniqueIds) - 1) disabled style="opacity:0.3; cursor:default;" @endif>
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </button>
+                                <button type="button" wire:click="removeTechnique({{ $tIdx }})" class="act-btn" style="color:var(--red); border-color:rgba(192,57,43,0.2);">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        @empty
+                        <div style="text-align:center; color:var(--smoke); padding:20px; border:2px dashed var(--paper2); border-radius:8px; font-size:12.5px;">
+                            Belum ada teknik yang ditambahkan.
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button wire:click="$set('editingMatchNumberId', null)" class="btn-prem secondary">Batal</button>
+                <button wire:click="saveTechniques" class="btn-prem primary"><i class="fa-solid fa-save"></i> Simpan Teknik</button>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
+

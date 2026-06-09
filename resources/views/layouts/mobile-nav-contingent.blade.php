@@ -28,10 +28,7 @@
     <span>Profil</span>
 </a>
 
-<form method="POST" action="{{ route('logout') }}" style="flex:1;display:contents;">
-    @csrf
-    <button type="submit" class="mob-nav-item danger">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        <span>Keluar</span>
-    </button>
-</form>
+<a class="mob-nav-item danger" href="{{ route('logout') }}">
+    <i class="fa-solid fa-right-from-bracket"></i>
+    <span>Keluar</span>
+</a>

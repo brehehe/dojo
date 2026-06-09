@@ -70,7 +70,7 @@
 
     {{-- Pendaftaran --}}
     @hasanyrole('Super Admin|Admin|Pendaftaran')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-registrations*')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-registrations*') || request()->routeIs('admin.new-registration-verification')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Pendaftaran</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -80,6 +80,8 @@
                 class="collapsible-content">
                 <a class="nav-item {{ request()->routeIs('admin.new-registrations*') ? 'active' : '' }}"
                     href="{{ route('admin.new-registrations') }}"><i class="fa-solid fa-file-edit"></i> Registrasi</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-registration-verification') ? 'active' : '' }}"
+                    href="{{ route('admin.new-registration-verification') }}"><i class="fa-solid fa-user-check"></i> Verifikasi Atlet</a>
             </div>
         </div>
     @endhasanyrole
@@ -264,8 +266,10 @@
                 href="{{ route('contingent.officials') }}"><i class="fa-solid fa-user-tie"></i> Official</a>
             <div class="nav-section">Pendaftaran</div>
             <a class="nav-item {{ request()->routeIs('contingent.registration-history') ? 'active' : '' }}"
-                href="{{ route('contingent.registration-history') }}"><i class="fa-solid fa-gavel"></i> History
+                href="{{ route('contingent.registration-history') }}"><i class="fa-solid fa-history"></i> History
                 Pendaftaran</a>
+            <a class="nav-item {{ request()->routeIs('contingent.athlete-verification') ? 'active' : '' }}"
+                href="{{ route('contingent.athlete-verification') }}"><i class="fa-solid fa-user-check"></i> Verifikasi Atlet</a>
             <div class="nav-section">Laporan</div>
             <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
                 href="{{ route('contingent.laporan-wasit') }}"><i class="fa-solid fa-gavel"></i> Laporan Wasit</a>
@@ -296,7 +300,7 @@
                         href="{{ route('contingent.athletes') }}"><i class="fa-solid fa-users"></i> Atlet</a>
                     <a class="nav-item {{ request()->routeIs('contingent.officials') ? 'active' : '' }}"
                         href="{{ route('contingent.officials') }}"><i class="fa-solid fa-user-tie"></i> Official</a>
-                    <div x-data="{ open: @json(request()->routeIs('contingent.registration-history*')) }">
+                    <div x-data="{ open: @json(request()->routeIs('contingent.registration-history*') || request()->routeIs('contingent.athlete-verification')) }">
                         <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                             <span class="label">Pendaftaran</span>
                             <i class="fa-solid fa-chevron-right chevron"></i>
@@ -307,6 +311,9 @@
                             <a class="nav-item {{ request()->routeIs('contingent.registration-history*') ? 'active' : '' }}"
                                 href="{{ route('contingent.registration-history') }}"><i class="fa-solid fa-history"></i>
                                 History Registrasi</a>
+                            <a class="nav-item {{ request()->routeIs('contingent.athlete-verification') ? 'active' : '' }}"
+                                href="{{ route('contingent.athlete-verification') }}"><i class="fa-solid fa-user-check"></i>
+                                Verifikasi Atlet</a>
                         </div>
                     </div>
                     <a class="nav-item {{ request()->routeIs('contingent.laporan-wasit') ? 'active' : '' }}"
@@ -413,13 +420,9 @@
     <a class="nav-item {{ request()->routeIs('admin.profile') ? 'active' : '' }}"
         href="{{ route('admin.profile') }}"><i class="fa-solid fa-user-circle"></i> Profil Saya</a>
 
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <a class="nav-item logout" href="{{ route('logout') }}"
-            onclick="event.preventDefault(); this.closest('form').submit();" style="color: var(--red-glow);">
-            <i class="fa-solid fa-right-from-bracket"></i> Keluar
-        </a>
-    </form>
+    <a class="nav-item logout" href="{{ route('logout') }}" style="color: var(--red-glow);">
+        <i class="fa-solid fa-right-from-bracket"></i> Keluar
+    </a>
 </nav>
 
 <script>

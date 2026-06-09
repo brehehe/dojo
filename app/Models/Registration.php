@@ -19,9 +19,14 @@ class Registration extends Model
         'payment_method',
         'referral_code',
         'status',
+        'athlete_status',
         'draft_data',
         'transfer_proof_path',
         'sim_perkemi_confirm',
+    ];
+
+    protected $attributes = [
+        'athlete_status' => 'pending',
     ];
 
     /**

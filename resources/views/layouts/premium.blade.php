@@ -851,12 +851,9 @@
               <i class="fa-solid fa-user"></i> Profil Saya
             </a>
             <div class="dd-divider"></div>
-            <form method="POST" action="{{ route('logout') }}">
-              @csrf
-              <button type="submit" class="dd-item logout">
-                <i class="fa-solid fa-right-from-bracket"></i> Keluar
-              </button>
-            </form>
+            <a href="{{ route('logout') }}" class="dd-item logout">
+              <i class="fa-solid fa-right-from-bracket"></i> Keluar
+            </a>
           </div>
         </div>
       </div>

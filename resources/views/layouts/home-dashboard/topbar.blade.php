@@ -121,16 +121,13 @@
 
                     {{-- Logout --}}
                     <div class="px-3 pb-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit"
-                                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors">
-                                <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                </div>
-                                Keluar Aplikasi
-                            </button>
-                        </form>
+                        <a href="{{ route('logout') }}"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </div>
+                            Keluar Aplikasi
+                        </a>
                     </div>
                 </div>
             </div>

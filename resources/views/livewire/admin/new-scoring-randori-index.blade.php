@@ -662,7 +662,6 @@
                     },
                     start() {
                         if (!this.running && this.countdown === 0) {
-                            window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
                             $wire.startTimer();
                         }
                     },

@@ -711,19 +711,19 @@
                             <div style="position: relative; flex-shrink: 0; width: 80px; height: 80px; border-radius: 12px; background: #fff; border: 1px solid var(--paper2); display: flex; align-items: center; justify-content: center; color: var(--smoke);">
                                 @if ($photo)
                                     <img src="{{ $photo->temporaryUrl() }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
-                                    <button type="button" wire:click="removePhoto" style="position: absolute; -top: 6px; -right: 6px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 10px; z-index: 20;" title="Hapus Foto">
+                                    <button type="button" wire:click="removePhoto" style="position: absolute; top: -6px; right: -6px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 10px; z-index: 20;" title="Hapus Foto">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
                                 @elseif ($existingPhoto && \Illuminate\Support\Facades\Storage::disk('public')->exists($existingPhoto))
                                     <img src="{{ \Illuminate\Support\Facades\Storage::url($existingPhoto) }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
-                                    <button type="button" wire:click="removePhoto" style="position: absolute; -top: 6px; -right: 6px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 10px; z-index: 20;" title="Hapus Foto">
+                                    <button type="button" wire:click="removePhoto" style="position: absolute; top: -6px; right: -6px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-size: 10px; z-index: 20;" title="Hapus Foto">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
                                 @else
                                     <i class="fa-solid fa-shield-halved" style="font-size: 28px;"></i>
                                 @endif
                                 
-                                <div wire:loading wire:target="photo" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; border-radius: 12px;">
+                                <div wire:loading.flex wire:target="photo" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); flex-direction: column; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; border-radius: 12px; display: none;">
                                     <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 14px; margin-bottom: 2px;"></i>
                                     <span>Wait...</span>
                                 </div>

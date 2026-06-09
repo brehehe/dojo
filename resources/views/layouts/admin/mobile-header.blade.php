@@ -65,13 +65,10 @@
                                 </a>
                             </div>
                             <div class="px-3 mt-1 border-t border-slate-50 pt-3">
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl transition-all font-black text-[13px] uppercase tracking-widest group">
-                                        <i class="fas fa-sign-out-alt opacity-50 group-hover:translate-x-1 transition-transform"></i>
-                                        Logout
-                                    </button>
-                                </form>
+                                <a href="{{ route('logout') }}" class="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2.5 rounded-xl transition-all font-black text-[13px] uppercase tracking-widest group">
+                                    <i class="fas fa-sign-out-alt opacity-50 group-hover:translate-x-1 transition-transform"></i>
+                                    Logout
+                                </a>
                             </div>
                         </div>
                     </div>

@@ -68,6 +68,13 @@
                 margin-bottom: 22px;
             }
 
+            .stats-grid-a-six {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                gap: 14px;
+                margin-bottom: 22px;
+            }
+
             .stat-card-a {
                 background: #fff;
                 border-radius: 16px;
@@ -107,6 +114,14 @@
                 background: #2ecc71;
             }
 
+            .stat-card-a.orange::after {
+                background: #e67e22;
+            }
+
+            .stat-card-a.red::after {
+                background: var(--red);
+            }
+
             .st-icon {
                 width: 38px;
                 height: 38px;
@@ -131,6 +146,16 @@
             .st-icon.green {
                 background: rgba(46, 204, 113, 0.15);
                 color: #2ecc71;
+            }
+
+            .st-icon.orange {
+                background: rgba(230, 126, 34, 0.15);
+                color: #e67e22;
+            }
+
+            .st-icon.red {
+                background: rgba(192, 57, 43, 0.15);
+                color: var(--red);
             }
 
             .st-val {
@@ -477,9 +502,19 @@
                 gap: 8px;
             }
 
+            @media (max-width: 1200px) {
+                .stats-grid-a-six {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+            }
+
             @media (max-width: 768px) {
                 .stats-grid-a {
                     grid-template-columns: 1fr;
+                }
+
+                .stats-grid-a-six {
+                    grid-template-columns: repeat(2, 1fr);
                 }
 
                 .prem-page-a {
@@ -487,6 +522,12 @@
                 }
 
                 .grid-2 {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .stats-grid-a-six {
                     grid-template-columns: 1fr;
                 }
             }
@@ -524,6 +565,45 @@
                 <div class="st-val">{{ \App\Models\MatchNumber\MatchNumber::where('draft_type', 'randori')->count() }}
                 </div>
                 <div class="st-lbl">Randori</div>
+            </div>
+        </div>
+
+        {{-- EKSEBISI & NON EKSEBISI GRID --}}
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 11px; color: var(--smoke); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-chart-pie" style="color:var(--red);"></i> Kategori Eksebisi &amp; Non Eksebisi (Master Nomor)
+            </div>
+            <div class="stats-grid-a-six">
+                <div class="stat-card-a gold">
+                    <div class="st-icon gold"><i class="fa-solid fa-award"></i></div>
+                    <div class="st-val">{{ $totalEksebisi }}</div>
+                    <div class="st-lbl">Eksebisi</div>
+                </div>
+                <div class="stat-card-a blue">
+                    <div class="st-icon blue"><i class="fa-solid fa-medal"></i></div>
+                    <div class="st-val">{{ $totalNonEksebisi }}</div>
+                    <div class="st-lbl">Non Eksebisi</div>
+                </div>
+                <div class="stat-card-a green">
+                    <div class="st-icon green"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="st-val">{{ $totalEmbuEksebisi }}</div>
+                    <div class="st-lbl">Embu Eksebisi</div>
+                </div>
+                <div class="stat-card-a orange">
+                    <div class="st-icon orange"><i class="fa-solid fa-scroll"></i></div>
+                    <div class="st-val">{{ $totalEmbuNonEksebisi }}</div>
+                    <div class="st-lbl">Embu Non Eksebisi</div>
+                </div>
+                <div class="stat-card-a red">
+                    <div class="st-icon red"><i class="fa-solid fa-hand-fist"></i></div>
+                    <div class="st-val">{{ $totalRandoriEksebisi }}</div>
+                    <div class="st-lbl">Randori Eksebisi</div>
+                </div>
+                <div class="stat-card-a orange">
+                    <div class="st-icon orange"><i class="fa-solid fa-user-shield"></i></div>
+                    <div class="st-val">{{ $totalRandoriNonEksebisi }}</div>
+                    <div class="st-lbl">Randori Non Eksebisi</div>
+                </div>
             </div>
         </div>
         {{-- TABLE --}}

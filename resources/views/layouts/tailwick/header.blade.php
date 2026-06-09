@@ -54,13 +54,10 @@
 
                         <div class="border-t border-default-200 -mx-2 my-1"></div>
 
-                        <form method="POST" action="{{ route('logout') }}" x-data>
-                            @csrf
-                            <a class="flex items-center gap-x-3.5 py-1.5 font-medium px-3 text-default-600 hover:bg-default-150 rounded cursor-pointer" @click.prevent="$root.submit();">
-                                <i data-lucide="log-out" class="size-4"></i>
-                                Sign Out
-                            </a>
-                        </form>
+                        <a class="flex items-center gap-x-3.5 py-1.5 font-medium px-3 text-default-600 hover:bg-default-150 rounded" href="{{ route('logout') }}">
+                            <i data-lucide="log-out" class="size-4"></i>
+                            Sign Out
+                        </a>
                     </div>
                 </div>
             </div>

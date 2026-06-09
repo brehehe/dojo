@@ -23,6 +23,22 @@ class NewUnregisteredAthleteReportIndex extends Component
 
     public int $totalUnregisteredAthletes = 0;
 
+    public int $totalMatchesWithAthletes = 0;
+
+    public int $totalMatchesWithoutAthletes = 0;
+
+    public int $totalEksebisi = 0;
+
+    public int $totalNonEksebisi = 0;
+
+    public int $totalEmbuEksebisi = 0;
+
+    public int $totalEmbuNonEksebisi = 0;
+
+    public int $totalRandoriEksebisi = 0;
+
+    public int $totalRandoriNonEksebisi = 0;
+
     public array $ageGroupStats = [];
 
     public string $genderFilter = '';
@@ -74,6 +90,8 @@ class NewUnregisteredAthleteReportIndex extends Component
 
         $matchNumbers = $matchNumbersQuery->get();
         $this->matchData = [];
+        $this->totalMatchesWithAthletes = 0;
+        $this->totalMatchesWithoutAthletes = 0;
 
         foreach ($matchNumbers as $mn) {
             $contingents = [];
@@ -137,13 +155,28 @@ class NewUnregisteredAthleteReportIndex extends Component
                 }
             }
 
+            $uniqueContingents = collect($mn->athletes)->map(function ($athlete) {
+                return $athlete->contingent ? $athlete->contingent->name : 'Tanpa Kontingen';
+            })->unique();
+            $distinctContingentsCount = $uniqueContingents->count();
+            $totalEntries = count($contingents);
+
+            $hasDuplicateContingent = ($distinctContingentsCount > 1 && $totalEntries <= 4);
+
             $this->matchData[] = [
                 'id' => $mn->id,
                 'name' => $mn->name,
                 'age_group' => $mn->ageGroup ? $mn->ageGroup->name : '-',
                 'contingents' => $contingents,
                 'total_athletes' => $mn->athletes->count(),
+                'has_duplicate_contingent' => $hasDuplicateContingent,
             ];
+
+            if ($mn->athletes->count() > 0) {
+                $this->totalMatchesWithAthletes++;
+            } else {
+                $this->totalMatchesWithoutAthletes++;
+            }
         }
 
         $athletesQuery = Athlete::with(['registrations.contingent', 'contingents', 'matchNumbers']);
@@ -182,6 +215,43 @@ class NewUnregisteredAthleteReportIndex extends Component
             : Athlete::count();
         $this->totalUnregisteredAthletes = count($this->unregisteredAthletes);
         $this->totalRegisteredAthletes = $this->totalAthletes - $this->totalUnregisteredAthletes;
+
+        $notLikeOperator = DB::connection()->getDriverName() === 'pgsql' ? 'not ilike' : 'not like';
+
+        $eksebisiQuery = Athlete::whereHas('matchNumbers', function ($query) use ($likeOperator) {
+            $query->where('name', $likeOperator, '%eksebisi%');
+        });
+        $nonEksebisiQuery = Athlete::whereHas('matchNumbers', function ($query) use ($notLikeOperator) {
+            $query->where('name', $notLikeOperator, '%eksebisi%');
+        });
+        $embuEksebisiQuery = Athlete::whereHas('matchNumbers', function ($query) use ($likeOperator) {
+            $query->where('draft_type', 'embu')->where('name', $likeOperator, '%eksebisi%');
+        });
+        $embuNonEksebisiQuery = Athlete::whereHas('matchNumbers', function ($query) use ($notLikeOperator) {
+            $query->where('draft_type', 'embu')->where('name', $notLikeOperator, '%eksebisi%');
+        });
+        $randoriEksebisiQuery = Athlete::whereHas('matchNumbers', function ($query) use ($likeOperator) {
+            $query->where('draft_type', 'randori')->where('name', $likeOperator, '%eksebisi%');
+        });
+        $randoriNonEksebisiQuery = Athlete::whereHas('matchNumbers', function ($query) use ($notLikeOperator) {
+            $query->where('draft_type', 'randori')->where('name', $notLikeOperator, '%eksebisi%');
+        });
+
+        if ($this->genderFilter) {
+            $eksebisiQuery->where('gender', $this->genderFilter);
+            $nonEksebisiQuery->where('gender', $this->genderFilter);
+            $embuEksebisiQuery->where('gender', $this->genderFilter);
+            $embuNonEksebisiQuery->where('gender', $this->genderFilter);
+            $randoriEksebisiQuery->where('gender', $this->genderFilter);
+            $randoriNonEksebisiQuery->where('gender', $this->genderFilter);
+        }
+
+        $this->totalEksebisi = $eksebisiQuery->count();
+        $this->totalNonEksebisi = $nonEksebisiQuery->count();
+        $this->totalEmbuEksebisi = $embuEksebisiQuery->count();
+        $this->totalEmbuNonEksebisi = $embuNonEksebisiQuery->count();
+        $this->totalRandoriEksebisi = $randoriEksebisiQuery->count();
+        $this->totalRandoriNonEksebisi = $randoriNonEksebisiQuery->count();
 
         $statsQuery = DB::table('registration_athlete')
             ->select('age_group', DB::raw('count(distinct athlete_id) as total_athletes'))

@@ -73,7 +73,7 @@ class RegistrationForm extends Component
             'age_group' => '',
             'join_other_age_group' => false,
             'event_age_group' => '',
-            'rank' => 'Kyu 6',
+            'rank' => 'Kyu 5',
             'dojo_origin' => '',
             'city' => '',
             'bpjs_number' => '',
@@ -348,7 +348,7 @@ class RegistrationForm extends Component
                     'current_weight' => '',
                     'weight_group_id' => '',
                     'age_group' => '',
-                    'rank' => 'Kyu 6',
+                    'rank' => 'Kyu 5',
                     'dojo_origin' => '',
                     'city' => '',
                     'bpjs_number' => '',
@@ -534,6 +534,17 @@ class RegistrationForm extends Component
                     $this->athletes[$index]['bpjs_status'] = $athlete->bpjs_status;
                     $this->athletes[$index]['is_master_found'] = true;
                     $this->athletes[$index]['show_fields'] = true;
+
+                    $latestReg = $athlete->latestRegistration();
+                    if ($latestReg && $latestReg->pivot) {
+                        $this->athletes[$index]['rank'] = $latestReg->pivot->rank ?? $latestReg->pivot->kyu ?? 'Kyu 5';
+                        $this->athletes[$index]['current_weight'] = $latestReg->pivot->weight ?? '';
+                        $this->athletes[$index]['weight_group_id'] = $latestReg->pivot->weight_group_id ?? '';
+                        $this->athletes[$index]['dojo_origin'] = $latestReg->pivot->dojo_origin ?? $athlete->dojo_origin;
+                        $this->athletes[$index]['city'] = $latestReg->pivot->city ?? '';
+                    } else {
+                        $this->athletes[$index]['rank'] = 'Kyu 5';
+                    }
                 }
             }
         }
@@ -671,6 +682,17 @@ class RegistrationForm extends Component
             $this->athletes[$index]['is_master_found'] = true;
             $this->athletes[$index]['show_fields'] = true;
 
+            $latestReg = $athlete->latestRegistration();
+            if ($latestReg && $latestReg->pivot) {
+                $this->athletes[$index]['rank'] = $latestReg->pivot->rank ?? $latestReg->pivot->kyu ?? 'Kyu 5';
+                $this->athletes[$index]['current_weight'] = $latestReg->pivot->weight ?? '';
+                $this->athletes[$index]['weight_group_id'] = $latestReg->pivot->weight_group_id ?? '';
+                $this->athletes[$index]['dojo_origin'] = $latestReg->pivot->dojo_origin ?? $athlete->dojo_origin;
+                $this->athletes[$index]['city'] = $latestReg->pivot->city ?? '';
+            } else {
+                $this->athletes[$index]['rank'] = 'Kyu 5';
+            }
+
             $this->dispatch('swal', title: 'Data Ditemukan!', text: "Data master untuk {$athlete->name} telah dimuat.", icon: 'success');
         } else {
             $this->athletes[$index]['athlete_id'] = 'new';
@@ -714,7 +736,7 @@ class RegistrationForm extends Component
             'age_group' => '',
             'join_other_age_group' => false,
             'event_age_group' => '',
-            'rank' => 'Kyu 6',
+            'rank' => 'Kyu 5',
             'dojo_origin' => '',
             'city' => '',
             'bpjs_number' => '',
@@ -739,23 +761,37 @@ class RegistrationForm extends Component
 
     public function getEventOptions($ageGroupId, $gender, $currentAthleteIndex = null, $currentField = null)
     {
-        if ($currentAthleteIndex !== null) {
-            $athlete = $this->athletes[$currentAthleteIndex] ?? null;
-            if ($athlete && ($athlete['join_other_age_group'] ?? false) && ! empty($athlete['event_age_group'])) {
-                $ageGroupId = $athlete['event_age_group'];
+        $ageGroupIds = [];
+        if ($ageGroupId) {
+            // Robust fallback: if $ageGroupId is a name (e.g. from legacy draft), find the ID
+            if (! is_numeric($ageGroupId)) {
+                $ageGroupId = AgeGroup::where('name', $ageGroupId)->value('id') ?? $ageGroupId;
+            }
+            if ($ageGroupId) {
+                $ageGroupIds[] = $ageGroupId;
             }
         }
 
-        if (empty($ageGroupId)) {
+        if ($currentAthleteIndex !== null) {
+            $athlete = $this->athletes[$currentAthleteIndex] ?? null;
+            if ($athlete && ($athlete['join_other_age_group'] ?? false) && ! empty($athlete['event_age_group'])) {
+                $bypassAgeGroupId = $athlete['event_age_group'];
+                if ($bypassAgeGroupId && ! is_numeric($bypassAgeGroupId)) {
+                    $bypassAgeGroupId = AgeGroup::where('name', $bypassAgeGroupId)->value('id') ?? $bypassAgeGroupId;
+                }
+                if ($bypassAgeGroupId) {
+                    $ageGroupIds[] = $bypassAgeGroupId;
+                }
+            }
+        }
+
+        $ageGroupIds = array_unique(array_filter($ageGroupIds));
+
+        if (empty($ageGroupIds)) {
             return [];
         }
 
-        // Robust fallback: if $ageGroupId is a name (e.g. from legacy draft), find the ID
-        if ($ageGroupId && ! is_numeric($ageGroupId)) {
-            $ageGroupId = AgeGroup::where('name', $ageGroupId)->value('id') ?? $ageGroupId;
-        }
-
-        return MatchNumber::where('age_group_id', $ageGroupId)
+        return MatchNumber::whereIn('age_group_id', $ageGroupIds)
             ->where(function ($query) use ($gender) {
                 $query->where('gender', $gender)
                     ->orWhere('gender', 'Mix');

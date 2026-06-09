@@ -591,7 +591,7 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Nama Lengkap <span class="required">*</span></label>
-                                            <input type="text" wire:model="athletes.{{ $index }}.name"
+                                            <input type="text" wire:model.blur="athletes.{{ $index }}.name"
                                                 class="form-input-custom @error('athletes.' . $index . '.name') border-red-500 @enderror">
                                             @error('athletes.' . $index . '.name')
                                                 <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}</p>
@@ -739,7 +739,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label>Tingkatan (Rank)</label>
-                                            <select wire:model="athletes.{{ $index }}.rank"
+                                            <select wire:model.live="athletes.{{ $index }}.rank"
                                                 class="form-input-custom">
                                                 @foreach ($kyuLevels as $level)
                                                     <option value="{{ $level->name }}">{{ $level->name }}</option>
@@ -788,7 +788,7 @@
                                             <div class="form-group">
                                                 <label>Berat Badan (KG)</label>
                                                 <input type="number" step="0.1"
-                                                    wire:model="athletes.{{ $index }}.current_weight"
+                                                    wire:model.blur="athletes.{{ $index }}.current_weight"
                                                     class="form-input-custom">
                                                 @error('athletes.' . $index . '.current_weight')
                                                     <p class="text-[14px] text-red-500 font-bold mt-1">{{ $message }}
@@ -797,7 +797,7 @@
                                             </div>
                                             <div class="form-group">
                                                 <label>Kelompok Berat</label>
-                                                <select wire:model="athletes.{{ $index }}.weight_group_id"
+                                                <select wire:model.live="athletes.{{ $index }}.weight_group_id"
                                                     class="form-input-custom">
                                                     <option value="">Pilih...</option>
                                                     @foreach ($weightGroups as $group)

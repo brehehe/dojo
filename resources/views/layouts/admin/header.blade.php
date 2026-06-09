@@ -120,15 +120,12 @@
                                 </a>
                             </div>
                             <div class="px-4 mt-2 border-t border-slate-50 pt-4">
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit"
-                                        class="w-full flex items-center justify-center gap-3 bg-red-50 hover:bg-red-100 text-red-600 py-3.5 rounded-2xl transition-all font-black text-[15px] uppercase tracking-widest group">
-                                        <i
-                                            class="fas fa-sign-out-alt opacity-50 group-hover:translate-x-1 transition-transform"></i>
-                                        Logout Account
-                                    </button>
-                                </form>
+                                <a href="{{ route('logout') }}"
+                                    class="w-full flex items-center justify-center gap-3 bg-red-50 hover:bg-red-100 text-red-600 py-3.5 rounded-2xl transition-all font-black text-[15px] uppercase tracking-widest group">
+                                    <i
+                                        class="fas fa-sign-out-alt opacity-50 group-hover:translate-x-1 transition-transform"></i>
+                                    Logout Account
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -758,13 +755,10 @@
                         class="text-[15px] text-orange-200/50 uppercase tracking-[0.2em] font-black truncate">{{ auth()->user()->getRoleNames()->first() }}</span>
                 </div>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                    class="w-full flex items-center justify-center gap-3 bg-red-600/10 text-red-400 py-5 rounded-[2rem] font-black uppercase tracking-widest text-[15px] border border-red-600/10 active:scale-95 transition-all">
-                    <i class="fas fa-sign-out-alt"></i> Logout System
-                </button>
-            </form>
+            <a href="{{ route('logout') }}"
+                class="w-full flex items-center justify-center gap-3 bg-red-600/10 text-red-400 py-5 rounded-[2rem] font-black uppercase tracking-widest text-[15px] border border-red-600/10 active:scale-95 transition-all">
+                <i class="fas fa-sign-out-alt"></i> Logout System
+            </a>
         </div>
     </div>
 </header>
