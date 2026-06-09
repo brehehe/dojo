@@ -24,6 +24,7 @@ class EmbuScore extends Model
         'denda',
         'nilai_akhir',
         'round_label',
+        'waktu',
     ];
 
     protected $casts = [

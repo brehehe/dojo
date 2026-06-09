@@ -189,6 +189,7 @@
                             <th colspan="5" class="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center border-r border-slate-800">Penilaian Wasit</th>
                             <th class="px-6 py-5 text-[11px] font-black text-slate-200 uppercase tracking-[0.2em] text-center border-r border-slate-800 bg-slate-800/50">Nilai Awal</th>
                             <th class="px-6 py-5 text-[11px] font-black text-indigo-300 uppercase tracking-[0.2em] text-center border-r border-slate-800 bg-indigo-950/30">Nilai Akhir</th>
+                            <th class="px-6 py-5 text-[11px] font-black text-slate-300 uppercase tracking-[0.2em] text-center border-r border-slate-800 bg-slate-900/40">Durasi</th>
                             @if($currentRound === 'Final')
                                 <th class="px-6 py-5 text-[11px] font-black text-amber-300 uppercase tracking-[0.2em] text-center border-r border-slate-800 bg-amber-950/20">Penyisihan</th>
                                 <th class="px-6 py-5 text-[11px] font-black text-emerald-300 uppercase tracking-[0.2em] text-center bg-emerald-950/20">Akumulasi</th>
@@ -229,7 +230,7 @@
                                 $denda = $s?->denda ?? 0;
                                 $nilaiAkhir = $s?->nilai_akhir ?? ($nilaiAwal - $denda);
 
-                                $isActive = $matchNumber->active_registration_id == $item['id'];
+                                $isActive = isset($activeDrawingId) && $activeDrawingId == $item['drawing_id'];
                             @endphp
                             <tr class="group hover:bg-slate-50 transition-all duration-300 {{ $isActive ? 'bg-indigo-50/30' : '' }}">
                                 <td class="sticky left-0 z-10 {{ $isActive ? 'bg-indigo-50' : ($loop->even ? 'bg-slate-50' : 'bg-white') }} px-6 py-5 text-center font-black text-slate-400 border-r border-slate-100">{{ $item['sequence_number'] ?? ($no + 1) }}</td>
@@ -300,15 +301,18 @@
                                 @endforeach
 
                                 <td class="px-6 py-5 text-center border-r border-slate-100 bg-slate-50/50">
-                                    <span class="font-black text-slate-800 text-[15px]">{{ $nilaiAwal > 0 ? number_format($nilaiAwal, 1) : '-' }}</span>
+                                    <span class="font-black text-slate-800 text-[15px]">{{ $s ? number_format($nilaiAwal, 1) : '-' }}</span>
                                 </td>
                                 <td class="px-6 py-5 text-center border-r border-slate-100 bg-indigo-50/30">
                                     <div class="flex flex-col items-center">
-                                        <span class="text-lg font-black text-indigo-700 tracking-tighter">{{ $nilaiAkhir > 0 ? number_format($nilaiAkhir, 1) : '-' }}</span>
+                                        <span class="text-lg font-black text-indigo-700 tracking-tighter">{{ $s ? number_format($nilaiAkhir, 1) : '-' }}</span>
                                         @if($denda > 0)
                                             <span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-600 text-[9px] font-black uppercase tracking-tighter mt-1">-{{ number_format($denda, 0) }} Denda</span>
                                         @endif
                                     </div>
+                                </td>
+                                <td class="px-6 py-5 text-center border-r border-slate-100">
+                                    <span class="font-black text-slate-800 text-[15px]">{{ $s && $s->waktu ? $s->waktu : '-' }}</span>
                                 </td>
                                 @if($currentRound === 'Final')
                                     <td class="px-6 py-5 text-center border-r border-slate-100 bg-amber-50/30">
@@ -321,7 +325,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="15" class="px-8 py-20 text-center">
+                                <td colspan="16" class="px-8 py-20 text-center">
                                     <div class="flex flex-col items-center gap-3">
                                         <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
                                             <i class="fas fa-users-slash text-2xl"></i>
@@ -462,7 +466,7 @@
         </div>
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
             @foreach($registrations as $no => $item)
-                @php $isActive = $matchNumber->active_registration_id == $item['id']; @endphp
+                @php $isActive = isset($activeDrawingId) && $activeDrawingId == $item['drawing_id']; @endphp
                 <div class="group relative flex flex-col gap-4 p-5 rounded-[2rem] border transition-all duration-500 
                     {{ $isActive 
                         ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-2xl scale-[1.02] z-10' 
@@ -504,7 +508,7 @@
                     </div>
 
                     @if(!$isActive)
-                        <button wire:click="callParticipant({{ $item['id'] }})"
+                        <button wire:click="callParticipant({{ $item['drawing_id'] }})"
                             class="w-full py-3.5 rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] transition-all bg-white border border-slate-200 text-slate-800 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-200">
                             <i class="fas fa-bullhorn mr-2"></i> Panggil
                         </button>
@@ -520,7 +524,7 @@
                                 playedIntervals: new Set(),
                                 interpolInterval: null,
                                 syncInterval: null,
-                                registrationId: {{ $item['id'] }},
+                                drawingId: {{ $item['drawing_id'] }},
                                 formatTime() {
                                     let t = Math.max(0, this.time);
                                     let m = Math.floor(t / 60000);
@@ -538,9 +542,15 @@
                                     let oldCountdown = this.countdown;
 
                                     if (state.status === 'running') {
+                                        let wasRunning = this.running;
                                         this.running = true;
                                         this.countdown = 0;
                                         this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
+
+                                        // Play buzzer when timer newly starts
+                                        if (!wasRunning && (!state.elapsed_ms || state.elapsed_ms < 1000)) {
+                                            window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
+                                        }
                                     } else if (state.status === 'countdown') {
                                         this.running = false;
                                         let remaining = state.countdown_end_ms - Date.now();
@@ -567,14 +577,21 @@
                                             this.time += 30; 
                                             let currentSecond = Math.floor(this.time / 1000);
                                             
-                                            // Interval buzzers: 90s and 120s
-                                            if (currentSecond === 90 && !this.playedIntervals.has(90)) {
-                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
-                                                this.playedIntervals.add(90);
-                                            }
-                                            if (currentSecond === 120 && !this.playedIntervals.has(120)) {
-                                                window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
-                                                this.playedIntervals.add(120);
+                                            let isTandoku = {{ $item['is_group'] ? 'false' : 'true' }};
+                                            let buzzerSound = '/music/freesound_community-buzzerwav-14908.mp3';
+                                            if (isTandoku) {
+                                                if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
+                                                    (currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                                    (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                                    window.playBuzzer ? window.playBuzzer(buzzerSound) : null;
+                                                    this.playedIntervals.add(currentSecond);
+                                                }
+                                            } else {
+                                                if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                                    (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                                    window.playBuzzer ? window.playBuzzer(buzzerSound) : null;
+                                                    this.playedIntervals.add(currentSecond);
+                                                }
                                             }
 
                                             // Play tick only if second has actually changed
@@ -613,7 +630,7 @@
                                         }
                                     }).then((result) => {
                                         if (result.isConfirmed) {
-                                            $wire.finishMatch(this.registrationId, capturedTime);
+                                            $wire.finishMatch(this.drawingId, capturedTime);
                                         } else {
                                             $wire.startTimer();
                                         }
@@ -648,7 +665,7 @@
                             </div>
                             <div class="mt-3 text-center">
                                 <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">
-                                    Target Waktu: {{ $item['is_group'] ? '1:30 - 2:00' : '1:00 - 1:30' }}
+                                    Target Waktu: {{ $item['is_group'] ? '1:30 - 2:00' : '1:30' }}
                                 </span>
                             </div>
                         </div>
@@ -793,11 +810,11 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-2xl border border-indigo-100 flex justify-between items-center">
-                                <span class="text-slate-600 font-bold">80s - 89s</span>
+                                <span class="text-slate-600 font-bold">50s - 89s</span>
                                 <span class="text-rose-500 font-black">-5</span>
                             </div>
                             <div class="bg-white p-3 rounded-2xl border border-indigo-100 flex justify-between items-center">
-                                <span class="text-slate-600 font-bold">&lt; 80s</span>
+                                <span class="text-slate-600 font-bold">&lt; 50s</span>
                                 <span class="text-rose-500 font-black">-10</span>
                             </div>
                             <div class="bg-white p-3 rounded-2xl border border-indigo-100 flex justify-between items-center">
@@ -815,15 +832,15 @@
                     <div class="p-5 rounded-3xl bg-emerald-50 border border-emerald-100">
                         <div class="flex items-center gap-2 mb-3 text-emerald-700">
                             <i class="fas fa-user"></i>
-                            <span class="text-[15px] font-black uppercase tracking-widest">Single / Solo (Target: 60s - 90s)</span>
+                            <span class="text-[15px] font-black uppercase tracking-widest">Single / Solo (Target: 90s)</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="bg-white p-3 rounded-2xl border border-emerald-100 flex justify-between items-center">
-                                <span class="text-slate-600 font-bold">50s - 59s</span>
+                                <span class="text-slate-600 font-bold">76s - 89s</span>
                                 <span class="text-rose-500 font-black">-5</span>
                             </div>
                             <div class="bg-white p-3 rounded-2xl border border-emerald-100 flex justify-between items-center">
-                                <span class="text-slate-600 font-bold">&lt; 50s</span>
+                                <span class="text-slate-600 font-bold">&lt; 76s</span>
                                 <span class="text-rose-500 font-black">-10</span>
                             </div>
                             <div class="bg-white p-3 rounded-2xl border border-emerald-100 flex justify-between items-center">

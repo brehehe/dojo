@@ -40,21 +40,6 @@ class MonitorRefereeIndex extends Component
                     ->orderBy('judge_index')
                     ->get();
             }
-
-            if ($referees->isEmpty()) {
-                $latestSchedule = ScheduleReferee::where('court_id', $court->id)
-                    ->orderBy('id', 'desc')
-                    ->first();
-                if ($latestSchedule) {
-                    $referees = ScheduleReferee::with('referee.user')
-                        ->where('court_id', $court->id)
-                        ->where('rundown_id', $latestSchedule->rundown_id)
-                        ->where('session_time_id', $latestSchedule->session_time_id)
-                        ->where('judge_index', '>', 0)
-                        ->orderBy('judge_index')
-                        ->get();
-                }
-            }
         }
 
         return view('livewire.admin.arbitrase.scoring.monitor-referee-index', [

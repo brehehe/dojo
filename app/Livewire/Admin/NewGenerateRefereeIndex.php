@@ -65,11 +65,23 @@ class NewGenerateRefereeIndex extends Component
         $id = (string) $id;
         if (in_array($id, $this->selectedReferees)) {
             $this->selectedReferees = array_values(array_diff($this->selectedReferees, [$id]));
+            $this->resetErrorBag('referees');
         } else {
             if ($this->isDewanArbitraseMode) {
                 $this->selectedReferees = [$id];
+                $this->resetErrorBag('referees');
             } else {
+                if (count($this->selectedReferees) >= 5) {
+                    $this->dispatch('swal', [
+                        'title' => 'Peringatan!',
+                        'text' => 'Maksimal 5 wasit yang dapat dipilih.',
+                        'icon' => 'warning',
+                    ]);
+
+                    return;
+                }
                 $this->selectedReferees[] = $id;
+                $this->resetErrorBag('referees');
             }
         }
     }
@@ -104,8 +116,8 @@ class NewGenerateRefereeIndex extends Component
             }
             $this->dispatch('swal', ['title' => 'Berhasil!', 'text' => 'Dewan Arbitrase telah diperbarui.', 'icon' => 'success']);
         } else {
-            if (count($this->selectedReferees) < 5) {
-                $this->addError('referees', 'Minimal 5 Wasit harus dipilih.');
+            if (count($this->selectedReferees) !== 5) {
+                $this->addError('referees', 'Harus memilih tepat 5 Wasit.');
 
                 return;
             }

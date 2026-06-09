@@ -234,3 +234,88 @@ test('drawing only includes athletes with verified payments and verified athlete
     $resultVerified = $drawingComponent->generateRandoriDrawing(false);
     expect($resultVerified)->toBeTrue();
 });
+
+test('admin can toggle selection and verify selected registrations athlete status', function () {
+    $contingent1 = Contingent::create([
+        'name' => 'C1',
+        'kab_kota' => 'Surabaya',
+        'leader_name' => 'Leader 1',
+        'leader_phone' => '0812345678',
+        'email' => 'c1@example.com',
+        'address' => 'Surabaya',
+    ]);
+    $contingent2 = Contingent::create([
+        'name' => 'C2',
+        'kab_kota' => 'Surabaya',
+        'leader_name' => 'Leader 2',
+        'leader_phone' => '0812345678',
+        'email' => 'c2@example.com',
+        'address' => 'Surabaya',
+    ]);
+
+    $reg1 = Registration::create([
+        'contingent_id' => $contingent1->id,
+        'status' => 'verified',
+        'athlete_status' => 'pending',
+    ]);
+
+    $reg2 = Registration::create([
+        'contingent_id' => $contingent2->id,
+        'status' => 'verified',
+        'athlete_status' => 'pending',
+    ]);
+
+    Livewire::actingAs($this->adminUser)
+        ->test(NewRegistrationVerificationIndex::class)
+        ->set('selectAll', true)
+        ->assertSet('selectedRows', [(string) $reg1->id, (string) $reg2->id])
+        ->call('verifySelected');
+
+    $reg1->refresh();
+    $reg2->refresh();
+
+    expect($reg1->athlete_status)->toBe('verified');
+    expect($reg2->athlete_status)->toBe('verified');
+});
+
+test('admin can toggle selection and unverify selected registrations athlete status', function () {
+    $contingent1 = Contingent::create([
+        'name' => 'C1',
+        'kab_kota' => 'Surabaya',
+        'leader_name' => 'Leader 1',
+        'leader_phone' => '0812345678',
+        'email' => 'c1@example.com',
+        'address' => 'Surabaya',
+    ]);
+    $contingent2 = Contingent::create([
+        'name' => 'C2',
+        'kab_kota' => 'Surabaya',
+        'leader_name' => 'Leader 2',
+        'leader_phone' => '0812345678',
+        'email' => 'c2@example.com',
+        'address' => 'Surabaya',
+    ]);
+
+    $reg1 = Registration::create([
+        'contingent_id' => $contingent1->id,
+        'status' => 'verified',
+        'athlete_status' => 'verified',
+    ]);
+
+    $reg2 = Registration::create([
+        'contingent_id' => $contingent2->id,
+        'status' => 'verified',
+        'athlete_status' => 'verified',
+    ]);
+
+    Livewire::actingAs($this->adminUser)
+        ->test(NewRegistrationVerificationIndex::class)
+        ->set('selectedRows', [(string) $reg1->id, (string) $reg2->id])
+        ->call('unverifySelected');
+
+    $reg1->refresh();
+    $reg2->refresh();
+
+    expect($reg1->athlete_status)->toBe('pending');
+    expect($reg2->athlete_status)->toBe('pending');
+});

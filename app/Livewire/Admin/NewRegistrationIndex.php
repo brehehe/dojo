@@ -16,16 +16,83 @@ class NewRegistrationIndex extends Component
 
     public int $perPage = 10;
 
+    public array $selectedRows = [];
+
+    public bool $selectAll = false;
+
     protected $queryString = ['search', 'status', 'perPage'];
 
     public function updatedSearch(): void
     {
         $this->resetPage();
+        $this->selectedRows = [];
+        $this->selectAll = false;
     }
 
     public function updatedStatus(): void
     {
         $this->resetPage();
+        $this->selectedRows = [];
+        $this->selectAll = false;
+    }
+
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+        $this->selectedRows = [];
+        $this->selectAll = false;
+    }
+
+    public function updatedSelectAll($value): void
+    {
+        if ($value) {
+            $this->selectedRows = $this->getFilteredRegistrationsQuery()
+                ->pluck('id')
+                ->map(fn ($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selectedRows = [];
+        }
+    }
+
+    public function verifySelected(): void
+    {
+        if (empty($this->selectedRows)) {
+            return;
+        }
+
+        Registration::whereIn('id', $this->selectedRows)->update(['status' => 'verified']);
+
+        $count = count($this->selectedRows);
+        $this->selectedRows = [];
+        $this->selectAll = false;
+
+        $this->dispatch('swal', [
+            'title' => 'Terverifikasi!',
+            'text' => "{$count} pendaftaran berhasil diverifikasi.",
+            'icon' => 'success',
+            'timer' => 3000,
+        ]);
+    }
+
+    public function unverifySelected(): void
+    {
+        if (empty($this->selectedRows)) {
+            return;
+        }
+
+        Registration::whereIn('id', $this->selectedRows)->update(['status' => 'pending']);
+
+        $count = count($this->selectedRows);
+        $this->selectedRows = [];
+        $this->selectAll = false;
+
+        $this->dispatch('swal', [
+            'title' => 'Unverified!',
+            'text' => "{$count} pendaftaran diubah status menjadi pending.",
+            'icon' => 'warning',
+            'timer' => 3000,
+        ]);
     }
 
     public function deleteRegistration(int $id): void
@@ -52,18 +119,23 @@ class NewRegistrationIndex extends Component
         ];
     }
 
-    public function render()
+    protected function getFilteredRegistrationsQuery()
     {
-        $registrations = Registration::with(['contingent'])
-            ->when($this->search, function ($query) {
-                $query->where('referral_code', 'ilike', '%'.$this->search.'%')
-                    ->orWhereHas('contingent', function ($q) {
-                        $q->where('name', 'ilike', '%'.$this->search.'%');
-                    });
-            })
+        return Registration::when($this->search, function ($query) {
+            $query->where('referral_code', 'ilike', '%'.$this->search.'%')
+                ->orWhereHas('contingent', function ($q) {
+                    $q->where('name', 'ilike', '%'.$this->search.'%');
+                });
+        })
             ->when($this->status, function ($query) {
                 $query->where('status', $this->status);
-            })
+            });
+    }
+
+    public function render()
+    {
+        $registrations = $this->getFilteredRegistrationsQuery()
+            ->with(['contingent'])
             ->latest()
             ->paginate($this->perPage);
 

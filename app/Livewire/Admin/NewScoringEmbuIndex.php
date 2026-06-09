@@ -249,26 +249,33 @@ class NewScoringEmbuIndex extends Component
         $this->showModal = true;
     }
 
-    public function applyTimerPenalty($timeMs)
+    public function applyTimerPenalty($timeMs, $registrationId = null)
     {
         $seconds = floor($timeMs / 1000);
         $denda = 0;
 
-        // Cek kategori dari atlet pertama
-        $firstAthlete = $this->matchNumber->athletes->first();
-        $isGroup = false;
-        if ($firstAthlete) {
-            $reg = Registration::find($firstAthlete->pivot->registration_id);
-            if ($reg) {
-                $isGroup = $reg->is_group;
+        $matchNumber = null;
+        if ($registrationId) {
+            $drawing = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
+                ->where('registration_id', $registrationId)
+                ->where('round', $this->currentRound)
+                ->first();
+            if ($drawing) {
+                $matchNumber = $drawing->matchNumber;
             }
         }
 
+        if (! $matchNumber) {
+            $matchNumber = $this->matchNumber;
+        }
+
+        $isGroup = $matchNumber ? ($matchNumber->max_athletes > 1) : false;
+
         if ($isGroup) {
             // Beregu / Pasangan (Target 90s - 120s)
-            if ($seconds >= 75 && $seconds <= 89) {
+            if ($seconds >= 50 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 75) {
+            } elseif ($seconds < 50) {
                 $denda = 10;
             } elseif ($seconds >= 121 && $seconds <= 135) {
                 $denda = 5;
@@ -276,10 +283,10 @@ class NewScoringEmbuIndex extends Component
                 $denda = 10;
             }
         } else {
-            // Single / Solo (Target 60s - 90s)
-            if ($seconds >= 50 && $seconds <= 59) {
+            // Single / Solo / Tandoku (Target 90s)
+            if ($seconds >= 76 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 50) {
+            } elseif ($seconds < 76) {
                 $denda = 10;
             } elseif ($seconds >= 91 && $seconds <= 100) {
                 $denda = 5;
@@ -299,12 +306,13 @@ class NewScoringEmbuIndex extends Component
         return $denda;
     }
 
-    public function finishMatch($registrationId, $timeMs = 0)
+    public function finishMatch($drawingId, $timeMs = 0)
     {
-        $drawing = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
-            ->where('registration_id', $registrationId)
-            ->where('round', $this->currentRound)
-            ->first();
+        $drawing = DrawingMatchNumber::find($drawingId);
+        if (! $drawing) {
+            return;
+        }
+        $registrationId = $drawing->registration_id;
 
         $courtId = $this->getCourtId();
         if ($courtId) {
@@ -318,14 +326,20 @@ class NewScoringEmbuIndex extends Component
         }
 
         // Apply Penalty automatically
-        $calculatedDenda = $this->applyTimerPenalty($timeMs);
+        $calculatedDenda = $this->applyTimerPenalty($timeMs, $registrationId);
+
+        $seconds = floor($timeMs / 1000);
+        $minutes = floor($seconds / 60);
+        $remainingSeconds = $seconds % 60;
+        $formattedTime = sprintf('%02d:%02d', $minutes, $remainingSeconds);
 
         // Save the penalty to the score model immediately
         $score = EmbuScore::firstOrCreate(
             [
-                'match_number_id' => $drawing ? $drawing->match_number_id : $this->matchNumber->id,
+                'match_number_id' => $drawing->match_number_id,
                 'registration_id' => $registrationId,
                 'round_label' => $this->currentRound,
+                'drawing_id' => $drawing->id,
             ],
             [
                 'judge_1' => 0,
@@ -340,6 +354,7 @@ class NewScoringEmbuIndex extends Component
         );
 
         $score->denda = $calculatedDenda;
+        $score->waktu = $formattedTime;
 
         $judges = [
             $score->judge_1,
@@ -747,7 +762,7 @@ class NewScoringEmbuIndex extends Component
                 'drawing_id' => $drawing->id,
                 'match_number_id' => $matchId,
                 'match_name' => $drawing->matchNumber?->name ?? '—',
-                'is_group' => $registration?->is_group,
+                'is_group' => $drawing->matchNumber ? ($drawing->matchNumber->max_athletes > 1) : false,
                 'athletes' => $athletes->unique('id'),
                 'contingent' => $registration?->contingent,
                 'score' => $score,

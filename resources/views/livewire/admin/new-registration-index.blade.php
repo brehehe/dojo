@@ -137,6 +137,69 @@
 
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
 
+    /* ── BULK ACTIONS ── */
+    .bulk-actions-bar {
+        background: rgba(247, 244, 239, 0.95);
+        border-bottom: 1px solid var(--paper2);
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        animation: slideDown 0.2s ease;
+    }
+    @keyframes slideDown {
+        from { transform: translateY(-10px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .bulk-btn {
+        padding: 8px 16px;
+        border-radius: 9px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+        font-family: 'DM Sans', sans-serif;
+    }
+    .bulk-btn.success {
+        background: rgba(39, 174, 96, 0.08);
+        color: #1e8449;
+        border-color: rgba(39, 174, 96, 0.2);
+    }
+    .bulk-btn.success:hover {
+        background: #27ae60;
+        color: #fff;
+        border-color: #27ae60;
+    }
+    .bulk-btn.warning {
+        background: rgba(212, 168, 67, 0.12);
+        color: #9a6e00;
+        border-color: rgba(212, 168, 67, 0.25);
+    }
+    .bulk-btn.warning:hover {
+        background: #d4a843;
+        color: #fff;
+        border-color: #d4a843;
+    }
+    .checkbox-col {
+        width: 40px;
+        text-align: center !important;
+    }
+    .prem-checkbox {
+        width: 15px;
+        height: 15px;
+        border: 1.5px solid var(--smoke);
+        border-radius: 4px;
+        cursor: pointer;
+        accent-color: var(--red);
+        transition: all 0.15s;
+        vertical-align: middle;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 640px)  { .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .prem-page { padding: 14px; } }
@@ -210,10 +273,31 @@
                 </select>
             </div>
 
+            {{-- Bulk Actions Bar --}}
+            @if(count($selectedRows) > 0)
+            <div class="bulk-actions-bar">
+                <div style="font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-square-check" style="color: var(--red); font-size: 15px;"></i>
+                    <span>Terpilih <strong style="color: var(--red);">{{ count($selectedRows) }}</strong> data registrasi</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="confirmBulkVerify()" class="bulk-btn success">
+                        <i class="fa-solid fa-circle-check"></i> Verifikasi Terpilih
+                    </button>
+                    <button onclick="confirmBulkUnverify()" class="bulk-btn warning">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Set Pending Terpilih
+                    </button>
+                </div>
+            </div>
+            @endif
+
             <div class="prem-table-wrap">
                 <table class="prem-table">
                     <thead>
                         <tr>
+                            <th class="checkbox-col">
+                                <input type="checkbox" wire:model.live="selectAll" class="prem-checkbox">
+                            </th>
                             <th>#</th>
                             <th>Kontingen / Kode</th>
                             <th>Wilayah</th>
@@ -226,7 +310,10 @@
                     </thead>
                     <tbody>
                         @forelse($registrations as $reg)
-                        <tr>
+                        <tr wire:key="reg-row-{{ $reg->id }}">
+                            <td class="checkbox-col">
+                                <input type="checkbox" wire:model.live="selectedRows" value="{{ $reg->id }}" class="prem-checkbox">
+                            </td>
                             <td style="color:var(--smoke);font-size:11px;">{{ $loop->iteration + $registrations->firstItem() - 1 }}</td>
                             <td>
                                 <div style="display:flex;align-items:center;gap:9px;">
@@ -274,7 +361,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8">
+                            <td colspan="9">
                                 <div class="empty-state">
                                     <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
                                     <p>Tidak ada data registrasi ditemukan</p>
@@ -312,6 +399,42 @@ function confirmDeleteRegistration(id, nama) {
     }).then((result) => {
         if (result.isConfirmed) {
             @this.deleteRegistration(id);
+        }
+    });
+}
+
+function confirmBulkVerify() {
+    Swal.fire({
+        title: 'Verifikasi Terpilih?',
+        html: 'Apakah Anda yakin ingin memverifikasi seluruh pendaftaran yang terpilih?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#27ae60',
+        cancelButtonColor: '#7f8c8d',
+        confirmButtonText: 'Ya, Verifikasi!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            @this.verifySelected();
+        }
+    });
+}
+
+function confirmBulkUnverify() {
+    Swal.fire({
+        title: 'Set Pending Terpilih?',
+        html: 'Ubah status seluruh pendaftaran yang terpilih kembali menjadi Pending?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d4a843',
+        cancelButtonColor: '#7f8c8d',
+        confirmButtonText: 'Ya, Ubah!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            @this.unverifySelected();
         }
     });
 }

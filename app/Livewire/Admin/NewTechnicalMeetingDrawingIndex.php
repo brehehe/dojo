@@ -383,7 +383,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     $a1 = $m['athlete1'] ?? null;
                     $a2 = $m['athlete2'] ?? null;
 
-                    $matchStart = $startTime->copy()->addMinutes($mIdx * $durationPerMatch);
+                    $slot = $slotData['slots'][$mIdx];
+                    $rundown = $slot['rundown'];
+                    $sessionTime = $slot['session'];
+                    $matchStart = $slot['startTime'];
                     $matchEnd = $matchStart->copy()->addMinutes($durationPerMatch);
 
                     if (isset($rundown) && isset($matchEnd)) {
@@ -499,17 +502,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 }
 
                 // If not passed via parameters, calculate minFinalStartTime dynamically from latest Penyisihan end time
-                if ($onlyRound !== 'Final') {
-                    if ($latestPenyisihanEndTime !== null && isset($sessionTime)) {
-                        $sessionStart = Carbon::parse(Carbon::parse($latestPenyisihanEndTime)->format('Y-m-d').' '.Carbon::parse($sessionTime->start_time)->format('H:i:s'));
-                        $diffMinutes = $sessionStart->diffInMinutes($latestPenyisihanEndTime->copy()->addMinutes(15), false);
-                        if ($diffMinutes > 0) {
-                            $slots = (int) ceil($diffMinutes / $durationPerMatch);
-                            $minFinalStartTime = $sessionStart->copy()->addMinutes($slots * $durationPerMatch);
-                        } else {
-                            $minFinalStartTime = $sessionStart->copy();
-                        }
-                    }
+                if ($onlyRound !== 'Final' && $latestPenyisihanEndTime !== null) {
+                    $minFinalStartTime = $this->calculateMinFinalStartTime($latestPenyisihanEndTime);
                 }
 
                 $slotData = $this->findBestAvailableSlot(count($finalMatches), $durationPerMatch, $minFinalStartTime, $matchAthletesGrouped, true, 'randori');
@@ -532,7 +526,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     $a1 = $m['athlete1'] ?? null;
                     $a2 = $m['athlete2'] ?? null;
 
-                    $matchStart = $startTime->copy()->addMinutes($mIdx * $durationPerMatch);
+                    $slot = $slotData['slots'][$mIdx];
+                    $rundown = $slot['rundown'];
+                    $sessionTime = $slot['session'];
+                    $matchStart = $slot['startTime'];
                     $matchEnd = $matchStart->copy()->addMinutes($durationPerMatch);
 
                     // Record for Athlete 1
@@ -608,40 +605,80 @@ class NewTechnicalMeetingDrawingIndex extends Component
     }
 
     // ── GENERATE ALL ─────────────────────────────────────────
-    public function generateAllDrawings(): void
+    public function generateAllDrawings(?string $type = null): void
     {
         set_time_limit(0);
         $this->isGenerating = true;
 
-        $matches = MatchNumber::whereNull('drawing_generated_at')
+        $targetType = $type ?: $this->draftType; // 'embu' or 'randori'
+
+        // 1. Fetch merges
+        $merges = MatchNumberMerge::where('type', $targetType)
+            ->whereHas('matchNumbers', function ($q) {
+                $q->whereNull('drawing_generated_at');
+            })
+            ->get();
+
+        // Filter merges to only those that have athletes across their constituent match numbers
+        $merges = $merges->filter(function ($merge) {
+            return DB::table('athlete_match_number')
+                ->whereIn('match_number_id', $merge->matchNumbers->pluck('id'))
+                ->exists();
+        });
+
+        // 2. Fetch standard matches (excluding merged ones)
+        $standardMatches = MatchNumber::whereNull('drawing_generated_at')
+            ->where('draft_type', $targetType)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('match_number_merge_details')
+                    ->whereColumn('match_number_merge_details.match_number_id', 'match_numbers.id');
+            })
             ->has('athletes')
             ->get();
 
-        // Sort matches: Embu first, then Randori. Inside, sort by Age Group and Subtype.
-        $matches = $matches->sort(function ($a, $b) {
-            $aType = $a->draft_type === 'embu' ? 0 : 1;
-            $bType = $b->draft_type === 'embu' ? 0 : 1;
-            if ($aType !== $bType) {
-                return $aType <=> $bType;
-            }
+        // 3. Map to uniform structure
+        $items = collect();
 
+        foreach ($merges as $merge) {
+            $items->push((object) [
+                'is_merge' => true,
+                'id' => $merge->id,
+                'age_group_name' => $merge->ageGroup->name ?? '',
+                'name' => $merge->name ?: 'Merged Group',
+                'draft_type' => $merge->type,
+                'model' => $merge,
+            ]);
+        }
+
+        foreach ($standardMatches as $match) {
+            $items->push((object) [
+                'is_merge' => false,
+                'id' => $match->id,
+                'age_group_name' => $match->ageGroup->name ?? '',
+                'name' => $match->name,
+                'draft_type' => $match->draft_type,
+                'model' => $match,
+            ]);
+        }
+
+        // 4. Sort the items
+        $items = $items->sort(function ($a, $b) {
             $ageOrder = [
                 'Pemula' => 0,
                 'Remaja A' => 1,
                 'Remaja B' => 2,
                 'Dewasa' => 3,
             ];
-            $aAge = $ageOrder[$a->ageGroup->name ?? ''] ?? 99;
-            $bAge = $ageOrder[$b->ageGroup->name ?? ''] ?? 99;
+            $aAge = $ageOrder[$a->age_group_name] ?? 99;
+            $bAge = $ageOrder[$b->age_group_name] ?? 99;
             if ($aAge !== $bAge) {
                 return $aAge <=> $bAge;
             }
 
             if ($a->draft_type === 'embu') {
-                $aName = $a->name;
-                $bName = $b->name;
-                $aSub = str_contains($aName, 'Tandoku') ? 0 : (str_contains($aName, 'Pasangan') ? 1 : (str_contains($aName, 'Beregu') ? 2 : 3));
-                $bSub = str_contains($bName, 'Tandoku') ? 0 : (str_contains($bName, 'Pasangan') ? 1 : (str_contains($bName, 'Beregu') ? 2 : 3));
+                $aSub = str_contains($a->name, 'Tandoku') ? 0 : (str_contains($a->name, 'Pasangan') ? 1 : (str_contains($a->name, 'Beregu') ? 2 : 3));
+                $bSub = str_contains($b->name, 'Tandoku') ? 0 : (str_contains($b->name, 'Pasangan') ? 1 : (str_contains($b->name, 'Beregu') ? 2 : 3));
                 if ($aSub !== $bSub) {
                     return $aSub <=> $bSub;
                 }
@@ -650,17 +687,25 @@ class NewTechnicalMeetingDrawingIndex extends Component
             return $a->id <=> $b->id;
         });
 
-        $embuMatches = $matches->filter(fn ($m) => $m->draft_type === 'embu');
-        $randoriMatches = $matches->filter(fn ($m) => $m->draft_type === 'randori');
-
         $success = 0;
         $skipped = 0;
 
-        // 1. Generate Embu Penyisihan
-        foreach ($embuMatches as $match) {
-            $this->filterMatchNumberId = $match->id;
+        // Pass 1: Generate Penyisihan
+        foreach ($items as $item) {
+            if ($item->is_merge) {
+                $this->filterMergeId = $item->id;
+                $this->filterMatchNumberId = null;
+            } else {
+                $this->filterMergeId = null;
+                $this->filterMatchNumberId = $item->id;
+            }
+
             try {
-                $result = $this->generateEmbuDrawing(false, 'Penyisihan');
+                if ($targetType === 'embu') {
+                    $result = $this->generateEmbuDrawing(false, 'Penyisihan');
+                } else {
+                    $result = $this->generateRandoriDrawing(false, 'Penyisihan');
+                }
                 if ($result === false) {
                     $skipped++;
                 } else {
@@ -668,118 +713,87 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 }
             } catch (\Throwable $e) {
                 $skipped++;
-                logger()->error('Failed generating Penyisihan for Embu match '.$match->id.': '.$e->getMessage());
+                logger()->error('Failed generating Penyisihan for '.($item->is_merge ? 'Merge' : 'Match').' '.$item->id.': '.$e->getMessage());
             }
         }
 
-        // 2. Calculate minFinalStartTime for Embu Finals
-        $latestEmbuPrelimEndTime = null;
-        $embuMatchIds = $embuMatches->pluck('id')->toArray();
-        $scheduledEmbuPrelims = DrawingMatchNumber::whereIn('match_number_id', $embuMatchIds)
-            ->where('round', 'Penyisihan')
-            ->get();
-
-        foreach ($scheduledEmbuPrelims as $item) {
-            $meta = $item->metadata ?? [];
-            if (empty($meta['end_time']) || empty($item->schedule_date)) {
-                continue;
+        // Pass 2: Generate Final
+        foreach ($items as $item) {
+            if ($item->is_merge) {
+                $this->filterMergeId = $item->id;
+                $this->filterMatchNumberId = null;
+                $matchIds = $item->model->matchNumbers->pluck('id')->toArray();
+            } else {
+                $this->filterMergeId = null;
+                $this->filterMatchNumberId = $item->id;
+                $matchIds = [$item->id];
             }
-            $dateStr = Carbon::parse($item->schedule_date)->format('Y-m-d');
-            $endTimeStr = $dateStr.' '.$meta['end_time'].':00';
-            $endTime = Carbon::parse($endTimeStr);
-            if ($latestEmbuPrelimEndTime === null || $endTime->gt($latestEmbuPrelimEndTime)) {
-                $latestEmbuPrelimEndTime = $endTime;
-            }
-        }
 
-        $minEmbuFinalStartTime = null;
-        if ($latestEmbuPrelimEndTime !== null) {
-            $earliestFinalTime = $latestEmbuPrelimEndTime->copy()->addMinutes(15);
-            $minute = (int) $earliestFinalTime->format('i');
-            $remainder = $minute % 10;
-            if ($remainder !== 0) {
-                $earliestFinalTime->addMinutes(10 - $remainder);
-            }
-            $minEmbuFinalStartTime = $earliestFinalTime;
-        }
-
-        // 3. Generate Embu Finals
-        foreach ($embuMatches as $match) {
-            $this->filterMatchNumberId = $match->id;
             try {
-                $this->generateEmbuDrawing(false, 'Final', $minEmbuFinalStartTime);
-            } catch (\Throwable $e) {
-                logger()->error('Failed generating Final for Embu match '.$match->id.': '.$e->getMessage());
-            }
-        }
+                $latest = $this->getLatestPrelimEndTime($matchIds);
+                $minFinalStartTime = $this->calculateMinFinalStartTime($latest);
 
-        // 4. Generate Randori Penyisihan
-        foreach ($randoriMatches as $match) {
-            $this->filterMatchNumberId = $match->id;
-            try {
-                $result = $this->generateRandoriDrawing(false, 'Penyisihan');
-                if ($result === false) {
-                    $skipped++;
+                if ($targetType === 'embu') {
+                    $this->generateEmbuDrawing(false, 'Final', $minFinalStartTime);
                 } else {
-                    $success++;
+                    $this->generateRandoriDrawing(false, 'Final', $minFinalStartTime);
                 }
             } catch (\Throwable $e) {
-                $skipped++;
-                logger()->error('Failed generating Penyisihan for Randori match '.$match->id.': '.$e->getMessage());
+                logger()->error('Failed generating Final for '.($item->is_merge ? 'Merge' : 'Match').' '.$item->id.': '.$e->getMessage());
             }
         }
 
-        // 5. Calculate minFinalStartTime for Randori Finals
-        $latestRandoriPrelimEndTime = null;
-        $randoriMatchIds = $randoriMatches->pluck('id')->toArray();
-        $scheduledRandoriPrelims = DrawingMatchNumber::whereIn('match_number_id', $randoriMatchIds)
-            ->where(function ($query) {
-                $query->where('round', 'like', 'Penyisihan%');
-            })
-            ->get();
-
-        foreach ($scheduledRandoriPrelims as $item) {
-            $meta = $item->metadata ?? [];
-            if (empty($meta['end_time']) || empty($item->schedule_date)) {
-                continue;
-            }
-            $dateStr = Carbon::parse($item->schedule_date)->format('Y-m-d');
-            $endTimeStr = $dateStr.' '.$meta['end_time'].':00';
-            $endTime = Carbon::parse($endTimeStr);
-            if ($latestRandoriPrelimEndTime === null || $endTime->gt($latestRandoriPrelimEndTime)) {
-                $latestRandoriPrelimEndTime = $endTime;
-            }
-        }
-
-        $minRandoriFinalStartTime = null;
-        if ($latestRandoriPrelimEndTime !== null) {
-            $earliestFinalTime = $latestRandoriPrelimEndTime->copy()->addMinutes(15);
-            $minute = (int) $earliestFinalTime->format('i');
-            $remainder = $minute % 10;
-            if ($remainder !== 0) {
-                $earliestFinalTime->addMinutes(10 - $remainder);
-            }
-            $minRandoriFinalStartTime = $earliestFinalTime;
-        }
-
-        // 6. Generate Randori Finals
-        foreach ($randoriMatches as $match) {
-            $this->filterMatchNumberId = $match->id;
-            try {
-                $this->generateRandoriDrawing(false, 'Final', $minRandoriFinalStartTime);
-            } catch (\Throwable $e) {
-                logger()->error('Failed generating Final for Randori match '.$match->id.': '.$e->getMessage());
-            }
-        }
-
+        $this->filterMergeId = null;
         $this->filterMatchNumberId = null;
         $this->isGenerating = false;
 
+        $typeLabel = $targetType === 'embu' ? 'Embu' : 'Randori';
         $this->dispatch('swal', [
             'icon' => 'success',
             'title' => 'Generate Selesai',
-            'text' => $success.' kategori berhasil di-generate (Embu dulu baru Randori, Penyisihan lalu Final).',
+            'text' => $success.' kategori '.$typeLabel.' berhasil di-generate (Penyisihan lalu Final secara otomatis).',
         ]);
+    }
+
+    private function getLatestPrelimEndTime(array $matchNumberIds): ?Carbon
+    {
+        $scheduledPrelims = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+            ->where(function ($q) {
+                $q->where('round', 'Penyisihan')
+                    ->orWhere('round', 'like', 'Penyisihan%');
+            })
+            ->get();
+
+        $latestEndTime = null;
+        foreach ($scheduledPrelims as $item) {
+            $meta = $item->metadata ?? [];
+            if (empty($meta['end_time']) || empty($item->schedule_date)) {
+                continue;
+            }
+            $dateStr = Carbon::parse($item->schedule_date)->format('Y-m-d');
+            $endTimeStr = $dateStr.' '.$meta['end_time'].':00';
+            $endTime = Carbon::parse($endTimeStr);
+            if ($latestEndTime === null || $endTime->gt($latestEndTime)) {
+                $latestEndTime = $endTime;
+            }
+        }
+
+        return $latestEndTime;
+    }
+
+    private function calculateMinFinalStartTime(?Carbon $latestPrelimEndTime): ?Carbon
+    {
+        if ($latestPrelimEndTime === null) {
+            return null;
+        }
+        $earliestFinalTime = $latestPrelimEndTime->copy()->addMinutes(15);
+        $minute = (int) $earliestFinalTime->format('i');
+        $remainder = $minute % 10;
+        if ($remainder !== 0) {
+            $earliestFinalTime->addMinutes(10 - $remainder);
+        }
+
+        return $earliestFinalTime;
     }
 
     public function resetAllDrawings(): void
@@ -994,7 +1008,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     $globalIndex++;
                     $orderInPool = count($pools[$poolName]) + 1;
 
-                    $entryStart = $startTime->copy()->addMinutes($index * $durationPerMatch);
+                    $slot = $slotData['slots'][$index];
+                    $rundown = $slot['rundown'];
+                    $sessionTime = $slot['session'];
+                    $entryStart = $slot['startTime'];
                     $entryEnd = $entryStart->copy()->addMinutes($durationPerMatch);
 
                     if (isset($rundown) && isset($entryEnd)) {
@@ -1065,19 +1082,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $totalFinalists = ($poolCount === 1) ? $totalEntries : ($poolCount * $qualifiersPerPool);
 
             if ($totalFinalists > 0) {
-                if ($onlyRound === 'Final') {
-                    // Passed via parameter
-                } else {
-                    if ($latestPenyisihanEndTime !== null && isset($sessionTime)) {
-                        $sessionStart = Carbon::parse(Carbon::parse($latestPenyisihanEndTime)->format('Y-m-d').' '.Carbon::parse($sessionTime->start_time)->format('H:i:s'));
-                        $diffMinutes = $sessionStart->diffInMinutes($latestPenyisihanEndTime->copy()->addMinutes(15), false);
-                        if ($diffMinutes > 0) {
-                            $slots = (int) ceil($diffMinutes / $durationPerMatch);
-                            $minFinalStartTime = $sessionStart->copy()->addMinutes($slots * $durationPerMatch);
-                        } else {
-                            $minFinalStartTime = $sessionStart->copy();
-                        }
-                    }
+                if ($onlyRound !== 'Final' && $latestPenyisihanEndTime !== null) {
+                    $minFinalStartTime = $this->calculateMinFinalStartTime($latestPenyisihanEndTime);
                 }
 
                 $finalSlotData = $this->findBestAvailableSlot($totalFinalists, $durationPerMatch, $minFinalStartTime, [], true, 'embu');
@@ -1085,7 +1091,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $fStartTime = $finalSlotData['startTime'];
 
                 for ($i = 0; $i < $totalFinalists; $i++) {
-                    $fStart = $fStartTime->copy()->addMinutes($i * $durationPerMatch);
+                    $slot = $finalSlotData['slots'][$i];
+                    $rundown = $slot['rundown'];
+                    $sessionTime = $slot['session'];
+                    $fStart = $slot['startTime'];
                     $fEnd = $fStart->copy()->addMinutes($durationPerMatch);
 
                     DrawingMatchNumber::create([
@@ -1093,9 +1102,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         'registration_id' => null, // TBD
                         'pool_id' => null, // Final pool
                         'court_id' => $fCourtId,
-                        'schedule_date' => $finalSlotData['rundown']?->date,
-                        'session_time_id' => $finalSlotData['session']?->id,
-                        'rundown_id' => $finalSlotData['rundown']?->id,
+                        'schedule_date' => $rundown?->date,
+                        'session_time_id' => $sessionTime?->id,
+                        'rundown_id' => $rundown?->id,
                         'round' => 'Final',
                         'sequence_number' => $i + 1,
                         'draft_type' => 'embu',
@@ -1164,53 +1173,55 @@ class NewTechnicalMeetingDrawingIndex extends Component
             }
         }
 
-        foreach ($rundowns as $rundown) {
-            foreach ($sessions as $session) {
+        // Eager load existing drawings across all sessions/rundowns once to avoid N+1 queries.
+        $existingDrawings = DrawingMatchNumber::with('registration.athletes')->get();
+        $busyAthletes = [];
+        foreach ($existingDrawings as $d) {
+            $m = $d->metadata ?? [];
+            if (! isset($m['start_time']) || ! isset($m['end_time']) || ! $d->schedule_date) {
+                continue;
+            }
+
+            $rDate = Carbon::parse($d->schedule_date)->format('Y-m-d');
+            $start = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
+            $end = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
+            $athletes = $d->registration ? $d->registration->athletes->pluck('id')->toArray() : [];
+            foreach ($athletes as $aId) {
+                $busyAthletes[$aId][] = ['start' => $start, 'end' => $end];
+            }
+        }
+
+        $bestCourt = null;
+        $bestSlots = null;
+        $bestEndTime = null;
+
+        foreach ($courts as $court) {
+            $slots = [];
+
+            // For this court, search through rundowns and sessions chronologically
+            foreach ($rundowns as $rundown) {
                 $rDate = Carbon::parse($rundown->date)->format('Y-m-d');
-                $sStartStr = Carbon::parse($session->start_time)->format('H:i:s');
-                $sEndStr = Carbon::parse($session->end_time)->format('H:i:s');
+                foreach ($sessions as $session) {
+                    $sStartStr = Carbon::parse($session->start_time)->format('H:i:s');
+                    $sEndStr = Carbon::parse($session->end_time)->format('H:i:s');
 
-                $sessionStart = Carbon::parse($rDate.' '.$sStartStr);
-                $sessionEnd = Carbon::parse($rDate.' '.$sEndStr);
+                    $sessionStart = Carbon::parse($rDate.' '.$sStartStr);
+                    $sessionEnd = Carbon::parse($rDate.' '.$sEndStr);
 
-                // Fetch ALL busy intervals for this session once to avoid N+1 inside the court loop
-                $busyAthletes = [];
-                $existingDrawingInSession = DrawingMatchNumber::where('rundown_id', $rundown->id)
-                    ->where('session_time_id', $session->id)
-                    ->with('registration.athletes')
-                    ->get();
-
-                foreach ($existingDrawingInSession as $d) {
-                    $m = $d->metadata ?? [];
-                    if (! isset($m['start_time']) || ! isset($m['end_time'])) {
-                        continue;
-                    }
-
-                    $start = Carbon::parse($m['start_time']);
-                    $end = Carbon::parse($m['end_time']);
-                    $athletes = $d->registration ? $d->registration->athletes->pluck('id')->toArray() : [];
-                    foreach ($athletes as $aId) {
-                        $busyAthletes[$aId][] = ['start' => $start, 'end' => $end];
-                    }
-                }
-
-                // Iterate through every possible start time in 10-minute increments
-                $currentTime = $sessionStart->copy();
-                while ($currentTime->copy()->addMinutes($neededCount * $durationMinutes)->lte($sessionEnd)) {
+                    $currentTime = $sessionStart->copy();
 
                     if ($minStartTime && $currentTime->lt($minStartTime)) {
-                        $currentTime->addMinutes($durationMinutes);
-
-                        continue;
+                        $currentTime = $minStartTime->copy();
                     }
 
-                    // Check which court is available at this EXACT currentTime
-                    foreach ($courts as $court) {
-                        // Check if this court is busy for ANY part of the needed block
-                        $endTimeBlock = $currentTime->copy()->addMinutes($neededCount * $durationMinutes);
+                    while ($currentTime->copy()->addMinutes($durationMinutes)->lte($sessionEnd)) {
+                        $slotEnd = $currentTime->copy()->addMinutes($durationMinutes);
 
+                        // Check if this court is occupied at this specific currentTime in the DB
                         $isCourtOccupied = false;
-                        $courtMatches = $existingDrawingInSession->where('court_id', $court->id);
+                        $courtMatches = $existingDrawings->where('court_id', $court->id)
+                            ->where('rundown_id', $rundown->id)
+                            ->where('session_time_id', $session->id);
                         foreach ($courtMatches as $cm) {
                             $m = $cm->metadata ?? [];
                             if (! isset($m['start_time']) || ! isset($m['end_time'])) {
@@ -1220,62 +1231,98 @@ class NewTechnicalMeetingDrawingIndex extends Component
                             $cmStart = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
                             $cmEnd = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
 
-                            if ($currentTime->lt($cmEnd) && $endTimeBlock->gt($cmStart)) {
+                            if ($currentTime->lt($cmEnd) && $slotEnd->gt($cmStart)) {
                                 $isCourtOccupied = true;
                                 break;
                             }
                         }
 
                         if ($isCourtOccupied) {
-                            continue; // Try next court at same currentTime
+                            $currentTime->addMinutes($durationMinutes);
+
+                            continue;
                         }
 
-                        // Court is available! Now check Granular Athlete Clashes
+                        // Check athlete clashes
                         $hasAthleteClash = false;
-                        for ($i = 0; $i < $neededCount; $i++) {
-                            $slotStart = $currentTime->copy()->addMinutes($i * $durationMinutes);
-                            $slotEnd = $slotStart->copy()->addMinutes($durationMinutes);
-
-                            $athletesInSlot = $matchAthletesGrouped[$i] ?? [];
-                            foreach ($athletesInSlot as $aId) {
-                                if (isset($busyAthletes[$aId])) {
-                                    foreach ($busyAthletes[$aId] as $interval) {
-                                        $iStart = Carbon::parse($rDate.' '.$interval['start']->format('H:i:s'));
-                                        $iEnd = Carbon::parse($rDate.' '.$interval['end']->format('H:i:s'));
-
-                                        if ($slotStart->lt($iEnd) && $slotEnd->gt($iStart)) {
-                                            $hasAthleteClash = true;
-                                            break 2; // Next court or next time
-                                        }
+                        $athletesInSlot = $matchAthletesGrouped[count($slots)] ?? [];
+                        foreach ($athletesInSlot as $aId) {
+                            if (isset($busyAthletes[$aId])) {
+                                foreach ($busyAthletes[$aId] as $interval) {
+                                    if ($currentTime->lt($interval['end']) && $slotEnd->gt($interval['start'])) {
+                                        $hasAthleteClash = true;
+                                        break 2;
                                     }
                                 }
                             }
                         }
 
                         if ($hasAthleteClash) {
-                            continue; // Try next court (though likely same clash) or next time
+                            $currentTime->addMinutes($durationMinutes);
+
+                            continue;
                         }
 
-                        // FOUND IT! Earliest time, first available court, no athlete clashes.
-                        return [
+                        // Slot is available!
+                        $slots[] = [
                             'rundown' => $rundown,
                             'session' => $session,
-                            'court' => $court,
-                            'startTime' => $currentTime,
+                            'startTime' => $currentTime->copy(),
                         ];
-                    }
 
-                    $currentTime->addMinutes($durationMinutes);
+                        if (count($slots) === $neededCount) {
+                            break 3; // Found all slots for this court
+                        }
+
+                        $currentTime->addMinutes($durationMinutes);
+                    }
+                }
+            }
+
+            if (count($slots) === $neededCount) {
+                // Calculate end time of the last slot on this day/rundown to compare
+                $lastSlot = $slots[count($slots) - 1];
+                $lastEnd = $lastSlot['startTime']->copy()->addMinutes($durationMinutes);
+
+                // We want the court that completes the series earliest
+                if ($bestEndTime === null || $lastEnd->lt($bestEndTime)) {
+                    $bestEndTime = $lastEnd;
+                    $bestSlots = $slots;
+                    $bestCourt = $court;
                 }
             }
         }
 
         // Ultimate fallback
+        if (! $bestCourt) {
+            $bestCourt = $courts->first() ?: Court::first();
+            $bestSlots = [];
+            $currentRundown = $rundowns->first() ?: Rundown::first();
+            $start = $minStartTime ?? Carbon::parse(Carbon::parse($currentRundown->date)->format('Y-m-d').' 07:30:00');
+
+            // Find session matching the start time
+            $currentSession = $sessions->first(function ($s) use ($start) {
+                $sStart = Carbon::parse($start->format('Y-m-d').' '.$s->start_time);
+                $sEnd = Carbon::parse($start->format('Y-m-d').' '.$s->end_time);
+
+                return $start->gte($sStart) && $start->lt($sEnd);
+            }) ?: ($sessions->last() ?: SessionTime::first());
+
+            for ($i = 0; $i < $neededCount; $i++) {
+                $bestSlots[] = [
+                    'rundown' => $currentRundown,
+                    'session' => $currentSession,
+                    'startTime' => $start->copy()->addMinutes($i * $durationMinutes),
+                ];
+            }
+        }
+
         return [
-            'rundown' => $rundowns->first(),
-            'session' => $sessions->first(),
-            'court' => $courts->first(),
-            'startTime' => $minStartTime ?? Carbon::parse(Carbon::parse($rundowns->first()->date)->format('Y-m-d').' '.Carbon::parse($sessions->first()->start_time)->format('H:i:s')),
+            'court' => $bestCourt,
+            'slots' => $bestSlots,
+            'session' => $bestSlots[0]['session'],
+            'rundown' => $bestSlots[0]['rundown'],
+            'startTime' => $bestSlots[0]['startTime'],
         ];
     }
 
@@ -1648,7 +1695,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'randori' => 0,
         ];
         if ($this->draftType === 'jadwal') {
-            $allDrawings = DrawingMatchNumber::with(['matchNumber', 'registration.contingent', 'court', 'sessionTime', 'rundown', 'merge'])
+            $allDrawings = DrawingMatchNumber::with(['matchNumber.ageGroup', 'registration.contingent', 'court', 'sessionTime', 'rundown', 'merge.ageGroup'])
                 ->get()
                 ->sortBy(function ($d) {
                     $date = $d->rundown->date ?? '9999-12-31';

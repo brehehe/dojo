@@ -23,6 +23,10 @@ class NewRegistrationVerificationIndex extends Component
 
     public array $expanded = [];
 
+    public array $selectedRows = [];
+
+    public bool $selectAll = false;
+
     // Edit modal properties
     public ?int $editingAthleteId = null;
 
@@ -51,11 +55,74 @@ class NewRegistrationVerificationIndex extends Component
     public function updatedSearch(): void
     {
         $this->resetPage();
+        $this->selectedRows = [];
+        $this->selectAll = false;
     }
 
     public function updatedStatus(): void
     {
         $this->resetPage();
+        $this->selectedRows = [];
+        $this->selectAll = false;
+    }
+
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+        $this->selectedRows = [];
+        $this->selectAll = false;
+    }
+
+    public function updatedSelectAll($value): void
+    {
+        if ($value) {
+            $this->selectedRows = $this->getFilteredRegistrationsQuery()
+                ->pluck('id')
+                ->map(fn ($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selectedRows = [];
+        }
+    }
+
+    public function verifySelected(): void
+    {
+        if (empty($this->selectedRows)) {
+            return;
+        }
+
+        Registration::whereIn('id', $this->selectedRows)->update(['athlete_status' => 'verified']);
+
+        $count = count($this->selectedRows);
+        $this->selectedRows = [];
+        $this->selectAll = false;
+
+        $this->dispatch('swal', [
+            'title' => 'Terverifikasi!',
+            'text' => "Data atlet dari {$count} pendaftaran berhasil diverifikasi.",
+            'icon' => 'success',
+            'timer' => 3000,
+        ]);
+    }
+
+    public function unverifySelected(): void
+    {
+        if (empty($this->selectedRows)) {
+            return;
+        }
+
+        Registration::whereIn('id', $this->selectedRows)->update(['athlete_status' => 'pending']);
+
+        $count = count($this->selectedRows);
+        $this->selectedRows = [];
+        $this->selectAll = false;
+
+        $this->dispatch('swal', [
+            'title' => 'Unverified!',
+            'text' => "Data atlet dari {$count} pendaftaran diubah status menjadi pending.",
+            'icon' => 'warning',
+            'timer' => 3000,
+        ]);
     }
 
     /**
@@ -184,11 +251,9 @@ class NewRegistrationVerificationIndex extends Component
         ];
     }
 
-    public function render()
+    protected function getFilteredRegistrationsQuery()
     {
-        // We only verify athletes from verified payment registrations
-        $registrations = Registration::with(['contingent', 'athletes.matchNumbers', 'officials'])
-            ->where('status', 'verified')
+        return Registration::where('status', 'verified')
             ->when($this->search, function ($query) {
                 $query->where('referral_code', 'ilike', '%'.$this->search.'%')
                     ->orWhereHas('contingent', function ($q) {
@@ -197,7 +262,14 @@ class NewRegistrationVerificationIndex extends Component
             })
             ->when($this->status, function ($query) {
                 $query->where('athlete_status', $this->status);
-            })
+            });
+    }
+
+    public function render()
+    {
+        // We only verify athletes from verified payment registrations
+        $registrations = $this->getFilteredRegistrationsQuery()
+            ->with(['contingent', 'athletes.matchNumbers', 'officials'])
             ->latest()
             ->paginate($this->perPage);
 

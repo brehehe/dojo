@@ -128,27 +128,42 @@ class RefereeScoringDashboard extends Component
             $newAssignedCourt = Court::find($user->court_id);
             $newJudgeIndex = $user->judge_index;
 
-            // Resolve Acting Referee dynamically from Schedule
+            // Resolve Acting Referee dynamically from ActiveCourtReferee (manual override) or Schedule
             if ($newAssignedCourt && $newAssignedCourt->active_match_id) {
                 $newActiveMatch = $newAssignedCourt->activeMatch;
 
-                // Find rundown/session from current drawing
-                $activeDrawing = DrawingMatchNumber::where('match_number_id', $newAssignedCourt->active_match_id)
-                    ->where('court_id', $newAssignedCourt->id)
+                // Priority 1: Check ActiveCourtReferee (Manual override)
+                $activeAssignment = ActiveCourtReferee::where('court_id', $newAssignedCourt->id)
+                    ->where('judge_index', $newJudgeIndex)
                     ->first();
 
-                if ($activeDrawing) {
-                    $newAssignedSession = $activeDrawing->sessionTime;
-                    $newAssignedRundown = $activeDrawing->rundown;
+                if ($activeAssignment) {
+                    $this->referee = $activeAssignment->referee;
+                } else {
+                    // Priority 2: Fallback to Schedule (Auto detection)
+                    $activeDrawing = null;
+                    if ($newAssignedCourt->active_drawing_id) {
+                        $activeDrawing = DrawingMatchNumber::find($newAssignedCourt->active_drawing_id);
+                    }
+                    if (! $activeDrawing) {
+                        $activeDrawing = DrawingMatchNumber::where('match_number_id', $newAssignedCourt->active_match_id)
+                            ->where('court_id', $newAssignedCourt->id)
+                            ->first();
+                    }
 
-                    $schedule = ScheduleReferee::where('court_id', $newAssignedCourt->id)
-                        ->where('judge_index', $newJudgeIndex)
-                        ->where('rundown_id', $activeDrawing->rundown_id)
-                        ->where('session_time_id', $activeDrawing->session_time_id)
-                        ->first();
+                    if ($activeDrawing) {
+                        $newAssignedSession = $activeDrawing->sessionTime;
+                        $newAssignedRundown = $activeDrawing->rundown;
 
-                    if ($schedule) {
-                        $this->referee = $schedule->referee;
+                        $schedule = ScheduleReferee::where('court_id', $newAssignedCourt->id)
+                            ->where('judge_index', $newJudgeIndex)
+                            ->where('rundown_id', $activeDrawing->rundown_id)
+                            ->where('session_time_id', $activeDrawing->session_time_id)
+                            ->first();
+
+                        if ($schedule) {
+                            $this->referee = $schedule->referee;
+                        }
                     }
                 }
             }
@@ -173,8 +188,9 @@ class RefereeScoringDashboard extends Component
 
             // Priority 2: Fallback to Schedule (Auto detection)
             if (! $newActiveMatch) {
-                $mySchedules = ScheduleReferee::with(['court.activeMatch', 'sessionTime', 'rundown'])
+                $mySchedules = ScheduleReferee::with(['court.activeMatch', 'court.activeDrawing', 'sessionTime', 'rundown'])
                     ->where('referee_id', $this->referee->id)
+                    ->whereNotNull('court_id')
                     ->get();
 
                 foreach ($mySchedules as $schedule) {
@@ -183,14 +199,29 @@ class RefereeScoringDashboard extends Component
                     }
 
                     $court = $schedule->court;
-                    if ($court->active_match_id && $court->activeMatch) {
-                        $newActiveMatch = $court->activeMatch;
-                        $newAssignedCourt = $court;
-                        $newAssignedSession = $schedule->sessionTime;
-                        $newAssignedRundown = $schedule->rundown;
-                        $newJudgeIndex = $schedule->judge_index;
-                        break;
+                    if (! $court->active_match_id || ! $court->activeMatch) {
+                        continue;
                     }
+
+                    // Verify the court's active drawing belongs to this schedule's session/rundown.
+                    // This prevents picking the wrong session when a referee is assigned to the
+                    // same court (or multiple courts) across different sessions/rundowns.
+                    $activeDrawing = $court->activeDrawing;
+                    if ($activeDrawing) {
+                        $sessionMatch = $activeDrawing->session_time_id == $schedule->session_time_id
+                            && $activeDrawing->rundown_id == $schedule->rundown_id;
+
+                        if (! $sessionMatch) {
+                            continue;
+                        }
+                    }
+
+                    $newActiveMatch = $court->activeMatch;
+                    $newAssignedCourt = $court;
+                    $newAssignedSession = $schedule->sessionTime;
+                    $newAssignedRundown = $schedule->rundown;
+                    $newJudgeIndex = $schedule->judge_index;
+                    break;
                 }
             }
         }

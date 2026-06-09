@@ -555,6 +555,7 @@
                             <th colspan="5">PENILAIAN WASIT</th>
                             <th rowspan="2">NILAI AWAL<br><small>(3 nilai tengah)</small></th>
                             <th rowspan="2">DENDA</th>
+                            <th rowspan="2">DURASI</th>
                             <th rowspan="2">NILAI AKHIR</th>
                             @if ($currentRound === 'Final')
                                 <th rowspan="2">PENYISIHAN</th>
@@ -626,6 +627,12 @@
                                 <td style="color: {{ $denda > 0 ? 'var(--red)' : 'var(--smoke)' }}; font-weight: {{ $denda > 0 ? '700' : '500' }};">
                                     {{ $denda > 0 ? number_format($denda, 1) : '-' }}
                                 </td>
+                                @php
+                                    $waktu = $item['score']?->waktu;
+                                @endphp
+                                <td style="font-family:'DM Mono',monospace; font-size:0.88rem; color: {{ $waktu ? '#1e3a5f' : 'var(--smoke)' }}; font-weight: {{ $waktu ? '700' : '400' }};">
+                                    {{ $waktu ?? '-' }}
+                                </td>
                                 <td class="nilai-akhir-cell">{{ $item['nilai_akhir'] > 0 ? number_format($item['nilai_akhir'], 1) : '-' }}</td>
                                 @if ($currentRound === 'Final')
                                     <td style="font-weight: 600;">{{ isset($item['penyisihan_score']) && $item['penyisihan_score'] ? number_format($item['penyisihan_score']->nilai_akhir, 1) : '-' }}</td>
@@ -636,7 +643,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $currentRound === 'Final' ? 12 : 10 }}" style="padding:40px; color:var(--smoke); text-align:center;">Tidak ada data peserta</td>
+                                <td colspan="{{ $currentRound === 'Final' ? 13 : 11 }}" style="padding:40px; color:var(--smoke); text-align:center;">Tidak ada data peserta</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -659,6 +666,7 @@
                                 <th style="width: 120px;">PERINGKAT</th>
                                 <th style="width: 80px;">NO URUT</th>
                                 <th>NAMA REGU / KONTINGEN</th>
+                                <th style="width: 100px;">DURASI</th>
                                 <th style="width: 150px;">NILAI AKHIR</th>
                             </tr>
                         </thead>
@@ -702,11 +710,14 @@
                                             {{ $item['contingent']?->name ?? '-' }}
                                         </div>
                                     </td>
+                                    <td style="font-family:'DM Mono',monospace; font-size:0.9rem; font-weight:700; color:#1e3a5f;">
+                                        {{ $item['score']?->waktu ?? '-' }}
+                                    </td>
                                     <td><strong>{{ number_format(($currentRound === 'Final' ? $item['accumulated_score'] : $item['nilai_akhir']), 1) }}</strong></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" style="padding:20px; color:var(--smoke); text-align:center;">Tidak ada data</td>
+                                    <td colspan="5" style="padding:20px; color:var(--smoke); text-align:center;">Tidak ada data</td>
                                 </tr>
                             @endforelse
                         </tbody>

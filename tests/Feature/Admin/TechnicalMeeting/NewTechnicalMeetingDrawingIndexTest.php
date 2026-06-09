@@ -7,6 +7,7 @@ use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\MatchNumberMerge;
 use App\Models\Registration;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
@@ -240,7 +241,8 @@ it('generates all drawings scheduling preliminaries first then finals across cat
     // Generate all
     Livewire::actingAs($this->admin)
         ->test(NewTechnicalMeetingDrawingIndex::class)
-        ->call('generateAllDrawings')
+        ->call('generateAllDrawings', 'embu')
+        ->call('generateAllDrawings', 'randori')
         ->assertDispatched('swal');
 
     // Fetch all scheduled drawings
@@ -540,7 +542,8 @@ it('generates all drawings following the priority sequence and packs them compac
     // Run generateAllDrawings
     Livewire::actingAs($this->admin)
         ->test(NewTechnicalMeetingDrawingIndex::class)
-        ->call('generateAllDrawings')
+        ->call('generateAllDrawings', 'embu')
+        ->call('generateAllDrawings', 'randori')
         ->assertDispatched('swal');
 
     $embuPemulaTandokuPrelim = DrawingMatchNumber::where('match_number_id', $embuPemulaTandoku->id)->where('round', 'Penyisihan')->first();
@@ -556,17 +559,197 @@ it('generates all drawings following the priority sequence and packs them compac
     expect($embuRemajaATandokuPrelim->rundown_id)->toBe($day1->id);
 
     $embuPemulaTandokuFinal = DrawingMatchNumber::where('match_number_id', $embuPemulaTandoku->id)->where('round', 'Final')->first();
-    expect($embuPemulaTandokuFinal->metadata['start_time'])->toBe('09:40');
+    expect($embuPemulaTandokuFinal->metadata['start_time'])->toBe('09:20');
     expect($embuPemulaTandokuFinal->rundown_id)->toBe($day1->id);
 
     $embuPemulaPasanganFinal = DrawingMatchNumber::where('match_number_id', $embuPemulaPasangan->id)->where('round', 'Final')->first();
-    expect($embuPemulaPasanganFinal->metadata['start_time'])->toBe('10:20');
+    expect($embuPemulaPasanganFinal->metadata['start_time'])->toBe('10:00');
     expect($embuPemulaPasanganFinal->rundown_id)->toBe($day1->id);
 
     $embuRemajaATandokuFinal = DrawingMatchNumber::where('match_number_id', $embuRemajaATandoku->id)->where('round', 'Final')->first();
-    expect($embuRemajaATandokuFinal->metadata['start_time'])->toBe('11:00');
+    expect($embuRemajaATandokuFinal->metadata['start_time'])->toBe('10:40');
     expect($embuRemajaATandokuFinal->rundown_id)->toBe($day1->id);
 
-    $randoriDewasaPrelim = DrawingMatchNumber::where('match_number_id', $randoriDewasa->id)->where('round', 'like', 'Penyisihan%')->first();
-    expect($randoriDewasaPrelim->rundown_id)->toBe($day2->id); // Pushed to Day 2!
+    $randoriDewasaPrelims = DrawingMatchNumber::where('match_number_id', $randoriDewasa->id)
+        ->where('round', 'like', 'Penyisihan%')
+        ->orderBy('sequence_number')
+        ->get()
+        ->unique('sequence_number')
+        ->values();
+
+    expect($randoriDewasaPrelims[0]->rundown_id)->toBe($day1->id);
+    expect($randoriDewasaPrelims[0]->metadata['start_time'])->toBe('11:10');
+    expect($randoriDewasaPrelims[1]->rundown_id)->toBe($day1->id);
+    expect($randoriDewasaPrelims[1]->metadata['start_time'])->toBe('11:20');
+    expect($randoriDewasaPrelims[2]->rundown_id)->toBe($day1->id);
+    expect($randoriDewasaPrelims[2]->metadata['start_time'])->toBe('11:30');
+    expect($randoriDewasaPrelims[3]->rundown_id)->toBe($day1->id);
+    expect($randoriDewasaPrelims[3]->metadata['start_time'])->toBe('11:40');
+    expect($randoriDewasaPrelims[4]->rundown_id)->toBe($day1->id);
+    expect($randoriDewasaPrelims[4]->metadata['start_time'])->toBe('11:50');
+});
+
+it('schedules category matches across session break maximizing the first session', function () {
+    // 1. Setup Court, Rundown, and 2 Sessions (Sesi Pagi: 07:30 - 12:00, Sesi Sore: 13:00 - 17:30)
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+
+    $day1 = Rundown::create([
+        'name' => 'Hari 1',
+        'date' => '2026-06-15',
+        'type' => 'pertandingan',
+        'order' => 1,
+    ]);
+
+    $pagi = SessionTime::create([
+        'name' => 'Sesi Pagi',
+        'start_time' => '07:30:00',
+        'end_time' => '12:00:00',
+    ]);
+
+    $sore = SessionTime::create([
+        'name' => 'Sesi Sore',
+        'start_time' => '13:00:00',
+        'end_time' => '17:30:00',
+    ]);
+
+    // Create a match number (Randori)
+    $match = MatchNumber::create([
+        'name' => 'Randori Test Match 2',
+        'draft_type' => 'randori',
+        'gender' => 'L',
+        'order' => 1,
+        'age_group_id' => $this->ageGroup->id,
+    ]);
+
+    // Create a dummy MatchNumber for foreign key constraints
+    $dummyMatch = MatchNumber::create([
+        'name' => 'Dummy Embu',
+        'draft_type' => 'embu',
+        'gender' => 'L',
+        'order' => 99,
+        'age_group_id' => $this->ageGroup->id,
+    ]);
+
+    // Fill Sesi Pagi on Court 1 so only 30 mins are left before lunch break (12:00).
+    // Sesi Pagi starts at 07:30. Capacity is 270 minutes (27 slots).
+    // We occupy 24 slots (240 minutes) on Court 1: 07:30 to 11:30.
+    for ($i = 0; $i < 24; $i++) {
+        $start = Carbon::parse('07:30')->addMinutes($i * 10)->format('H:i');
+        $end = Carbon::parse('07:30')->addMinutes(($i + 1) * 10)->format('H:i');
+        DrawingMatchNumber::create([
+            'match_number_id' => $dummyMatch->id,
+            'court_id' => $court->id,
+            'rundown_id' => $day1->id,
+            'session_time_id' => $pagi->id,
+            'schedule_date' => $day1->date,
+            'round' => 'Penyisihan',
+            'sequence_number' => $i + 1,
+            'draft_type' => 'embu',
+            'metadata' => [
+                'start_time' => $start,
+                'end_time' => $end,
+                'duration' => 10,
+            ],
+        ]);
+    }
+
+    // Now, Court 1 Sesi Pagi has only 3 slots (30 minutes) left: 11:30 to 12:00.
+    // The rest break (lunch break) is 12:00 to 13:00.
+    // Sesi Sore starts at 13:00.
+    // We create a category needing 5 slots (50 minutes): 4 entries in double elimination = 5 matches of 10 minutes.
+    createMockRandoriEntries($match, 4);
+
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->set('filterMatchNumberId', $match->id)
+        ->call('generateRandoriDrawing')
+        ->assertDispatched('swal');
+
+    $drawings = DrawingMatchNumber::where('match_number_id', $match->id)
+        ->where('round', 'like', 'Penyisihan%')
+        ->orderBy('sequence_number')
+        ->get()
+        ->unique('sequence_number')
+        ->values();
+
+    // Verify it schedules the first 3 matches in Sesi Pagi (11:30 - 12:00)
+    expect($drawings[0]->session_time_id)->toBe($pagi->id);
+    expect($drawings[0]->metadata['start_time'])->toBe('11:30');
+    expect($drawings[1]->session_time_id)->toBe($pagi->id);
+    expect($drawings[1]->metadata['start_time'])->toBe('11:40');
+    expect($drawings[2]->session_time_id)->toBe($pagi->id);
+    expect($drawings[2]->metadata['start_time'])->toBe('11:50');
+
+    // Verify it schedules the remaining 2 matches in Sesi Sore starting at 13:00
+    expect($drawings[3]->session_time_id)->toBe($sore->id);
+    expect($drawings[3]->metadata['start_time'])->toBe('13:00');
+    expect($drawings[4]->session_time_id)->toBe($sore->id);
+    expect($drawings[4]->metadata['start_time'])->toBe('13:10');
+});
+
+it('generates drawing for merged groups in generateAllDrawings', function () {
+    // 1. Setup Court, Rundown, SessionTime
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create([
+        'name' => 'Hari 1',
+        'date' => '2026-06-08',
+        'type' => 'pertandingan',
+        'order' => 1,
+    ]);
+    $session = SessionTime::create([
+        'name' => 'Sesi Pagi',
+        'start_time' => '07:30:00',
+        'end_time' => '12:00:00',
+    ]);
+
+    // 2. Create a merge group
+    $merge = MatchNumberMerge::create([
+        'name' => 'Embu Pasangan Gabungan Test',
+        'age_group_id' => $this->ageGroup->id,
+        'type' => 'embu',
+    ]);
+
+    $mn1 = MatchNumber::create([
+        'name' => 'Embu Pasangan Putra Test',
+        'draft_type' => 'embu',
+        'max_athletes' => 2,
+        'order' => 1,
+        'age_group_id' => $this->ageGroup->id,
+    ]);
+
+    $mn2 = MatchNumber::create([
+        'name' => 'Embu Pasangan Putri Test',
+        'draft_type' => 'embu',
+        'max_athletes' => 2,
+        'order' => 2,
+        'age_group_id' => $this->ageGroup->id,
+    ]);
+
+    // Attach to merge group
+    $merge->matchNumbers()->attach([$mn1->id, $mn2->id]);
+
+    // 3. Add entries (6 athletes each -> 3 pairs each, total 6 entries)
+    createMockRandoriEntries($mn1, 6);
+    createMockRandoriEntries($mn2, 6);
+
+    // Verify they are not generated initially
+    expect($mn1->refresh()->drawing_generated_at)->toBeNull();
+    expect($mn2->refresh()->drawing_generated_at)->toBeNull();
+
+    // 4. Generate all Embu drawings
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->call('generateAllDrawings', 'embu')
+        ->assertDispatched('swal');
+
+    // 5. Assert database states
+    $mn1->refresh();
+    $mn2->refresh();
+
+    expect($mn1->drawing_generated_at)->not->toBeNull();
+    expect($mn2->drawing_generated_at)->not->toBeNull();
+
+    // The drawings should be successfully scheduled in the database
+    $drawings = DrawingMatchNumber::whereIn('match_number_id', [$mn1->id, $mn2->id])->get();
+    expect($drawings->count())->toBeGreaterThan(0);
 });

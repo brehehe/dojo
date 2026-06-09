@@ -505,7 +505,7 @@
     @endpush
 
     <div class="tm-page" x-data="{ round: 1 }">
-        <div style="position: fixed; bottom: 30px; right: 30px; z-index: 90;">
+        <div style="position: fixed; top: 30px; right: 30px; z-index: 90;">
             <button wire:click="clearAllCourts"
                 wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
                 class="btn-gen danger"
@@ -670,6 +670,7 @@
                             <th colspan="5">Nilai Wasit</th>
                             <th rowspan="2">Nilai Awal</th>
                             <th rowspan="2">Nilai Akhir</th>
+                            <th rowspan="2">Durasi</th>
                             @if ($currentRound === 'Final')
                                 <th rowspan="2">Penyisihan</th>
                                 <th rowspan="2">Akumulasi</th>
@@ -722,9 +723,9 @@
                                     }
                                 }
 
-                                $nilaiAwal = $s?->total_score > 0 ? $s->total_score : $calculatedTotal;
-                                $denda = $s?->denda ?? 0;
-                                $nilaiAkhir = $s?->nilai_akhir > 0 ? $s->nilai_akhir : max(0, $nilaiAwal - $denda);
+                                $nilaiAwal = $s ? $s->total_score : $calculatedTotal;
+                                $denda = $s ? $s->denda : 0;
+                                $nilaiAkhir = $s ? $s->nilai_akhir : max(0, $nilaiAwal - $denda);
                                 $isActive = isset($activeDrawingId) && $activeDrawingId == $item['drawing_id'];
                             @endphp
                             <tr style="{{ $isActive ? 'background:#fdfbf7;' : '' }}">
@@ -760,14 +761,19 @@
                                         @endif
                                     </td>
                                 @endforeach
-                                <td>{{ $nilaiAwal > 0 ? number_format($nilaiAwal, 1) : '-' }}</td>
+                                <td>{{ $s ? number_format($nilaiAwal, 1) : '-' }}</td>
                                 <td>
                                     <div class="score-final">
-                                        {{ $nilaiAkhir > 0 ? number_format($nilaiAkhir, 1) : '-' }}</div>
+                                        {{ $s ? number_format($nilaiAkhir, 1) : '-' }}</div>
                                     @if ($denda > 0)
                                         <div style="font-size:9px; color:var(--red); font-weight:700; margin-top:2px;">
                                             -{{ $denda }} Denda</div>
                                     @endif
+                                </td>
+                                <td>
+                                    <div style="font-weight:700; color:var(--ink);">
+                                        {{ $s && $s->waktu ? $s->waktu : '-' }}
+                                    </div>
                                 </td>
                                 @if ($currentRound === 'Final')
                                     <td>{{ isset($item['penyisihan_score']) && $item['penyisihan_score'] ? number_format($item['penyisihan_score']->nilai_akhir, 1) : '-' }}
@@ -779,7 +785,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" style="padding:40px; color:var(--smoke); text-align:center;">Tidak
+                                <td colspan="15" style="padding:40px; color:var(--smoke); text-align:center;">Tidak
                                     ada data peserta</td>
                             </tr>
                         @endforelse
@@ -792,10 +798,19 @@
         @if ($matchNumber->active_registration_id)
             @php
                 // Find the specific drawing that is active
-                $activeDrawing = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
-                    ->where('registration_id', $matchNumber->active_registration_id)
-                    ->where('round', $currentRound)
-                    ->first();
+                $activeDrawing = null;
+                if (isset($activeDrawingId)) {
+                    $activeDrawing = \App\Models\DrawingMatchNumber::find($activeDrawingId);
+                }
+                if (!$activeDrawing) {
+                    $activeDrawingQuery = \App\Models\DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+                        ->where('registration_id', $matchNumber->active_registration_id)
+                        ->where('round', $currentRound);
+                    if ($currentRound === 'Penyisihan' && $selectedPoolId) {
+                        $activeDrawingQuery->where('pool_id', $selectedPoolId);
+                    }
+                    $activeDrawing = $activeDrawingQuery->first();
+                }
 
                 $activeRegItem = $registrations->first(
                     fn($r) => $r['id'] == $matchNumber->active_registration_id &&
@@ -816,7 +831,7 @@
                     playedIntervals: new Set(),
                     interpolInterval: null,
                     syncInterval: null,
-                    registrationId: {{ $matchNumber->active_registration_id }},
+                    drawingId: {{ $activeDrawing?->id ?? 0 }},
                     formatTime() {
                         let t = Math.max(0, this.time);
                         let m = Math.floor(t / 60000);
@@ -839,6 +854,11 @@
                             if (!wasRunning || Math.abs(this.time - expected) > 1000) {
                                 this.time = expected;
                             }
+
+                            // Play buzzer when timer newly starts
+                            if (!wasRunning && (!state.elapsed_ms || state.elapsed_ms < 1000)) {
+                                window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
+                            }
                         } else if (state.status === 'countdown') {
                             this.running = false;
                             let remaining = state.countdown_end_ms - Date.now();
@@ -854,7 +874,7 @@
                         if (this.countdown > 0 && this.countdown !== oldCountdown) {
                             // Siap and countdown removed
                         }
-
+ 
                         if (!this.running && this.time < 500) {
                             this.playedIntervals.clear();
                         }
@@ -865,7 +885,7 @@
                             if (this.running) {
                                 this.time += 30;
                                 let currentSecond = Math.floor(this.time / 1000);
-                                let isTandoku = {{ (str_contains(strtolower($matchNumber->name), 'tandoku') || $matchNumber->max_athletes == 1) ? 'true' : 'false' }};
+                                let isTandoku = {{ ($activeRegItem['is_group'] ?? false) ? 'false' : 'true' }};
                                 let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
                 
                                 if (isTandoku) {
@@ -896,6 +916,9 @@
                     start() {
                         if (!this.running && this.countdown === 0) {
                             this.running = true;
+                            if (this.time < 1000) {
+                                window.playBuzzer ? window.playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
+                            }
                             $wire.startTimer();
                         }
                     },
@@ -913,7 +936,7 @@
                         this.running = false;
                         $wire.pauseTimer();
                         window.playBuzzerDouble ? window.playBuzzerDouble('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3') : null;
-                        $wire.finishMatch(this.registrationId, capturedTime);
+                        $wire.finishMatch(this.drawingId, capturedTime);
                     }
                 }">
                 <div class="tm-card-head"
@@ -949,7 +972,7 @@
                     </div>
                     <div
                         style="margin-top:12px; font-size:11px; color:var(--smoke); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">
-                        Target Waktu: {{ $activeRegItem['is_group'] ?? false ? '1:30 - 2:00' : '1:00 - 1:30' }}
+                        Target Waktu: {{ $activeRegItem['is_group'] ?? false ? '1:30 - 2:00' : '1:30' }}
                     </div>
                 </div>
             </div>

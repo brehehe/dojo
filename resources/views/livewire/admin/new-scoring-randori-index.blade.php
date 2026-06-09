@@ -474,7 +474,7 @@
 @endpush
 
 <div class="tm-page">
-    <div style="position: fixed; bottom: 30px; right: 30px; z-index: 90;">
+    <div style="position: fixed; top: 30px; right: 30px; z-index: 90;">
         <button wire:click="clearAllCourts"
             wire:confirm="PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?"
             class="btn-gen danger"

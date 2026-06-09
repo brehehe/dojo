@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Arbitrase\Scoring;
 
+use App\Models\Athlete;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
@@ -76,14 +77,11 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
     // ─── PANGGIL PESERTA ─────────────────────────────────────
 
-    public function callParticipant($registrationId)
+    public function callParticipant($drawingId)
     {
-        // Cari drawing yang SPESIFIK untuk registrasi ini di round yang aktif
+        // Cari drawing yang SPESIFIK untuk slot ini
         $drawing = DrawingMatchNumber::with(['court', 'pool', 'registration.contingent', 'registration.athletes'])
-            ->where('match_number_id', $this->matchNumber->id)
-            ->where('registration_id', $registrationId)
-            ->where('round', $this->currentRound)
-            ->first();
+            ->find($drawingId);
 
         if (! $drawing || ! $drawing->registration) {
             $this->dispatch('swal', [
@@ -94,6 +92,8 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
             return;
         }
+
+        $registrationId = $drawing->registration_id;
 
         // Update active_registration_id di match number (untuk referensi wasit)
         $this->matchNumber->update(['active_registration_id' => $registrationId]);
@@ -107,11 +107,17 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 'active_bracket_node' => null,
             ]);
 
-            // Announcement logic
-            $athletes = $this->matchNumber->athletes()
-                ->wherePivot('registration_id', $registrationId)
-                ->pluck('name')
-                ->implode(', ');
+            // Announcement logic - Use specific athletes from drawing metadata if possible
+            $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            if (! empty($metaAthleteIds)) {
+                $athletes = Athlete::whereIn('id', $metaAthleteIds)->pluck('name')->implode(', ');
+            } else {
+                $athletes = $this->matchNumber->athletes()
+                    ->wherePivot('registration_id', $registrationId)
+                    ->pluck('name')
+                    ->implode(', ');
+            }
+
             $contingent = $drawing->registration->contingent->name ?? '—';
             $matchName = $this->matchNumber->name;
             $courtName = $drawing->court->name;
@@ -154,26 +160,33 @@ class AdminArbitraseScoringEmbuDetail extends Component
         $this->showModal = true;
     }
 
-    public function applyTimerPenalty($timeMs)
+    public function applyTimerPenalty($timeMs, $registrationId = null)
     {
         $seconds = floor($timeMs / 1000);
         $denda = 0;
 
-        // Cek kategori dari atlet pertama
-        $firstAthlete = $this->matchNumber->athletes->first();
-        $isGroup = false;
-        if ($firstAthlete) {
-            $reg = Registration::find($firstAthlete->pivot->registration_id);
-            if ($reg) {
-                $isGroup = $reg->is_group;
+        $matchNumber = null;
+        if ($registrationId) {
+            $drawing = DrawingMatchNumber::where('match_number_id', $this->matchNumber->id)
+                ->where('registration_id', $registrationId)
+                ->where('round', $this->currentRound)
+                ->first();
+            if ($drawing) {
+                $matchNumber = $drawing->matchNumber;
             }
         }
 
+        if (! $matchNumber) {
+            $matchNumber = $this->matchNumber;
+        }
+
+        $isGroup = $matchNumber ? ($matchNumber->max_athletes > 1) : false;
+
         if ($isGroup) {
             // Beregu / Pasangan (Target 90s - 120s)
-            if ($seconds >= 75 && $seconds <= 89) {
+            if ($seconds >= 50 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 75) {
+            } elseif ($seconds < 50) {
                 $denda = 10;
             } elseif ($seconds >= 121 && $seconds <= 135) {
                 $denda = 5;
@@ -181,10 +194,10 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 $denda = 10;
             }
         } else {
-            // Single / Solo (Target 60s - 90s)
-            if ($seconds >= 50 && $seconds <= 59) {
+            // Single / Solo / Tandoku (Target 90s)
+            if ($seconds >= 76 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 50) {
+            } elseif ($seconds < 76) {
                 $denda = 10;
             } elseif ($seconds >= 91 && $seconds <= 100) {
                 $denda = 5;
@@ -204,8 +217,17 @@ class AdminArbitraseScoringEmbuDetail extends Component
         return $denda;
     }
 
-    public function finishMatch($registrationId, $timeMs = 0)
+    public function finishMatch($drawingId, $timeMs = 0)
     {
+        $drawing = DrawingMatchNumber::with('court')
+            ->find($drawingId);
+
+        if (! $drawing) {
+            return;
+        }
+
+        $registrationId = $drawing->registration_id;
+
         $courtId = $this->getCourtId();
         if ($courtId) {
             $state = [
@@ -218,7 +240,12 @@ class AdminArbitraseScoringEmbuDetail extends Component
         }
 
         // Apply Penalty automatically
-        $calculatedDenda = $this->applyTimerPenalty($timeMs);
+        $calculatedDenda = $this->applyTimerPenalty($timeMs, $registrationId);
+
+        $seconds = floor($timeMs / 1000);
+        $minutes = floor($seconds / 60);
+        $remainingSeconds = $seconds % 60;
+        $formattedTime = sprintf('%02d:%02d', $minutes, $remainingSeconds);
 
         // Save the penalty to the score model immediately
         $score = EmbuScore::firstOrCreate(
@@ -226,6 +253,7 @@ class AdminArbitraseScoringEmbuDetail extends Component
                 'match_number_id' => $this->matchNumber->id,
                 'registration_id' => $registrationId,
                 'round_label' => $this->currentRound,
+                'drawing_id' => $drawing->id,
             ],
             [
                 'judge_1' => 0,
@@ -240,19 +268,30 @@ class AdminArbitraseScoringEmbuDetail extends Component
         );
 
         $score->denda = $calculatedDenda;
-        $total = ($score->judge_1 + $score->judge_2 + $score->judge_3 + $score->judge_4 + $score->judge_5);
+        $score->waktu = $formattedTime;
+
+        // Sum middle 3 if fully scored (5 judges)
+        $judges = [
+            $score->judge_1,
+            $score->judge_2,
+            $score->judge_3,
+            $score->judge_4,
+            $score->judge_5,
+        ];
+        $scoredCount = count(array_filter($judges, fn ($v) => $v > 0));
+        if ($scoredCount === 5) {
+            sort($judges);
+            $total = $judges[1] + $judges[2] + $judges[3];
+        } else {
+            $total = array_sum($judges);
+        }
+
         $score->total_score = $total;
         $score->nilai_akhir = max(0, $total - $score->denda);
         $score->save();
 
         // Close call
         $this->matchNumber->update(['active_registration_id' => null]);
-
-        $drawing = DrawingMatchNumber::with('court')
-            ->where('match_number_id', $this->matchNumber->id)
-            ->where('registration_id', $registrationId)
-            ->where('round', $this->currentRound)
-            ->first();
 
         if ($drawing && $drawing->court_id) {
             $drawing->court->update([
@@ -548,70 +587,107 @@ class AdminArbitraseScoringEmbuDetail extends Component
         // Reload fresh
         $this->matchNumber->load(['athletes', 'embuScores', 'drawings.court', 'drawings.sessionTime', 'drawings.rundown', 'drawings.pool', 'ageGroup']);
 
-        // Group athletes by registration, but filter to valid registrations for current round
-        $drawingsQuery = DrawingMatchNumber::where('match_number_id', $this->matchNumber->id)
+        // Fetch all drawings for the current match number and round
+        $drawingsQuery = DrawingMatchNumber::with(['registration.contingent'])
+            ->where('match_number_id', $this->matchNumber->id)
             ->where('round', $this->currentRound);
 
-        // Jika current round = Final, jangan filter by pool_id karena final menggabungkan peserta
-        // Kecuali jika memang arsitekturnya Final dipisah per pool (jarang)
         if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
             $drawingsQuery->where('pool_id', $this->selectedPoolId);
         }
 
-        $drawingsList = $drawingsQuery->get()->keyBy('registration_id');
-        $validRegIds = $drawingsList->keys();
+        $drawingsList = $drawingsQuery->orderBy('sequence_number')->get();
 
-        $registrations = $this->matchNumber->athletes
-            ->filter(fn ($athlete) => $validRegIds->contains($athlete->pivot->registration_id))
-            ->groupBy('pivot.registration_id')
-            ->map(function ($athletes, $regId) use ($drawingsList) {
-                $registration = Registration::find($regId);
+        // Fetch all scores for this match in current round
+        $allScores = EmbuScore::where('match_number_id', $this->matchNumber->id)
+            ->where('round_label', $this->currentRound)
+            ->get();
 
-                // Get the latest score for the current round
-                $score = $this->matchNumber->embuScores
-                    ->where('registration_id', $regId)
-                    ->where('round_label', $this->currentRound)
+        $registrations = $drawingsList->map(function ($drawing) use ($allScores) {
+            $regId = $drawing->registration_id;
+            $matchId = $drawing->match_number_id;
+            $registration = $drawing->registration;
+
+            // Fetch athletes specific to THIS drawing entry to avoid duplication and mix-ups
+            $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
+
+            if (! empty($metaAthleteIds)) {
+                $athletes = Athlete::whereIn('id', $metaAthleteIds)->get();
+            } else {
+                // Fallback to old logic for legacy drawings
+                $athletes = Athlete::whereHas('matchNumbers', function ($q) use ($matchId, $regId) {
+                    $q->where('match_numbers.id', $matchId)
+                        ->where('athlete_match_number.registration_id', $regId);
+                })->get();
+            }
+
+            // Get the latest score for this specific drawing
+            $score = $allScores->where('registration_id', $regId)
+                ->where('match_number_id', $matchId)
+                ->where('drawing_id', $drawing->id)
+                ->sortByDesc('tiebreak_round')
+                ->first();
+
+            if (! $score) {
+                // Fallback for legacy scores or if drawing_id not yet filled
+                $score = $allScores->where('registration_id', $regId)
+                    ->where('match_number_id', $matchId)
+                    ->whereNull('drawing_id')
                     ->sortByDesc('tiebreak_round')
                     ->first();
+            }
 
-                // All score history for this reg in current round
-                $scoreHistory = $this->matchNumber->embuScores
-                    ->where('registration_id', $regId)
-                    ->where('round_label', $this->currentRound)
+            // All score history for this specific drawing
+            $scoreHistory = $allScores->where('registration_id', $regId)
+                ->where('match_number_id', $matchId)
+                ->where('drawing_id', $drawing->id)
+                ->sortBy('tiebreak_round')
+                ->values();
+
+            if ($scoreHistory->isEmpty()) {
+                $scoreHistory = $allScores->where('registration_id', $regId)
+                    ->where('match_number_id', $matchId)
+                    ->whereNull('drawing_id')
                     ->sortBy('tiebreak_round')
                     ->values();
+            }
 
-                $accumulatedScore = 0;
-                $penyisihanScore = null;
+            $accumulatedScore = 0;
+            $penyisihanScore = null;
 
-                if ($this->currentRound === 'Final') {
-                    $penyisihanScore = $this->matchNumber->embuScores
-                        ->where('registration_id', $regId)
-                        ->where('round_label', 'Penyisihan')
-                        ->sortByDesc('tiebreak_round')
-                        ->first();
+            if ($this->currentRound === 'Final') {
+                $penyisihanScore = EmbuScore::where('match_number_id', $this->matchNumber->id)
+                    ->where('registration_id', $regId)
+                    ->where('round_label', 'Penyisihan')
+                    ->orderByDesc('tiebreak_round')
+                    ->first();
 
-                    if ($penyisihanScore) {
-                        $accumulatedScore += $penyisihanScore->nilai_akhir;
-                    }
+                if ($penyisihanScore) {
+                    $accumulatedScore += $penyisihanScore->nilai_akhir;
                 }
+            }
 
-                if ($score) {
-                    $accumulatedScore += $score->nilai_akhir;
-                }
+            if ($score) {
+                $accumulatedScore += $score->nilai_akhir;
+            }
 
-                return [
-                    'id' => $regId,
-                    'is_group' => $registration?->is_group,
-                    'athletes' => $athletes,
-                    'contingent' => $registration?->contingent,
-                    'score' => $score,
-                    'score_history' => $scoreHistory,
-                    'penyisihan_score' => $penyisihanScore,
-                    'accumulated_score' => $accumulatedScore,
-                    'sequence_number' => $drawingsList[$regId]->sequence_number ?? 999,
-                ];
-            });
+            $isGroup = $drawing->matchNumber ? ($drawing->matchNumber->max_athletes > 1) : ($this->matchNumber->max_athletes > 1);
+
+            return [
+                'id' => $regId,
+                'drawing_id' => $drawing->id,
+                'match_number_id' => $matchId,
+                'match_name' => $drawing->matchNumber?->name ?? '—',
+                'is_group' => $isGroup,
+                'athletes' => $athletes->unique('id'),
+                'contingent' => $registration?->contingent,
+                'score' => $score,
+                'score_history' => $scoreHistory,
+                'penyisihan_score' => $penyisihanScore,
+                'accumulated_score' => $accumulatedScore,
+                'sequence_number' => $drawing->sequence_number ?? 999,
+            ];
+        });
 
         // Urutkan berdasarkan rank (jika sudah ada), jika belum gunakan sequence_number
         $registrations = $registrations->sort(function ($a, $b) {
@@ -643,11 +719,16 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
         $tiedIds = $this->detectTies();
 
+        $courtId = $this->getCourtId();
+        $court = $courtId ? Court::find($courtId) : null;
+        $activeDrawingId = $court?->active_drawing_id;
+
         return view('livewire.admin.arbitrase.scoring.admin-arbitrase-scoring-embu-detail', [
             'registrations' => $registrations,
             'firstDrawing' => $firstDrawing,
             'availablePools' => $availablePools,
             'tiedIds' => $tiedIds,
+            'activeDrawingId' => $activeDrawingId,
         ]);
     }
 

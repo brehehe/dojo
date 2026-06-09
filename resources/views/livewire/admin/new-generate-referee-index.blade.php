@@ -454,6 +454,12 @@
                     </div>
                 </div>
 
+                @error('referees')
+                    <div style="padding: 10px 24px; background-color: #fee2e2; color: #b91c1c; font-size: 12.5px; font-weight: 600; border-bottom: 1px solid #fca5a5;">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i> {{ $message }}
+                    </div>
+                @enderror
+
                 <div class="referee-grid-a custom-scrollbar">
                     @forelse($allReferees as $ref)
                         <div wire:click="toggleReferee('{{ $ref->id }}')"

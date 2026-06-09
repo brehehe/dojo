@@ -740,7 +740,7 @@
                     <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings">
                         <i class="fa-solid fa-magic" wire:loading.remove wire:target="generateAllDrawings"></i>
                         <i class="fa-solid fa-spinner fa-spin" wire:loading wire:target="generateAllDrawings"></i>
-                        Generate Semua
+                        Generate Semua {{ ucfirst($draftType) }}
                     </button>
                     <button class="btn-gen ghost" onclick="confirmResetAll()" wire:loading.attr="disabled">
                         <i class="fa-solid fa-rotate-left"></i> Reset Semua
@@ -938,6 +938,14 @@
                                                                     <div style="font-weight: 700;">
                                                                         {{ $entries[0]->merge->name ?? $entries[0]->matchNumber->name }}
                                                                     </div>
+                                                                    @php
+                                                                        $ageGroupName = $entries[0]->merge->ageGroup->name ?? $entries[0]->matchNumber->ageGroup->name ?? null;
+                                                                    @endphp
+                                                                    @if($ageGroupName)
+                                                                        <div style="font-size: 10px; color: var(--smoke); margin-top: 1px; font-weight: 500;">
+                                                                            Kelas: {{ $ageGroupName }}
+                                                                        </div>
+                                                                    @endif
 
                                                                     @if ($entries[0]->draft_type === 'randori')
                                                                         @php
