@@ -126,10 +126,11 @@
 
     /* MODAL */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-    .modal-card { background: #fff; border-radius: 16px; width: 100%; max-width: 580px; border: 1px solid var(--paper2); box-shadow: 0 20px 50px rgba(0,0,0,.15); overflow: hidden; animation: slideUp .25s ease-out; }
+    .modal-card { background: #fff; border-radius: 16px; width: calc(100% - 32px); max-width: 580px; border: 1px solid var(--paper2); box-shadow: 0 20px 50px rgba(0,0,0,.15); overflow: hidden; animation: slideUp .25s ease-out; box-sizing: border-box; }
     .modal-header { padding: 16px 20px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: space-between; }
     .modal-header h3 { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; margin: 0; color: var(--gold-lt); }
-    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-height: 480px; overflow-y: auto; }
+    .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-height: 480px; overflow-y: auto; overflow-x: hidden; }
+    .modal-body select, .modal-body input { max-width: 100%; width: 100%; box-sizing: border-box; }
     .modal-footer { padding: 14px 20px; background: var(--paper); border-top: 1px solid var(--paper2); display: flex; justify-content: flex-end; gap: 8px; }
 
     .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -148,9 +149,53 @@
 
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+    .act-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--paper2); background: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--ink); font-size: 12px; cursor: pointer;
+      transition: all .15s;
+    }
+    .act-btn:hover:not(:disabled) { background: var(--paper2); color: var(--ink); }
+    .act-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 1100px) { .det-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+        .match-table, .match-table thead, .match-table tbody, .match-table th, .match-table td, .match-table tr {
+            display: block;
+        }
+        .match-table thead {
+            display: none;
+        }
+        .match-table tr {
+            border-bottom: 2px solid var(--paper2);
+            padding: 8px 0;
+        }
+        .match-table td {
+            border-bottom: none;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+        }
+        .match-table td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            color: var(--smoke);
+            font-size: 10px;
+            text-transform: uppercase;
+            float: left;
+            margin-right: 15px;
+        }
+    }
     @media (max-width: 640px)  { .det-page { padding: 14px; } }
+    @media (max-width: 600px) {
+        .modal-card { width: 95%; margin: 10px; max-height: 90vh; }
+        .modal-body { grid-template-columns: 1fr; }
+        .form-group.span-2 { grid-column: span 1; }
+    }
     </style>
     @endpush
 
@@ -425,13 +470,13 @@
                                         @if(($data['max_athletes'] ?? 2) == 1)
                                             @foreach($data['athletes'] as $i => $athData)
                                             <tr>
-                                                <td>{{ $i + 1 }}</td>
-                                                <td>
+                                                <td data-label="#">{{ $i + 1 }}</td>
+                                                <td data-label="Nama Atlet">
                                                     <div style="font-weight:600;">{{ $athData['model']->name }}</div>
                                                     <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athData['model']->nik }}</div>
                                                 </td>
-                                                <td>{{ $athData['model']->pivot->rank ?? '-' }}</td>
-                                                <td>
+                                                <td data-label="Tingkat">{{ $athData['model']->pivot->rank ?? '-' }}</td>
+                                                <td data-label="Komposisi / Teknik">
                                                     @forelse($athData['techniques'] as $tIdx => $tId)
                                                         <div>{{ $tIdx + 1 }}. {{ $allTechniques[$tId] ?? '-' }}</div>
                                                     @empty
@@ -439,7 +484,7 @@
                                                     @endforelse
                                                 </td>
                                                 @if(($data['details']->draft_type ?? '') == 'randori')
-                                                <td>{{ rtrim(rtrim(number_format($athData['model']->pivot->weight, 2, '.', ''), '0'), '.') }}</td>
+                                                <td data-label="BB (kg)">{{ rtrim(rtrim(number_format($athData['model']->pivot->weight, 2, '.', ''), '0'), '.') }}</td>
                                                 @endif
                                             </tr>
                                             @endforeach
@@ -451,21 +496,21 @@
                                             @endphp
                                             @for($i = 0; $i < $rowCount; $i++)
                                             <tr>
-                                                <td>{{ $i < count($athletes) ? $i + 1 : '' }}</td>
-                                                <td>
+                                                <td data-label="#">{{ $i < count($athletes) ? $i + 1 : '' }}</td>
+                                                <td data-label="Nama Atlet">
                                                     @if(isset($athletes[$i]))
                                                     <div style="font-weight:600;">{{ $athletes[$i]['model']->name }}</div>
                                                     <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athletes[$i]['model']->nik }}</div>
                                                     @endif
                                                 </td>
-                                                <td>{{ isset($athletes[$i]) ? ($athletes[$i]['model']->pivot->rank ?? '-') : '' }}</td>
-                                                <td>
+                                                <td data-label="Tingkat">{{ isset($athletes[$i]) ? ($athletes[$i]['model']->pivot->rank ?? '-') : '' }}</td>
+                                                <td data-label="Komposisi / Teknik">
                                                     @if(isset($techniques[$i]))
                                                         {{ $i + 1 }}. {{ $allTechniques[$techniques[$i]] ?? '-' }}
                                                     @endif
                                                 </td>
                                                 @if(($data['details']->draft_type ?? '') == 'randori')
-                                                <td>{{ isset($athletes[$i]) ? rtrim(rtrim(number_format($athletes[$i]['model']->pivot->weight, 2, '.', ''), '0'), '.') : '' }}</td>
+                                                <td data-label="BB (kg)">{{ isset($athletes[$i]) ? rtrim(rtrim(number_format($athletes[$i]['model']->pivot->weight, 2, '.', ''), '0'), '.') : '' }}</td>
                                                 @endif
                                             </tr>
                                             @endfor
@@ -604,7 +649,7 @@
     {{-- EDIT MODAL FOR TECHNIQUES --}}
     @if($editingMatchNumberId)
     <div class="modal-overlay">
-        <div class="modal-card">
+        <div class="modal-card" style="max-width: 480px;">
             <div class="modal-header">
                 <h3>Edit Komposisi Teknik</h3>
                 <button wire:click="$set('editingMatchNumberId', null)" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;">&times;</button>
@@ -612,14 +657,14 @@
             <div class="modal-body" style="grid-template-columns: 1fr; gap: 12px;">
                 <div class="form-group" style="border-bottom:1px solid var(--paper2);padding-bottom:10px;margin-bottom:10px;">
                     <label>Tambah Teknik Baru</label>
-                    <div style="display:flex; gap:8px; margin-top:4px;">
-                        <select wire:model="newTechniqueId" style="flex:1; padding: 8px; border: 1px solid var(--paper2); border-radius: 8px; background: #fff; color: var(--ink);">
+                    <div style="display:flex; gap:8px; margin-top:4px; overflow: hidden;">
+                        <select wire:model="newTechniqueId" style="width: 0; flex: 1; padding: 8px; border: 1px solid var(--paper2); border-radius: 8px; background: #fff; color: var(--ink); box-sizing: border-box;">
                             <option value="">-- Pilih Teknik --</option>
                             @foreach($allTechniques as $id => $name)
                                 <option value="{{ $id }}">{{ $name }}</option>
                             @endforeach
                         </select>
-                        <button type="button" wire:click="addTechnique" class="btn-prem primary" style="padding:0 18px; height: 38px;">Tambah</button>
+                        <button type="button" wire:click="addTechnique" class="btn-prem primary" style="padding:0 18px; height: 38px; flex-shrink: 0;">Tambah</button>
                     </div>
                 </div>
 
@@ -627,21 +672,21 @@
                     <label>Urutan Komposisi Teknik</label>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
                         @forelse($selectedTechniqueIds as $tIdx => $tId)
-                        <div style="display:flex; align-items:center; justify-content:space-between; background:var(--paper); padding:8px 12px; border-radius:8px; border:1px solid var(--paper2);" wire:key="tech-item-{{ $tIdx }}">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="width:20px; height:20px; border-radius:50%; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--paper); padding:8px 10px; border-radius:8px; border:1px solid var(--paper2);" wire:key="tech-item-{{ $tIdx }}">
+                            <div style="display:flex; align-items:center; gap:8px; min-width: 0; flex: 1;">
+                                <div style="width:20px; height:20px; border-radius:50%; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; flex-shrink: 0;">
                                     {{ $tIdx + 1 }}
                                 </div>
-                                <span style="font-size:13px; font-weight:600;">{{ $allTechniques[$tId] ?? '-' }}</span>
+                                <span style="font-size:13px; font-weight:600; white-space: normal; word-break: break-word; min-width: 0;">{{ $allTechniques[$tId] ?? '-' }}</span>
                             </div>
-                            <div style="display:flex; gap:4px;">
-                                <button type="button" wire:click="moveTechniqueUp({{ $tIdx }})" class="act-btn" @if($tIdx == 0) disabled style="opacity:0.3; cursor:default;" @endif>
+                            <div style="display:flex; gap:4px; flex-shrink: 0;">
+                                <button type="button" wire:click="moveTechniqueUp({{ $tIdx }})" style="width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--paper2); background: #fff; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); font-size: 11px; cursor: pointer; opacity: {{ $tIdx == 0 ? '0.3' : '1' }};" @if($tIdx == 0) disabled @endif>
                                     <i class="fa-solid fa-arrow-up"></i>
                                 </button>
-                                <button type="button" wire:click="moveTechniqueDown({{ $tIdx }})" class="act-btn" @if($tIdx == count($selectedTechniqueIds) - 1) disabled style="opacity:0.3; cursor:default;" @endif>
+                                <button type="button" wire:click="moveTechniqueDown({{ $tIdx }})" style="width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--paper2); background: #fff; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); font-size: 11px; cursor: pointer; opacity: {{ $tIdx == count($selectedTechniqueIds) - 1 ? '0.3' : '1' }};" @if($tIdx == count($selectedTechniqueIds) - 1) disabled @endif>
                                     <i class="fa-solid fa-arrow-down"></i>
                                 </button>
-                                <button type="button" wire:click="removeTechnique({{ $tIdx }})" class="act-btn" style="color:var(--red); border-color:rgba(192,57,43,0.2);">
+                                <button type="button" wire:click="removeTechnique({{ $tIdx }})" style="width: 30px; height: 30px; border-radius: 6px; border: 1px solid rgba(192,57,43,0.2); background: #fff; display: inline-flex; align-items: center; justify-content: center; color: var(--red); font-size: 11px; cursor: pointer;">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>

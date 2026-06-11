@@ -677,6 +677,12 @@
                     max-height: none;
                 }
             }
+
+            @keyframes progressPulse {
+                0% { opacity: 1; }
+                50% { opacity: .45; }
+                100% { opacity: 1; }
+            }
         </style>
     @endpush
 
@@ -737,17 +743,47 @@
                         <i class="fa-solid fa-file-excel"></i> Export Excel
                     </button>
                 @else
-                    <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings">
+                    <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings" @if($isGenerating) disabled @endif>
                         <i class="fa-solid fa-magic" wire:loading.remove wire:target="generateAllDrawings"></i>
                         <i class="fa-solid fa-spinner fa-spin" wire:loading wire:target="generateAllDrawings"></i>
                         Generate Semua {{ ucfirst($draftType) }}
                     </button>
-                    <button class="btn-gen ghost" onclick="confirmResetAll()" wire:loading.attr="disabled">
+                    <button class="btn-gen ghost" onclick="confirmResetAll()" wire:loading.attr="disabled" @if($isGenerating) disabled @endif>
                         <i class="fa-solid fa-rotate-left"></i> Reset Semua
                     </button>
                 @endif
             </div>
         </div>
+
+        {{-- GENERATE PROGRESS OVERLAY --}}
+        @if($isGenerating)
+        <div style="position:fixed; inset:0; background:rgba(15,12,36,.75); z-index:9000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);" wire:poll.500ms>
+            <div style="background:#fff; border-radius:20px; padding:36px 40px; max-width:480px; width:calc(100% - 48px); box-shadow:0 24px 60px rgba(0,0,0,.25); text-align:center;">
+                <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--ink)); display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                    <i class="fa-solid fa-cog fa-spin" style="color:#fff; font-size:24px;"></i>
+                </div>
+                <h3 style="font-family:'Cinzel',serif; font-size:16px; font-weight:800; color:var(--ink); margin:0 0 6px;">Sedang Generate...</h3>
+                <p style="font-size:12.5px; color:var(--smoke); margin:0 0 20px; min-height:18px;">{{ $generateCurrentLabel ?: 'Mempersiapkan data...' }}</p>
+
+                @if($generateTotal > 0)
+                @php
+                    $pct = min(100, (int) round($generateProgress / $generateTotal * 100));
+                @endphp
+                <div style="background:var(--paper); border-radius:100px; height:10px; overflow:hidden; margin-bottom:8px;">
+                    <div style="height:100%; width:{{ $pct }}%; background:linear-gradient(90deg,var(--gold),var(--ink)); border-radius:100px; transition:width .4s ease;"></div>
+                </div>
+                <div style="font-size:11.5px; color:var(--smoke);">{{ $generateProgress }} / {{ $generateTotal }} — {{ $pct }}%</div>
+                @else
+                <div style="background:var(--paper); border-radius:100px; height:10px; overflow:hidden; margin-bottom:8px;">
+                    <div style="height:100%; width:100%; background:linear-gradient(90deg,var(--gold),var(--ink)); border-radius:100px; animation:progressPulse 1.5s ease-in-out infinite;"></div>
+                </div>
+                <div style="font-size:11.5px; color:var(--smoke);">Memuat data awal...</div>
+                @endif
+
+                <p style="font-size:11px; color:var(--smoke); margin:16px 0 0; opacity:.7;">Jangan tutup halaman ini. Proses berjalan di server.</p>
+            </div>
+        </div>
+        @endif
 
         {{-- STATS --}}
         <div class="tm-stats">

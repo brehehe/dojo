@@ -313,66 +313,122 @@ class RefereeScoringDashboard extends Component
         $this->activeAthleteNames = [];
         $this->activeIsTeamCategory = false;
 
-        if (! $this->activeMatch?->active_registration_id) {
+        if (! $this->activeMatch) {
             return;
         }
 
-        $registration = Registration::with([
-            'contingent',
-            'athletes.matchNumbers' => fn ($query) => $query
-                ->whereIn('match_numbers.id', $this->matchNumberIds)
-                ->wherePivot('registration_id', $this->activeMatch->active_registration_id),
-        ])->find($this->activeMatch->active_registration_id);
+        if ($this->activeMatch->draft_type === 'embu') {
+            if (! $this->activeMatch->active_registration_id) {
+                return;
+            }
 
-        if (! $registration) {
-            return;
-        }
+            $registration = Registration::with([
+                'contingent',
+                'athletes.matchNumbers' => fn ($query) => $query
+                    ->whereIn('match_numbers.id', $this->matchNumberIds)
+                    ->wherePivot('registration_id', $this->activeMatch->active_registration_id),
+            ])->find($this->activeMatch->active_registration_id);
 
-        $this->activeContingentName = $registration->contingent?->name ?? '-';
-        $activeAthletes = $registration->athletes
-            ->filter(fn ($athlete) => $athlete->matchNumbers->isNotEmpty())
-            ->values();
+            if (! $registration) {
+                return;
+            }
 
-        $this->activeAthleteNames = $activeAthletes
-            ->pluck('name')
-            ->filter()
-            ->values()
-            ->all();
-        $this->activeIsTeamCategory = count($this->activeAthleteNames) > 2;
+            $this->activeContingentName = $registration->contingent?->name ?? '-';
+            $activeAthletes = $registration->athletes
+                ->filter(fn ($athlete) => $athlete->matchNumbers->isNotEmpty())
+                ->values();
 
-        $selectedTechniqueIds = $activeAthletes
-            ->flatMap(fn ($athlete) => $athlete->matchNumbers->pluck('pivot.technique_ids'))
-            ->filter()
-            ->first();
+            $this->activeAthleteNames = $activeAthletes
+                ->pluck('name')
+                ->filter()
+                ->values()
+                ->all();
+            $this->activeIsTeamCategory = count($this->activeAthleteNames) > 2;
 
-        if (! $selectedTechniqueIds) {
-            return;
-        }
+            $selectedTechniqueIds = $activeAthletes
+                ->flatMap(fn ($athlete) => $athlete->matchNumbers->pluck('pivot.technique_ids'))
+                ->filter()
+                ->first();
 
-        $decodedTechniqueIds = json_decode($selectedTechniqueIds, true);
+            if (! $selectedTechniqueIds) {
+                return;
+            }
 
-        $techniqueIds = collect(is_array($decodedTechniqueIds) ? $decodedTechniqueIds : explode(',', (string) $selectedTechniqueIds))
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->values();
+            $decodedTechniqueIds = json_decode($selectedTechniqueIds, true);
 
-        if ($techniqueIds->isEmpty()) {
-            return;
-        }
+            $techniqueIds = collect(is_array($decodedTechniqueIds) ? $decodedTechniqueIds : explode(',', (string) $selectedTechniqueIds))
+                ->map(fn ($id) => (int) $id)
+                ->filter()
+                ->values();
 
-        $techniqueNames = Technique::whereIn('id', $techniqueIds)
-            ->get()
-            ->keyBy('id');
+            if ($techniqueIds->isEmpty()) {
+                return;
+            }
 
-        $selectedTechniqueNames = $techniqueIds
-            ->map(fn ($id) => $techniqueNames->get($id)?->name)
-            ->filter()
-            ->values()
-            ->all();
+            $techniqueNames = Technique::whereIn('id', $techniqueIds)
+                ->get()
+                ->keyBy('id');
 
-        if ($selectedTechniqueNames !== []) {
-            $this->activeTechniqueLabel = implode(', ', $selectedTechniqueNames);
-            $this->activeTechniqueList = $selectedTechniqueNames;
+            $selectedTechniqueNames = $techniqueIds
+                ->map(fn ($id) => $techniqueNames->get($id)?->name)
+                ->filter()
+                ->values()
+                ->all();
+
+            if ($selectedTechniqueNames !== []) {
+                $this->activeTechniqueLabel = implode(', ', $selectedTechniqueNames);
+                $this->activeTechniqueList = $selectedTechniqueNames;
+            }
+        } else {
+            // Randori Match
+            $bracketNode = $this->activeMatch->active_bracket_node;
+            if (! $bracketNode) {
+                return;
+            }
+
+            $parts = explode('_', $bracketNode);
+            $bracket = $parts[0] ?? null;
+            $roundIdx = isset($parts[1]) ? (int) $parts[1] : 0;
+            $matchIdx = isset($parts[2]) ? (int) $parts[2] : 0;
+
+            $drawingData = $this->activeMatch->drawing_data ?? [];
+            if (is_string($drawingData)) {
+                $drawingData = json_decode($drawingData, true);
+            }
+
+            $targetBracket = $bracket === 'ub' ? 'upper_bracket' : ($bracket === 'lb' ? 'lower_bracket' : 'grand_final');
+            if ($targetBracket === 'grand_final') {
+                $matchInfo = $drawingData['grand_final'] ?? null;
+            } else {
+                $matchInfo = $drawingData[$targetBracket]['rounds'][$roundIdx][$matchIdx] ?? null;
+            }
+
+            if ($matchInfo) {
+                $akaName = $matchInfo['athlete1']['name'] ?? null;
+                $akaContingent = $matchInfo['athlete1']['contingent'] ?? null;
+                $shiroName = $matchInfo['athlete2']['name'] ?? null;
+                $shiroContingent = $matchInfo['athlete2']['contingent'] ?? null;
+
+                $names = [];
+                $contingents = [];
+                if ($akaName && $akaName !== 'BYE') {
+                    $names[] = $akaName.' (Merah)';
+                    if ($akaContingent) {
+                        $contingents[] = $akaContingent;
+                    }
+                }
+                if ($shiroName && $shiroName !== 'BYE') {
+                    $names[] = $shiroName.' (Putih)';
+                    if ($shiroContingent) {
+                        $contingents[] = $shiroContingent;
+                    }
+                }
+
+                $this->activeAthleteNames = $names;
+                if ($contingents !== []) {
+                    $this->activeContingentName = implode(' vs ', array_unique($contingents));
+                }
+            }
         }
     }
 

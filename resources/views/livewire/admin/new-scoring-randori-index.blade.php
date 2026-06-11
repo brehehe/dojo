@@ -930,24 +930,27 @@
                                     if (!this.canvas || this.canvas.offsetWidth === 0) return;
                                     const temp = this.canvas.toDataURL();
                                     const rect = this.canvas.getBoundingClientRect();
-                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    const dpr = window.devicePixelRatio || 1;
+                                    this.canvas.width = rect.width * dpr;
+                                    this.canvas.height = rect.height * dpr;
                                     this.ctx.strokeStyle = '#000000';
-                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineWidth = 2.5 * dpr;
                                     this.ctx.lineCap = 'round';
                                     this.ctx.lineJoin = 'round';
                                     if (temp && temp !== 'data:,') {
                                         const img = new Image();
-                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height); };
                                         img.src = temp;
                                     }
                                 },
                                 getMousePos(e) {
                                     const rect = this.canvas.getBoundingClientRect();
-                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                                    const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
+                                    return {
+                                        x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                        y: (clientY - rect.top) * (this.canvas.height / rect.height)
+                                    };
                                 },
                                 startDrawing(e) {
                                     this.isDrawing = true;
@@ -985,9 +988,8 @@
                                 loadSignature(dataUrl) {
                                     const img = new Image();
                                     img.onload = () => {
-                                        const rect = this.canvas.getBoundingClientRect();
-                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                     };
                                     img.src = dataUrl;
                                 }
@@ -998,7 +1000,7 @@
                                         <i class="fas fa-eraser"></i> Hapus
                                     </button>
                                 </div>
-                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 160px;" wire:ignore>
                                     <canvas x-ref="canvas" 
                                             class="absolute inset-0 w-full h-full cursor-crosshair"
                                             @mousedown="startDrawing($event)"
@@ -1042,24 +1044,27 @@
                                     if (!this.canvas || this.canvas.offsetWidth === 0) return;
                                     const temp = this.canvas.toDataURL();
                                     const rect = this.canvas.getBoundingClientRect();
-                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    const dpr = window.devicePixelRatio || 1;
+                                    this.canvas.width = rect.width * dpr;
+                                    this.canvas.height = rect.height * dpr;
                                     this.ctx.strokeStyle = '#000000';
-                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineWidth = 2.5 * dpr;
                                     this.ctx.lineCap = 'round';
                                     this.ctx.lineJoin = 'round';
                                     if (temp && temp !== 'data:,') {
                                         const img = new Image();
-                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height); };
                                         img.src = temp;
                                     }
                                 },
                                 getMousePos(e) {
                                     const rect = this.canvas.getBoundingClientRect();
-                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                                    const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
+                                    return {
+                                        x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                        y: (clientY - rect.top) * (this.canvas.height / rect.height)
+                                    };
                                 },
                                 startDrawing(e) {
                                     this.isDrawing = true;
@@ -1097,9 +1102,8 @@
                                 loadSignature(dataUrl) {
                                     const img = new Image();
                                     img.onload = () => {
-                                        const rect = this.canvas.getBoundingClientRect();
-                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                     };
                                     img.src = dataUrl;
                                 }
@@ -1110,7 +1114,7 @@
                                         <i class="fas fa-eraser"></i> Hapus
                                     </button>
                                 </div>
-                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 160px;" wire:ignore>
                                     <canvas x-ref="canvas" 
                                             class="absolute inset-0 w-full h-full cursor-crosshair"
                                             @mousedown="startDrawing($event)"
@@ -1159,24 +1163,27 @@
                                     if (!this.canvas || this.canvas.offsetWidth === 0) return;
                                     const temp = this.canvas.toDataURL();
                                     const rect = this.canvas.getBoundingClientRect();
-                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    const dpr = window.devicePixelRatio || 1;
+                                    this.canvas.width = rect.width * dpr;
+                                    this.canvas.height = rect.height * dpr;
                                     this.ctx.strokeStyle = '#000000';
-                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineWidth = 2.5 * dpr;
                                     this.ctx.lineCap = 'round';
                                     this.ctx.lineJoin = 'round';
                                     if (temp && temp !== 'data:,') {
                                         const img = new Image();
-                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height); };
                                         img.src = temp;
                                     }
                                 },
                                 getMousePos(e) {
                                     const rect = this.canvas.getBoundingClientRect();
-                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                                    const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
+                                    return {
+                                        x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                        y: (clientY - rect.top) * (this.canvas.height / rect.height)
+                                    };
                                 },
                                 startDrawing(e) {
                                     this.isDrawing = true;
@@ -1214,9 +1221,8 @@
                                 loadSignature(dataUrl) {
                                     const img = new Image();
                                     img.onload = () => {
-                                        const rect = this.canvas.getBoundingClientRect();
-                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                     };
                                     img.src = dataUrl;
                                 }
@@ -1227,7 +1233,7 @@
                                         <i class="fas fa-eraser"></i> Hapus
                                     </button>
                                 </div>
-                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 160px;" wire:ignore>
                                     <canvas x-ref="canvas" 
                                             class="absolute inset-0 w-full h-full cursor-crosshair"
                                             @mousedown="startDrawing($event)"
@@ -1293,24 +1299,27 @@
                                             if (!this.canvas || this.canvas.offsetWidth === 0) return;
                                             const temp = this.canvas.toDataURL();
                                             const rect = this.canvas.getBoundingClientRect();
-                                            this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                                            this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                                            this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                            const dpr = window.devicePixelRatio || 1;
+                                            this.canvas.width = rect.width * dpr;
+                                            this.canvas.height = rect.height * dpr;
                                             this.ctx.strokeStyle = '#000000';
-                                            this.ctx.lineWidth = 2.5;
+                                            this.ctx.lineWidth = 2.5 * dpr;
                                             this.ctx.lineCap = 'round';
                                             this.ctx.lineJoin = 'round';
                                             if (temp && temp !== 'data:,') {
                                                 const img = new Image();
-                                                img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                                img.onload = () => { this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height); };
                                                 img.src = temp;
                                             }
                                         },
                                         getMousePos(e) {
                                             const rect = this.canvas.getBoundingClientRect();
-                                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                            return { x: clientX - rect.left, y: clientY - rect.top };
+                                            const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                                            const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
+                                            return {
+                                                x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                                y: (clientY - rect.top) * (this.canvas.height / rect.height)
+                                            };
                                         },
                                         startDrawing(e) {
                                             this.isDrawing = true;
@@ -1355,9 +1364,8 @@
                                         loadSignature(dataUrl) {
                                             const img = new Image();
                                             img.onload = () => {
-                                                const rect = this.canvas.getBoundingClientRect();
-                                                this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                                this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                                this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                             };
                                             img.src = dataUrl;
                                         }
@@ -1368,7 +1376,7 @@
                                                 <i class="fas fa-eraser"></i> Hapus
                                             </button>
                                         </div>
-                                        <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 190px;" wire:ignore>
+                                        <div class="border border-dashed border-slate-300 rounded-b-lg bg-white relative overflow-hidden" style="height: 160px;" wire:ignore>
                                             <canvas x-ref="canvas" 
                                                     class="absolute inset-0 w-full h-full cursor-crosshair"
                                                     @mousedown="startDrawing($event)"
@@ -1417,24 +1425,27 @@
                                     if (!this.canvas || this.canvas.offsetWidth === 0) return;
                                     const temp = this.canvas.toDataURL();
                                     const rect = this.canvas.getBoundingClientRect();
-                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    const dpr = window.devicePixelRatio || 1;
+                                    this.canvas.width = rect.width * dpr;
+                                    this.canvas.height = rect.height * dpr;
                                     this.ctx.strokeStyle = '#000000';
-                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineWidth = 2.5 * dpr;
                                     this.ctx.lineCap = 'round';
                                     this.ctx.lineJoin = 'round';
                                     if (temp && temp !== 'data:,') {
                                         const img = new Image();
-                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height); };
                                         img.src = temp;
                                     }
                                 },
                                 getMousePos(e) {
                                     const rect = this.canvas.getBoundingClientRect();
-                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                                    const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
+                                    return {
+                                        x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                        y: (clientY - rect.top) * (this.canvas.height / rect.height)
+                                    };
                                 },
                                 startDrawing(e) {
                                     this.isDrawing = true;
@@ -1472,9 +1483,8 @@
                                 loadSignature(dataUrl) {
                                     const img = new Image();
                                     img.onload = () => {
-                                        const rect = this.canvas.getBoundingClientRect();
-                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                     };
                                     img.src = dataUrl;
                                 }
@@ -1485,7 +1495,7 @@
                                         <i class="fas fa-eraser"></i> Hapus
                                     </button>
                                 </div>
-                                <div class="border border-dashed border-rose-200 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                <div class="border border-dashed border-rose-200 rounded-b-lg bg-white relative overflow-hidden" style="height: 160px;" wire:ignore>
                                     <canvas x-ref="canvas" 
                                             class="absolute inset-0 w-full h-full cursor-crosshair"
                                             @mousedown="startDrawing($event)"
@@ -1532,24 +1542,27 @@
                                     if (!this.canvas || this.canvas.offsetWidth === 0) return;
                                     const temp = this.canvas.toDataURL();
                                     const rect = this.canvas.getBoundingClientRect();
-                                    this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                                    this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                                    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                                    const dpr = window.devicePixelRatio || 1;
+                                    this.canvas.width = rect.width * dpr;
+                                    this.canvas.height = rect.height * dpr;
                                     this.ctx.strokeStyle = '#000000';
-                                    this.ctx.lineWidth = 2.5;
+                                    this.ctx.lineWidth = 2.5 * dpr;
                                     this.ctx.lineCap = 'round';
                                     this.ctx.lineJoin = 'round';
                                     if (temp && temp !== 'data:,') {
                                         const img = new Image();
-                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, rect.width, rect.height); };
+                                        img.onload = () => { this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height); };
                                         img.src = temp;
                                     }
                                 },
                                 getMousePos(e) {
                                     const rect = this.canvas.getBoundingClientRect();
-                                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                    return { x: clientX - rect.left, y: clientY - rect.top };
+                                    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                                    const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
+                                    return {
+                                        x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                        y: (clientY - rect.top) * (this.canvas.height / rect.height)
+                                    };
                                 },
                                 startDrawing(e) {
                                     this.isDrawing = true;
@@ -1587,9 +1600,8 @@
                                 loadSignature(dataUrl) {
                                     const img = new Image();
                                     img.onload = () => {
-                                        const rect = this.canvas.getBoundingClientRect();
-                                        this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                        this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                     };
                                     img.src = dataUrl;
                                 }
@@ -1600,7 +1612,7 @@
                                         <i class="fas fa-eraser"></i> Hapus
                                     </button>
                                 </div>
-                                <div class="border border-dashed border-blue-200 rounded-b-lg bg-white relative overflow-hidden" style="height: 240px;" wire:ignore>
+                                <div class="border border-dashed border-blue-200 rounded-b-lg bg-white relative overflow-hidden" style="height: 160px;" wire:ignore>
                                     <canvas x-ref="canvas" 
                                             class="absolute inset-0 w-full h-full cursor-crosshair"
                                             @mousedown="startDrawing($event)"

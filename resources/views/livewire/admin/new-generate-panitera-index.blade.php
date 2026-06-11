@@ -413,10 +413,6 @@
             @endforelse
         </div>
 
-        <div style="margin-top: 16px;">
-            {{ $paginatedShifts->links() }}
-        </div>
-
         {{-- MODAL --}}
         <x-modal wire:model.live="assigningBlock" maxWidth="3xl" :title="$isKoordinatorMode ? 'Pilih Koordinator Lapangan' : 'Pilih Panitera'">
             <div style="background:#fff;">

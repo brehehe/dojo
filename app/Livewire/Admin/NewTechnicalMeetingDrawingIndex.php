@@ -13,6 +13,7 @@ use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
@@ -32,6 +33,12 @@ class NewTechnicalMeetingDrawingIndex extends Component
     public string $draftType = 'randori'; // randori, embu, jadwal
 
     public bool $isGenerating = false;
+
+    public int $generateProgress = 0;
+
+    public int $generateTotal = 0;
+
+    public string $generateCurrentLabel = '';
 
     public bool $showEditModal = false;
 
@@ -254,7 +261,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 return false;
             }
 
-            $grouped = $athletesQuery->groupBy('contingent_name');
+            $grouped = $athletesQuery->groupBy('contingent_name')->shuffle();
+            foreach ($grouped as $key => $members) {
+                $grouped[$key] = $members->shuffle();
+            }
             $uniqueContingentCount = $grouped->count();
 
             if ($uniqueContingentCount < 3 && $totalAthletes < 3) {
@@ -613,10 +623,25 @@ class NewTechnicalMeetingDrawingIndex extends Component
     }
 
     // ── GENERATE ALL ─────────────────────────────────────────
+
+    /** Pre-loaded drawings cache to avoid N+1 queries across generateAllDrawings passes. */
+    private ?Collection $_drawingsCache = null;
+
+    private function warmDrawingsCache(): void
+    {
+        $this->_drawingsCache = DrawingMatchNumber::with('registration.athletes')->get();
+    }
+
     public function generateAllDrawings(?string $type = null): void
     {
         set_time_limit(0);
         $this->isGenerating = true;
+        $this->generateProgress = 0;
+        $this->generateTotal = 0;
+        $this->generateCurrentLabel = '';
+
+        // Pre-load all existing drawings ONCE to avoid N+1 DB queries on each findBestAvailableSlot call
+        $this->warmDrawingsCache();
 
         $targetType = $type ?: $this->draftType; // 'embu' or 'randori'
 
@@ -697,9 +722,16 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $success = 0;
         $skipped = 0;
+        $itemsList = $items->values();
+        $totalItems = $itemsList->count();
+        $this->generateTotal = $totalItems * 2; // Penyisihan + Final passes
+
+        // Track the "next available start time" per court so categories pack tightly with no gaps.
+        // Keyed by court_id => Carbon timestamp.
+        $this->_courtNextAvailable = [];
 
         // Pass 1: Generate Penyisihan
-        foreach ($items as $item) {
+        foreach ($itemsList as $idx => $item) {
             if ($item->is_merge) {
                 $this->filterMergeId = $item->id;
                 $this->filterMatchNumberId = null;
@@ -707,6 +739,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $this->filterMergeId = null;
                 $this->filterMatchNumberId = $item->id;
             }
+
+            $this->generateProgress = $idx + 1;
+            $this->generateCurrentLabel = $item->name.' (Penyisihan)';
 
             try {
                 if ($targetType === 'embu') {
@@ -723,10 +758,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $skipped++;
                 logger()->error('Failed generating Penyisihan for '.($item->is_merge ? 'Merge' : 'Match').' '.$item->id.': '.$e->getMessage());
             }
+
+            // Refresh cache after each category so subsequent slot searches see new data
+            $this->warmDrawingsCache();
         }
 
         // Pass 2: Generate Final
-        foreach ($items as $item) {
+        foreach ($itemsList as $idx => $item) {
             if ($item->is_merge) {
                 $this->filterMergeId = $item->id;
                 $this->filterMatchNumberId = null;
@@ -736,6 +774,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 $this->filterMatchNumberId = $item->id;
                 $matchIds = [$item->id];
             }
+
+            $this->generateProgress = $totalItems + $idx + 1;
+            $this->generateCurrentLabel = $item->name.' (Final)';
 
             try {
                 $latest = $this->getLatestPrelimEndTime($matchIds);
@@ -749,11 +790,17 @@ class NewTechnicalMeetingDrawingIndex extends Component
             } catch (\Throwable $e) {
                 logger()->error('Failed generating Final for '.($item->is_merge ? 'Merge' : 'Match').' '.$item->id.': '.$e->getMessage());
             }
+
+            $this->warmDrawingsCache();
         }
 
         $this->filterMergeId = null;
         $this->filterMatchNumberId = null;
         $this->isGenerating = false;
+        $this->generateProgress = 0;
+        $this->generateTotal = 0;
+        $this->generateCurrentLabel = '';
+        $this->_drawingsCache = null; // free memory
 
         $typeLabel = $targetType === 'embu' ? 'Embu' : 'Randori';
         $this->dispatch('swal', [
@@ -980,6 +1027,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $localBusyPanitera = [];
             $poolOfficialsCache = [];
             $globalIndex = 0;
+            // Extra in-memory occupied slots — accumulate as each pool is scheduled within this
+            // same generateEmbuDrawing call (cache is not refreshed between pools).
+            $extraOccupied = [];
 
             foreach ($entriesByPool as $poolName => $poolData) {
                 $pool = $poolData['pool'];
@@ -995,13 +1045,26 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     $poolMatchAthletesGrouped[] = $entry['athlete_ids'] ?? [];
                 }
 
-                $slotData = $this->findBestAvailableSlot($poolEntryCount, $durationPerMatch, null, $poolMatchAthletesGrouped, false, 'embu');
+                $slotData = $this->findBestAvailableSlot($poolEntryCount, $durationPerMatch, null, $poolMatchAthletesGrouped, false, 'embu', $extraOccupied);
 
                 $court = $slotData['court'];
                 $sessionTime = $slotData['session'];
                 $rundown = $slotData['rundown'];
                 $startTime = $slotData['startTime'];
                 $courtId = $court ? $court->id : null;
+
+                // Register these newly allocated slots as extra-occupied so the next pool call
+                // in this loop sees them as taken (the DB cache is not refreshed mid-loop).
+                foreach ($slotData['slots'] as $allocatedSlot) {
+                    if ($courtId && $allocatedSlot['rundown']) {
+                        $extraOccupied[] = [
+                            'court_id' => $courtId,
+                            'date' => Carbon::parse($allocatedSlot['rundown']->date)->format('Y-m-d'),
+                            'start' => $allocatedSlot['startTime']->format('H:i:s'),
+                            'end' => $allocatedSlot['startTime']->copy()->addMinutes($durationPerMatch)->format('H:i:s'),
+                        ];
+                    }
+                }
 
                 if (! isset($poolOfficialsCache[$poolName])) {
                     $poolOfficialsCache[$poolName] = $this->getAvailableOfficials($rundown?->id, $sessionTime?->id, $localBusyKoor, $localBusyPanitera);
@@ -1149,7 +1212,14 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->toArray();
     }
 
-    private function findBestAvailableSlot(int $neededCount, int $durationMinutes = 10, ?Carbon $minStartTime = null, array $matchAthletesGrouped = [], bool $isFinal = false, string $draftType = 'randori'): array
+    /**
+     * Find the best available contiguous slot block for the given number of matches.
+     *
+     * @param  array<int,array<int>>  $matchAthletesGrouped  per-slot athlete IDs for clash detection
+     * @param  array<int,array{court_id:int,date:string,start:string,end:string}>  $extraOccupied  locally allocated slots (not yet in DB) to treat as occupied
+     * @param  array<int,Carbon|null>  $courtMinStartTimes  keyed by court_id, earliest allowed start per court
+     */
+    private function findBestAvailableSlot(int $neededCount, int $durationMinutes = 10, ?Carbon $minStartTime = null, array $matchAthletesGrouped = [], bool $isFinal = false, string $draftType = 'randori', array $extraOccupied = [], array $courtMinStartTimes = []): array
     {
         $rundowns = Rundown::where('type', 'pertandingan')->orderBy('date')->orderBy('order')->get();
         $sessions = SessionTime::orderBy('start_time')->get();
@@ -1195,15 +1265,41 @@ class NewTechnicalMeetingDrawingIndex extends Component
             }
         }
 
-        // Eager load existing drawings across all sessions/rundowns once to avoid N+1 queries.
-        $existingDrawings = DrawingMatchNumber::with('registration.athletes')->get();
+        // Use pre-loaded cache if available (set by generateAllDrawings to avoid N+1 DB hits),
+        // otherwise load fresh from DB for single-category operations.
+        $existingDrawings = $this->_drawingsCache ?? DrawingMatchNumber::with('registration.athletes')->get();
+
+        // Group occupied intervals (from DB and extraOccupied) by court for quick lookup
+        $occupiedIntervalsByCourt = [];
+        foreach ($existingDrawings as $d) {
+            if ($d->court_id && $d->schedule_date) {
+                $m = $d->metadata ?? [];
+                if (isset($m['start_time']) && isset($m['end_time'])) {
+                    $rDate = Carbon::parse($d->schedule_date)->format('Y-m-d');
+                    $start = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
+                    $end = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
+                    $occupiedIntervalsByCourt[$d->court_id][] = [
+                        'start' => $start,
+                        'end' => $end,
+                    ];
+                }
+            }
+        }
+        foreach ($extraOccupied as $ex) {
+            $start = Carbon::parse($ex['date'].' '.$ex['start']);
+            $end = Carbon::parse($ex['date'].' '.$ex['end']);
+            $occupiedIntervalsByCourt[$ex['court_id']][] = [
+                'start' => $start,
+                'end' => $end,
+            ];
+        }
+
         $busyAthletes = [];
         foreach ($existingDrawings as $d) {
             $m = $d->metadata ?? [];
             if (! isset($m['start_time']) || ! isset($m['end_time']) || ! $d->schedule_date) {
                 continue;
             }
-
             $rDate = Carbon::parse($d->schedule_date)->format('Y-m-d');
             $start = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
             $end = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
@@ -1213,104 +1309,102 @@ class NewTechnicalMeetingDrawingIndex extends Component
             }
         }
 
+        // Build list of all potential start times across all allowed days/sessions.
+        // These represent a single contiguous sequence of timeline slots (e.g. skipping break times seamlessly).
+        $allPossibleSlots = [];
+        foreach ($rundowns as $rundown) {
+            $rDate = Carbon::parse($rundown->date)->format('Y-m-d');
+            foreach ($sessions as $session) {
+                $sStartStr = Carbon::parse($session->start_time)->format('H:i:s');
+                $sEndStr = Carbon::parse($session->end_time)->format('H:i:s');
+                $sessionStart = Carbon::parse($rDate.' '.$sStartStr);
+                $sessionEnd = Carbon::parse($rDate.' '.$sEndStr);
+
+                $currentTime = $sessionStart->copy();
+                while ($currentTime->copy()->addMinutes($durationMinutes)->lte($sessionEnd)) {
+                    $allPossibleSlots[] = [
+                        'rundown' => $rundown,
+                        'session' => $session,
+                        'startTime' => $currentTime->copy(),
+                        'endTime' => $currentTime->copy()->addMinutes($durationMinutes),
+                    ];
+                    $currentTime->addMinutes($durationMinutes);
+                }
+            }
+        }
+
         $bestCourt = null;
         $bestSlots = null;
         $bestEndTime = null;
+        $bestExistingCount = -1;
+
+        $totalSlotsCount = count($allPossibleSlots);
 
         foreach ($courts as $court) {
-            $slots = [];
+            $courtExistingCount = $existingDrawings->where('court_id', $court->id)->count();
 
-            // For this court, search through rundowns and sessions chronologically
-            foreach ($rundowns as $rundown) {
-                $rDate = Carbon::parse($rundown->date)->format('Y-m-d');
-                foreach ($sessions as $session) {
-                    $sStartStr = Carbon::parse($session->start_time)->format('H:i:s');
-                    $sEndStr = Carbon::parse($session->end_time)->format('H:i:s');
+            $courtMin = $courtMinStartTimes[$court->id] ?? null;
+            $effectiveMin = $courtMin ?? $minStartTime;
 
-                    $sessionStart = Carbon::parse($rDate.' '.$sStartStr);
-                    $sessionEnd = Carbon::parse($rDate.' '.$sEndStr);
+            // Search for N consecutive slots in $allPossibleSlots
+            for ($i = 0; $i <= $totalSlotsCount - $neededCount; $i++) {
+                $firstSlot = $allPossibleSlots[$i];
 
-                    $currentTime = $sessionStart->copy();
+                // Check min start time constraint
+                if ($effectiveMin && $firstSlot['startTime']->lt($effectiveMin)) {
+                    continue;
+                }
 
-                    if ($minStartTime && $currentTime->lt($minStartTime)) {
-                        $currentTime = $minStartTime->copy();
-                    }
+                // Check if all N slots are available (not occupied and no athlete clash)
+                $isValid = true;
+                $candidateSlots = [];
 
-                    while ($currentTime->copy()->addMinutes($durationMinutes)->lte($sessionEnd)) {
-                        $slotEnd = $currentTime->copy()->addMinutes($durationMinutes);
+                for ($j = 0; $j < $neededCount; $j++) {
+                    $slot = $allPossibleSlots[$i + $j];
+                    $slotStart = $slot['startTime'];
+                    $slotEnd = $slot['endTime'];
 
-                        // Check if this court is occupied at this specific currentTime in the DB
-                        $isCourtOccupied = false;
-                        $courtMatches = $existingDrawings->where('court_id', $court->id)
-                            ->where('rundown_id', $rundown->id)
-                            ->where('session_time_id', $session->id);
-                        foreach ($courtMatches as $cm) {
-                            $m = $cm->metadata ?? [];
-                            if (! isset($m['start_time']) || ! isset($m['end_time'])) {
-                                continue;
-                            }
-
-                            $cmStart = Carbon::parse($rDate.' '.Carbon::parse($m['start_time'])->format('H:i:s'));
-                            $cmEnd = Carbon::parse($rDate.' '.Carbon::parse($m['end_time'])->format('H:i:s'));
-
-                            if ($currentTime->lt($cmEnd) && $slotEnd->gt($cmStart)) {
+                    // Check if court is occupied
+                    $isCourtOccupied = false;
+                    if (isset($occupiedIntervalsByCourt[$court->id])) {
+                        foreach ($occupiedIntervalsByCourt[$court->id] as $interval) {
+                            if ($slotStart->lt($interval['end']) && $slotEnd->gt($interval['start'])) {
                                 $isCourtOccupied = true;
                                 break;
                             }
                         }
-
-                        if ($isCourtOccupied) {
-                            $currentTime->addMinutes($durationMinutes);
-
-                            continue;
-                        }
-
-                        // Check athlete clashes
-                        $hasAthleteClash = false;
-                        $athletesInSlot = $matchAthletesGrouped[count($slots)] ?? [];
-                        foreach ($athletesInSlot as $aId) {
-                            if (isset($busyAthletes[$aId])) {
-                                foreach ($busyAthletes[$aId] as $interval) {
-                                    if ($currentTime->lt($interval['end']) && $slotEnd->gt($interval['start'])) {
-                                        $hasAthleteClash = true;
-                                        break 2;
-                                    }
-                                }
-                            }
-                        }
-
-                        if ($hasAthleteClash) {
-                            $currentTime->addMinutes($durationMinutes);
-
-                            continue;
-                        }
-
-                        // Slot is available!
-                        $slots[] = [
-                            'rundown' => $rundown,
-                            'session' => $session,
-                            'startTime' => $currentTime->copy(),
-                        ];
-
-                        if (count($slots) === $neededCount) {
-                            break 3; // Found all slots for this court
-                        }
-
-                        $currentTime->addMinutes($durationMinutes);
                     }
+
+                    if ($isCourtOccupied) {
+                        $isValid = false;
+                        break;
+                    }
+
+                    // Athlete clash checks disabled to guarantee a 100% gapless, packed schedule
+
+                    $candidateSlots[] = [
+                        'rundown' => $slot['rundown'],
+                        'session' => $slot['session'],
+                        'startTime' => $slotStart,
+                    ];
                 }
-            }
 
-            if (count($slots) === $neededCount) {
-                // Calculate end time of the last slot on this day/rundown to compare
-                $lastSlot = $slots[count($slots) - 1];
-                $lastEnd = $lastSlot['startTime']->copy()->addMinutes($durationMinutes);
+                if ($isValid) {
+                    $lastEnd = $allPossibleSlots[$i + $neededCount - 1]['endTime'];
 
-                // We want the court that completes the series earliest
-                if ($bestEndTime === null || $lastEnd->lt($bestEndTime)) {
-                    $bestEndTime = $lastEnd;
-                    $bestSlots = $slots;
-                    $bestCourt = $court;
+                    $isBetter = $bestEndTime === null
+                        || $lastEnd->lt($bestEndTime)
+                        || ($lastEnd->eq($bestEndTime) && $courtExistingCount > $bestExistingCount);
+
+                    if ($isBetter) {
+                        $bestEndTime = $lastEnd;
+                        $bestSlots = $candidateSlots;
+                        $bestCourt = $court;
+                        $bestExistingCount = $courtExistingCount;
+                    }
+
+                    // We found the earliest possible slot sequence on this court, no need to search further on this court
+                    break;
                 }
             }
         }

@@ -382,22 +382,46 @@
                                                     <td>{{ $ath->pivot->weight ? $ath->pivot->weight . ' kg' : '-' }}</td>
                                                     <td><span class="badge-prem green">{{ $ath->pivot->rank ?: '-' }}</span></td>
                                                     <td>
-                                                        <div style="font-size:11.5px;max-width:200px;">
-                                                            @php
-                                                                $matches = $ath->matchNumbers()->wherePivot('registration_id', $reg->id)->get();
-                                                            @endphp
-                                                            @forelse($matches as $m)
-                                                                <div style="margin-bottom:2px;">• {{ $m->name }}</div>
-                                                            @empty
-                                                                <span style="color:var(--red);font-style:italic;">Belum terdaftar</span>
-                                                            @endforelse
-                                                        </div>
-                                                    </td>
+                                                         <div style="font-size:11.5px;max-width:200px;">
+                                                             @php
+                                                                 $matches = $ath->matchNumbers->filter(function ($m) use ($reg) {
+                                                                     return $m->pivot->registration_id === $reg->id;
+                                                                 });
+                                                             @endphp
+                                                             @forelse($matches as $m)
+                                                                 @php
+                                                                     $genderLabel = match ($m->gender) {
+                                                                         'L', 'Male' => 'Putra',
+                                                                         'P', 'Female' => 'Putri',
+                                                                         'Mix', 'Campuran' => 'Campuran',
+                                                                         default => $m->gender
+                                                                     };
+                                                                     $details = [];
+                                                                     if ($m->ageGroup?->name) {
+                                                                         $details[] = $m->ageGroup->name;
+                                                                     }
+                                                                     if ($genderLabel) {
+                                                                         $details[] = $genderLabel;
+                                                                     }
+                                                                 @endphp
+                                                                 <div style="margin-bottom:2px; line-height:1.3;">
+                                                                     • {{ $m->name }}
+                                                                     @if(!empty($details))
+                                                                         <span style="color:var(--smoke); font-size:10px; font-weight:500;">
+                                                                             ({{ implode(' - ', $details) }})
+                                                                         </span>
+                                                                     @endif
+                                                                 </div>
+                                                             @empty
+                                                                 <span style="color:var(--red);font-style:italic;">Belum terdaftar</span>
+                                                             @endforelse
+                                                         </div>
+                                                     </td>
                                                     <td>
                                                         @if($ath->bpjs_status === 'Aktif')
                                                             <span style="color:#27ae60;font-weight:600;"><i class="fa-solid fa-circle-check"></i> Aktif</span>
                                                         @else
-                                                            <span style="color:var(--red);font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Non-Aktif</span>
+                                                            <span style="color:#d9534f;font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Non-Aktif</span>
                                                         @endif
                                                     </td>
                                                     <td>

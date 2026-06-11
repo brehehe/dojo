@@ -269,7 +269,7 @@ class NewRegistrationVerificationIndex extends Component
     {
         // We only verify athletes from verified payment registrations
         $registrations = $this->getFilteredRegistrationsQuery()
-            ->with(['contingent', 'athletes.matchNumbers', 'officials'])
+            ->with(['contingent', 'athletes.matchNumbers.ageGroup', 'officials'])
             ->latest()
             ->paginate($this->perPage);
 

@@ -651,7 +651,6 @@
 
             .ref-score-input {
                 width: 100%;
-                max-width: 100px;
                 padding: 6px 2px;
                 border: 1.5px solid var(--paper2);
                 border-radius: 10px;
@@ -826,9 +825,9 @@
 
             /* ── ACTION BUTTONS ── */
             .ref-actions {
-                display: grid;
-                grid-template-columns: 1fr 2fr;
-                gap: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
             }
 
             .ref-btn-reset {
@@ -853,6 +852,7 @@
             }
 
             .ref-btn-submit {
+                width: 100%;
                 padding: 14px;
                 background: var(--red);
                 border: none;
@@ -1149,7 +1149,7 @@
             .ref-sig-canvas-container {
                 position: relative;
                 width: 100%;
-                height: 380px;
+                height: 200px;
                 background: #ffffff;
                 border: 1.5px dashed #b8c9dd;
                 border-radius: 10px;
@@ -1420,6 +1420,18 @@
             <div class="ref-live-badge"><span class="ref-live-dot"></span> LIVE ON COURT</div>
             <p class="ref-match-type">{{ strtoupper($activeMatch->draft_type) }}</p>
             <h3 class="ref-match-name">{{ $activeMatch->name }}</h3>
+            @if(!empty($activeAthleteNames))
+                <div class="ref-match-athletes" style="margin-top: 8px; margin-bottom: 8px; padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border-radius: 8px;">
+                    <p style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">Atlet Bertanding:</p>
+                    <p style="font-size: 16px; color: #fff; font-weight: 600; margin: 2px 0 0;">
+                        @if($activeMatch->draft_type === 'embu')
+                            {{ implode(' & ', $activeAthleteNames) }}
+                        @else
+                            {{ implode(' vs ', $activeAthleteNames) }}
+                        @endif
+                    </p>
+                </div>
+            @endif
             <p class="ref-match-sub">Berikan penilaian terbaik Anda secara objektif.</p>
         </div>
 
@@ -1731,30 +1743,30 @@
                             const temp = this.canvas.toDataURL();
                             
                             const rect = this.canvas.getBoundingClientRect();
-                            this.canvas.width = rect.width * (window.devicePixelRatio || 1);
-                            this.canvas.height = rect.height * (window.devicePixelRatio || 1);
-                            this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+                            const dpr = window.devicePixelRatio || 1;
+                            this.canvas.width = rect.width * dpr;
+                            this.canvas.height = rect.height * dpr;
                             
                             this.ctx.strokeStyle = '#000000';
-                            this.ctx.lineWidth = 3;
+                            this.ctx.lineWidth = 3 * dpr;
                             this.ctx.lineCap = 'round';
                             this.ctx.lineJoin = 'round';
                             
                             if (temp && temp !== 'data:,') {
                                 const img = new Image();
                                 img.onload = () => {
-                                    this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                    this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                                 };
                                 img.src = temp;
                             }
                         },
                         getMousePos(e) {
                             const rect = this.canvas.getBoundingClientRect();
-                            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                            const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) : e.clientX;
+                            const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) : e.clientY;
                             return {
-                                x: clientX - rect.left,
-                                y: clientY - rect.top
+                                x: (clientX - rect.left) * (this.canvas.width / rect.width),
+                                y: (clientY - rect.top) * (this.canvas.height / rect.height)
                             };
                         },
                         startDrawing(e) {
@@ -1793,9 +1805,8 @@
                         loadSignature(dataUrl) {
                             const img = new Image();
                             img.onload = () => {
-                                const rect = this.canvas.getBoundingClientRect();
-                                this.ctx.clearRect(0, 0, rect.width, rect.height);
-                                this.ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
                             };
                             img.src = dataUrl;
                         }
@@ -1829,9 +1840,6 @@
 
                         {{-- Actions --}}
                         <div class="ref-actions">
-                            <button wire:click="resetForm" class="ref-btn-reset">
-                                <i class="fa-solid fa-rotate-left"></i> Reset
-                            </button>
                             <button type="button" @click="$wire.submitScore(localSignature)" class="ref-btn-submit">
                                 <span wire:loading.remove wire:target="submitScore">
                                     <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
