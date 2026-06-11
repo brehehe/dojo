@@ -33,6 +33,15 @@ class Referee extends Model
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'name',
+    ];
+
+    /**
      * Get the user that owns the referee profile
      */
     public function user(): BelongsTo

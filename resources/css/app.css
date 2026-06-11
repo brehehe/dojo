@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+    --red: #c0392b;
+    --red-deep: #96281b;
+    --red-glow: #e74c3c;
+    --gold: #d4a843;
+    --gold-lt: #f0c060;
+    --ink: #0f0d0b;
+    --paper: #f7f4ef;
+    --paper2: #ede9e1;
+    --smoke: #b5afa6;
+}
+
 [x-cloak] {
     display: none !important;
 }

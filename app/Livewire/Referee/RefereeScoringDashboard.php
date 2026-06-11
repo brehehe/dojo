@@ -334,9 +334,17 @@ class RefereeScoringDashboard extends Component
             }
 
             $this->activeContingentName = $registration->contingent?->name ?? '-';
+            $activeDrawing = $this->assignedCourt?->activeDrawing;
             $activeAthletes = $registration->athletes
                 ->filter(fn ($athlete) => $athlete->matchNumbers->isNotEmpty())
                 ->values();
+
+            if ($activeDrawing && ! empty($activeDrawing->metadata['athlete_ids'])) {
+                $selectedAthleteIds = array_values((array) $activeDrawing->metadata['athlete_ids']);
+                if (! empty($selectedAthleteIds)) {
+                    $activeAthletes = $activeAthletes->filter(fn ($athlete) => in_array($athlete->id, $selectedAthleteIds))->values();
+                }
+            }
 
             $this->activeAthleteNames = $activeAthletes
                 ->pluck('name')
