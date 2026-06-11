@@ -1066,8 +1066,13 @@ class NewScoringRandoriIndex extends Component
     public function getTimerState()
     {
         $id = $this->getCourtId();
+        if (! $id) {
+            return ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null, 'server_time_ms' => floor(microtime(true) * 1000)];
+        }
+        $state = Cache::get("court_{$id}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
+        $state['server_time_ms'] = floor(microtime(true) * 1000);
 
-        return $id ? Cache::get("court_{$id}_timer") : null;
+        return $state;
     }
 
     public function finishMatch()

@@ -37,11 +37,17 @@
              time: 0,
              running: false,
              countdown: 0,
+             offset: 0,
              playedIntervals: new Set(),
+             state: { status: 'stopped', elapsed_ms: 0, started_at_ms: null, countdown_end_ms: null },
              async sync() {
                  let res = await fetch(`/api/court/{{ $court->id }}/timer-state`);
                  let state = await res.json();
                  if (!state) return;
+                 
+                 this.offset = state.server_time_ms - Date.now();
+                 this.state = state;
+                 
                  let wasRunning = this.running;
                  this.running = (state.status === 'running');
 
@@ -61,31 +67,8 @@
                      } catch(e) {}
                  }
                  
-                 if (state.status === 'countdown') {
-                     let now = Date.now();
-                     let remaining = state.countdown_end_ms - now;
-                     if (remaining > 0) {
-                         this.countdown = Math.ceil(remaining / 1000);
-                     } else {
-                         this.countdown = 0;
-                     }
-                     this.time = state.elapsed_ms || 0;
-                 } else if (state.status === 'running') {
+                 if (state.status !== 'countdown') {
                      this.countdown = 0;
-                     let now = Date.now();
-                     let serverElapsed = state.elapsed_ms || 0;
-                     let runningDiff = now - state.started_at_ms;
-                     
-                     // Calculate expected time based on server start point
-                     let expected = serverElapsed + (runningDiff > 0 ? runningDiff : 0);
-                     
-                     // If we are significantly out of sync, or just started, snap to it
-                     if (!wasRunning || Math.abs(this.time - expected) > 1000) {
-                         this.time = expected;
-                     }
-                 } else {
-                     this.countdown = 0;
-                     this.time = state.elapsed_ms || 0;
                  }
 
                  if (!this.running && this.time < 500) {
@@ -97,62 +80,78 @@
                   setInterval(() => {
                       this.sync();
                   }, 200);
-                 
-                 // High-speed local interpolation for smooth UI
-                 setInterval(() => {
-                     if (this.running) {
-                         this.time += 30; // 30ms interval
-                         let currentSecond = Math.floor(this.time / 1000);
-                         let isRandori = {{ ($court->activeMatch && ($court->activeMatch->draft_type === 'randori' || str_contains(strtolower($court->activeMatch->name), 'randori'))) ? 'true' : 'false' }};
-                         let isTandoku = {{ ($court->activeMatch && (str_contains(strtolower($court->activeMatch->name), 'tandoku') || $court->activeMatch->max_athletes == 1)) ? 'true' : 'false' }};
-                         let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
+                  
+                  // High-speed local interpolation for smooth UI
+                  setInterval(() => {
+                      if (this.running && this.state.started_at_ms) {
+                          let expected = (this.state.elapsed_ms || 0) + (Date.now() + this.offset - this.state.started_at_ms);
+                          this.time = expected;
+                          
+                          let currentSecond = Math.floor(this.time / 1000);
+                          let isRandori = {{ ($court->activeMatch && ($court->activeMatch->draft_type === 'randori' || str_contains(strtolower($court->activeMatch->name), 'randori'))) ? 'true' : 'false' }};
+                          let isTandoku = {{ ($court->activeMatch && (str_contains(strtolower($court->activeMatch->name), 'tandoku') || $court->activeMatch->max_athletes == 1)) ? 'true' : 'false' }};
+                          let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
 
-                         if (isRandori) {
-                             if (currentSecond >= 120 && !this.playedIntervals.has(120)) {
-                                 this.time = 120000;
-                                 this.running = false;
-                                 this.playedIntervals.add(120);
-                                 try {
-                                     let audio = new Audio(buzzerSound);
-                                     audio.play().catch(e => console.warn(e));
-                                 } catch(e) {}
-                             }
-                         } else {
-                             if (isTandoku) {
-                                 if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
-                                     (currentSecond === 90 && !this.playedIntervals.has(90)) ||
-                                     (currentSecond === 120 && !this.playedIntervals.has(120))) {
-                                     this.playedIntervals.add(currentSecond);
-                                     try {
-                                         let audio = new Audio(buzzerSound);
-                                         audio.play().catch(e => console.warn(e));
-                                     } catch(e) {}
-                                 }
-                             } else {
-                                 if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
-                                     (currentSecond === 120 && !this.playedIntervals.has(120))) {
-                                     this.playedIntervals.add(currentSecond);
-                                     try {
-                                         let audio = new Audio(buzzerSound);
-                                         audio.play().catch(e => console.warn(e));
-                                     } catch(e) {}
-                                 }
-                             }
-                         }
-                     } else if (this.countdown > 0) {
-                         // local countdown calculation based on system time (sync handles absolute)
-                     }
-                 }, 30);
+                          if (isRandori) {
+                              if (currentSecond >= 120 && !this.playedIntervals.has(120)) {
+                                  this.time = 120000;
+                                  this.running = false;
+                                  this.playedIntervals.add(120);
+                                  try {
+                                      let audio = new Audio(buzzerSound);
+                                      audio.play().catch(e => console.warn(e));
+                                  } catch(e) {}
+                              }
+                          } else {
+                              if (isTandoku) {
+                                  if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
+                                      (currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                      (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                      this.playedIntervals.add(currentSecond);
+                                      try {
+                                          let audio = new Audio(buzzerSound);
+                                          audio.play().catch(e => console.warn(e));
+                                      } catch(e) {}
+                                  }
+                              } else {
+                                  if ((currentSecond === 90 && !this.playedIntervals.has(90)) ||
+                                      (currentSecond === 120 && !this.playedIntervals.has(120))) {
+                                      this.playedIntervals.add(currentSecond);
+                                      try {
+                                          let audio = new Audio(buzzerSound);
+                                          audio.play().catch(e => console.warn(e));
+                                      } catch(e) {}
+                                  }
+                              }
+                          }
+                      } else if (this.state.status === 'countdown' && this.state.countdown_end_ms) {
+                          let remaining = this.state.countdown_end_ms - (Date.now() + this.offset);
+                          if (remaining > 0) {
+                              this.countdown = Math.ceil(remaining / 1000);
+                          } else {
+                              this.countdown = 0;
+                          }
+                          this.time = this.state.elapsed_ms || 0;
+                      } else {
+                          this.countdown = 0;
+                          this.time = this.state.elapsed_ms || 0;
+                      }
+                  }, 30);
              },
              formatTime() {
-                 let t = Math.max(0, this.time);
-                 let m = Math.floor(t / 60000);
-                 let s = Math.floor((t % 60000) / 1000);
-                 let ms = Math.floor((t % 1000) / 10);
-                 return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+                  let t = Math.max(0, this.time);
+                  let m = Math.floor(t / 60000);
+                  let s = Math.floor((t % 60000) / 1000);
+                  let ms = Math.floor((t % 1000) / 10);
+                  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
              },
              formatCountdown() {
-                 return '';
+                  if (this.countdown === 5) return 'Siap';
+                  if (this.countdown === 4) return '3';
+                  if (this.countdown === 3) return '2';
+                  if (this.countdown === 2) return '1';
+                  if (this.countdown === 1) return 'Mulai';
+                  return this.countdown > 0 ? this.countdown.toString() : '';
              }
          }">
 

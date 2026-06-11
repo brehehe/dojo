@@ -600,51 +600,43 @@
                     time: 0,
                     running: false,
                     countdown: 0,
+                    offset: 0,
                     lastTickSecond: -1,
                     playedIntervals: new Set(),
                     interpolInterval: null,
                     syncInterval: null,
+                    starting: false,
+                    state: { status: 'stopped', elapsed_ms: 0, started_at_ms: null, countdown_end_ms: null },
                     formatTime() {
                         let t = Math.max(0, this.time);
                         let m = Math.floor(t / 60000);
                         let s = Math.floor((t % 60000) / 1000);
                         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                     },
-                    formatCountdown() { return ''; },
+                    formatCountdown() {
+                        if (this.countdown === 5) return 'Siap';
+                        if (this.countdown === 4) return '3';
+                        if (this.countdown === 3) return '2';
+                        if (this.countdown === 2) return '1';
+                        if (this.countdown === 1) return 'Mulai';
+                        return this.countdown > 0 ? this.countdown.toString() : '';
+                    },
                     async sync() {
-                        let res = await fetch(`/api/court/{{ $courtId }}/timer-state`);
-                        let state = await res.json();
+                        let state = await $wire.getTimerState();
                         if (!state) return;
-                        let oldCountdown = this.countdown;
-                        if (state.status === 'running') {
-                            let wasRunning = this.running;
-                            this.running = true;
+                        this.offset = state.server_time_ms - Date.now();
+                        this.state = state;
+                        this.running = (state.status === 'running');
+                        if (state.status !== 'countdown') {
                             this.countdown = 0;
-                            let now = Date.now();
-                            let expected = (state.elapsed_ms || 0) + Math.max(0, now - state.started_at_ms);
-                            if (!wasRunning || Math.abs(this.time - expected) > 1000) {
-                                this.time = expected;
-                            }
-                        } else if (state.status === 'countdown') {
-                            this.running = false;
-                            let remaining = state.countdown_end_ms - Date.now();
-                            this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
-                            this.time = state.elapsed_ms || 0;
-                            if (remaining <= 0) { $wire.startTimer(); }
-                        } else {
-                            this.running = false;
-                            this.countdown = 0;
-                            this.time = state.elapsed_ms || 0;
-                        }
-                        if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                            // Siap and countdown removed
                         }
                     },
                     init() {
                         this.sync();
                         this.interpolInterval = setInterval(() => {
-                            if (this.running) {
-                                this.time += 30;
+                            if (this.running && this.state.started_at_ms) {
+                                let expected = (this.state.elapsed_ms || 0) + (Date.now() + this.offset - this.state.started_at_ms);
+                                this.time = expected;
                                 let s = Math.floor(this.time / 1000);
                                 if (s >= 120 && !this.playedIntervals.has(120)) {
                                     this.time = 120000;
@@ -657,7 +649,20 @@
                                     window.playTimerTick ? window.playTimerTick(1000, 0.05) : null;
                                     this.lastTickSecond = s;
                                 }
-                            } else { this.lastTickSecond = Math.floor(this.time / 1000); }
+                            } else if (this.state.status === 'countdown' && this.state.countdown_end_ms) {
+                                let remaining = this.state.countdown_end_ms - (Date.now() + this.offset);
+                                this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                this.time = this.state.elapsed_ms || 0;
+                                if (remaining <= 0 && !this.starting) {
+                                    this.starting = true;
+                                    $wire.startTimer().then(() => { this.starting = false; });
+                                }
+                                this.lastTickSecond = Math.floor(this.time / 1000);
+                            } else {
+                                this.countdown = 0;
+                                this.time = this.state.elapsed_ms || 0;
+                                this.lastTickSecond = Math.floor(this.time / 1000);
+                            }
                         }, 30);
                         this.syncInterval = setInterval(() => { this.sync(); }, 300);
                     },

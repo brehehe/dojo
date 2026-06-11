@@ -18,11 +18,14 @@ class MonitorTimerIndex extends Component
 
     public function getTimerState()
     {
-        return Cache::get("court_{$this->court->id}_timer", [
+        $state = Cache::get("court_{$this->court->id}_timer", [
             'status' => 'stopped',
             'elapsed_ms' => 0,
             'started_at_ms' => null,
         ]);
+        $state['server_time_ms'] = floor(microtime(true) * 1000);
+
+        return $state;
     }
 
     #[Layout('layouts.guest')]

@@ -810,14 +810,17 @@ class AdminArbitraseScoringRandoriDetail extends Component
     {
         $courtId = $this->getCourtId();
         if (! $courtId) {
-            return ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null];
+            return ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null, 'server_time_ms' => floor(microtime(true) * 1000)];
         }
 
-        return Cache::get("court_{$courtId}_timer", [
+        $state = Cache::get("court_{$courtId}_timer", [
             'status' => 'stopped',
             'elapsed_ms' => 0,
             'started_at_ms' => null,
         ]);
+        $state['server_time_ms'] = floor(microtime(true) * 1000);
+
+        return $state;
     }
 
     public function startCountdown()
@@ -829,7 +832,7 @@ class AdminArbitraseScoringRandoriDetail extends Component
 
         $state = Cache::get("court_{$courtId}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
         $state['status'] = 'countdown';
-        $state['countdown_end_ms'] = floor(microtime(true) * 1000) + 2000;
+        $state['countdown_end_ms'] = floor(microtime(true) * 1000) + 5000;
         Cache::put("court_{$courtId}_timer", $state);
         $this->dispatch('timer-updated');
     }

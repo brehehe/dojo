@@ -383,11 +383,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 // require __DIR__.'/auth.php'; // Disabling Breeze auth routes
 
 Route::get('/api/court/{courtId}/timer-state', function ($courtId) {
-    return response()->json(
-        Cache::get("court_{$courtId}_timer", [
-            'status' => 'stopped',
-            'elapsed_ms' => 0,
-            'started_at_ms' => null,
-        ])
-    );
+    $state = Cache::get("court_{$courtId}_timer", [
+        'status' => 'stopped',
+        'elapsed_ms' => 0,
+        'started_at_ms' => null,
+    ]);
+    $state['server_time_ms'] = floor(microtime(true) * 1000);
+
+    return response()->json($state);
 })->name('api.court.timer-state');

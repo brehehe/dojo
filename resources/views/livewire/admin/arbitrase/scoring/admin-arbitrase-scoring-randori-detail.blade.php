@@ -251,9 +251,12 @@
                                             time: 0,
                                             running: false,
                                             countdown: 0,
+                                            offset: 0,
                                             lastTickSecond: -1,
                                             interpolInterval: null,
                                             syncInterval: null,
+                                            starting: false,
+                                            state: { status: 'stopped', elapsed_ms: 0, started_at_ms: null, countdown_end_ms: null },
                                             formatTime() {
                                                 let t = Math.max(0, this.time);
                                                 let m = Math.floor(t / 60000);
@@ -266,53 +269,59 @@
                                                 if (this.countdown === 3) return '2';
                                                 if (this.countdown === 2) return '1';
                                                 if (this.countdown === 1) return 'Mulai';
-                                                return '';
+                                                return this.countdown > 0 ? this.countdown.toString() : '';
                                             },
                                             async sync() {
                                                 let state = await $wire.getTimerState();
                                                 if (!state) return;
                                                 
                                                 let oldCountdown = this.countdown;
+                                                this.offset = state.server_time_ms - Date.now();
+                                                this.state = state;
                                                 
-                                                if (state.status === 'running') {
-                                                    this.running = true;
-                                                    this.countdown = 0;
-                                                    this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
-                                                } else if (state.status === 'countdown') {
-                                                    this.running = false;
-                                                    let remaining = state.countdown_end_ms - Date.now();
+                                                this.running = (state.status === 'running');
+                                                
+                                                if (state.status === 'countdown') {
+                                                    let remaining = state.countdown_end_ms - (Date.now() + this.offset);
                                                     this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
-                                                    this.time = state.elapsed_ms || 0;
-                                                    if (remaining <= 0) { $wire.startTimer(); }
                                                 } else {
-                                                    this.running = false;
                                                     this.countdown = 0;
-                                                    this.time = state.elapsed_ms || 0;
                                                 }
 
                                                 // Trigger Countdown Voice
                                                 if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                                                    window.speakCountdown(this.formatCountdown());
+                                                    window.speakCountdown ? window.speakCountdown(this.formatCountdown()) : null;
                                                 }
                                             },
                                             init() {
                                                 this.sync();
                                                 this.interpolInterval = setInterval(() => { 
-                                                    if (this.running) {
-                                                        this.time += 30; 
+                                                    if (this.running && this.state.started_at_ms) {
+                                                        let expected = (this.state.elapsed_ms || 0) + (Date.now() + this.offset - this.state.started_at_ms);
+                                                        this.time = expected;
                                                         let currentSecond = Math.floor(this.time / 1000);
                                                         
                                                         // Play tick only if second has actually changed
                                                         if (currentSecond > this.lastTickSecond) {
-                                                            window.playTimerTick(1000, 0.05);
+                                                            window.playTimerTick ? window.playTimerTick(1000, 0.05) : null;
                                                             this.lastTickSecond = currentSecond;
                                                         }
+                                                    } else if (this.state.status === 'countdown' && this.state.countdown_end_ms) {
+                                                        let remaining = this.state.countdown_end_ms - (Date.now() + this.offset);
+                                                        this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                                        this.time = this.state.elapsed_ms || 0;
+                                                        if (remaining <= 0 && !this.starting) {
+                                                            this.starting = true;
+                                                            $wire.startTimer().then(() => { this.starting = false; });
+                                                        }
+                                                        this.lastTickSecond = Math.floor(this.time / 1000);
                                                     } else {
-                                                        // Update tracker while paused so it doesn't double-tick on resume
+                                                        this.countdown = 0;
+                                                        this.time = this.state.elapsed_ms || 0;
                                                         this.lastTickSecond = Math.floor(this.time / 1000);
                                                     }
                                                 }, 30);
-                                                this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                                                this.syncInterval = setInterval(() => { this.sync(); }, 300);
                                             },
                                             start() {
                                                 if (!this.running && this.countdown === 0) {
@@ -476,15 +485,17 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <div wire:ignore x-data="{
+                                             <div wire:ignore x-data="{
                                         time: 0,
                                         running: false,
                                         countdown: 0,
+                                        offset: 0,
                                         lastTickSecond: -1,
                                         playedIntervals: new Set(),
                                         interpolInterval: null,
                                         syncInterval: null,
+                                        starting: false,
+                                        state: { status: 'stopped', elapsed_ms: 0, started_at_ms: null, countdown_end_ms: null },
                                         formatTime() {
                                             let t = Math.max(0, this.time);
                                             let m = Math.floor(t / 60000);
@@ -492,63 +503,71 @@
                                             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                                         },
                                         formatCountdown() {
-                                            if (this.countdown === 2) return 'Siap';
-                                            return '';
+                                            if (this.countdown === 5) return 'Siap';
+                                            if (this.countdown === 4) return '3';
+                                            if (this.countdown === 3) return '2';
+                                            if (this.countdown === 2) return '1';
+                                            if (this.countdown === 1) return 'Mulai';
+                                            return this.countdown > 0 ? this.countdown.toString() : '';
                                         },
                                         async sync() {
                                             let state = await $wire.getTimerState();
                                             if (!state) return;
                                             
                                             let oldCountdown = this.countdown;
+                                            this.offset = state.server_time_ms - Date.now();
+                                            this.state = state;
                                             
-                                            if (state.status === 'running') {
-                                                this.running = true;
-                                                this.countdown = 0;
-                                                this.time = state.elapsed_ms + (Date.now() - state.started_at_ms);
-                                            } else if (state.status === 'countdown') {
-                                                this.running = false;
-                                                let remaining = state.countdown_end_ms - Date.now();
+                                            this.running = (state.status === 'running');
+                                            
+                                            if (state.status === 'countdown') {
+                                                let remaining = state.countdown_end_ms - (Date.now() + this.offset);
                                                 this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
-                                                this.time = state.elapsed_ms || 0;
-                                                if (remaining <= 0) { $wire.startTimer(); }
                                             } else {
-                                                this.running = false;
                                                 this.countdown = 0;
-                                                this.time = state.elapsed_ms || 0;
                                             }
 
                                             // Trigger Countdown Voice
                                             if (this.countdown > 0 && this.countdown !== oldCountdown) {
-                                                if (this.countdown === 2) {
-                                                    window.speakCountdown('Siap');
-                                                }
+                                                window.speakCountdown ? window.speakCountdown(this.formatCountdown()) : null;
                                             }
                                         },
                                         init() {
                                             this.sync();
                                             this.interpolInterval = setInterval(() => { 
-                                                if (this.running) {
-                                                    this.time += 30; 
+                                                if (this.running && this.state.started_at_ms) {
+                                                    let expected = (this.state.elapsed_ms || 0) + (Date.now() + this.offset - this.state.started_at_ms);
+                                                    this.time = expected;
                                                     let currentSecond = Math.floor(this.time / 1000);
                                                     
                                                     // Interval buzzers: 120s
                                                     if (currentSecond === 120 && !this.playedIntervals.has(120)) {
-                                                        window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3');
+                                                        window.playBuzzer ? window.playBuzzer('/music/freesound_community-buzzerwav-14908.mp3') : null;
                                                         this.playedIntervals.add(120);
                                                         $wire.pauseTimer();
                                                     }
 
                                                     // Play tick only if second has actually changed
                                                     if (currentSecond > this.lastTickSecond) {
-                                                        window.playTimerTick(1000, 0.05);
+                                                        window.playTimerTick ? window.playTimerTick(1000, 0.05) : null;
                                                         this.lastTickSecond = currentSecond;
                                                     }
+                                                } else if (this.state.status === 'countdown' && this.state.countdown_end_ms) {
+                                                    let remaining = this.state.countdown_end_ms - (Date.now() + this.offset);
+                                                    this.countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+                                                    this.time = this.state.elapsed_ms || 0;
+                                                    if (remaining <= 0 && !this.starting) {
+                                                        this.starting = true;
+                                                        $wire.startTimer().then(() => { this.starting = false; });
+                                                    }
+                                                    this.lastTickSecond = Math.floor(this.time / 1000);
                                                 } else {
-                                                    // Update tracker while paused so it doesn't double-tick on resume
+                                                    this.countdown = 0;
+                                                    this.time = this.state.elapsed_ms || 0;
                                                     this.lastTickSecond = Math.floor(this.time / 1000);
                                                 }
                                             }, 30);
-                                            this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                                            this.syncInterval = setInterval(() => { this.sync(); }, 300);
                                         },
                                         start() {
                                             if (!this.running && this.countdown === 0) {
