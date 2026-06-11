@@ -132,6 +132,7 @@ use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
 use App\Livewire\Referee\RefereeScoringDashboard;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 // Welcome page templates (preview routes)
@@ -380,3 +381,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
 });
 
 // require __DIR__.'/auth.php'; // Disabling Breeze auth routes
+
+Route::get('/api/court/{courtId}/timer-state', function ($courtId) {
+    return response()->json(
+        Cache::get("court_{$courtId}_timer", [
+            'status' => 'stopped',
+            'elapsed_ms' => 0,
+            'started_at_ms' => null,
+        ])
+    );
+})->name('api.court.timer-state');

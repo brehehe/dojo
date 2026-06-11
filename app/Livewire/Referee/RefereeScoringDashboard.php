@@ -489,7 +489,101 @@ class RefereeScoringDashboard extends Component
                 $value = $sanitized;
             }
             $this->calculateTotal();
+            $this->autoSave();
+        } elseif ($propertyName === 'notes' || $propertyName === 'signature') {
+            $this->autoSave();
         }
+    }
+
+    public function autoSave()
+    {
+        if (! $this->activeMatch || ! $this->referee) {
+            return;
+        }
+
+        // Identify role/assignment
+        $activeAssignment = ActiveCourtReferee::where('referee_id', $this->referee->id)
+            ->where('court_id', $this->assignedCourt?->id)
+            ->first();
+
+        $validAssignment = $activeAssignment ?: ScheduleReferee::where('referee_id', $this->referee->id)
+            ->where('court_id', $this->assignedCourt?->id)
+            ->where('session_time_id', $this->assignedSession?->id)
+            ->where('rundown_id', $this->assignedRundown?->id)
+            ->first();
+
+        if (! $validAssignment) {
+            return;
+        }
+
+        $this->judgeIndex = $validAssignment->judge_index;
+
+        if (! $this->judgeIndex) {
+            return;
+        }
+
+        // Only embu is active in referee dashboard
+        $currentCourt = $this->assignedCourt ? Court::find($this->assignedCourt->id) : null;
+        $drawingId = $currentCourt?->active_drawing_id;
+
+        if ($drawingId) {
+            $id = $drawingId;
+            $scorableType = DrawingMatchNumber::class;
+        } else {
+            $id = $this->activeMatch->active_registration_id;
+            $scorableType = Registration::class;
+        }
+
+        if (! $id) {
+            return;
+        }
+
+        foreach ($this->embuItems as $key => $val) {
+            $numericVal = is_numeric($val) ? (float) $val : 0;
+            if ($numericVal !== 0.0) {
+                $this->embuItems[$key] = max(0.0, min(10.0, $numericVal));
+            }
+        }
+        $details = $this->embuItems;
+
+        DB::transaction(function () use ($id, $scorableType, $details, $drawingId) {
+            $targetMatchId = $this->specificMatchId ?? $this->activeMatch->id;
+
+            // 1. Save Granular Details
+            RefereeScoreDetail::updateOrCreate(
+                [
+                    'match_number_id' => $targetMatchId,
+                    'referee_id' => $this->referee->id,
+                    'scorable_type' => $scorableType,
+                    'scorable_id' => $id,
+                ],
+                [
+                    'judge_index' => $this->judgeIndex,
+                    'details' => $details,
+                    'total_calculated_score' => $this->totalScore,
+                    'notes' => $this->notes ?? '',
+                    'signature' => $this->signature,
+                ]
+            );
+
+            // 2. Sync to Main Table for Quick Access
+            $column = 'judge_'.$this->judgeIndex;
+
+            $registrationId = $this->activeMatch->active_registration_id;
+            if (! $registrationId && $drawingId) {
+                $drawing = DrawingMatchNumber::find($drawingId);
+                $registrationId = $drawing?->registration_id;
+            }
+
+            EmbuScore::updateOrCreate(
+                [
+                    'match_number_id' => $targetMatchId,
+                    'registration_id' => $registrationId,
+                    'drawing_id' => $drawingId ?? null,
+                ],
+                [$column => $this->totalScore]
+            );
+        });
     }
 
     public function calculateTotal()

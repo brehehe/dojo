@@ -50,6 +50,10 @@
         .row-has-duplicate:hover { background-color: #fef08a !important; }
         .row-no-duplicate { background-color: #dcfce7 !important; }
         .row-no-duplicate:hover { background-color: #bbf7d0 !important; }
+        .row-merged { background: linear-gradient(135deg, rgba(142,68,173,0.06), rgba(52,152,219,0.06)) !important; border-left: 3px solid #8e44ad !important; }
+        .row-merged:hover { background: linear-gradient(135deg, rgba(142,68,173,0.12), rgba(52,152,219,0.12)) !important; }
+        .merge-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: linear-gradient(135deg, #8e44ad, #2980b9); color: #fff; border-radius: 6px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+        .merge-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid rgba(142,68,173,0.25); background: rgba(142,68,173,0.07); color: #8e44ad; border-radius: 6px; font-size: 10.5px; font-weight: 700; margin: 2px; }
         .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
         .contingent-item { margin-bottom: 16px; }
         .contingent-item:last-child { margin-bottom: 0; }
@@ -135,7 +139,17 @@
             <div style="font-size: 11px; color: var(--smoke); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                 <i class="fas fa-list-check" style="color:var(--red);"></i> Status Nomor Pertandingan Sesuai Filter
             </div>
-            <div class="stats-grid-a-two">
+            <div class="stats-grid-a-sub">
+                <div class="stat-card-a blue">
+                    <div class="st-icon blue"><i class="fas fa-hashtag"></i></div>
+                    <div class="st-val">{{ $totalMatchNumbers }}</div>
+                    <div class="st-lbl">Total Nomor Pertandingan</div>
+                </div>
+                <div class="stat-card-a orange">
+                    <div class="st-icon orange"><i class="fas fa-object-group"></i></div>
+                    <div class="st-val">{{ $totalMergeGroups }}</div>
+                    <div class="st-lbl">Total Merge Group</div>
+                </div>
                 <div class="stat-card-a green">
                     <div class="st-icon green"><i class="fas fa-check-circle"></i></div>
                     <div class="st-val">{{ $totalMatchesWithAthletes }}</div>
@@ -219,57 +233,243 @@
 
         <!-- Tabel 1: Nomor Pertandingan dan Kontingen -->
         <div class="table-section-prem" style="padding:24px;">
-            <h3 style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--ink);margin:0 0 16px;"><i class="fas fa-list-alt" style="color:#2980b9;margin-right:8px;"></i> Distribusi Atlet & Kontingen per Nomor Pertandingan</h3>
-            
-            <div style="overflow-x:auto;border:1px solid var(--paper2);border-radius:12px;">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px; text-align: center;">ID</th>
-                            <th style="width: 300px;">Nomor Pertandingan</th>
-                            <th>Daftar Kontingen & Atlet</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($matchData as $match)
-                            <tr class="{{ $match['has_duplicate_contingent'] ? 'row-has-duplicate' : 'row-no-duplicate' }}">
-                                <td style="text-align: center; font-weight: 700; color: var(--smoke);">{{ $match['id'] }}</td>
-                                <td>
-                                    <div style="font-weight: 700; color: var(--ink); font-size: 13.5px; margin-bottom: 6px;">{{ $match['name'] }}</div>
-                                    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                                        <span class="badge" style="background:rgba(41,128,185,0.1);color:#2980b9;">{{ $match['age_group'] }}</span>
-                                        <span class="badge" style="background:rgba(39,174,96,0.1);color:#27ae60;">
-                                            <i class="fas fa-users" style="margin-right:4px;"></i> {{ $match['total_athletes'] }} Atlet
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if(empty($match['contingents']))
-                                        <span style="color: #95a5a6; font-style: italic; font-size: 12px;">Belum ada peserta terdaftar</span>
-                                    @else
-                                        @foreach($match['contingents'] as $c)
-                                            <div class="contingent-item">
-                                                <div class="contingent-title">
-                                                    <i class="fas fa-flag" style="color:var(--red);font-size:11px;"></i> {{ $c['name'] }}
-                                                </div>
-                                                <ul class="athlete-list">
-                                                    @foreach($c['athletes'] as $athleteName)
-                                                        <li>{{ $athleteName }}</li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
+            <h3 style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--ink);margin:0 0 16px;">
+                <i class="fas fa-list-alt" style="color:#2980b9;margin-right:8px;"></i>
+                Distribusi Atlet &amp; Kontingen per Nomor Pertandingan
+                <span style="font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--smoke); margin-left:10px;">
+                    — {{ $totalMatchNumbers }} Nomor
+                    @if($totalMergeGroups > 0)
+                        <span style="color:#8e44ad;">· {{ $totalMergeGroups }} Merge</span>
+                    @endif
+                </span>
+            </h3>
+
+            @php
+                // Urutan tetap: Pemula → Remaja A → Remaja B → Dewasa
+                $ageGroupOrder  = ['Pemula', 'Remaja A', 'Remaja B', 'Dewasa'];
+                $allAgeGroupsRaw = collect($matchData)->pluck('age_group')
+                    ->merge(collect($mergeGroups)->pluck('age_group'))
+                    ->unique()->values();
+                // Urutkan sesuai $ageGroupOrder, sisanya append di belakang
+                $allAgeGroups = collect($ageGroupOrder)
+                    ->filter(fn($ag) => $allAgeGroupsRaw->contains($ag))
+                    ->merge($allAgeGroupsRaw->diff($ageGroupOrder)->sort()->values())
+                    ->values();
+            @endphp
+
+            @if($allAgeGroups->isEmpty())
+                <div style="text-align: center; padding: 32px; color: var(--smoke); font-style: italic;">Tidak ada data nomor pertandingan.</div>
+            @else
+                @foreach($allAgeGroups as $ageGroup)
+                    @php
+                        $ageGroupIndividual = collect($matchData)->where('age_group', $ageGroup);
+                        $ageGroupMerges     = collect($mergeGroups)->where('age_group', $ageGroup);
+                        $totalCount         = $ageGroupIndividual->count() + $ageGroupMerges->count();
+                    @endphp
+
+                    {{-- Header Age Group --}}
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; margin-top: 24px;">
+                        <div style="flex:none; background:linear-gradient(135deg,#2980b9,#1a5276); color:#fff; border-radius:10px; padding:6px 16px; font-family:'Cinzel',serif; font-size:13px; font-weight:700; letter-spacing:.04em; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-layer-group" style="font-size:12px;"></i>
+                            {{ $ageGroup }}
+                        </div>
+                        <div style="flex:1; height:2px; background:linear-gradient(to right, rgba(41,128,185,0.4), transparent);"></div>
+                        <span style="font-size:11px; color:var(--smoke); font-weight:600; white-space:nowrap;">
+                            {{ $totalCount }} Entri
+                            @if($ageGroupMerges->count() > 0)
+                                &nbsp;·&nbsp; <span style="color:#8e44ad;">{{ $ageGroupMerges->count() }} Merge</span>
+                            @endif
+                        </span>
+                    </div>
+
+                    {{-- MERGE GROUPS untuk Age Group ini --}}
+                    @foreach($ageGroupMerges as $mergeGroup)
+                        <div style="margin-left:16px; margin-bottom:16px;">
+                            {{-- Header Merge --}}
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                                <div style="width:3px; height:20px; background:linear-gradient(#8e44ad, #2980b9); border-radius:2px;"></div>
+                                <span class="merge-badge">
+                                    <i class="fas fa-object-group" style="font-size:9px;"></i> MERGE
+                                </span>
+                                <span style="font-size:12px; font-weight:700; color:var(--ink);">{{ $mergeGroup['name'] }}</span>
+                                <div style="flex:1; height:1px; background:rgba(142,68,173,0.15);"></div>
+                                <span style="font-size:10px; color:#8e44ad; font-weight:600; white-space:nowrap;">{{ count($mergeGroup['match_numbers']) }} nomor digabung</span>
+                            </div>
+
+                            {{-- Daftar nomor dalam merge --}}
+                            <div style="overflow-x:auto; border:1px solid rgba(142,68,173,0.2); border-left:3px solid #8e44ad; border-radius:0 12px 12px 0;">
+                                <table class="premium-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:50px; text-align:center;">#</th>
+                                            <th style="width:280px;">Nomor Pertandingan (Digabung)</th>
+                                            <th style="width:100px; text-align:center;">Gender</th>
+                                            <th>Daftar Kontingen &amp; Atlet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($mergeGroup['match_numbers'] as $mnIdx => $mn)
+                                            @php
+                                                $mnGenderLabel = match($mn['gender']) {
+                                                    'Male'   => 'Laki-laki',
+                                                    'Female' => 'Perempuan',
+                                                    'Mix'    => 'Campuran',
+                                                    default  => $mn['gender'],
+                                                };
+                                                $mnGenderIcon = match($mn['gender']) {
+                                                    'Male'   => 'fas fa-mars',
+                                                    'Female' => 'fas fa-venus',
+                                                    'Mix'    => 'fas fa-venus-mars',
+                                                    default  => 'fas fa-genderless',
+                                                };
+                                                $mnGenderColor = match($mn['gender']) {
+                                                    'Male'   => '#2980b9',
+                                                    'Female' => '#e91e63',
+                                                    'Mix'    => '#8e44ad',
+                                                    default  => '#7f8c8d',
+                                                };
+                                                $mnGenderBg = match($mn['gender']) {
+                                                    'Male'   => 'rgba(41,128,185,0.08)',
+                                                    'Female' => 'rgba(233,30,99,0.08)',
+                                                    'Mix'    => 'rgba(142,68,173,0.08)',
+                                                    default  => 'rgba(149,165,166,0.08)',
+                                                };
+                                            @endphp
+                                            <tr class="row-merged">
+                                                <td style="text-align:center; font-weight:700; color:#8e44ad;">{{ $mnIdx + 1 }}</td>
+                                                <td>
+                                                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                                                        <span class="merge-chip"><i class="fas fa-link" style="font-size:9px;"></i></span>
+                                                        <span style="font-weight:700; color:var(--ink); font-size:13px;">{{ $mn['name'] }}</span>
+                                                    </div>
+                                                    <span class="badge" style="background:rgba(39,174,96,0.1);color:#27ae60;">
+                                                        <i class="fas fa-users" style="margin-right:4px;"></i> {{ $mn['total_athletes'] }} Atlet
+                                                    </span>
+                                                </td>
+                                                <td style="text-align:center;">
+                                                    <span style="background:{{ $mnGenderBg }}; color:{{ $mnGenderColor }}; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                                        <i class="{{ $mnGenderIcon }}" style="font-size:10px;"></i> {{ $mnGenderLabel }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if(empty($mn['contingents']))
+                                                        <span style="color: #95a5a6; font-style: italic; font-size: 12px;">Belum ada peserta terdaftar</span>
+                                                    @else
+                                                        @foreach($mn['contingents'] as $c)
+                                                            <div class="contingent-item">
+                                                                <div class="contingent-title">
+                                                                    <i class="fas fa-flag" style="color:var(--red);font-size:11px;"></i> {{ $c['name'] }}
+                                                                </div>
+                                                                <ul class="athlete-list">
+                                                                    @foreach($c['athletes'] as $athleteName)
+                                                                        <li>{{ $athleteName }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                        @endforeach
+                                                    @endif
+                                                </td>
+                                            </tr>
                                         @endforeach
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" style="text-align: center; padding: 32px; color: var(--smoke); font-style: italic;">Tidak ada data nomor pertandingan.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    {{-- NOMOR INDIVIDUAL (tidak di-merge) per Gender --}}
+                    @if($ageGroupIndividual->count() > 0)
+                        @foreach($ageGroupIndividual->groupBy('gender') as $gender => $genderMatches)
+                            @php
+                                $genderLabel = match($gender) {
+                                    'Male'   => 'Laki-laki (Male)',
+                                    'Female' => 'Perempuan (Female)',
+                                    'Mix'    => 'Campuran (Mix)',
+                                    default  => $gender,
+                                };
+                                $genderIcon = match($gender) {
+                                    'Male'   => 'fas fa-mars',
+                                    'Female' => 'fas fa-venus',
+                                    'Mix'    => 'fas fa-venus-mars',
+                                    default  => 'fas fa-genderless',
+                                };
+                                $genderColor = match($gender) {
+                                    'Male'   => '#2980b9',
+                                    'Female' => '#e91e63',
+                                    'Mix'    => '#8e44ad',
+                                    default  => '#7f8c8d',
+                                };
+                                $genderBg = match($gender) {
+                                    'Male'   => 'rgba(41,128,185,0.08)',
+                                    'Female' => 'rgba(233,30,99,0.08)',
+                                    'Mix'    => 'rgba(142,68,173,0.08)',
+                                    default  => 'rgba(149,165,166,0.08)',
+                                };
+                            @endphp
+
+                            {{-- Sub-header Gender --}}
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; margin-left:16px; margin-top:8px;">
+                                <div style="width:3px; height:20px; background:{{ $genderColor }}; border-radius:2px;"></div>
+                                <span style="background:{{ $genderBg }}; color:{{ $genderColor }}; border:1px solid {{ $genderColor }}33; border-radius:8px; padding:4px 12px; font-size:11px; font-weight:700; letter-spacing:.04em; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="{{ $genderIcon }}" style="font-size:11px;"></i>
+                                    {{ $genderLabel }}
+                                </span>
+                                <div style="flex:1; height:1px; background:{{ $genderColor }}22;"></div>
+                                <span style="font-size:10px; color:var(--smoke); white-space:nowrap;">{{ count($genderMatches) }} nomor</span>
+                            </div>
+
+                            {{-- Tabel per Gender --}}
+                            <div style="overflow-x:auto; border:1px solid {{ $genderColor }}22; border-left:3px solid {{ $genderColor }}; border-radius:0 12px 12px 0; margin-bottom:20px; margin-left:16px;">
+                                <table class="premium-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px; text-align: center;">#</th>
+                                            <th style="width: 300px;">Nomor Pertandingan</th>
+                                            <th>Daftar Kontingen & Atlet</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($genderMatches as $match)
+                                            <tr class="{{ $match['has_duplicate_contingent'] ? 'row-has-duplicate' : 'row-no-duplicate' }}">
+                                                <td style="text-align: center; font-weight: 700; color: var(--smoke);">{{ $loop->iteration }}</td>
+                                                <td>
+                                                    <div style="font-weight: 700; color: var(--ink); font-size: 13.5px; margin-bottom: 6px;">{{ $match['name'] }}</div>
+                                                    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                                        <span style="background:{{ $genderBg }}; color:{{ $genderColor }}; border-radius:6px; padding:3px 8px; font-size:10.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                                            <i class="{{ $genderIcon }}" style="font-size:10px;"></i> {{ $genderLabel }}
+                                                        </span>
+                                                        <span class="badge" style="background:rgba(39,174,96,0.1);color:#27ae60;">
+                                                            <i class="fas fa-users" style="margin-right:4px;"></i> {{ $match['total_athletes'] }} Atlet
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    @if(empty($match['contingents']))
+                                                        <span style="color: #95a5a6; font-style: italic; font-size: 12px;">Belum ada peserta terdaftar</span>
+                                                    @else
+                                                        @foreach($match['contingents'] as $c)
+                                                            <div class="contingent-item">
+                                                                <div class="contingent-title">
+                                                                    <i class="fas fa-flag" style="color:var(--red);font-size:11px;"></i> {{ $c['name'] }}
+                                                                </div>
+                                                                <ul class="athlete-list">
+                                                                    @foreach($c['athletes'] as $athleteName)
+                                                                        <li>{{ $athleteName }}</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                        @endforeach
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endforeach
+                    @endif
+                @endforeach
+            @endif
         </div>
 
         <!-- Tabel 2: Atlet yang tidak ada jadwal -->

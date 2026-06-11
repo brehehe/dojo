@@ -1674,12 +1674,12 @@
                             <i class="fa-solid fa-pen-line" style="font-size:10px;"></i>
                             Catatan Wasit (Opsional)
                         </div>
-                        <textarea wire:model="notes" class="ref-notes-textarea" rows="3" placeholder="Ketik catatan di sini..."></textarea>
+                        <textarea wire:model.blur="notes" class="ref-notes-textarea" rows="3" placeholder="Ketik catatan di sini..."></textarea>
                     </div>
 
                     {{-- Digital Signature & Actions Wrapper --}}
                     <div x-data="{
-                        localSignature: '{{ $signature }}' || null,
+                        localSignature: @entangle('signature'),
                         activeId: @entangle('currentActiveIdentifier'),
                         isDrawing: false,
                         ctx: null,

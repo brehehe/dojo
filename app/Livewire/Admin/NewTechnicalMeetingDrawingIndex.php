@@ -49,6 +49,14 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
     public string $searchPanitera = '';
 
+    public string $searchJadwalMatch = '';
+
+    public ?int $filterJadwalCourtId = null;
+
+    public ?int $filterJadwalRundownId = null;
+
+    public ?int $filterJadwalSessionId = null;
+
     public string $newKoorName = '';
 
     public string $newKoorEmail = '';
@@ -1147,6 +1155,20 @@ class NewTechnicalMeetingDrawingIndex extends Component
         $sessions = SessionTime::orderBy('start_time')->get();
         $courts = Court::orderBy('order')->get();
 
+        if ($draftType === 'randori') {
+            $courts = $courts->filter(function ($court) {
+                $name = strtolower($court->name);
+
+                return str_contains($name, 'court 1') ||
+                       str_contains($name, 'court 2') ||
+                       str_contains($name, 'court 4') ||
+                       str_contains($name, 'lapangan 1') ||
+                       str_contains($name, 'lapangan 2') ||
+                       str_contains($name, 'lapangan 4') ||
+                       in_array($court->order, [1, 2, 4]);
+            });
+        }
+
         // Prioritize Embu on the first day. If this is a Randori match and there are still unscheduled Embu matches,
         // we avoid scheduling it on the first day if we have other days available.
         if ($draftType === 'randori' && $rundowns->count() > 1) {
@@ -1694,9 +1716,39 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'embu' => 0,
             'randori' => 0,
         ];
+        $ungeneratedMatches = collect();
+        $timeConflicts = [];
+
         if ($this->draftType === 'jadwal') {
-            $allDrawings = DrawingMatchNumber::with(['matchNumber.ageGroup', 'registration.contingent', 'court', 'sessionTime', 'rundown', 'merge.ageGroup'])
-                ->get()
+            $allDrawingsQuery = DrawingMatchNumber::with(['matchNumber.ageGroup', 'registration.contingent', 'court', 'sessionTime', 'rundown', 'merge.ageGroup']);
+
+            if ($this->filterJadwalCourtId) {
+                $allDrawingsQuery->where('court_id', $this->filterJadwalCourtId);
+            }
+
+            if ($this->filterJadwalRundownId) {
+                $allDrawingsQuery->where('rundown_id', $this->filterJadwalRundownId);
+            }
+
+            if ($this->filterJadwalSessionId) {
+                $allDrawingsQuery->where('session_time_id', $this->filterJadwalSessionId);
+            }
+
+            if (! empty($this->searchJadwalMatch)) {
+                $allDrawingsQuery->where(function ($q) use ($likeOperator) {
+                    $q->whereHas('matchNumber', function ($m) use ($likeOperator) {
+                        $m->where('name', $likeOperator, '%'.$this->searchJadwalMatch.'%');
+                    })->orWhereHas('merge', function ($m) use ($likeOperator) {
+                        $m->where('name', $likeOperator, '%'.$this->searchJadwalMatch.'%');
+                    })->orWhereHas('registration.athletes', function ($a) use ($likeOperator) {
+                        $a->where('name', $likeOperator, '%'.$this->searchJadwalMatch.'%');
+                    })->orWhereHas('registration.contingent', function ($c) use ($likeOperator) {
+                        $c->where('name', $likeOperator, '%'.$this->searchJadwalMatch.'%');
+                    });
+                });
+            }
+
+            $allDrawings = $allDrawingsQuery->get()
                 ->sortBy(function ($d) {
                     $date = $d->rundown->date ?? '9999-12-31';
                     $sTime = $d->sessionTime->start_time ?? '99:99';
@@ -1746,9 +1798,86 @@ class NewTechnicalMeetingDrawingIndex extends Component
                             } else {
                                 $scheduleStats['embu']++;
                             }
+
+                            // Detect duplicate match numbers at same time + court (conflict)
+                            $seqNums = collect($entries)->pluck('sequence_number')->unique();
+                            $matchNumIds = collect($entries)->pluck('match_number_id')->unique();
+                            if ($seqNums->count() > 1 || $matchNumIds->count() > 1) {
+                                $timeConflicts[] = [
+                                    'time' => $tId,
+                                    'court_id' => $cId,
+                                    'rundown' => $rData['model']?->name ?? 'Rundown',
+                                    'count' => count($entries),
+                                    'match_names' => collect($entries)->map(fn ($e) => $e->merge?->name ?? $e->matchNumber?->name ?? '-')->unique()->implode(', '),
+                                ];
+                            }
                         }
                     }
                 }
+            }
+
+            // Ungenerated match numbers (have athletes but no drawings)
+            $allMatchesWithAthletes = MatchNumber::with(['ageGroup'])
+                ->has('athletes')
+                ->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('drawing_match_numbers')
+                        ->whereColumn('drawing_match_numbers.match_number_id', 'match_numbers.id');
+                })
+                ->get();
+
+            $allMergesWithAthletes = MatchNumberMerge::with(['matchNumbers.ageGroup', 'ageGroup'])
+                ->whereHas('matchNumbers', fn ($q) => $q->has('athletes'))
+                ->get()
+                ->filter(function ($merge) {
+                    $matchIds = $merge->matchNumbers->pluck('id')->toArray();
+
+                    return ! DrawingMatchNumber::whereIn('match_number_id', $matchIds)->exists();
+                });
+
+            $ungeneratedMatches = collect();
+            foreach ($allMatchesWithAthletes as $mn) {
+                $athleteCount = DB::table('athlete_match_number')
+                    ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
+                    ->where('registrations.status', 'verified')
+                    ->where('registrations.athlete_status', 'verified')
+                    ->where('athlete_match_number.match_number_id', $mn->id)
+                    ->count();
+
+                $ungeneratedMatches->push([
+                    'name' => $mn->name,
+                    'age_group' => $mn->ageGroup?->name ?? '-',
+                    'gender' => match ($mn->gender) {
+                        'L', 'Male' => 'Putra',
+                        'P', 'Female' => 'Putri',
+                        'Mix', 'Campuran' => 'Campuran',
+                        default => $mn->gender ?? '-',
+                    },
+                    'type' => $mn->draft_type,
+                    'athlete_count' => $athleteCount,
+                ]);
+            }
+            foreach ($allMergesWithAthletes as $merge) {
+                $mergeMatchIds = $merge->matchNumbers->pluck('id')->toArray();
+                $mergeAthleteCount = DB::table('athlete_match_number')
+                    ->join('registrations', 'athlete_match_number.registration_id', '=', 'registrations.id')
+                    ->where('registrations.status', 'verified')
+                    ->where('registrations.athlete_status', 'verified')
+                    ->whereIn('athlete_match_number.match_number_id', $mergeMatchIds)
+                    ->count();
+
+                $ungeneratedMatches->push([
+                    'name' => $merge->name ?: $merge->matchNumbers->pluck('name')->implode(', '),
+                    'age_group' => $merge->ageGroup?->name ?? '-',
+                    'gender' => match ($merge->gender ?? '') {
+                        'L', 'Male' => 'Putra',
+                        'P', 'Female' => 'Putri',
+                        'Mix', 'Campuran' => 'Campuran',
+                        default => $merge->gender ?? '-',
+                    },
+                    'type' => $merge->type,
+                    'athlete_count' => $mergeAthleteCount,
+                ]);
             }
         }
 
@@ -1760,7 +1889,9 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'matchAthletes' => $matchAthletes,
             'drawingEntries' => $drawingEntries,
             'contingentCounts' => $contingentCounts,
-            'courts' => Court::orderBy('order')->get(),
+            'courts' => $this->draftType === 'jadwal' && $this->filterJadwalCourtId
+                ? Court::where('id', $this->filterJadwalCourtId)->get()
+                : Court::orderBy('order')->get(),
             'sessionTimes' => SessionTime::orderBy('start_time')->get(),
             'koorUsers' => User::role('Koordinator Lapangan')->orderBy('name')->get(),
             'paniteraUsers' => User::role('Panitera')->where('name', $likeOperator, '%'.$this->searchPanitera.'%')->orderBy('name')->get(),
@@ -1769,8 +1900,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
                 'drawn' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNotNull('drawing_generated_at')->count(),
                 'pending' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNull('drawing_generated_at')->count(),
             ],
+            'allRundowns' => Rundown::orderBy('date')->orderBy('order')->get(),
+            'allCourts' => Court::orderBy('order')->get(),
+            'allSessions' => SessionTime::orderBy('start_time')->get(),
             'scheduleByRundown' => $scheduleByRundown,
             'scheduleStats' => $scheduleStats,
+            'ungeneratedMatches' => $ungeneratedMatches,
+            'timeConflicts' => $timeConflicts,
         ]);
     }
 

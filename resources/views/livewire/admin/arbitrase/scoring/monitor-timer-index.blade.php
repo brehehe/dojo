@@ -39,7 +39,8 @@
              countdown: 0,
              playedIntervals: new Set(),
              async sync() {
-                 let state = await $wire.getTimerState();
+                 let res = await fetch(`/api/court/{{ $court->id }}/timer-state`);
+                 let state = await res.json();
                  if (!state) return;
                  let wasRunning = this.running;
                  this.running = (state.status === 'running');
@@ -92,10 +93,10 @@
                  }
              },
              init() {
-                 // Fetch absolute state from server every 1s
-                 setInterval(() => {
-                     this.sync();
-                 }, 1000);
+                  // Fetch absolute state from server every 200ms
+                  setInterval(() => {
+                      this.sync();
+                  }, 200);
                  
                  // High-speed local interpolation for smooth UI
                  setInterval(() => {

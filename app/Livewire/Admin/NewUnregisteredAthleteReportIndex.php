@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Exports\UnregisteredAthleteReportExport;
 use App\Models\Athlete;
 use App\Models\MatchNumber\MatchNumber;
+use App\Models\MatchNumberMerge;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -14,6 +15,12 @@ use Maatwebsite\Excel\Facades\Excel;
 class NewUnregisteredAthleteReportIndex extends Component
 {
     public $matchData = [];
+
+    /** @var array<int, array<string, mixed>> Daftar merge group yang aktif */
+    public $mergeGroups = [];
+
+    /** @var array<int> ID match_number yang sudah masuk merge */
+    public $mergedMatchIds = [];
 
     public $unregisteredAthletes = [];
 
@@ -26,6 +33,12 @@ class NewUnregisteredAthleteReportIndex extends Component
     public int $totalMatchesWithAthletes = 0;
 
     public int $totalMatchesWithoutAthletes = 0;
+
+    /** Total semua nomor pertandingan: individual + yang ada di dalam merge */
+    public int $totalMatchNumbers = 0;
+
+    /** Total merge groups yang aktif */
+    public int $totalMergeGroups = 0;
 
     public int $totalEksebisi = 0;
 
@@ -90,10 +103,79 @@ class NewUnregisteredAthleteReportIndex extends Component
 
         $matchNumbers = $matchNumbersQuery->get();
         $this->matchData = [];
+        $this->mergeGroups = [];
+        $this->mergedMatchIds = [];
         $this->totalMatchesWithAthletes = 0;
         $this->totalMatchesWithoutAthletes = 0;
+        $this->totalMatchNumbers = 0;
+        $this->totalMergeGroups = 0;
+
+        // Load semua merge groups beserta kontingen tiap nomor di dalamnya
+        $allMerges = MatchNumberMerge::with(['matchNumbers.athletes.contingents', 'matchNumbers.ageGroup', 'ageGroup'])->get();
+        foreach ($allMerges as $merge) {
+            $mergeMatchIds = $merge->matchNumbers->pluck('id')->toArray();
+
+            // Filter match numbers in this merge sesuai filter gender
+            $mergeMatchNumbers = $merge->matchNumbers->filter(function ($mn) {
+                if ($this->genderFilter && $mn->gender !== $this->genderFilter) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if ($mergeMatchNumbers->isEmpty()) {
+                continue;
+            }
+
+            // Kumpulkan IDs yang sudah di-merge
+            foreach ($mergeMatchIds as $id) {
+                $this->mergedMatchIds[] = $id;
+            }
+
+            // Build match_numbers with contingent data
+            $mergeMatchNumbersData = $mergeMatchNumbers->map(function ($mn) {
+                // Group athletes by contingent (same logic as individual matches)
+                $grouped = [];
+                foreach ($mn->athletes as $athlete) {
+                    $contingent = $athlete->contingent;
+                    $contingentName = $contingent ? $contingent->name : 'Tanpa Kontingen';
+                    if (! isset($grouped[$contingentName])) {
+                        $grouped[$contingentName] = [];
+                    }
+                    $grouped[$contingentName][] = trim($athlete->name);
+                }
+                ksort($grouped);
+
+                $contingents = [];
+                foreach ($grouped as $contingentName => $athletes) {
+                    $contingents[] = ['name' => $contingentName, 'athletes' => $athletes];
+                }
+
+                return [
+                    'id' => $mn->id,
+                    'name' => $mn->name,
+                    'gender' => $mn->gender ?? '-',
+                    'total_athletes' => $mn->athletes->count(),
+                    'contingents' => $contingents,
+                ];
+            })->values()->toArray();
+
+            $this->mergeGroups[] = [
+                'id' => $merge->id,
+                'name' => $merge->name,
+                'type' => $merge->type,
+                'age_group' => $merge->ageGroup?->name ?? '-',
+                'match_numbers' => $mergeMatchNumbersData,
+            ];
+        }
 
         foreach ($matchNumbers as $mn) {
+            // Skip jika nomor ini sudah masuk dalam sebuah merge group
+            if (in_array($mn->id, $this->mergedMatchIds)) {
+                continue;
+            }
+
             $contingents = [];
 
             if ($mn->max_athletes == 1) {
@@ -167,6 +249,7 @@ class NewUnregisteredAthleteReportIndex extends Component
                 'id' => $mn->id,
                 'name' => $mn->name,
                 'age_group' => $mn->ageGroup ? $mn->ageGroup->name : '-',
+                'gender' => $mn->gender ?? '-',
                 'contingents' => $contingents,
                 'total_athletes' => $mn->athletes->count(),
                 'has_duplicate_contingent' => $hasDuplicateContingent,
@@ -178,6 +261,11 @@ class NewUnregisteredAthleteReportIndex extends Component
                 $this->totalMatchesWithoutAthletes++;
             }
         }
+
+        // Hitung total: individual matchData + semua nomor di dalam merge groups
+        $mergeMatchCount = collect($this->mergeGroups)->sum(fn ($mg) => count($mg['match_numbers']));
+        $this->totalMatchNumbers = count($this->matchData) + $mergeMatchCount;
+        $this->totalMergeGroups = count($this->mergeGroups);
 
         $athletesQuery = Athlete::with(['registrations.contingent', 'contingents', 'matchNumbers']);
 

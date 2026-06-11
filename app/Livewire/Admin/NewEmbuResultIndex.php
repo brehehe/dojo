@@ -505,16 +505,28 @@ class NewEmbuResultIndex extends Component
 
     public function openGenerateFinalModal(): void
     {
-        // Pre-fill from existing Penyisihan drawing
-        $existing = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
-            ->where('round', 'Penyisihan')
+        $matchIds = $this->getMatchNumberIds();
+        $existing = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+            ->where('round', 'Final')
             ->first();
 
-        $this->finalCourtId = $existing?->court_id;
-        $this->finalPoolId = null; // Usually Final is in a single pool, so we can leave it empty or create a 'FINAL POOL'
-        $this->finalSessionTimeId = $existing?->session_time_id;
-        $this->finalRundownId = $existing?->rundown_id;
-        $this->finalScheduleDate = $existing?->schedule_date;
+        if ($existing) {
+            $this->finalCourtId = $existing->court_id;
+            $this->finalPoolId = $existing->pool_id;
+            $this->finalSessionTimeId = $existing->session_time_id;
+            $this->finalRundownId = $existing->rundown_id;
+            $this->finalScheduleDate = $existing->schedule_date;
+        } else {
+            $existingPenyisihan = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+                ->where('round', 'Penyisihan')
+                ->first();
+
+            $this->finalCourtId = $existingPenyisihan?->court_id;
+            $this->finalPoolId = null;
+            $this->finalSessionTimeId = $existingPenyisihan?->session_time_id;
+            $this->finalRundownId = $existingPenyisihan?->rundown_id;
+            $this->finalScheduleDate = $existingPenyisihan?->schedule_date;
+        }
         $this->showGenerateFinalModal = true;
     }
 
@@ -551,7 +563,8 @@ class NewEmbuResultIndex extends Component
             return;
         }
 
-        $existingFinals = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
+        $matchIds = $this->getMatchNumberIds();
+        $existingFinals = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', 'Final')
             ->orderBy('sequence_number')
             ->get();
@@ -567,10 +580,13 @@ class NewEmbuResultIndex extends Component
             ];
 
             if ($existing) {
+                $existingMeta = is_array($existing->metadata) ? $existing->metadata : [];
+                $mergedMeta = array_merge($existingMeta, $meta);
+
                 $existing->update([
                     'registration_id' => $reg['id'],
                     'match_number_id' => $reg['match_number_id'],
-                    'metadata' => $meta,
+                    'metadata' => $mergedMeta,
                 ]);
                 $usedIds[] = $existing->id;
             } else {
@@ -591,11 +607,19 @@ class NewEmbuResultIndex extends Component
             }
         }
 
-        // Clean up any remaining unused TBD final slots
-        DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
-            ->where('round', 'Final')
-            ->whereNotIn('id', $usedIds)
-            ->delete();
+        // Reset any remaining unused slots to empty (registration_id = null), keeping the pre-scheduled slots
+        $unusedFinals = $existingFinals->whereNotIn('id', $usedIds);
+        foreach ($unusedFinals as $unused) {
+            $unusedMeta = is_array($unused->metadata) ? $unused->metadata : [];
+            $unusedMeta['contingent'] = 'TBD';
+            $unusedMeta['athlete_name'] = 'TBD';
+            $unusedMeta['athlete_ids'] = [];
+
+            $unused->update([
+                'registration_id' => null,
+                'metadata' => $unusedMeta,
+            ]);
+        }
 
         $this->showGenerateFinalModal = false;
 
@@ -613,7 +637,8 @@ class NewEmbuResultIndex extends Component
         $this->tiebreakRound = $round;
         $this->tiebreakRegistrationIds = $regIds;
 
-        $existing = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
+        $matchIds = $this->getMatchNumberIds();
+        $existing = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', $round)
             ->first();
 
@@ -789,15 +814,15 @@ class NewEmbuResultIndex extends Component
                 return $m;
             });
 
+        $matchIds = $this->getMatchNumberIds();
         $penyisihanRanking = $this->getPenyisihanRanking();
         $finalRanking = $this->getFinalRanking();
-        $finalExists = DrawingMatchNumber::where('match_number_id', $this->selectedMatchId)
+        $finalExists = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', 'Final')
             ->exists();
         $tiedPenyisihanIds = $this->detectPenyisihanBoundaryTies();
         $tiedFinalIds = $this->detectFinalTies();
 
-        $matchIds = $this->getMatchNumberIds();
         $champions = $this->selectedMatchId
             ? EmbuChampion::whereIn('match_number_id', $matchIds)
                 ->orderBy('rank')

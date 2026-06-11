@@ -423,8 +423,9 @@
                                     <i class="fas fa-arrow-right"></i> Generate Final
                                 </button>
                             @else
-                                <button wire:click="openGenerateFinalModal" class="btn-gen ghost">
-                                    <i class="fas fa-sync"></i> Re-generate
+                                <button wire:click="generateFinal" wire:loading.attr="disabled" class="btn-gen ghost">
+                                    <span wire:loading.remove wire:target="generateFinal"><i class="fas fa-sync"></i> Re-generate</span>
+                                    <span wire:loading wire:target="generateFinal"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
                                 </button>
                             @endif
                         </div>

@@ -72,7 +72,20 @@ test('applyTimerPenalty calculates correct denda for single and group matches', 
         'sequence_number' => 1,
     ]);
 
-    // Test Tandoku 80 seconds -> expected denda = 5
+    // Test Tandoku 50 seconds -> expected denda = 5
+    Livewire::actingAs($admin)
+        ->test(NewScoringEmbuIndex::class, ['matchNumber' => $tandokuMatch])
+        ->call('finishMatch', $drawingTandoku->id, 50 * 1000);
+
+    $score1 = EmbuScore::where('match_number_id', $tandokuMatch->id)
+        ->where('registration_id', $regTandoku->id)
+        ->first();
+    expect($score1)->not->toBeNull();
+    expect($score1->denda)->toEqual(5);
+    expect($score1->waktu)->toEqual('00:50');
+
+    // Test Tandoku 80 seconds -> expected denda = 0
+    $score1->delete();
     Livewire::actingAs($admin)
         ->test(NewScoringEmbuIndex::class, ['matchNumber' => $tandokuMatch])
         ->call('finishMatch', $drawingTandoku->id, 80 * 1000);
@@ -81,7 +94,7 @@ test('applyTimerPenalty calculates correct denda for single and group matches', 
         ->where('registration_id', $regTandoku->id)
         ->first();
     expect($score1)->not->toBeNull();
-    expect($score1->denda)->toEqual(5);
+    expect($score1->denda)->toEqual(0);
     expect($score1->waktu)->toEqual('01:20');
 
     // 2. Group / Pasangan category (max_athletes = 2)

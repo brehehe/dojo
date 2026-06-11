@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Master\Court;
 
 use App\Models\Court\Court;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -73,11 +74,16 @@ class AdminMasterCourtIndex extends Component
                     'name' => $this->name,
                 ]);
 
+                $this->syncTabletUsers($court);
+
                 $this->dispatch('swal', title: 'Berhasil!', text: 'Data Court telah diperbarui.', icon: 'success');
             } else {
-                Court::create([
+                $court = Court::create([
                     'name' => $this->name,
+                    'order' => (Court::max('order') ?? 0) + 1,
                 ]);
+
+                $this->syncTabletUsers($court);
 
                 $this->dispatch('swal', title: 'Berhasil!', text: 'Court baru telah ditambahkan.', icon: 'success');
             }
@@ -86,10 +92,40 @@ class AdminMasterCourtIndex extends Component
         $this->showingCourtModal = false;
     }
 
+    private function syncTabletUsers(Court $court): void
+    {
+        // Index 1: Wasit Utama
+        $this->createOrUpdateTabletUser($court, 1, 'wasitutama');
+
+        // Index 2-5: Wasit 2, 3, 4, 5
+        for ($i = 2; $i <= 5; $i++) {
+            $this->createOrUpdateTabletUser($court, $i, 'wasit'.$i);
+        }
+    }
+
+    private function createOrUpdateTabletUser(Court $court, int $index, string $suffix): void
+    {
+        $email = 'tabletcourt'.$court->order.$suffix.'@gmail.com';
+
+        $user = User::updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => 'Tablet '.$court->name.' - '.ucwords(str_replace('wasit', 'Wasit ', $suffix)),
+                'password' => bcrypt('password'),
+                'court_id' => $court->id,
+                'judge_index' => $index,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        $user->assignRole('Wasit');
+    }
+
     public function deleteCourt($courtId)
     {
         $court = Court::findOrFail($courtId);
         DB::transaction(function () use ($court) {
+            User::where('court_id', $court->id)->delete();
             $court->delete();
         });
 

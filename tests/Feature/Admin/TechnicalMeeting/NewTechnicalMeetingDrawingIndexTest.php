@@ -204,7 +204,7 @@ it('generates all drawings scheduling preliminaries first then finals across cat
     // 1. Setup Court, Rundown, SessionTime
     $court1 = Court::create(['name' => 'Court 1', 'order' => 1]);
     $court2 = Court::create(['name' => 'Court 2', 'order' => 2]);
-    $court3 = Court::create(['name' => 'Court 3', 'order' => 3]);
+    $court4 = Court::create(['name' => 'Court 4', 'order' => 4]);
 
     $rundown = Rundown::create([
         'name' => 'Hari 1',

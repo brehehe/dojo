@@ -262,8 +262,180 @@ test('personal mode resolves correct court when referee is scheduled on multiple
     $component = Livewire::test(RefereeScoringDashboard::class);
 
     // Should resolve to Court 1, session 2, judge index 2 — NOT Court 2 session 1 judge 1
+    // Should resolve to Court 1, session 2, judge index 2 — NOT Court 2 session 1 judge 1
     expect($component->get('assignedCourt'))->not->toBeNull();
     expect($component->get('assignedCourt')->id)->toBe($court1->id);
     expect($component->get('judgeIndex'))->toBe(2);
     expect($component->get('isFormOpen'))->toBeTrue();
+});
+
+test('manual referee assignment prevents duplicate assignments in the same session', function () {
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 10 referees
+    $referees = [];
+    for ($i = 0; $i < 10; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT UTAMA']);
+    }
+
+    $court1 = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $court2 = Court::create(['name' => 'Court 2', 'order' => 2]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    // Pre-assign 5 referees to Court 1
+    for ($i = 0; $i < 5; $i++) {
+        ScheduleReferee::create([
+            'rundown_id' => $rundown->id,
+            'session_time_id' => $session->id,
+            'court_id' => $court1->id,
+            'referee_id' => $referees[$i]->id,
+            'judge_index' => $i + 1,
+        ]);
+    }
+
+    // Now try to assign a panel to Court 2 that contains one of the referees from Court 1 (e.g. $referees[0])
+    $component = Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('openAssignModal', $rundown->id, $session->id, $court2->id);
+
+    // Toggle 4 fresh referees
+    for ($i = 5; $i < 9; $i++) {
+        $component->call('toggleReferee', $referees[$i]->id);
+    }
+    // Toggle 1 duplicate referee (who is on Court 1)
+    $component->call('toggleReferee', $referees[0]->id);
+
+    // Try to save - should fail
+    $component->call('saveReferees')
+        ->assertHasErrors(['referees']);
+});
+
+test('autoGenerateAllReferees assigns unique referees in the same session', function () {
+    $roleArbitrase = Role::firstOrCreate(['name' => 'Arbitrase']);
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 2 Arbitrators
+    $userArb1 = User::factory()->create();
+    $userArb1->assignRole($roleArbitrase);
+    $refArb1 = Referee::create(['user_id' => $userArb1->id, 'certification_level' => 'Nasional']);
+
+    $userArb2 = User::factory()->create();
+    $userArb2->assignRole($roleArbitrase);
+    $refArb2 = Referee::create(['user_id' => $userArb2->id, 'certification_level' => 'Nasional']);
+
+    // Create 15 Referees (enough for 3 courts * 5)
+    $refereeIds = [];
+    for ($i = 0; $i < 15; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $r = Referee::create(['user_id' => $u->id, 'certification_level' => $i === 0 ? 'WASIT UTAMA' : 'Daerah']);
+        $refereeIds[] = $r->id;
+    }
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $court1 = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $court2 = Court::create(['name' => 'Court 2', 'order' => 2]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    // Schedule matches on two courts
+    DrawingMatchNumber::create(['match_number_id' => $matchNumber->id, 'registration_id' => $registration->id, 'draft_type' => 'embu', 'court_id' => $court1->id, 'rundown_id' => $rundown->id, 'session_time_id' => $session->id, 'sequence_number' => 1, 'round' => 'Penyisihan']);
+    DrawingMatchNumber::create(['match_number_id' => $matchNumber->id, 'registration_id' => $registration->id, 'draft_type' => 'embu', 'court_id' => $court2->id, 'rundown_id' => $rundown->id, 'session_time_id' => $session->id, 'sequence_number' => 2, 'round' => 'Penyisihan']);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('autoGenerateAllReferees');
+
+    // Get all assigned referees for the session
+    $allAssignedRefs = ScheduleReferee::where('rundown_id', $rundown->id)
+        ->where('session_time_id', $session->id)
+        ->pluck('referee_id')
+        ->toArray();
+
+    // Verify there are no duplicates
+    expect(count($allAssignedRefs))->toBe(count(array_unique($allAssignedRefs)));
+});
+
+test('clearAllAssignments removes all referee assignments', function () {
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+    $user = User::factory()->create();
+    $user->assignRole($rolePerwasitan);
+    $referee = Referee::create(['user_id' => $user->id, 'certification_level' => 'Daerah']);
+
+    $court = Court::create(['name' => 'Court 1']);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    DrawingMatchNumber::create(['match_number_id' => $matchNumber->id, 'registration_id' => $registration->id, 'draft_type' => 'embu', 'court_id' => $court->id, 'rundown_id' => $rundown->id, 'session_time_id' => $session->id, 'sequence_number' => 1]);
+
+    // Create an assignment
+    ScheduleReferee::create([
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'court_id' => $court->id,
+        'referee_id' => $referee->id,
+        'judge_index' => 1,
+    ]);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('clearAllAssignments');
+
+    expect(ScheduleReferee::count())->toBe(0);
+});
+
+test('resetAndGenerateAllReferees resets and generates fresh assignments', function () {
+    $roleArbitrase = Role::firstOrCreate(['name' => 'Arbitrase']);
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    $userArb = User::factory()->create();
+    $userArb->assignRole($roleArbitrase);
+    $refArb = Referee::create(['user_id' => $userArb->id, 'certification_level' => 'Nasional']);
+
+    $refereeIds = [];
+    for ($i = 0; $i < 5; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $r = Referee::create(['user_id' => $u->id, 'certification_level' => 'Daerah']);
+        $refereeIds[] = $r->id;
+    }
+
+    $court = Court::create(['name' => 'Court 1']);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    DrawingMatchNumber::create(['match_number_id' => $matchNumber->id, 'registration_id' => $registration->id, 'draft_type' => 'embu', 'court_id' => $court->id, 'rundown_id' => $rundown->id, 'session_time_id' => $session->id, 'sequence_number' => 1]);
+
+    // Create an initial dummy assignment using a real referee without Perwasitan role so it's not selected during generation
+    $dummyUser = User::factory()->create();
+    $dummyReferee = Referee::create(['user_id' => $dummyUser->id, 'certification_level' => 'Daerah']);
+
+    ScheduleReferee::create([
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'court_id' => $court->id,
+        'referee_id' => $dummyReferee->id,
+        'judge_index' => 1,
+    ]);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('resetAndGenerateAllReferees');
+
+    // Dummy assignment should be gone, and a new unique panel of 5 referees + 1 dewan arbitrase should be generated.
+    expect(ScheduleReferee::where('referee_id', $dummyReferee->id)->exists())->toBeFalse();
+    expect(ScheduleReferee::count())->toBe(6); // 5 judges + 1 dewan arbitrase
 });

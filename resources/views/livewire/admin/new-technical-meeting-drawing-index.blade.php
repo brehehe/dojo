@@ -880,6 +880,105 @@
                         </div>
                     </div>
 
+                    {{-- SEARCH & FILTER BAR --}}
+                    <div class="tm-card" style="margin-bottom: 20px; padding: 16px 20px;">
+                        <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                            <div style="flex: 2; min-width: 200px; position:relative;">
+                                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--smoke); font-size:12px;"></i>
+                                <input type="text" wire:model.live="searchJadwalMatch" 
+                                    placeholder="Cari kelas, nomor pertandingan, kontingen atau nama atlet..." 
+                                    style="width: 100%; padding: 8px 12px 8px 36px; border: 1px solid var(--paper2); border-radius: 10px; font-size: 12.5px; outline:none; font-family:'DM Sans', sans-serif;">
+                            </div>
+                            <div style="flex: 1; min-width: 130px;">
+                                <select wire:model.live="filterJadwalCourtId" 
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid var(--paper2); border-radius: 10px; font-size: 12.5px; outline:none; font-family:'DM Sans', sans-serif; background: #fff; cursor: pointer;">
+                                    <option value="">Semua Lapangan</option>
+                                    @foreach($allCourts as $court)
+                                        <option value="{{ $court->id }}">{{ $court->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 130px;">
+                                <select wire:model.live="filterJadwalRundownId" 
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid var(--paper2); border-radius: 10px; font-size: 12.5px; outline:none; font-family:'DM Sans', sans-serif; background: #fff; cursor: pointer;">
+                                    <option value="">Semua Hari</option>
+                                    @foreach($allRundowns as $rd)
+                                        <option value="{{ $rd->id }}">{{ $rd->name }} ({{ \Carbon\Carbon::parse($rd->date)->format('d/m') }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div style="flex: 1; min-width: 130px;">
+                                <select wire:model.live="filterJadwalSessionId" 
+                                    style="width: 100%; padding: 8px 12px; border: 1px solid var(--paper2); border-radius: 10px; font-size: 12.5px; outline:none; font-family:'DM Sans', sans-serif; background: #fff; cursor: pointer;">
+                                    <option value="">Semua Sesi</option>
+                                    @foreach($allSessions as $sess)
+                                        <option value="{{ $sess->id }}">{{ $sess->name }} ({{ \Carbon\Carbon::parse($sess->start_time)->format('H:i') }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- UNGENERATED MATCHES INFO --}}
+                    @if($ungeneratedMatches->isNotEmpty())
+                        <div style="margin-bottom:16px; background:#fff8e1; border:1px solid #f39c12; border-radius:14px; padding:16px 20px;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                                <div style="width:32px;height:32px;border-radius:50%;background:#f39c12;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size:13px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:800;color:#d68910;text-transform:uppercase;letter-spacing:0.04em;">
+                                        {{ $ungeneratedMatches->count() }} Nomer Pertandingan Belum Ter-Generate
+                                    </div>
+                                    <div style="font-size:11px;color:#a67c00;margin-top:1px;">Nomer pertandingan berikut memiliki peserta tetapi belum memiliki jadwal drawing</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                @foreach($ungeneratedMatches as $um)
+                                    <div style="background:#fff;border:1px solid #f39c12;border-radius:8px;padding:6px 12px;font-size:11px;display:flex;align-items:center;gap:8px;">
+                                        <span style="font-weight:800;color:var(--ink);">{{ $um['name'] }}</span>
+                                        <span style="color:var(--smoke);">· {{ $um['age_group'] }} · {{ $um['gender'] }} · {{ ucfirst($um['type']) }}</span>
+                                        <span style="background:#f39c12;color:#fff;padding:2px 8px;border-radius:20px;font-weight:800;font-size:10px;white-space:nowrap;">
+                                            {{ $um['athlete_count'] }} atlet
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <div style="margin-bottom:16px; background:#f0fdf4; border:1px solid #27ae60; border-radius:14px; padding:12px 20px; display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-check-circle" style="color:#27ae60;font-size:18px;"></i>
+                            <div style="font-size:12px;font-weight:700;color:#1a7a45;">Semua nomer pertandingan sudah ter-generate</div>
+                        </div>
+                    @endif
+
+                    {{-- TIME CONFLICTS INFO --}}
+                    @if(!empty($timeConflicts))
+                        <div style="margin-bottom:16px; background:#fff0f0; border:1px solid #e74c3c; border-radius:14px; padding:16px 20px;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                                <div style="width:32px;height:32px;border-radius:50%;background:#e74c3c;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;">
+                                    <i class="fas fa-clock" style="font-size:13px;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:800;color:#c0392b;text-transform:uppercase;letter-spacing:0.04em;">
+                                        {{ count($timeConflicts) }} Potensi Bentrok Waktu Terdeteksi
+                                    </div>
+                                    <div style="font-size:11px;color:#922b21;margin-top:1px;">Beberapa slot waktu & court memiliki lebih dari 1 kelompok pertandingan</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                @foreach($timeConflicts as $conflict)
+                                    <div style="background:#fff;border:1px solid #e74c3c;border-radius:8px;padding:8px 12px;font-size:11px;display:flex;align-items:center;gap:12px;">
+                                        <span style="font-family:'DM Mono',monospace;font-weight:800;color:#e74c3c;min-width:50px;">{{ $conflict['time'] }}</span>
+                                        <span style="color:var(--smoke);">{{ $conflict['rundown'] }}</span>
+                                        <span style="font-weight:700;color:var(--ink);">{{ $conflict['match_names'] }}</span>
+                                        <span style="background:#fecaca;color:#c0392b;padding:2px 8px;border-radius:4px;font-weight:800;margin-left:auto;">{{ $conflict['count'] }} entries</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     @forelse($scheduleByRundown as $rId => $rundownData)
                         <div class="tm-card" style="margin-bottom: 24px; border: 2px solid var(--paper2);">
                             <div class="tm-card-head" style="background: var(--ink); color: #fff; padding: 12px 20px;">
@@ -940,10 +1039,17 @@
                                                                     </div>
                                                                     @php
                                                                         $ageGroupName = $entries[0]->merge->ageGroup->name ?? $entries[0]->matchNumber->ageGroup->name ?? null;
+                                                                        $gender = $entries[0]->merge->gender ?? $entries[0]->matchNumber->gender ?? null;
+                                                                        $genderLabel = match ($gender) {
+                                                                            'L', 'Male' => 'Putra',
+                                                                            'P', 'Female' => 'Putri',
+                                                                            'Mix', 'Campuran' => 'Campuran',
+                                                                            default => $gender
+                                                                        };
                                                                     @endphp
-                                                                    @if($ageGroupName)
+                                                                    @if($ageGroupName || $genderLabel)
                                                                         <div style="font-size: 10px; color: var(--smoke); margin-top: 1px; font-weight: 500;">
-                                                                            Kelas: {{ $ageGroupName }}
+                                                                            Kelas: {{ $ageGroupName }}{{ $genderLabel ? ' (' . $genderLabel . ')' : '' }}
                                                                         </div>
                                                                     @endif
 

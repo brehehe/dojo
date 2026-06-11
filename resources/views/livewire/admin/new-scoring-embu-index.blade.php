@@ -840,7 +840,8 @@
                     },
                     formatCountdown() { return ''; },
                     async sync() {
-                        let state = await $wire.getTimerState();
+                        let res = await fetch(`/api/court/{{ $courtId }}/timer-state`);
+                        let state = await res.json();
                         if (!state) return;
                 
                         let oldCountdown = this.countdown;
@@ -911,7 +912,7 @@
                                 this.lastTickSecond = Math.floor(this.time / 1000);
                             }
                         }, 30);
-                        this.syncInterval = setInterval(() => { this.sync(); }, 1000);
+                        this.syncInterval = setInterval(() => { this.sync(); }, 300);
                     },
                     start() {
                         if (!this.running && this.countdown === 0) {

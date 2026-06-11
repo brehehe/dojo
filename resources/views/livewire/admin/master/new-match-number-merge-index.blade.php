@@ -1,3 +1,4 @@
+
 <div>
     @push('styles')
         <style>

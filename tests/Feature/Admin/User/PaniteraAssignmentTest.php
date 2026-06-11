@@ -31,9 +31,9 @@ beforeEach(function () {
     $this->koorUser2 = User::factory()->create(['name' => 'Joko Koor 2']);
     $this->koorUser2->assignRole($this->roleKoor);
 
-    // Create 4 Paniteras
+    // Create 10 Paniteras
     $this->paniteras = [];
-    for ($i = 1; $i <= 4; $i++) {
+    for ($i = 1; $i <= 10; $i++) {
         $u = User::factory()->create(['name' => "Panitera {$i}"]);
         $u->assignRole($this->rolePanitera);
         $this->paniteras[] = $u;
@@ -79,7 +79,7 @@ it('allows admin to view new-generate-panitera page', function () {
 });
 
 it('allows admin to assign koordinator and panitera manually', function () {
-    // 1. Assign Coordinators
+    // 1. Assign Coordinators (toggling second one should replace the first one, allowing only 1)
     Livewire::actingAs($this->admin)
         ->test(NewGeneratePaniteraIndex::class)
         ->call('openAssignModal', $this->rundown->id, $this->session->id, $this->court->id, 'koordinator')
@@ -97,20 +97,20 @@ it('allows admin to assign koordinator and panitera manually', function () {
         ->call('saveAssignment')
         ->assertDispatched('swal');
 
-    // Assert database has correct coordinator assignments
-    $this->assertDatabaseHas('schedule_paniteras', [
-        'rundown_id' => $this->rundown->id,
-        'session_time_id' => $this->session->id,
-        'court_id' => $this->court->id,
-        'user_id' => $this->koorUser1->id,
-        'role_type' => 'koordinator',
-    ]);
-
+    // Assert database has correct coordinator assignment (only koorUser2, since koorUser1 got deselected)
     $this->assertDatabaseHas('schedule_paniteras', [
         'rundown_id' => $this->rundown->id,
         'session_time_id' => $this->session->id,
         'court_id' => $this->court->id,
         'user_id' => $this->koorUser2->id,
+        'role_type' => 'koordinator',
+    ]);
+
+    $this->assertDatabaseMissing('schedule_paniteras', [
+        'rundown_id' => $this->rundown->id,
+        'session_time_id' => $this->session->id,
+        'court_id' => $this->court->id,
+        'user_id' => $this->koorUser1->id,
         'role_type' => 'koordinator',
     ]);
 
@@ -132,32 +132,120 @@ it('allows admin to assign koordinator and panitera manually', function () {
     ]);
 });
 
-it('can auto generate coordinators and paniteras for active shifts', function () {
+it('can auto generate coordinators and paniteras for active shifts uniquely', function () {
+    // Create an extra court to test multi-court scheduling uniqueness
+    $court2 = Court::create(['name' => 'Lapangan B', 'order' => 2]);
+    DrawingMatchNumber::create([
+        'match_number_id' => $this->matchNumber->id,
+        'registration_id' => $this->registration->id,
+        'draft_type' => 'embu',
+        'court_id' => $court2->id,
+        'rundown_id' => $this->rundown->id,
+        'session_time_id' => $this->session->id,
+        'sequence_number' => 2,
+        'round' => 'Penyisihan',
+    ]);
+
     Livewire::actingAs($this->admin)
         ->test(NewGeneratePaniteraIndex::class)
         ->call('autoGenerateAllOfficers')
         ->assertDispatched('swal');
 
-    // Verify Koordinator was assigned (role_type = koordinator)
-    $koorAssignments = SchedulePanitera::where('rundown_id', $this->rundown->id)
+    // Verify exactly 1 Koordinator was assigned per court
+    $koorCourt1 = SchedulePanitera::where('rundown_id', $this->rundown->id)
         ->where('session_time_id', $this->session->id)
         ->where('court_id', $this->court->id)
         ->where('role_type', 'koordinator')
         ->pluck('user_id')
         ->toArray();
+    expect(count($koorCourt1))->toBe(1);
 
-    expect(count($koorAssignments))->toBeGreaterThanOrEqual(1);
+    $koorCourt2 = SchedulePanitera::where('rundown_id', $this->rundown->id)
+        ->where('session_time_id', $this->session->id)
+        ->where('court_id', $court2->id)
+        ->where('role_type', 'koordinator')
+        ->pluck('user_id')
+        ->toArray();
+    expect(count($koorCourt2))->toBe(1);
 
-    // Verify Paniteras were assigned (role_type = panitera)
-    $paniteraAssignments = SchedulePanitera::where('rundown_id', $this->rundown->id)
+    // Verify Koordinator IDs are unique across courts
+    expect($koorCourt1[0])->not->toBe($koorCourt2[0]);
+
+    // Verify Panitera assignments are unique
+    $paniteraCourt1 = SchedulePanitera::where('rundown_id', $this->rundown->id)
         ->where('session_time_id', $this->session->id)
         ->where('court_id', $this->court->id)
         ->where('role_type', 'panitera')
         ->pluck('user_id')
         ->toArray();
 
-    expect(count($paniteraAssignments))->toBeGreaterThanOrEqual(1);
-    foreach ($paniteraAssignments as $userId) {
-        expect(collect($this->paniteras)->pluck('id')->toArray())->toContain($userId);
-    }
+    $paniteraCourt2 = SchedulePanitera::where('rundown_id', $this->rundown->id)
+        ->where('session_time_id', $this->session->id)
+        ->where('court_id', $court2->id)
+        ->where('role_type', 'panitera')
+        ->pluck('user_id')
+        ->toArray();
+
+    // The intersection should be empty because we have enough paniteras (4) to assign to both courts (up to 2 per court if split, or we just ensure they don't overlap)
+    $intersect = array_intersect($paniteraCourt1, $paniteraCourt2);
+    expect($intersect)->toBeEmpty();
+});
+
+it('prevents manual assignment of duplicate officers in the same session', function () {
+    // Assign paniteras[0] to court 1
+    SchedulePanitera::create([
+        'rundown_id' => $this->rundown->id,
+        'session_time_id' => $this->session->id,
+        'court_id' => $this->court->id,
+        'user_id' => $this->paniteras[0]->id,
+        'role_type' => 'panitera',
+        'slot_index' => 1,
+    ]);
+
+    // Create a second court
+    $court2 = Court::create(['name' => 'Lapangan B', 'order' => 2]);
+
+    // Attempt to manually assign paniteras[0] to court 2 in the same session
+    Livewire::actingAs($this->admin)
+        ->test(NewGeneratePaniteraIndex::class)
+        ->call('openAssignModal', $this->rundown->id, $this->session->id, $court2->id, 'panitera')
+        ->call('toggleOfficer', (string) $this->paniteras[0]->id)
+        ->call('saveAssignment')
+        ->assertHasErrors(['officers']);
+});
+
+it('can clear all officer assignments', function () {
+    SchedulePanitera::create([
+        'rundown_id' => $this->rundown->id,
+        'session_time_id' => $this->session->id,
+        'court_id' => $this->court->id,
+        'user_id' => $this->paniteras[0]->id,
+        'role_type' => 'panitera',
+        'slot_index' => 1,
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test(NewGeneratePaniteraIndex::class)
+        ->call('clearAllAssignments');
+
+    expect(SchedulePanitera::count())->toBe(0);
+});
+
+it('can reset and regenerate all officer assignments', function () {
+    $dummyUser = User::factory()->create();
+    SchedulePanitera::create([
+        'rundown_id' => $this->rundown->id,
+        'session_time_id' => $this->session->id,
+        'court_id' => $this->court->id,
+        'user_id' => $dummyUser->id,
+        'role_type' => 'panitera',
+        'slot_index' => 1,
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test(NewGeneratePaniteraIndex::class)
+        ->call('resetAndGenerateAllOfficers');
+
+    expect(SchedulePanitera::where('user_id', $dummyUser->id)->exists())->toBeFalse();
+    expect(SchedulePanitera::count())->toBeGreaterThan(0);
 });

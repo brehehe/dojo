@@ -200,6 +200,17 @@
         vertical-align: middle;
     }
 
+    /* ── EXPANDED SECTION ── */
+    .expanded-row td { background: rgba(247,244,239,.35); padding: 18px 22px !important; border-bottom: 2px solid var(--paper2) !important; }
+    .expanded-card { background: #fff; border-radius: 12px; border: 1px solid var(--paper2); padding: 16px; box-shadow: inset 0 2px 8px rgba(0,0,0,.02); }
+    .expanded-title { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; margin-bottom: 12px; color: var(--ink); border-bottom: 1px solid var(--paper); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* ── INNER ATHLETE TABLE ── */
+    .ath-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .ath-table th { font-size: 10px; color: var(--smoke); text-transform: uppercase; letter-spacing: .05em; padding: 8px 10px; text-align: left; background: var(--paper); border-bottom: 1px solid var(--paper2); }
+    .ath-table td { padding: 9px 10px; font-size: 12.5px; border-bottom: 1px solid var(--paper2); }
+    .ath-table tr:last-child td { border-bottom: none; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 640px)  { .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .prem-page { padding: 14px; } }
@@ -310,6 +321,9 @@
                     </thead>
                     <tbody>
                         @forelse($registrations as $reg)
+                        @php
+                            $isExpanded = in_array($reg->id, $expanded, true);
+                        @endphp
                         <tr wire:key="reg-row-{{ $reg->id }}">
                             <td class="checkbox-col">
                                 <input type="checkbox" wire:model.live="selectedRows" value="{{ $reg->id }}" class="prem-checkbox">
@@ -350,6 +364,9 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:5px;justify-content:center;">
+                                    <button wire:click="toggleExpand({{ $reg->id }})" class="act-btn {{ $isExpanded ? 'view' : '' }}" title="Lihat Atlet" style="color:{{ $isExpanded ? '#2980b9' : '#888' }};">
+                                        <i class="fa-solid {{ $isExpanded ? 'fa-chevron-up' : 'fa-chevron-down' }}"></i>
+                                    </button>
                                     <a href="{{ route('admin.new-registrations.show', $reg->id) }}" class="act-btn view" title="Detail">
                                         <i class="fa-solid fa-eye"></i>
                                     </a>
@@ -359,6 +376,90 @@
                                 </div>
                             </td>
                         </tr>
+
+                        {{-- ── EXPANDED ATHLETE ROWS ── --}}
+                        @if($isExpanded)
+                        <tr class="expanded-row" wire:key="reg-expanded-{{ $reg->id }}">
+                            <td colspan="9">
+                                <div class="expanded-card">
+                                    <div class="expanded-title">
+                                        <span><i class="fa-solid fa-users" style="margin-right:6px;"></i>Daftar Atlet — {{ $reg->contingent->name }}</span>
+                                        <span style="font-size:11px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--smoke);">
+                                            {{ $reg->athletes->count() }} Atlet &nbsp;|&nbsp; {{ $reg->officials->count() }} Official
+                                        </span>
+                                    </div>
+
+                                    <div style="overflow-x:auto;">
+                                        <table class="ath-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Nama / NIK</th>
+                                                    <th>Gender</th>
+                                                    <th>Kelompok Umur</th>
+                                                    <th>Dojo</th>
+                                                    <th>BB (Kg)</th>
+                                                    <th>Rank / Kyu</th>
+                                                    <th>Nomor Tanding</th>
+                                                    <th>BPJS</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($reg->athletes as $idx => $ath)
+                                                <tr wire:key="ath-{{ $reg->id }}-{{ $ath->id }}">
+                                                    <td style="color:var(--smoke);font-size:11px;">{{ $idx + 1 }}</td>
+                                                    <td>
+                                                        <div style="font-weight:600;">{{ $ath->name }}</div>
+                                                        <div style="font-size:11px;color:var(--smoke);font-family:monospace;">NIK: {{ $ath->nik ?: '-' }} | Kenshi: {{ $ath->nik_kenshi ?: '-' }}</div>
+                                                    </td>
+                                                    <td>{{ $ath->gender === 'Male' ? '🧍 L' : '🧍‍♀️ P' }}</td>
+                                                    <td>
+                                                        <span class="badge-prem gold" style="font-size:10px;">{{ $ath->pivot->age_group ?: '-' }}</span>
+                                                    </td>
+                                                    <td style="font-size:12px;">{{ $ath->pivot->dojo_origin ?: '-' }}</td>
+                                                    <td style="font-weight:600;">{{ $ath->pivot->weight ? $ath->pivot->weight . ' kg' : '-' }}</td>
+                                                    <td>
+                                                        <span class="badge-prem green" style="font-size:10px;">{{ $ath->pivot->rank ?: '-' }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div style="font-size:11.5px;max-width:220px;">
+                                                            @php
+                                                                $athMatches = $ath->matchNumbers->filter(fn($m) => $m->pivot->registration_id == $reg->id);
+                                                            @endphp
+                                                            @forelse($athMatches as $m)
+                                                                <div style="margin-bottom:2px;"><span style="color:var(--smoke)">•</span> {{ $m->name }}</div>
+                                                            @empty
+                                                                <span style="color:var(--red);font-style:italic;font-size:11px;">Belum terdaftar</span>
+                                                            @endforelse
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        @if($ath->bpjs_status === 'Aktif')
+                                                            <span style="color:#27ae60;font-weight:600;font-size:11.5px;"><i class="fa-solid fa-circle-check"></i> Aktif</span>
+                                                        @else
+                                                            <span style="color:var(--red);font-weight:600;font-size:11.5px;"><i class="fa-solid fa-circle-xmark"></i> Non-Aktif</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                                @empty
+                                                <tr>
+                                                    <td colspan="9" style="text-align:center;color:var(--smoke);padding:20px;font-style:italic;">Belum ada atlet terdaftar dalam registrasi ini.</td>
+                                                </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {{-- Footer Actions --}}
+                                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;border-top:1px solid var(--paper);padding-top:12px;">
+                                        <a href="{{ route('admin.new-registrations.show', $reg->id) }}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Detail Lengkap
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endif
                         @empty
                         <tr>
                             <td colspan="9">

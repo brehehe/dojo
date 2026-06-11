@@ -20,6 +20,9 @@ class NewRegistrationIndex extends Component
 
     public bool $selectAll = false;
 
+    /** @var array<int> IDs of expanded registration rows */
+    public array $expanded = [];
+
     protected $queryString = ['search', 'status', 'perPage'];
 
     public function updatedSearch(): void
@@ -95,6 +98,18 @@ class NewRegistrationIndex extends Component
         ]);
     }
 
+    /**
+     * Toggle the expanded/collapsed state of a registration row.
+     */
+    public function toggleExpand(int $registrationId): void
+    {
+        if (in_array($registrationId, $this->expanded, true)) {
+            $this->expanded = array_values(array_diff($this->expanded, [$registrationId]));
+        } else {
+            $this->expanded[] = $registrationId;
+        }
+    }
+
     public function deleteRegistration(int $id): void
     {
         $registration = Registration::findOrFail($id);
@@ -135,7 +150,7 @@ class NewRegistrationIndex extends Component
     public function render()
     {
         $registrations = $this->getFilteredRegistrationsQuery()
-            ->with(['contingent'])
+            ->with(['contingent', 'athletes.matchNumbers', 'officials'])
             ->latest()
             ->paginate($this->perPage);
 

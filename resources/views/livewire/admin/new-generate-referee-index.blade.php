@@ -60,6 +60,30 @@
                 color: #fff;
             }
 
+            .btn-prem-outline {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 20px;
+                background: #fff;
+                color: var(--smoke);
+                border: 1px solid var(--paper2);
+                border-radius: 12px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                text-decoration: none;
+                font-family: 'DM Sans', sans-serif;
+                transition: all .2s;
+                white-space: nowrap;
+            }
+
+            .btn-prem-outline:hover {
+                background: var(--paper);
+                color: var(--red);
+                border-color: var(--red);
+            }
+
             /* ── SHIFT CARDS ── */
             .shift-card-a {
                 background: #fff;
@@ -333,11 +357,18 @@
                 <h2>Penugasan Wasit (Assignment)</h2>
                 <p>Atur pembagian wasit per lapangan dan dewan arbitrase</p>
             </div>
-            <button wire:click="autoGenerateAllReferees"
-                onclick="confirm('Sistem akan men-generate otomatis panel wasit. Lanjutkan?') || event.stopImmediatePropagation()"
-                class="btn-prem-gen">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto Generate Panel
-            </button>
+            <div style="display:flex; gap:10px;">
+                <button wire:click="clearAllAssignments"
+                    onclick="confirm('Sistem akan menghapus SEMUA penugasan wasit pada sesi-sesi ini. Lanjutkan?') || event.stopImmediatePropagation()"
+                    class="btn-prem-outline">
+                    <i class="fa-solid fa-trash-can"></i> Reset Penugasan
+                </button>
+                <button wire:click="resetAndGenerateAllReferees"
+                    onclick="confirm('Sistem akan menghapus semua penugasan saat ini dan men-generate ulang secara otomatis. Lanjutkan?') || event.stopImmediatePropagation()"
+                    class="btn-prem-gen">
+                    <i class="fa-solid fa-rotate"></i> Reset & Generate Ulang
+                </button>
+            </div>
         </div>
 
         {{-- SHIFT LIST --}}

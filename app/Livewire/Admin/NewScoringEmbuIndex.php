@@ -283,14 +283,14 @@ class NewScoringEmbuIndex extends Component
                 $denda = 10;
             }
         } else {
-            // Single / Solo / Tandoku (Target 90s)
-            if ($seconds >= 76 && $seconds <= 89) {
+            // Single / Solo / Tandoku (Target 60s - 90s)
+            if ($seconds >= 46 && $seconds <= 59) {
                 $denda = 5;
-            } elseif ($seconds < 76) {
+            } elseif ($seconds <= 45) {
                 $denda = 10;
-            } elseif ($seconds >= 91 && $seconds <= 100) {
+            } elseif ($seconds >= 91 && $seconds <= 105) {
                 $denda = 5;
-            } elseif ($seconds > 100) {
+            } elseif ($seconds >= 106) {
                 $denda = 10;
             }
         }

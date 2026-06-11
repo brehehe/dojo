@@ -68,8 +68,15 @@ class NewGeneratePaniteraIndex extends Component
         $id = (string) $id;
         if (in_array($id, $this->selectedOfficers)) {
             $this->selectedOfficers = array_values(array_diff($this->selectedOfficers, [$id]));
+            $this->resetErrorBag('officers');
         } else {
-            $this->selectedOfficers[] = $id;
+            if ($this->isKoordinatorMode) {
+                $this->selectedOfficers = [$id];
+                $this->resetErrorBag('officers');
+            } else {
+                $this->selectedOfficers[] = $id;
+                $this->resetErrorBag('officers');
+            }
         }
     }
 
@@ -83,6 +90,29 @@ class NewGeneratePaniteraIndex extends Component
         $sId = $this->assigningBlock['session_time_id'];
         $cId = $this->assigningBlock['court_id'];
         $roleType = $this->assigningBlock['role_type'];
+
+        if ($roleType === 'koordinator' && count($this->selectedOfficers) > 1) {
+            $this->addError('officers', 'Maksimal 1 Koordinator Lapangan yang dapat dipilih.');
+
+            return;
+        }
+
+        // Check for duplicates in other courts for this role in the same shift
+        $query = SchedulePanitera::where('rundown_id', $rId)
+            ->where('session_time_id', $sId)
+            ->where('role_type', $roleType)
+            ->where('court_id', '!=', $cId);
+
+        $alreadyAssignedUserIds = $query->pluck('user_id')->map(fn ($id) => (string) $id)->toArray();
+        $duplicates = array_intersect($this->selectedOfficers, $alreadyAssignedUserIds);
+
+        if (! empty($duplicates)) {
+            $duplicateNames = User::whereIn('id', $duplicates)->pluck('name')->join(', ');
+            $roleLabel = $roleType === 'koordinator' ? 'Koordinator' : 'Panitera';
+            $this->addError('officers', "{$roleLabel} berikut sudah ditugaskan pada sesi ini di lapangan lain: {$duplicateNames}.");
+
+            return;
+        }
 
         DB::beginTransaction();
         try {
@@ -111,7 +141,7 @@ class NewGeneratePaniteraIndex extends Component
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->addError('save_error', 'Gagal menyimpan: '.$e->getMessage());
+            $this->addError('officers', 'Gagal menyimpan: '.$e->getMessage());
 
             return;
         }
@@ -146,6 +176,19 @@ class NewGeneratePaniteraIndex extends Component
                 ->distinct()
                 ->pluck('court_id');
 
+            // Track assigned officers in this shift
+            $assignedKoorInShift = SchedulePanitera::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->where('role_type', 'koordinator')
+                ->pluck('user_id')
+                ->toArray();
+
+            $assignedPaniteraInShift = SchedulePanitera::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->where('role_type', 'panitera')
+                ->pluck('user_id')
+                ->toArray();
+
             foreach ($courtsInShift as $courtId) {
                 $exists = SchedulePanitera::where('rundown_id', $shift->rundown_id)
                     ->where('session_time_id', $shift->session_time_id)
@@ -155,24 +198,35 @@ class NewGeneratePaniteraIndex extends Component
                 if (! $exists) {
                     DB::beginTransaction();
                     try {
-                        // Select random Koordinator (1 or 2)
-                        $numKoor = min(2, count($koordinatorIds));
-                        $randomKoordinators = collect($koordinatorIds)->random($numKoor)->toArray();
-                        foreach ($randomKoordinators as $index => $koorId) {
-                            SchedulePanitera::create([
-                                'rundown_id' => $shift->rundown_id,
-                                'session_time_id' => $shift->session_time_id,
-                                'court_id' => $courtId,
-                                'user_id' => $koorId,
-                                'role_type' => 'koordinator',
-                                'slot_index' => $index + 1,
-                            ]);
+                        // 1. Select exactly 1 Coordinator
+                        $availableKoors = array_values(array_diff($koordinatorIds, $assignedKoorInShift));
+                        if (empty($availableKoors)) {
+                            $availableKoors = $koordinatorIds;
+                        }
+                        $selectedKoorId = collect($availableKoors)->random();
+
+                        SchedulePanitera::create([
+                            'rundown_id' => $shift->rundown_id,
+                            'session_time_id' => $shift->session_time_id,
+                            'court_id' => $courtId,
+                            'user_id' => $selectedKoorId,
+                            'role_type' => 'koordinator',
+                            'slot_index' => 1,
+                        ]);
+                        $assignedKoorInShift[] = $selectedKoorId;
+
+                        // 2. Select unique Paniteras (up to 4)
+                        $availablePaniteras = array_values(array_diff($paniteraIds, $assignedPaniteraInShift));
+                        $neededPanitera = min(4, count($availablePaniteras));
+                        if ($neededPanitera < 4 && count($paniteraIds) >= 4) {
+                            $availablePaniteras = $paniteraIds;
+                            $neededPanitera = 4;
+                        } else {
+                            $neededPanitera = min(4, count($paniteraIds));
                         }
 
-                        // Select random Panitera (3 or 4)
-                        $numPaniteras = min(4, count($paniteraIds));
-                        $randomPaniteras = collect($paniteraIds)->random($numPaniteras)->toArray();
-                        foreach ($randomPaniteras as $index => $paniteraId) {
+                        $selectedPaniteraIds = collect($availablePaniteras)->random(min($neededPanitera, count($availablePaniteras)))->toArray();
+                        foreach ($selectedPaniteraIds as $index => $paniteraId) {
                             SchedulePanitera::create([
                                 'rundown_id' => $shift->rundown_id,
                                 'session_time_id' => $shift->session_time_id,
@@ -181,6 +235,7 @@ class NewGeneratePaniteraIndex extends Component
                                 'role_type' => 'panitera',
                                 'slot_index' => $index + 1,
                             ]);
+                            $assignedPaniteraInShift[] = $paniteraId;
                         }
 
                         DB::commit();
@@ -197,6 +252,34 @@ class NewGeneratePaniteraIndex extends Component
             'text' => "Penugasan otomatis berhasil untuk $countGenerated lapangan.",
             'icon' => 'success',
         ]);
+    }
+
+    public function clearAllAssignments(): void
+    {
+        $uniqueShifts = DrawingMatchNumber::select('rundown_id', 'session_time_id')
+            ->distinct()->whereNotNull('rundown_id')->whereNotNull('session_time_id')->get();
+
+        foreach ($uniqueShifts as $shift) {
+            SchedulePanitera::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->delete();
+        }
+
+        $this->dispatch('swal', ['title' => 'Berhasil!', 'text' => 'Semua penugasan petugas telah dihapus.', 'icon' => 'success']);
+    }
+
+    public function resetAndGenerateAllOfficers(): void
+    {
+        $uniqueShifts = DrawingMatchNumber::select('rundown_id', 'session_time_id')
+            ->distinct()->whereNotNull('rundown_id')->whereNotNull('session_time_id')->get();
+
+        foreach ($uniqueShifts as $shift) {
+            SchedulePanitera::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->delete();
+        }
+
+        $this->autoGenerateAllOfficers();
     }
 
     public function render()

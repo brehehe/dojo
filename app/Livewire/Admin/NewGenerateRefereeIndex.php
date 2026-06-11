@@ -96,6 +96,35 @@ class NewGenerateRefereeIndex extends Component
         $sId = $this->assigningBlock['session_time_id'];
         $cId = $this->assigningBlock['court_id'];
 
+        // Check for duplicates in the same shift (rundown_id & session_time_id)
+        $query = ScheduleReferee::where('rundown_id', $rId)
+            ->where('session_time_id', $sId);
+
+        if ($this->isDewanArbitraseMode) {
+            // Exclude current Dewan Arbitrase record
+            $query->where(function ($q) {
+                $q->whereNotNull('court_id')
+                    ->orWhere('judge_index', '>', 0);
+            });
+        } else {
+            // Exclude current court being edited
+            $query->where(function ($q) use ($cId) {
+                $q->whereNull('court_id')
+                    ->orWhere('court_id', '!=', $cId)
+                    ->orWhere('judge_index', 0);
+            });
+        }
+
+        $alreadyAssignedRefereeIds = $query->pluck('referee_id')->map(fn ($id) => (string) $id)->toArray();
+        $duplicates = array_intersect($this->selectedReferees, $alreadyAssignedRefereeIds);
+
+        if (! empty($duplicates)) {
+            $duplicateNames = Referee::whereIn('id', $duplicates)->with('user')->get()->pluck('user.name')->join(', ');
+            $this->addError('referees', 'Wasit berikut sudah ditugaskan pada sesi ini di lapangan lain atau Dewan Arbitrase: '.$duplicateNames);
+
+            return;
+        }
+
         if ($this->isDewanArbitraseMode) {
             if (count($this->selectedReferees) > 1) {
                 $this->addError('referees', 'Pilih maksimal 1 Wasit untuk Dewan Arbitrase.');
@@ -184,11 +213,15 @@ class NewGenerateRefereeIndex extends Component
         })->pluck('id')->toArray();
 
         $wasitUtamaIds = Referee::whereHas('user', function ($q) {
-            $q->role('Perwasitan');
+            $q->whereHas('roles', function ($r) {
+                $r->whereIn('name', ['Perwasitan', 'Koordinator Lapangan']);
+            });
         })->where('certification_level', 'WASIT UTAMA')->pluck('id')->toArray();
 
         $refereeIds = Referee::whereHas('user', function ($q) {
-            $q->role('Perwasitan');
+            $q->whereHas('roles', function ($r) {
+                $r->whereIn('name', ['Perwasitan', 'Koordinator Lapangan']);
+            });
         })->pluck('id')->toArray();
 
         if (count($arbitraseIds) < 1 || count($refereeIds) < 5) {
@@ -206,15 +239,23 @@ class NewGenerateRefereeIndex extends Component
 
         $countGenerated = 0;
         foreach ($uniqueShifts as $shift) {
+            // Keep track of all referees assigned in this shift to ensure uniqueness
+            $assignedInShift = ScheduleReferee::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->pluck('referee_id')
+                ->toArray();
+
             // Generate Dewan Arbitrase if empty
             $existingDewan = ScheduleReferee::where('rundown_id', $shift->rundown_id)
                 ->where('session_time_id', $shift->session_time_id)
                 ->whereNull('court_id')
                 ->where('judge_index', 0)
-                ->exists();
+                ->first();
 
             if (! $existingDewan) {
-                $randomDewanId = collect($arbitraseIds)->random();
+                $availableArbitrase = array_values(array_diff($arbitraseIds, $assignedInShift));
+                $randomDewanId = ! empty($availableArbitrase) ? collect($availableArbitrase)->random() : collect($arbitraseIds)->random();
+
                 ScheduleReferee::create([
                     'rundown_id' => $shift->rundown_id,
                     'session_time_id' => $shift->session_time_id,
@@ -222,6 +263,11 @@ class NewGenerateRefereeIndex extends Component
                     'referee_id' => $randomDewanId,
                     'judge_index' => 0,
                 ]);
+                $assignedInShift[] = $randomDewanId;
+            } else {
+                if (! in_array($existingDewan->referee_id, $assignedInShift)) {
+                    $assignedInShift[] = $existingDewan->referee_id;
+                }
             }
 
             // Generate Court Panels
@@ -233,28 +279,49 @@ class NewGenerateRefereeIndex extends Component
                 ->pluck('court_id');
 
             foreach ($courtsInShift as $courtId) {
-                $existing = ScheduleReferee::where('rundown_id', $shift->rundown_id)
+                $existingCount = ScheduleReferee::where('rundown_id', $shift->rundown_id)
                     ->where('session_time_id', $shift->session_time_id)
                     ->where('court_id', $courtId)
                     ->where('judge_index', '>', 0)
                     ->count();
 
-                if ($existing < 5) {
-                    if (! empty($wasitUtamaIds)) {
-                        $randomUtamaId = collect($wasitUtamaIds)->random();
-                        $otherRefereePool = array_values(array_diff($refereeIds, [$randomUtamaId]));
-                        $randomOtherIds = collect($otherRefereePool)->random(4)->toArray();
+                if ($existingCount !== 5) {
+                    // Remove existing referee assignments on this court from the tracking array if any
+                    $existingCourtRefs = ScheduleReferee::where('rundown_id', $shift->rundown_id)
+                        ->where('session_time_id', $shift->session_time_id)
+                        ->where('court_id', $courtId)
+                        ->where('judge_index', '>', 0)
+                        ->pluck('referee_id')
+                        ->toArray();
+                    $assignedInShift = array_values(array_diff($assignedInShift, $existingCourtRefs));
 
-                        $panelIds = array_merge([$randomUtamaId], $randomOtherIds);
-                    } else {
-                        $panelIds = collect($refereeIds)->random(5)->toArray();
+                    $panelIds = [];
+
+                    // 1. Pick a Wasit Utama if available and not already assigned in this shift
+                    if (! empty($wasitUtamaIds)) {
+                        $availableUtama = array_values(array_diff($wasitUtamaIds, $assignedInShift));
+                        if (! empty($availableUtama)) {
+                            $randomUtamaId = collect($availableUtama)->random();
+                            $panelIds[] = $randomUtamaId;
+                        }
                     }
+
+                    // 2. Pick the other 4 (or 5 if there's no available Wasit Utama)
+                    $neededCount = 5 - count($panelIds);
+                    $availableOthers = array_values(array_diff($refereeIds, array_merge($assignedInShift, $panelIds)));
+                    if (count($availableOthers) < $neededCount) {
+                        // Fallback to all referee pool (excluding currently selected panel IDs)
+                        $availableOthers = array_values(array_diff($refereeIds, $panelIds));
+                    }
+                    $randomOtherIds = collect($availableOthers)->random(min($neededCount, count($availableOthers)))->toArray();
+                    $panelIds = array_merge($panelIds, $randomOtherIds);
 
                     ScheduleReferee::where('rundown_id', $shift->rundown_id)
                         ->where('session_time_id', $shift->session_time_id)
                         ->where('court_id', $courtId)
                         ->where('judge_index', '>', 0)
                         ->delete();
+
                     foreach ($panelIds as $index => $refereeId) {
                         ScheduleReferee::create([
                             'rundown_id' => $shift->rundown_id,
@@ -264,12 +331,51 @@ class NewGenerateRefereeIndex extends Component
                             'judge_index' => $index + 1,
                         ]);
                     }
+
+                    $assignedInShift = array_values(array_unique(array_merge($assignedInShift, $panelIds)));
                     $countGenerated++;
+                } else {
+                    // Make sure existing court referees are added to assignedInShift
+                    $existingCourtRefs = ScheduleReferee::where('rundown_id', $shift->rundown_id)
+                        ->where('session_time_id', $shift->session_time_id)
+                        ->where('court_id', $courtId)
+                        ->where('judge_index', '>', 0)
+                        ->pluck('referee_id')
+                        ->toArray();
+                    $assignedInShift = array_values(array_unique(array_merge($assignedInShift, $existingCourtRefs)));
                 }
             }
         }
 
         $this->dispatch('swal', ['title' => 'Selesai!', 'text' => "Dewan Arbitrase & $countGenerated blok lapangan telah di-generate otomatis.", 'icon' => 'success']);
+    }
+
+    public function clearAllAssignments()
+    {
+        $uniqueShifts = DrawingMatchNumber::select('rundown_id', 'session_time_id')
+            ->distinct()->whereNotNull('rundown_id')->whereNotNull('session_time_id')->get();
+
+        foreach ($uniqueShifts as $shift) {
+            ScheduleReferee::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->delete();
+        }
+
+        $this->dispatch('swal', ['title' => 'Berhasil!', 'text' => 'Semua penugasan wasit telah dihapus.', 'icon' => 'success']);
+    }
+
+    public function resetAndGenerateAllReferees()
+    {
+        $uniqueShifts = DrawingMatchNumber::select('rundown_id', 'session_time_id')
+            ->distinct()->whereNotNull('rundown_id')->whereNotNull('session_time_id')->get();
+
+        foreach ($uniqueShifts as $shift) {
+            ScheduleReferee::where('rundown_id', $shift->rundown_id)
+                ->where('session_time_id', $shift->session_time_id)
+                ->delete();
+        }
+
+        $this->autoGenerateAllReferees();
     }
 
     public function render()
@@ -299,7 +405,9 @@ class NewGenerateRefereeIndex extends Component
                 });
             } else {
                 $refereesQuery->whereHas('user', function ($q) {
-                    $q->role('Perwasitan');
+                    $q->whereHas('roles', function ($r) {
+                        $r->whereIn('name', ['Perwasitan', 'Koordinator Lapangan']);
+                    });
                 });
             }
         }
