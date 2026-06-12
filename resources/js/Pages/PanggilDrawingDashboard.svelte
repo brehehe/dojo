@@ -433,13 +433,22 @@
                 Dinilai
             </p>
         </div>
-        <button
-            onclick={resetFilters}
-            class="btn-gen ghost"
-            style="padding: 8px 16px; border: 1px solid var(--paper2); background: #fff; border-radius: 8px; font-weight: 600; cursor: pointer;"
-        >
-            <i class="fas fa-rotate-left"></i> Reset Filter
-        </button>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <button
+                onclick={resetFilters}
+                class="btn-gen ghost"
+                style="padding: 8px 16px; border: 1px solid var(--paper2); background: #fff; border-radius: 8px; font-weight: 600; cursor: pointer;"
+            >
+                <i class="fas fa-rotate-left"></i> Reset Filter
+            </button>
+            <a
+                href="/admin/new-dashboard"
+                class="btn-gen ghost"
+                style="padding: 8px 16px; border: 1px solid var(--paper2); background: #fff; border-radius: 8px; font-weight: 600; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+            >
+                <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
+            </a>
+        </div>
     </div>
 
     <!-- ACTIVE COURT CARDS -->

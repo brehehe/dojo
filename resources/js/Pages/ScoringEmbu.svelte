@@ -2,8 +2,9 @@
     import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
 
-    // Props
-    let { matchId, urlRound = null, urlPoolId = null } = $props();
+    let { matchId, urlRound = null, urlPoolId = null, urlFrom = null } = $props();
+
+    const backRoute = urlFrom === 'panggil-drawing' ? '/admin/panitera/panggil-drawing' : '/admin/new-scoring';
 
     // State
     let matchNumber = $state(null);
@@ -746,7 +747,7 @@
             >
                 <i class="fas fa-volume-xmark"></i> Stop Suara
             </button>
-            <a href="/admin/new-scoring" class="btn-gen ghost">
+            <a href={backRoute} class="btn-gen ghost">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>

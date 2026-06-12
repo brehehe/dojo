@@ -4,7 +4,9 @@
     import SignaturePad from '../Components/SignaturePad.svelte';
 
     // Props
-    let { matchId } = $props();
+    let { matchId, urlRound = null, urlPoolId = null, urlFrom = null } = $props();
+
+    const backRoute = urlFrom === 'panggil-drawing' ? '/admin/panitera/panggil-drawing' : '/admin/new-scoring';
 
     // State
     let matchNumber = $state(null);
@@ -743,7 +745,7 @@
                 style="color:var(--red); border-color:var(--red);">
                 <i class="fas fa-volume-xmark"></i> Stop Suara
             </button>
-            <a href="/admin/new-scoring" class="btn-gen ghost" style="text-decoration:none;">
+            <a href={backRoute} class="btn-gen ghost" style="text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
         </div>
