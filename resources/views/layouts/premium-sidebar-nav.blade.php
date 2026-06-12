@@ -143,7 +143,7 @@
 
     {{-- Sistem Panitera --}}
     @hasanyrole('Super Admin|Admin|Panitera|Koordinator Lapangan|Court')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result') || request()->routeIs('admin.panitera.panggil-drawing')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Panitera</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -151,9 +151,11 @@
             <div x-show="open" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 class="collapsible-content">
-                <a class="nav-item {{ request()->routeIs('admin.new-scoring-*') ? 'active' : '' }}"
+                <a class="nav-item {{ request()->routeIs('admin.new-scoring-index') ? 'active' : '' }}"
                     href="{{ route('admin.new-scoring-index') }}"><i class="fa-solid fa-star"></i> Penilaian
                     (Scoring)</a>
+                <a class="nav-item {{ request()->routeIs('admin.panitera.panggil-drawing') ? 'active' : '' }}"
+                    href="{{ route('admin.panitera.panggil-drawing') }}"><i class="fa-solid fa-bullhorn"></i> Panggil Lapangan (Waktu)</a>
                 <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'active' : '' }}"
                     href="{{ route('admin.panitera.scoring.embu.result') }}"><i class="fa-solid fa-trophy"></i> Hasil
                     Embu</a>
@@ -449,5 +451,5 @@
     document.addEventListener('DOMContentLoaded', scrollNavToActive);
 
     // Run after Livewire navigations
-    document.addEventListener('livewire:navigated', scrollNavToActive);
+    document.addEventListener('lived', scrollNavToActive);
 </script>

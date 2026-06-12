@@ -868,7 +868,7 @@
     @if($isReferee)
       {{-- Referee Nav --}}
       <a class="mob-nav-btn {{ request()->routeIs('admin.referee.scoring') ? 'active' : '' }}"
-         href="{{ route('admin.referee.scoring') }}" wire:navigate>
+         href="{{ route('admin.referee.scoring') }}">
         <i class="fa-solid fa-gavel"></i>
         <span>Scoring</span>
       </a>
@@ -879,22 +879,22 @@
     @else
       {{-- Contingent Nav --}}
       <a class="mob-nav-btn {{ request()->routeIs('contingent.dashboard') ? 'active' : '' }}"
-         href="{{ route('contingent.dashboard') }}" wire:navigate>
+         href="{{ route('contingent.dashboard') }}" >
         <i class="fa-solid fa-gauge-high"></i>
         <span>Dashboard</span>
       </a>
       <a class="mob-nav-btn {{ request()->routeIs('contingent.schedule') ? 'active' : '' }}"
-         href="{{ route('contingent.schedule') }}" wire:navigate>
+         href="{{ route('contingent.schedule') }}" >
         <i class="fa-solid fa-calendar-days"></i>
         <span>Jadwal</span>
       </a>
       <a class="mob-nav-btn {{ request()->routeIs('contingent.results') ? 'active' : '' }}"
-         href="{{ route('contingent.results') }}" wire:navigate>
+         href="{{ route('contingent.results') }}" >
         <i class="fa-solid fa-trophy"></i>
         <span>Hasil</span>
       </a>
       <a class="mob-nav-btn {{ request()->routeIs('contingent.standings') ? 'active' : '' }}"
-         href="{{ route('contingent.standings') }}" wire:navigate>
+         href="{{ route('contingent.standings') }}" >
         <i class="fa-solid fa-ranking-star"></i>
         <span>Klasemen</span>
       </a>

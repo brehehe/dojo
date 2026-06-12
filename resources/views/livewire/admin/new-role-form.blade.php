@@ -59,7 +59,7 @@
                 <h2>{{ $isEdit ? 'Edit Role' : 'Tambah Role Baru' }}</h2>
                 <p>Konfigurasi nama role dan hak akses (permissions)</p>
             </div>
-            <a href="{{ route('admin.new-roles') }}" class="btn-back" wire:navigate>
+            <a href="{{ route('admin.new-roles') }}" class="btn-back" >
                 <i class="fa-solid fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -90,7 +90,7 @@
             </div>
 
             <div class="form-actions">
-                <a href="{{ route('admin.new-roles') }}" class="btn-back" wire:navigate>Batal</a>
+                <a href="{{ route('admin.new-roles') }}" class="btn-back" >Batal</a>
                 <button type="submit" class="btn-save">
                     <span wire:loading.remove wire:target="save"><i class="fa-solid fa-save"></i> Simpan Role</span>
                     <span wire:loading wire:target="save"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...</span>

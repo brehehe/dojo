@@ -552,8 +552,8 @@
                 }
             });
 
-            // Re-initialize on wire:navigate SPA routing
-            document.addEventListener('livewire:navigated', () => {
+            // Re-initialize on  SPA routing
+            document.addEventListener('lived', () => {
                 // If elements are present, re-render with whatever static or current data
                 const navigatedCategoryData = @js($categoryChartData);
                 const navigatedCourtData = @js($courtChartData);

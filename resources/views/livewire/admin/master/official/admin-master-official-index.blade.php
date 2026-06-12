@@ -10,7 +10,7 @@
             </div>
         </div>
         <div class="w-full md:w-auto">
-            <a href="{{ route('admin.master.officials.create') }}" wire:navigate
+            <a href="{{ route('admin.master.officials.create') }}" 
                 class="w-full md:w-auto group bg-gradient-to-br from-orange-500 to-orange-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 active:scale-95">
                 <i class="fas fa-user-plus text-[15px]"></i>
                 <span class="uppercase text-[15px] tracking-widest">Tambah Official Baru</span>

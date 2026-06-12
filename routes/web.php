@@ -144,7 +144,7 @@ Route::get('/welcome/5', [WelcomeController::class, 'template5'])->name('welcome
 
 Route::view('/piala_walikotasby2026', 'register')->name('register');
 
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', 'nocache'])->group(function () {
     Route::get('login', NewLoginIndex::class)->name('login');
     Route::get('new-login', NewLoginIndex::class)->name('new-login');
     Route::get('register', Register::class)->name('register');
@@ -153,6 +153,14 @@ Route::middleware('guest')->group(function () {
 Route::get('/piala_walikotasby2026', function () {
     return view('register');
 })->name('old_register');
+
+Route::match(['get', 'post'], 'logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+
+    return redirect('/login');
+})->name('logout');
 
 Route::middleware('auth')->group(function () {
     Route::get('dashboard', GeneralDashboard::class)->name('dashboard');
@@ -172,14 +180,6 @@ Route::middleware('auth')->group(function () {
     Route::get('contingent/observasi-wasit/create', RefereeObservationForm::class)->name('contingent.observasi-wasit.create');
     Route::get('contingent/observasi-wasit/{observation}', RefereeObservationForm::class)->name('contingent.observasi-wasit.show');
     Route::get('contingent/observasi-wasit/{observation}/edit', RefereeObservationForm::class)->name('contingent.observasi-wasit.edit');
-
-    Route::match(['get', 'post'], 'logout', function () {
-        Auth::logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-
-        return redirect('/login');
-    })->name('logout');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', AdminDashboard::class)->name('dashboard');
@@ -222,6 +222,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/new-scoring', [SvelteMonitorController::class, 'scoringIndex'])->name('new-scoring-index');
         Route::get('/new-scoring/embu/{matchNumber}', [SvelteMonitorController::class, 'scoringEmbu'])->name('new-scoring-embu-index');
         Route::get('/new-scoring/randori/{matchNumber}', [SvelteMonitorController::class, 'scoringRandori'])->name('new-scoring-randori-index');
+        Route::get('/panitera/panggil-drawing', [SvelteMonitorController::class, 'panggilDrawingIndex'])->name('panitera.panggil-drawing');
+        Route::get('/api/scoring/panggil-drawing-state', [SvelteMonitorController::class, 'panggilDrawingState'])->name('api.scoring.panggil-drawing-state');
 
         Route::prefix('api/scoring')->name('api.scoring.')->group(function () {
             Route::get('/dashboard-state', [SvelteMonitorController::class, 'scoringDashboardState'])->name('dashboard-state');

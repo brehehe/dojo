@@ -969,13 +969,18 @@
                               ]
                             : [0, 0, 0, 0, 0]}
 
+                        {@const activeJudges = rawVals.filter(v => v > 0)}
+                        {@const scoredCount = activeJudges.length}
                         {@const sortedVals = [...rawVals].sort((a, b) => a - b)}
-                        {@const minVal = s ? sortedVals[0] : 0}
-                        {@const maxVal = s ? sortedVals[4] : 0}
+                        {@const minVal = s ? (scoredCount === 5 ? sortedVals[0] : 0) : 0}
+                        {@const maxVal = s ? (scoredCount === 5 ? sortedVals[4] : 0) : 0}
 
-                        {@const nilaiAwal = s ? s.total_score : 0}
+                        {@const calculatedNilaiAwal = s ? (
+                            scoredCount === 5 ? (sortedVals[1] + sortedVals[2] + sortedVals[3]) : rawVals.reduce((a, b) => a + b, 0)
+                        ) : 0}
+                        {@const nilaiAwal = s ? (s.total_score > 0 ? s.total_score : calculatedNilaiAwal) : 0}
                         {@const denda = s ? s.denda : 0}
-                        {@const nilaiAkhir = s ? s.nilai_akhir : 0}
+                        {@const nilaiAkhir = s ? (s.nilai_akhir > 0 ? s.nilai_akhir : Math.max(0, calculatedNilaiAwal - denda)) : 0}
                         {@const isActive = !!(
                             activeDrawingId &&
                             Number(activeDrawingId) === Number(item.drawing_id)
@@ -1240,8 +1245,15 @@
                                         callParticipant(item.drawing_id)}
                                     class="btn-gen primary"
                                     style="width:100%;"
-                                    ><i class="fas fa-bullhorn"></i> Panggil</button
+                                    disabled={!!item.score}
                                 >
+                                    <i class="fas fa-bullhorn"></i>
+                                    {#if item.score}
+                                        Sudah Dinilai
+                                    {:else}
+                                        Panggil
+                                    {/if}
+                                </button>
                             {/if}
                         </div>
                         {#if isActive}
@@ -1838,6 +1850,14 @@
         transition: all 0.15s;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    .btn-gen:disabled {
+        background: #bdc3c7 !important;
+        color: #7f8c8d !important;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     .btn-gen.primary {

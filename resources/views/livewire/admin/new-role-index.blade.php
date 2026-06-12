@@ -102,7 +102,7 @@
                 <h2>Role & Hak Akses</h2>
                 <p>Kelola pengaturan hak akses tiap grup pengguna</p>
             </div>
-            <a href="{{ route('admin.new-roles.create') }}" class="btn-prem-add" wire:navigate>
+            <a href="{{ route('admin.new-roles.create') }}" class="btn-prem-add" >
                 <i class="fa-solid fa-shield-halved"></i> Tambah Role
             </a>
         </div>
@@ -159,7 +159,7 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:5px;justify-content:flex-end;">
-                                    <a href="{{ route('admin.new-roles.edit', $role->id) }}" class="act-btn-a edit" title="Edit" wire:navigate>
+                                    <a href="{{ route('admin.new-roles.edit', $role->id) }}" class="act-btn-a edit" title="Edit" >
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
                                     @if($role->name !== 'Super Admin')

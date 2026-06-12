@@ -9,7 +9,7 @@
             </div>
         </div>
         <div class="flex items-center gap-3 w-full md:w-auto">
-            <a href="{{ route('admin.master.roles.create') }}" wire:navigate
+            <a href="{{ route('admin.master.roles.create') }}" 
                 class="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-black shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 text-[15px] uppercase tracking-widest">
                 <i class="fas fa-plus-circle"></i>
                 <span>Tambah Role</span>
@@ -41,7 +41,7 @@
                             <i class="fas fa-user-shield text-xl"></i>
                         </div>
                         <div class="flex items-center gap-1">
-                            <a href="{{ route('admin.master.roles.edit', $role->id) }}" wire:navigate
+                            <a href="{{ route('admin.master.roles.edit', $role->id) }}" 
                                 class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all">
                                 <i class="fas fa-edit text-[15px]"></i>
                             </a>

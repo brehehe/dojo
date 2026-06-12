@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DisablePageCaching;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
@@ -22,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'nocache' => DisablePageCaching::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

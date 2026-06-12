@@ -1099,6 +1099,8 @@
                                         {:else if isActive}
                                             <button onclick={() => openMatchModal('ub', roundIdx, matchIdx)} class="b-action-btn" style="color:#2980b9;"><i class="fas fa-edit"></i> Skor</button>
                                             <button onclick={dismissMatch} class="b-action-btn" style="color:var(--red);"><i class="fas fa-times"></i> Tutup</button>
+                                        {:else if isDone && !isActive}
+                                            <button disabled class="b-action-btn opacity-50 cursor-not-allowed" style="color:#7f8c8d;"><i class="fas fa-check-circle"></i> Selesai</button>
                                         {/if}
                                     </div>
                                 {/if}
@@ -1164,6 +1166,8 @@
                                                 <button onclick={() => callMatch(nodeKey, lbRoundIdx, matchIdx, 'lb')} class="b-action-btn"><i class="fas fa-redo"></i> Ulang</button>
                                                 <button onclick={() => openMatchModal('lb', lbRoundIdx, matchIdx)} class="b-action-btn" style="color:#2980b9;"><i class="fas fa-edit"></i> Skor</button>
                                                 <button onclick={dismissMatch} class="b-action-btn" style="color:var(--red);"><i class="fas fa-times"></i> Tutup</button>
+                                            {:else if isDone && !isActive}
+                                                <button disabled class="b-action-btn opacity-50 cursor-not-allowed" style="color:#7f8c8d;"><i class="fas fa-check-circle"></i> Selesai</button>
                                             {/if}
                                         </div>
                                     {/if}
@@ -1216,14 +1220,16 @@
                                 <i class="fas fa-trophy" style="color:#f1c40f; font-size:16px;"></i>
                             {/if}
                         </div>
-                        {#if grandFinal.athlete1 && grandFinal.athlete2 && !gfDone}
+                        {#if grandFinal.athlete1 && grandFinal.athlete2}
                             <div class="b-match-actions">
-                                {#if !gfActive}
+                                {#if !gfActive && !gfDone}
                                     <button onclick={callGrandFinal} class="b-action-btn"><i class="fas fa-bullhorn"></i> Panggil GF</button>
-                                {:else}
+                                {:else if gfActive}
                                     <button onclick={callGrandFinal} class="b-action-btn"><i class="fas fa-redo"></i> Ulang</button>
                                     <button onclick={openGrandFinalModal} class="b-action-btn" style="color:#f39c12;"><i class="fas fa-edit"></i> Skor GF</button>
                                     <button onclick={dismissMatch} class="b-action-btn" style="color:var(--red);"><i class="fas fa-times"></i> Tutup</button>
+                                {:else if gfDone && !gfActive}
+                                    <button disabled class="b-action-btn opacity-50 cursor-not-allowed" style="color:#7f8c8d;"><i class="fas fa-check-circle"></i> Selesai</button>
                                 {/if}
                             </div>
                         {/if}
@@ -1546,6 +1552,12 @@
         border: none;
         cursor: pointer;
         border-right: 1px solid var(--paper2, #e0dcd3);
+    }
+
+    .b-action-btn:disabled {
+        background: #f2f2f2 !important;
+        color: #999999 !important;
+        cursor: not-allowed;
     }
 
     .b-action-btn:last-child {

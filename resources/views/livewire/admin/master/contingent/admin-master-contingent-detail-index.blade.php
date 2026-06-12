@@ -3,14 +3,14 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div class="space-y-1">
             <div class="flex items-center gap-2 text-[15px] font-black uppercase tracking-widest text-slate-800">
-                <a href="{{ route('admin.master.contingents.index') }}" wire:navigate class="hover:text-orange-600 transition-colors">Master Kontingen</a>
+                <a href="{{ route('admin.master.contingents.index') }}"  class="hover:text-orange-600 transition-colors">Master Kontingen</a>
                 <i class="fas fa-chevron-right text-[15px]"></i>
                 <span class="text-slate-900">Detail Unit & Partisipasi</span>
             </div>
             <h1 class="text-2xl font-black text-slate-800 tracking-tight lowercase first-letter:uppercase">{{ $contingent->name }}</h1>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('admin.master.contingents.edit', $contingent->id) }}" wire:navigate
+            <a href="{{ route('admin.master.contingents.edit', $contingent->id) }}" 
                 class="bg-slate-100 hover:bg-slate-200 text-slate-900 px-4 py-2 rounded-xl text-[15px] font-black uppercase tracking-widest transition-all">
                 Edit Profil Unit
             </a>
@@ -315,7 +315,7 @@
                                                 </span>
                                             </div>
                                         </div>
-                                        <a href="{{ route('admin.master.athletes.detail', $athlete->id) }}" wire:navigate class="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-slate-100 text-slate-300 hover:text-orange-600 transition-all">
+                                        <a href="{{ route('admin.master.athletes.detail', $athlete->id) }}"  class="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-slate-100 text-slate-300 hover:text-orange-600 transition-all">
                                             <i class="fas fa-chevron-right text-[15px]"></i>
                                         </a>
                                     </div>

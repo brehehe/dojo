@@ -512,6 +512,173 @@ class SvelteMonitorController extends Controller
             ->values();
     }
 
+    public function panggilDrawingIndex(): Response
+    {
+        return Inertia::render('PanggilDrawingDashboard');
+    }
+
+    public function panggilDrawingState(Request $request): JsonResponse
+    {
+        $search = $request->input('search', '');
+        $filterCourt = $request->input('filterCourt', '');
+        $filterSession = $request->input('filterSession', '');
+        $filterRundown = $request->input('filterRundown', '');
+        $filterPool = $request->input('filterPool', '');
+        $filterRound = $request->input('filterRound', '');
+        $filterType = $request->input('filterType', '');
+        $filterContingent = $request->input('filterContingent', '');
+        $filterAgeGroup = $request->input('filterAgeGroup', '');
+        $filterMatchNumber = $request->input('filterMatchNumber', '');
+        $filterGender = $request->input('filterGender', '');
+
+        $query = DrawingMatchNumber::with([
+            'matchNumber.ageGroup',
+            'pool',
+            'court',
+            'sessionTime',
+            'rundown',
+            'registration.contingent',
+        ]);
+
+        // Filters
+        if (! empty($filterCourt)) {
+            $query->where('court_id', $filterCourt);
+        }
+        if (! empty($filterSession)) {
+            $query->where('session_time_id', $filterSession);
+        }
+        if (! empty($filterRundown)) {
+            $query->where('rundown_id', $filterRundown);
+        }
+        if (! empty($filterPool)) {
+            $query->where('pool_id', $filterPool);
+        }
+        if (! empty($filterRound)) {
+            $query->where('round', $filterRound);
+        }
+        if (! empty($filterType)) {
+            $query->where('draft_type', $filterType);
+        }
+        if (! empty($filterAgeGroup)) {
+            $query->whereHas('matchNumber', function ($q) use ($filterAgeGroup) {
+                $q->where('age_group_id', $filterAgeGroup);
+            });
+        }
+        if (! empty($filterMatchNumber)) {
+            $query->where('match_number_id', $filterMatchNumber);
+        }
+        if (! empty($filterGender)) {
+            $query->whereHas('matchNumber', function ($q) use ($filterGender) {
+                $q->where('gender', $filterGender);
+            });
+        }
+        if (! empty($filterContingent)) {
+            $query->whereHas('registration.contingent', function ($q) use ($filterContingent) {
+                $q->where('id', $filterContingent);
+            });
+        }
+        if (auth()->user()->court_id) {
+            $query->where('drawing_match_numbers.court_id', auth()->user()->court_id);
+        }
+        if (! empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('matchNumber', fn ($mq) => $mq->where('name', 'ilike', '%'.$search.'%'))
+                    ->orWhereHas('registration.contingent', fn ($cq) => $cq->where('name', 'ilike', '%'.$search.'%'))
+                    ->orWhereRaw("metadata->>'athlete_name' ilike ?", ['%'.$search.'%']);
+            });
+        }
+
+        // Sorting: ASC date, ASC start_time, ASC sequence_number
+        $query->join('rundowns', 'drawing_match_numbers.rundown_id', '=', 'rundowns.id')
+            ->select('drawing_match_numbers.*')
+            ->orderBy('rundowns.date', 'asc')
+            ->orderBy(DB::raw("drawing_match_numbers.metadata->>'start_time'"), 'asc')
+            ->orderBy('drawing_match_numbers.sequence_number', 'asc');
+
+        $drawings = $query->paginate(15);
+
+        // Map drawings to check if they have score/lock
+        $drawings->getCollection()->transform(function ($drawing) {
+            $hasScore = false;
+            if ($drawing->draft_type === 'embu') {
+                $hasScore = EmbuScore::where('drawing_id', $drawing->id)
+                    ->orWhere(function ($q) use ($drawing) {
+                        $q->where('registration_id', $drawing->registration_id)
+                            ->where('match_number_id', $drawing->match_number_id);
+                    })
+                    ->exists();
+            } else {
+                // Randori score check
+                $hasScore = RandoriMatchResult::where('match_number_id', $drawing->match_number_id)
+                    ->exists();
+            }
+            $drawing->has_score = $hasScore;
+
+            return $drawing;
+        });
+
+        // Other filters lists
+        $courtQuery = Court::with([
+            'activeMatch',
+            'activeDrawing.pool',
+            'activeDrawing.sessionTime',
+            'activeDrawing.rundown',
+            'activeDrawing.registration.contingent',
+        ])->orderBy('order');
+
+        if (auth()->user()->court_id) {
+            $courtQuery->where('id', auth()->user()->court_id);
+        }
+
+        $courts = $courtQuery->get();
+
+        foreach ($courts as $court) {
+            $court->current_referees = ActiveCourtReferee::with('referee.user')
+                ->where('court_id', $court->id)
+                ->orderBy('judge_index')
+                ->get();
+        }
+        $sessions = SessionTime::orderBy('start_time')->get();
+        $rundowns = Rundown::orderBy('date')->get();
+        $pools = Pool::orderBy('order')->get();
+        $contingents = Contingent::orderBy('name')->get();
+        $rounds = DrawingMatchNumber::whereNotNull('round')
+            ->distinct()
+            ->orderBy('round')
+            ->pluck('round');
+        $ageGroups = AgeGroup::orderBy('order')->get();
+
+        $matchNumberQuery = MatchNumber::orderBy('name');
+        if ($filterAgeGroup) {
+            $matchNumberQuery->where('age_group_id', $filterAgeGroup);
+        }
+        if ($filterGender) {
+            $matchNumberQuery->where('gender', $filterGender);
+        }
+        if ($filterType) {
+            $matchNumberQuery->where('draft_type', $filterType);
+        }
+        $matchNumbers = $matchNumberQuery->get();
+
+        $refereesQuery = Referee::with('user');
+        $allReferees = $refereesQuery->get()->sortBy([
+            ['certification_level', 'asc'],
+        ])->values();
+
+        return response()->json([
+            'drawings' => $drawings,
+            'courts' => $courts,
+            'sessions' => $sessions,
+            'rundowns' => $rundowns,
+            'pools' => $pools,
+            'contingents' => $contingents,
+            'rounds' => $rounds,
+            'ageGroups' => $ageGroups,
+            'matchNumbers' => $matchNumbers,
+            'allReferees' => $allReferees,
+        ]);
+    }
+
     // --- Svelte Admin Scoring Dashboard Page Renders and Actions ---
 
     public function scoringIndex(): Response
@@ -525,6 +692,7 @@ class SvelteMonitorController extends Controller
             'matchId' => $matchNumber->id,
             'urlRound' => $request->query('round'),
             'urlPoolId' => $request->query('pool_id') ? (int) $request->query('pool_id') : null,
+            'urlFrom' => $request->query('from'),
         ]);
     }
 
@@ -534,6 +702,7 @@ class SvelteMonitorController extends Controller
             'matchId' => $matchNumber->id,
             'urlRound' => $request->query('round'),
             'urlPoolId' => $request->query('pool_id') ? (int) $request->query('pool_id') : null,
+            'urlFrom' => $request->query('from'),
         ]);
     }
 

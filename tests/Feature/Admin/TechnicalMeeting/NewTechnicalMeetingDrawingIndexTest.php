@@ -8,6 +8,8 @@ use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\MatchNumberMerge;
+use App\Models\RandoriJudgeScore;
+use App\Models\RandoriMatchResult;
 use App\Models\Registration;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
@@ -760,4 +762,131 @@ it('generates drawing for merged groups in generateAllDrawings', function () {
     // The drawings should be successfully scheduled in the database
     $drawings = DrawingMatchNumber::whereIn('match_number_id', [$mn1->id, $mn2->id])->get();
     expect($drawings->count())->toBeGreaterThan(0);
+});
+
+it('deletes scores and results when resetting drawings', function () {
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create([
+        'name' => 'Hari 1',
+        'date' => '2026-06-15',
+        'type' => 'pertandingan',
+        'order' => 1,
+    ]);
+    $session = SessionTime::create([
+        'name' => 'Sesi Pagi',
+        'start_time' => '07:30:00',
+        'end_time' => '12:00:00',
+    ]);
+
+    $match = MatchNumber::create([
+        'name' => 'Randori Test Match',
+        'draft_type' => 'randori',
+        'gender' => 'L',
+        'order' => 1,
+        'age_group_id' => $this->ageGroup->id,
+    ]);
+
+    createMockRandoriEntries($match, 4);
+
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->set('filterMatchNumberId', $match->id)
+        ->call('generateRandoriDrawing');
+
+    RandoriJudgeScore::create([
+        'match_number_id' => $match->id,
+        'bracket_node' => '0_0',
+        'judge_index' => 1,
+        'waza_ari_aka' => 1,
+        'ippon_aka' => 0,
+        'hansoku_aka' => 0,
+        'waza_ari_shiro' => 0,
+        'ippon_shiro' => 0,
+        'hansoku_shiro' => 0,
+    ]);
+
+    RandoriMatchResult::create([
+        'match_number_id' => $match->id,
+        'bracket_node_index' => 0,
+        'bracket_node' => '0_0',
+        'bracket_section' => 'upper',
+        'winner_athlete_id' => 1,
+        'winner_color' => 'RED',
+        'score_red' => 1,
+        'score_blue' => 0,
+    ]);
+
+    expect(RandoriJudgeScore::where('match_number_id', $match->id)->exists())->toBeTrue();
+    expect(RandoriMatchResult::where('match_number_id', $match->id)->exists())->toBeTrue();
+
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->set('filterMatchNumberId', $match->id)
+        ->call('resetDrawing');
+
+    expect(RandoriJudgeScore::where('match_number_id', $match->id)->exists())->toBeFalse();
+    expect(RandoriMatchResult::where('match_number_id', $match->id)->exists())->toBeFalse();
+});
+
+it('deletes scores and results when resetting all drawings', function () {
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create([
+        'name' => 'Hari 1',
+        'date' => '2026-06-15',
+        'type' => 'pertandingan',
+        'order' => 1,
+    ]);
+    $session = SessionTime::create([
+        'name' => 'Sesi Pagi',
+        'start_time' => '07:30:00',
+        'end_time' => '12:00:00',
+    ]);
+
+    $match = MatchNumber::create([
+        'name' => 'Randori Test Match',
+        'draft_type' => 'randori',
+        'gender' => 'L',
+        'order' => 1,
+        'age_group_id' => $this->ageGroup->id,
+    ]);
+
+    createMockRandoriEntries($match, 4);
+
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->set('filterMatchNumberId', $match->id)
+        ->call('generateRandoriDrawing');
+
+    RandoriJudgeScore::create([
+        'match_number_id' => $match->id,
+        'bracket_node' => '0_0',
+        'judge_index' => 1,
+        'waza_ari_aka' => 1,
+        'ippon_aka' => 0,
+        'hansoku_aka' => 0,
+        'waza_ari_shiro' => 0,
+        'ippon_shiro' => 0,
+        'hansoku_shiro' => 0,
+    ]);
+
+    RandoriMatchResult::create([
+        'match_number_id' => $match->id,
+        'bracket_node_index' => 0,
+        'bracket_node' => '0_0',
+        'bracket_section' => 'upper',
+        'winner_athlete_id' => 1,
+        'winner_color' => 'RED',
+        'score_red' => 1,
+        'score_blue' => 0,
+    ]);
+
+    expect(RandoriJudgeScore::where('match_number_id', $match->id)->exists())->toBeTrue();
+    expect(RandoriMatchResult::where('match_number_id', $match->id)->exists())->toBeTrue();
+
+    Livewire::actingAs($this->admin)
+        ->test(NewTechnicalMeetingDrawingIndex::class)
+        ->call('resetAllDrawings');
+
+    expect(RandoriJudgeScore::where('match_number_id', $match->id)->exists())->toBeFalse();
+    expect(RandoriMatchResult::where('match_number_id', $match->id)->exists())->toBeFalse();
 });

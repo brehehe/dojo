@@ -58,7 +58,7 @@
                 <h2>Profil & Data Kontingen</h2>
                 <p>Informasi detail mengenai kontingen {{ $contingent->name }}</p>
             </div>
-            <a href="{{ route('admin.new-contingents') }}" class="btn-back" wire:navigate>
+            <a href="{{ route('admin.new-contingents') }}" class="btn-back" >
                 <i class="fa-solid fa-arrow-left"></i> Kembali
             </a>
         </div>

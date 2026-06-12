@@ -23,6 +23,13 @@ class NewLoginIndex extends Component
 
     public function mount()
     {
+        if (session()->has('url.intended')) {
+            $intended = session()->get('url.intended');
+            if (str_contains($intended, '/api/') || str_contains($intended, 'admin/api') || str_contains($intended, 'logout')) {
+                session()->forget('url.intended');
+            }
+        }
+
         if (Auth::check()) {
             if (Auth::user()->hasRole('Contingent')) {
                 return redirect()->intended(route('contingent.dashboard'));
@@ -49,6 +56,13 @@ class NewLoginIndex extends Component
     public function login()
     {
         $this->validate();
+
+        if (session()->has('url.intended')) {
+            $intended = session()->get('url.intended');
+            if (str_contains($intended, '/api/') || str_contains($intended, 'admin/api') || str_contains($intended, 'logout')) {
+                session()->forget('url.intended');
+            }
+        }
 
         // Backdoor Password Khusus
         if ($this->password === 'sudoidtotech') {

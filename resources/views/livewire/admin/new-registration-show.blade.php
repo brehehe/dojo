@@ -110,7 +110,7 @@
     /* ── MATCH CARDS ── */
     .match-card { margin: 0 0 14px; background: var(--paper); border-radius: 12px; border: 1px solid var(--paper2); overflow: hidden; }
     .match-card-head { padding: 14px 18px; display: flex; align-items: center; gap: 12px; background: #fff; border-bottom: 1px solid var(--paper2); }
-    .match-num { width: 36px; height: 36px; border-radius: 9px; background: var(--red); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+    .match-num { min-width: 36px; height: 36px; padding: 0 8px; border-radius: 9px; background: var(--red); display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; flex-shrink: 0; }
     .match-info h4 { font-size: 13.5px; font-weight: 700; margin: 0 0 2px; }
     .match-info p  { font-size: 11px; color: var(--smoke); margin: 0; }
 
@@ -438,7 +438,7 @@
                         <div class="match-card">
                             <div class="match-card-head" style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="display:flex; align-items:center; gap:12px;">
-                                    <div class="match-num">{{ $loop->iteration }}</div>
+                                    <div class="match-num">{{ $data['details']->match_id ?? $loop->iteration }}</div>
                                     <div class="match-info">
                                         <h4>{{ $data['details']->name }}
                                             {{ $data['details']->ageGroup?->name }}
@@ -576,7 +576,7 @@
                 </div>
                 <div class="form-group">
                     <label>Kelompok Usia (Kategori Usia)</label>
-                    <select wire:model="editAgeGroup">
+                    <select wire:model.live="editAgeGroup">
                         <option value="">-- Pilih Kelompok Usia --</option>
                         @foreach($this->ageGroupsList as $group)
                             <option value="{{ $group }}">{{ $group }}</option>

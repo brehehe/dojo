@@ -3,7 +3,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div class="space-y-1">
             <div class="flex items-center gap-2 text-[15px] font-black uppercase tracking-widest text-slate-800">
-                <a href="{{ route('admin.master.officials.index') }}" wire:navigate class="hover:text-orange-600 transition-colors">Master Official</a>
+                <a href="{{ route('admin.master.officials.index') }}"  class="hover:text-orange-600 transition-colors">Master Official</a>
                 <i class="fas fa-chevron-right text-[15px]"></i>
                 <span class="text-slate-900">{{ $isEdit ? 'Edit Data' : 'Tambah Baru' }}</span>
             </div>
@@ -12,7 +12,7 @@
             </h1>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('admin.master.officials.index') }}" wire:navigate
+            <a href="{{ route('admin.master.officials.index') }}" 
                 class="bg-slate-100 hover:bg-slate-200 text-slate-900 px-5 py-2.5 rounded-xl text-[15px] font-black uppercase tracking-widest transition-all">
                 Batal & Kembali
             </a>

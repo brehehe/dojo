@@ -288,7 +288,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', renderRefereeChart);
-        document.addEventListener('livewire:navigated', renderRefereeChart);
+        document.addEventListener('lived', renderRefereeChart);
         Livewire.hook('morph.updated', () => { setTimeout(renderRefereeChart, 100); });
     </script>
     @endpush

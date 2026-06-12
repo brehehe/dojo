@@ -104,7 +104,7 @@
                 <h2>Master Kontingen</h2>
                 <p>Kelola data daerah/cabang/dojo peserta turnamen</p>
             </div>
-            <a href="{{ route('admin.new-contingents.create') }}" class="btn-prem-add" wire:navigate>
+            <a href="{{ route('admin.new-contingents.create') }}" class="btn-prem-add" >
                 <i class="fa-solid fa-flag"></i> Tambah Kontingen
             </a>
         </div>
@@ -187,10 +187,10 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:5px;justify-content:flex-end;">
-                                    <a href="{{ route('admin.new-contingents.detail', $ctg->id) }}" class="act-btn-a view" title="Detail" wire:navigate>
+                                    <a href="{{ route('admin.new-contingents.detail', $ctg->id) }}" class="act-btn-a view" title="Detail" >
                                         <i class="fa-solid fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.new-contingents.edit', $ctg->id) }}" class="act-btn-a edit" title="Edit" wire:navigate>
+                                    <a href="{{ route('admin.new-contingents.edit', $ctg->id) }}" class="act-btn-a edit" title="Edit" >
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
                                     <button onclick="confirmDelete({{ $ctg->id }}, '{{ addslashes($ctg->name) }}')" class="act-btn-a danger" title="Hapus">

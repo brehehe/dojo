@@ -103,7 +103,7 @@
                 <h2>Master Official</h2>
                 <p>Kelola data pendamping (Manajer, Pelatih, dll) kontingen</p>
             </div>
-            <a href="{{ route('admin.new-officials.create') }}" class="btn-prem-add" wire:navigate>
+            <a href="{{ route('admin.new-officials.create') }}" class="btn-prem-add" >
                 <i class="fa-solid fa-user-tie"></i> Tambah Official
             </a>
         </div>
@@ -173,7 +173,7 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:5px;justify-content:flex-end;">
-                                    <a href="{{ route('admin.new-officials.edit', $off->id) }}" class="act-btn-a edit" title="Edit" wire:navigate>
+                                    <a href="{{ route('admin.new-officials.edit', $off->id) }}" class="act-btn-a edit" title="Edit" >
                                         <i class="fa-solid fa-pen"></i>
                                     </a>
                                     <button onclick="confirmDelete({{ $off->id }}, '{{ addslashes($off->name) }}')" class="act-btn-a danger" title="Hapus">

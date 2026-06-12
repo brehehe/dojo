@@ -1331,7 +1331,7 @@
                     initRefereeScoringView();
                 }
 
-                document.addEventListener('livewire:navigated', initRefereeScoringView);
+                document.addEventListener('lived', initRefereeScoringView);
                 document.addEventListener('livewire:navigating', cleanupImmersiveMode);
                 document.addEventListener('fullscreenchange', syncFullscreenButton);
                 document.addEventListener('visibilitychange', () => {

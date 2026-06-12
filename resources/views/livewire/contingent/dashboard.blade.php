@@ -425,11 +425,11 @@
 
     {{-- ── QUICK ACTIONS ── --}}
     {{-- <div class="ctg-quick-actions">
-        <a href="{{ route('contingent.athletes') }}" wire:navigate class="btn-action dark">
+        <a href="{{ route('contingent.athletes') }}"  class="btn-action dark">
             <i class="fa-solid fa-user-plus"></i>
             <span>Tambah Atlet</span>
         </a>
-        <a href="{{ route('contingent.officials') }}" wire:navigate class="btn-action">
+        <a href="{{ route('contingent.officials') }}"  class="btn-action">
             <i class="fa-solid fa-user-tie" style="color: var(--smoke);"></i>
             <span>Tambah Official</span>
         </a>
@@ -437,14 +437,14 @@
 
     {{-- ── STATS ── --}}
     <div class="ctg-stats">
-        <a href="{{ route('contingent.athletes') }}" wire:navigate style="text-decoration: none;">
+        <a href="{{ route('contingent.athletes') }}"  style="text-decoration: none;">
             <div class="ctg-stat-card">
                 <div class="ctg-stat-icon blue"><i class="fa-solid fa-users"></i></div>
                 <div class="ctg-stat-val">{{ $contingent->athletes()->count() }}</div>
                 <div class="ctg-stat-lbl">Master Atlet</div>
             </div>
         </a>
-        <a href="{{ route('contingent.officials') }}" wire:navigate style="text-decoration: none;">
+        <a href="{{ route('contingent.officials') }}"  style="text-decoration: none;">
             <div class="ctg-stat-card">
                 <div class="ctg-stat-icon green"><i class="fa-solid fa-user-tie"></i></div>
                 <div class="ctg-stat-val">{{ $contingent->officials()->count() }}</div>

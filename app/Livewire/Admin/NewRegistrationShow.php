@@ -388,12 +388,30 @@ class NewRegistrationShow extends Component
 
     public function getAvailableEventsProperty(): array
     {
-        return MatchNumber::where(function ($q) {
+        $query = MatchNumber::with('ageGroup')->where(function ($q) {
             $q->where('gender', $this->editGender)
                 ->orWhere('gender', 'Mix');
-        })
-            ->orderBy('name')
-            ->get(['id', 'name', 'gender', 'draft_type'])
+        });
+
+        if (! empty($this->editAgeGroup)) {
+            $ageGroup = AgeGroup::where('name', $this->editAgeGroup)->first();
+            if ($ageGroup) {
+                $query->where('age_group_id', $ageGroup->id);
+            }
+        }
+
+        return $query->orderBy('name')
+            ->get()
+            ->map(function ($mn) {
+                $ageGroupName = $mn->ageGroup?->name ? ' - '.$mn->ageGroup->name : '';
+
+                return [
+                    'id' => $mn->id,
+                    'name' => $mn->name.$ageGroupName,
+                    'gender' => $mn->gender,
+                    'draft_type' => $mn->draft_type,
+                ];
+            })
             ->toArray();
     }
 

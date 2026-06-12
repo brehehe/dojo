@@ -56,7 +56,7 @@
                 <h2>{{ $isEdit ? 'Edit Kontingen' : 'Tambah Kontingen' }}</h2>
                 <p>Silakan lengkapi formulir pendaftaran kontingen</p>
             </div>
-            <a href="{{ route('admin.new-contingents') }}" class="btn-back" wire:navigate>
+            <a href="{{ route('admin.new-contingents') }}" class="btn-back" >
                 <i class="fa-solid fa-arrow-left"></i> Kembali
             </a>
         </div>
@@ -104,7 +104,7 @@
                 </div>
 
                 <div class="form-actions">
-                    <a href="{{ route('admin.new-contingents') }}" class="btn-back" wire:navigate>Batal</a>
+                    <a href="{{ route('admin.new-contingents') }}" class="btn-back" >Batal</a>
                     <button type="submit" class="btn-save">
                         <span wire:loading.remove wire:target="save"><i class="fa-solid fa-save"></i> Simpan Data Kontingen</span>
                         <span wire:loading wire:target="save"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyimpan...</span>

@@ -9,7 +9,7 @@
             </div>
         </div>
         <div class="flex items-center gap-3 w-full md:w-auto">
-            <a href="{{ route('admin.master.contingents.create') }}" wire:navigate
+            <a href="{{ route('admin.master.contingents.create') }}" 
                 class="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-black shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 active:scale-95 text-[15px] uppercase tracking-widest">
                 <i class="fas fa-plus-circle text-[15px]"></i>
                 <span>Register Kontingen</span>
@@ -109,11 +109,11 @@
                             </td>
                             <td class="py-4 px-6 text-right border-r border-slate-200">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('admin.master.contingents.detail', $contingent->id) }}" wire:navigate
+                                    <a href="{{ route('admin.master.contingents.detail', $contingent->id) }}" 
                                         class="w-10 h-10 flex items-center justify-center bg-slate-100 text-orange-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all border border-transparent hover:border-orange-100">
                                         <i class="fas fa-eye text-[15px]"></i>
                                     </a>
-                                    <a href="{{ route('admin.master.contingents.edit', $contingent->id) }}" wire:navigate
+                                    <a href="{{ route('admin.master.contingents.edit', $contingent->id) }}" 
                                         class="w-10 h-10 flex items-center justify-center bg-slate-100 text-blue-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100">
                                         <i class="fas fa-edit text-[15px]"></i>
                                     </a>

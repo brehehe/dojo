@@ -8,7 +8,7 @@
                 <p class="text-[15px] text-slate-900 font-bold uppercase tracking-wider italic">Konfigurasi Nama Jabatan dan Hak Akses Spesifik</p>
             </div>
         </div>
-        <a href="{{ route('admin.master.roles.index') }}" wire:navigate
+        <a href="{{ route('admin.master.roles.index') }}" 
             class="group px-4 py-2 text-slate-800 hover:text-slate-900 transition-all flex items-center gap-2">
             <i class="fas fa-arrow-left text-[15px] transition-transform group-hover:-translate-x-1"></i>
             <span class="text-[15px] font-black uppercase tracking-widest">Kembali ke List</span>

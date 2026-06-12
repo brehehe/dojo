@@ -5,12 +5,18 @@ namespace App\Livewire\Admin;
 use App\Exports\ScheduleExport;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
+use App\Models\EmbuChampion;
+use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\MatchNumberMerge;
 use App\Models\Pool\Pool;
+use App\Models\RandoriJudgeScore;
+use App\Models\RandoriMatchResult;
+use App\Models\RefereeScoreDetail;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
+use App\Models\TournamentResult;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -856,6 +862,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
         set_time_limit(0);
 
         DrawingMatchNumber::query()->delete();
+        EmbuScore::query()->delete();
+        RandoriJudgeScore::query()->delete();
+        RefereeScoreDetail::query()->delete();
+        EmbuChampion::query()->delete();
+        RandoriMatchResult::query()->delete();
+        TournamentResult::query()->delete();
+
         MatchNumber::whereNotNull('drawing_generated_at')
             ->update(['drawing_data' => null, 'drawing_generated_at' => null]);
 
@@ -1457,6 +1470,13 @@ class NewTechnicalMeetingDrawingIndex extends Component
         }
 
         DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->delete();
+        EmbuScore::whereIn('match_number_id', $matchNumberIds)->delete();
+        RandoriJudgeScore::whereIn('match_number_id', $matchNumberIds)->delete();
+        RefereeScoreDetail::whereIn('match_number_id', $matchNumberIds)->delete();
+        EmbuChampion::whereIn('match_number_id', $matchNumberIds)->delete();
+        RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)->delete();
+        TournamentResult::whereIn('match_number_id', $matchNumberIds)->delete();
+
         MatchNumber::whereIn('id', $matchNumberIds)->update(['drawing_data' => null, 'drawing_generated_at' => null]);
 
         $this->dispatch('swal', ['icon' => 'success', 'title' => 'Drawing Direset', 'text' => 'Data drawing berhasil dihapus.', 'timer' => 2000]);
