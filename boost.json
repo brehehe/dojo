@@ -11,6 +11,7 @@
         "livewire-development",
         "volt-development",
         "pest-testing",
+        "inertia-svelte-development",
         "tailwindcss-development"
     ]
 }

@@ -18,7 +18,7 @@
         "maatwebsite/excel": "^3.1",
         "mckenziearts/laravel-notify": "^3.2",
         "opcodesio/log-viewer": "^3.24",
-        "spatie/laravel-backup": "^10.2",
+        "spatie/laravel-backup": "^10.3",
         "spatie/laravel-permission": "^7.2"
     },
     "require-dev": {

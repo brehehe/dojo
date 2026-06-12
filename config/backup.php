@@ -39,6 +39,9 @@ return [
                     base_path('vendor'),
                     base_path('node_modules'),
                     storage_path('framework'),
+                    storage_path('app/private/livewire-tmp'),
+                    storage_path('app/backup-temp'),
+                    storage_path('app/private/Smart Perkemi'),
                 ],
 
                 /*
@@ -49,7 +52,7 @@ return [
                 /*
                  * Determines if it should avoid unreadable folders.
                  */
-                'ignore_unreadable_directories' => false,
+                'ignore_unreadable_directories' => true,
 
                 /*
                  * This path is used to make directories in resulting zip-file relative
