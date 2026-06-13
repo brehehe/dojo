@@ -36,6 +36,8 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
     public ?int $filterMergeId = null;
 
+    public ?string $filterGender = '';
+
     public string $draftType = 'randori'; // randori, embu, jadwal
 
     public bool $isGenerating = false;
@@ -197,6 +199,12 @@ class NewTechnicalMeetingDrawingIndex extends Component
     }
 
     public function updatedFilterAgeGroupId(): void
+    {
+        $this->filterMatchNumberId = null;
+        $this->filterMergeId = null;
+    }
+
+    public function updatedFilterGender(): void
     {
         $this->filterMatchNumberId = null;
         $this->filterMergeId = null;
@@ -922,22 +930,40 @@ class NewTechnicalMeetingDrawingIndex extends Component
 
         $allEntries = collect();
         foreach ($registrationsQuery as $reg) {
-            $athleteIds = DB::table('athlete_match_number')
+            $pivots = DB::table('athlete_match_number')
                 ->where('match_number_id', $reg->match_number_id)
                 ->where('registration_id', $reg->registration_id)
                 ->orderBy('id')
-                ->pluck('athlete_id');
+                ->get();
 
             $matchObj = $matchNumbers->firstWhere('id', $reg->match_number_id);
             $currentMax = $matchObj->max_athletes ?? 1;
 
-            $chunks = $athleteIds->chunk($currentMax);
+            // Ensure all have team_number
+            $hasNullTeam = $pivots->contains(fn ($p) => is_null($p->team_number));
+            if ($hasNullTeam) {
+                $tempChunks = $pivots->chunk($currentMax);
+                foreach ($tempChunks as $cIdx => $chunk) {
+                    $assignedNum = $cIdx + 1;
+                    foreach ($chunk as $p) {
+                        if (is_null($p->team_number)) {
+                            DB::table('athlete_match_number')
+                                ->where('id', $p->id)
+                                ->update(['team_number' => $assignedNum]);
+                            $p->team_number = $assignedNum;
+                        }
+                    }
+                }
+            }
 
-            foreach ($chunks as $chunk) {
+            // Group by team_number
+            $teamGroups = $pivots->groupBy('team_number')->sortKeys();
+
+            foreach ($teamGroups as $teamNum => $group) {
                 $allEntries->push((object) [
                     'registration_id' => $reg->registration_id,
                     'match_number_id' => $reg->match_number_id,
-                    'athlete_ids' => $chunk->toArray(),
+                    'athlete_ids' => $group->pluck('athlete_id')->toArray(),
                 ]);
             }
         }
@@ -985,7 +1011,22 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'contingent' => $regContingents[$r->registration_id] ?? 'Unknown',
         ])->values()->toArray();
 
-        shuffle($entries);
+        // Group by contingent, shuffle, then interleave round-robin to avoid consecutive same-contingent matches
+        $grouped = collect($entries)->groupBy('contingent')->shuffle();
+        foreach ($grouped as $contingent => $items) {
+            $grouped[$contingent] = $items->shuffle();
+        }
+
+        $spreadEntries = [];
+        $maxPerContingent = $grouped->max(fn ($c) => $c->count());
+        for ($i = 0; $i < $maxPerContingent; $i++) {
+            foreach ($grouped as $members) {
+                if ($members->count() > $i) {
+                    $spreadEntries[] = $members[$i];
+                }
+            }
+        }
+        $entries = $spreadEntries;
 
         if ($totalEntries <= 9) {
             $format = '2_babak';
@@ -1692,6 +1733,10 @@ class NewTechnicalMeetingDrawingIndex extends Component
             $matchNumbersQuery->where('age_group_id', $this->filterAgeGroupId);
         }
 
+        if ($this->filterGender) {
+            $matchNumbersQuery->where('gender', $this->filterGender);
+        }
+
         $filterMatchNumbers = $matchNumbersQuery->get();
 
         // Get Match Number Merges
@@ -1699,6 +1744,11 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->where('type', $this->draftType);
         if ($this->filterAgeGroupId) {
             $mergeQuery->where('age_group_id', $this->filterAgeGroupId);
+        }
+        if ($this->filterGender) {
+            $mergeQuery->whereHas('matchNumbers', function ($q) {
+                $q->where('gender', $this->filterGender);
+            });
         }
         if ($this->searchMatchNumber) {
             $mergeQuery->where('name', $likeOperator, '%'.$this->searchMatchNumber.'%');
@@ -1716,18 +1766,35 @@ class NewTechnicalMeetingDrawingIndex extends Component
             ->where('registrations.status', 'verified')
             ->where('registrations.athlete_status', 'verified')
             ->whereIn('match_number_id', $filterMatchNumbers->pluck('id'))
-            ->select('athlete_match_number.match_number_id', DB::raw('count(*) as count'))
-            ->groupBy('athlete_match_number.match_number_id')
-            ->pluck('count', 'athlete_match_number.match_number_id');
+            ->select('athlete_match_number.match_number_id', 'athlete_match_number.registration_id', 'athlete_match_number.team_number')
+            ->get();
 
         $contingentCounts = [];
         foreach ($filterMatchNumbers as $match) {
-            $count = $rawAthleteCounts[$match->id] ?? 0;
-            if ($match->draft_type === 'embu') {
-                $contingentCounts[$match->id] = ceil($count / ($match->max_athletes ?: 1));
-            } else {
-                $contingentCounts[$match->id] = $count;
+            $matchId = $match->id;
+            $maxAthletes = $match->max_athletes ?: 1;
+
+            // Get all athlete pivots for this match
+            $pivots = $rawAthleteCounts->where('match_number_id', $matchId);
+
+            $totalTeams = 0;
+            // Group by registration_id
+            foreach ($pivots->groupBy('registration_id') as $regId => $regPivots) {
+                // If any has null team_number, simulate the sequential chunking
+                $hasNullTeam = $regPivots->contains(fn ($p) => is_null($p->team_number));
+                if ($hasNullTeam) {
+                    // Count unique non-null team numbers
+                    $nonNullTeams = $regPivots->whereNotNull('team_number')->pluck('team_number')->unique()->count();
+                    // Plus chunked null team numbers
+                    $nullCount = $regPivots->whereNull('team_number')->count();
+                    $nullTeams = ceil($nullCount / $maxAthletes);
+                    $totalTeams += ($nonNullTeams + $nullTeams);
+                } else {
+                    // Just count unique team_numbers
+                    $totalTeams += $regPivots->pluck('team_number')->unique()->count();
+                }
             }
+            $contingentCounts[$matchId] = $totalTeams;
         }
 
         $selectedMatch = null;
@@ -1752,12 +1819,7 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     ->whereIn('athlete_match_number.match_number_id', $matchNumberIds)
                     ->where('registrations.status', 'verified')
                     ->where('registrations.athlete_status', 'verified')
-                    ->select(
-                        'athletes.name as athlete_name',
-                        'contingents.name as contingent_name',
-                        'athlete_match_number.registration_id',
-                        'athlete_match_number.match_number_id'
-                    )
+                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id', 'athlete_match_number.match_number_id', 'athlete_match_number.team_number', 'athlete_match_number.id')
                     ->orderBy('contingents.name')
                     ->orderBy('athlete_match_number.id')
                     ->get();
@@ -1768,10 +1830,27 @@ class NewTechnicalMeetingDrawingIndex extends Component
                         $matchObj = $merge->matchNumbers->firstWhere('id', $matchId);
                         $currentMax = $matchObj->max_athletes ?? 1;
 
-                        $chunks = $regAthletes->chunk($currentMax);
-                        foreach ($chunks as $chunkIndex => $chunk) {
-                            $entryKey = $regId.'_'.$matchId.'_'.$chunkIndex;
-                            $entryData[$entryKey] = $chunk;
+                        // Ensure all have team_number
+                        $hasNullTeam = $regAthletes->contains(fn ($p) => is_null($p->team_number));
+                        if ($hasNullTeam) {
+                            $tempChunks = $regAthletes->chunk($currentMax);
+                            foreach ($tempChunks as $cIdx => $chunk) {
+                                $assignedNum = $cIdx + 1;
+                                foreach ($chunk as $p) {
+                                    if (is_null($p->team_number)) {
+                                        DB::table('athlete_match_number')
+                                            ->where('id', $p->id)
+                                            ->update(['team_number' => $assignedNum]);
+                                        $p->team_number = $assignedNum;
+                                    }
+                                }
+                            }
+                        }
+
+                        $teamGroups = $regAthletes->groupBy('team_number')->sortKeys();
+                        foreach ($teamGroups as $teamNum => $group) {
+                            $entryKey = $regId.'_'.$matchId.'_'.$teamNum;
+                            $entryData[$entryKey] = $group;
                         }
                     }
                 }
@@ -1795,17 +1874,33 @@ class NewTechnicalMeetingDrawingIndex extends Component
                     ->where('athlete_match_number.match_number_id', $this->filterMatchNumberId)
                     ->where('registrations.status', 'verified')
                     ->where('registrations.athlete_status', 'verified')
-                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id')
+                    ->select('athletes.name as athlete_name', 'contingents.name as contingent_name', 'athlete_match_number.registration_id', 'athlete_match_number.team_number', 'athlete_match_number.id')
                     ->orderBy('contingents.name')
                     ->orderBy('athlete_match_number.id')
                     ->get();
 
                 $entryData = [];
                 foreach ($rawAthletes->groupBy('registration_id') as $regId => $regAthletes) {
-                    $chunks = $regAthletes->chunk($maxAthletes);
-                    foreach ($chunks as $chunkIndex => $chunk) {
-                        $entryKey = $regId.'_'.$chunkIndex;
-                        $entryData[$entryKey] = $chunk;
+                    $hasNullTeam = $regAthletes->contains(fn ($p) => is_null($p->team_number));
+                    if ($hasNullTeam) {
+                        $tempChunks = $regAthletes->chunk($maxAthletes);
+                        foreach ($tempChunks as $cIdx => $chunk) {
+                            $assignedNum = $cIdx + 1;
+                            foreach ($chunk as $p) {
+                                if (is_null($p->team_number)) {
+                                    DB::table('athlete_match_number')
+                                        ->where('id', $p->id)
+                                        ->update(['team_number' => $assignedNum]);
+                                    $p->team_number = $assignedNum;
+                                }
+                            }
+                        }
+                    }
+
+                    $teamGroups = $regAthletes->groupBy('team_number')->sortKeys();
+                    foreach ($teamGroups as $teamNum => $group) {
+                        $entryKey = $regId.'_'.$teamNum;
+                        $entryData[$entryKey] = $group;
                     }
                 }
                 $matchAthletes = collect($entryData);
@@ -2009,11 +2104,24 @@ class NewTechnicalMeetingDrawingIndex extends Component
             'sessionTimes' => SessionTime::orderBy('start_time')->get(),
             'koorUsers' => User::role('Koordinator Lapangan')->orderBy('name')->get(),
             'paniteraUsers' => User::role('Panitera')->where('name', $likeOperator, '%'.$this->searchPanitera.'%')->orderBy('name')->get(),
-            'stats' => [
-                'total' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->count(),
-                'drawn' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNotNull('drawing_generated_at')->count(),
-                'pending' => MatchNumber::where('draft_type', $this->draftType)->has('athletes')->whereNull('drawing_generated_at')->count(),
-            ],
+            'stats' => (function () use ($likeOperator) {
+                $statsQuery = MatchNumber::where('draft_type', $this->draftType)->has('athletes');
+                if ($this->filterAgeGroupId) {
+                    $statsQuery->where('age_group_id', $this->filterAgeGroupId);
+                }
+                if ($this->filterGender) {
+                    $statsQuery->where('gender', $this->filterGender);
+                }
+                if ($this->searchMatchNumber) {
+                    $statsQuery->where('name', $likeOperator, '%'.$this->searchMatchNumber.'%');
+                }
+
+                return [
+                    'total' => (clone $statsQuery)->count(),
+                    'drawn' => (clone $statsQuery)->whereNotNull('drawing_generated_at')->count(),
+                    'pending' => (clone $statsQuery)->whereNull('drawing_generated_at')->count(),
+                ];
+            })(),
             'allRundowns' => Rundown::orderBy('date')->orderBy('order')->get(),
             'allCourts' => Court::orderBy('order')->get(),
             'allSessions' => SessionTime::orderBy('start_time')->get(),

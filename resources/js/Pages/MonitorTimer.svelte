@@ -34,12 +34,10 @@
 
             // Play buzzer when timer newly starts
             if (running && !wasRunning && (!newState.elapsed_ms || newState.elapsed_ms < 1000)) {
-                playBuzzer();
-            }
-
-            // Play buzzer when timer is stopped/finished (but not when just paused)
-            if (!running && wasRunning && newState.status === 'stopped') {
-                playBuzzer();
+                if (!playedIntervals.has('start')) {
+                    playedIntervals.add('start');
+                    playBuzzer();
+                }
             }
 
             if (newState.status !== 'countdown') {

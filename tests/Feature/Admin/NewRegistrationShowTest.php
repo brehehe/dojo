@@ -174,9 +174,14 @@ test('admin can edit techniques for a match number', function () {
     $tech1 = Technique::create(['name' => 'Keri']);
     $tech2 = Technique::create(['name' => 'Tsuki']);
 
+    $pivotId = DB::table('athlete_match_number')
+        ->where('registration_id', $this->registration->id)
+        ->where('match_number_id', $this->match->id)
+        ->value('id');
+
     Livewire::actingAs($this->adminUser)
         ->test(NewRegistrationShow::class, ['registration' => $this->registration->id])
-        ->call('openEditTechniques', $this->match->id)
+        ->call('openEditTechniques', [$pivotId])
         ->set('newTechniqueId', $tech1->id)
         ->call('addTechnique')
         ->set('newTechniqueId', $tech2->id)

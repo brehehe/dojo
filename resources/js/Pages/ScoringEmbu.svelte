@@ -2,9 +2,17 @@
     import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
 
-    let { matchId, urlRound = null, urlPoolId = null, urlFrom = null } = $props();
+    let {
+        matchId,
+        urlRound = null,
+        urlPoolId = null,
+        urlFrom = null,
+    } = $props();
 
-    const backRoute = urlFrom === 'panggil-drawing' ? '/admin/panitera/panggil-drawing' : '/admin/new-scoring';
+    const backRoute =
+        urlFrom === "panggil-drawing"
+            ? "/admin/panitera/panggil-drawing"
+            : "/admin/new-scoring";
 
     // State
     let matchNumber = $state(null);
@@ -32,10 +40,23 @@
     // Audio & Announcer state
     let isPlayingAnnouncer = $state(false);
     let currentAudio = null;
+    let buzzerPool = [];
+
+    // Toast Notification State
+    let toast = $state({ show: false, message: "", type: "success" });
+    let toastTimeout;
+    function showToast(message, type = "success") {
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toast = { show: true, message, type };
+        toastTimeout = setTimeout(() => {
+            toast.show = false;
+        }, 3000);
+    }
 
     // Modal wasit override
     let showModal = $state(false);
     let activeRegistrationIdForModal = $state(null);
+    let activeDrawingIdForModal = $state(null);
     let activeRegistrationNameForModal = $state("");
     let modalScores = $state({
         judge_1: 0,
@@ -114,6 +135,11 @@
     // Timer controls
     async function startTimer() {
         if (!courtId) return;
+        // Optimistic UI updates
+        running = true;
+        if (time < 1000) {
+            playBuzzer("/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3");
+        }
         try {
             const res = await fetch("/admin/api/scoring/timer-control", {
                 method: "POST",
@@ -129,19 +155,18 @@
             if (data.success) {
                 timerState = data.timer_state;
                 running = true;
-                if (time < 1000) {
-                    playBuzzer(
-                        "/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3",
-                    );
-                }
+            } else {
+                running = false;
             }
         } catch (e) {
+            running = false;
             console.error(e);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        running = false;
         try {
             const res = await fetch("/admin/api/scoring/timer-control", {
                 method: "POST",
@@ -157,14 +182,20 @@
             if (data.success) {
                 timerState = data.timer_state;
                 running = false;
+            } else {
+                running = true;
             }
         } catch (e) {
+            running = true;
             console.error(e);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        running = false;
+        time = 0;
+        countdown = 0;
         try {
             const res = await fetch("/admin/api/scoring/timer-control", {
                 method: "POST",
@@ -224,16 +255,21 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 fetchState();
+            } else {
+                showToast(data.message || "Gagal menyelesaikan pertandingan", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
     // Call participant
     async function callParticipant(drawingId) {
+        const originalActiveDrawingId = activeDrawingId;
+        activeDrawingId = drawingId; // Optimistic update
         try {
             const res = await fetch(
                 "/admin/api/scoring/embu/call-participant",
@@ -250,19 +286,26 @@
             );
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
                 fetchState();
+            } else {
+                activeDrawingId = originalActiveDrawingId;
+                showToast(data.message || "Gagal memanggil kontingen", "error");
             }
         } catch (e) {
+            activeDrawingId = originalActiveDrawingId;
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
     // Dismiss participant
     async function dismissParticipant() {
+        const originalActiveDrawingId = activeDrawingId;
+        activeDrawingId = null; // Optimistic update
         try {
             const res = await fetch(
                 "/admin/api/scoring/embu/dismiss-participant",
@@ -282,11 +325,16 @@
             );
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 fetchState();
+            } else {
+                activeDrawingId = originalActiveDrawingId;
+                showToast(data.message || "Gagal menutup kontingen", "error");
             }
         } catch (e) {
+            activeDrawingId = originalActiveDrawingId;
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -309,13 +357,16 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
+            } else {
+                showToast(data.message || "Gagal memanggil wasit", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -339,11 +390,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 fetchState();
+            } else {
+                showToast(data.message || "Gagal mereset lapangan", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -371,11 +425,14 @@
             );
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 fetchState();
+            } else {
+                showToast(data.message || "Gagal melakukan tanding ulang", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -400,14 +457,15 @@
             );
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 currentRound = "Final";
                 fetchState();
             } else {
-                alert(data.message || "Gagal loloskan ke final.");
+                showToast(data.message || "Gagal loloskan ke final.", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -420,6 +478,7 @@
     // Open Scoring override modal
     function openScoringModal(item) {
         activeRegistrationIdForModal = item.id;
+        activeDrawingIdForModal = item.drawing_id;
         activeRegistrationNameForModal = item.athletes
             .map((a) => a.name)
             .join(" & ");
@@ -448,6 +507,7 @@
                 body: JSON.stringify({
                     match_id: matchId,
                     registration_id: activeRegistrationIdForModal,
+                    drawing_id: activeDrawingIdForModal,
                     round: currentRound,
                     scores: modalScores,
                     denda: modalDenda,
@@ -455,12 +515,15 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, "success");
                 showModal = false;
                 fetchState();
+            } else {
+                showToast(data.message || "Gagal menyimpan nilai", "error");
             }
         } catch (e) {
             console.error(e);
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -484,7 +547,13 @@
     // Audio functions
     function playBuzzer(src) {
         try {
-            const audio = new Audio(src);
+            let audio = buzzerPool.find(a => a.paused || a.ended);
+            if (!audio) {
+                audio = new Audio(src);
+                audio.preload = "auto";
+                buzzerPool.push(audio);
+            }
+            audio.currentTime = 0;
             audio.play().catch((e) => console.warn("Buzzer error:", e));
         } catch (e) {
             console.warn("Audio error:", e);
@@ -949,7 +1018,7 @@
                             <th rowspan="2">Penyisihan</th>
                             <th rowspan="2">Akumulasi</th>
                         {/if}
-                        <th rowspan="2" style="width:80px;">Override</th>
+                        <!-- <th rowspan="2" style="width:80px;">Override</th> -->
                     </tr>
                     <tr>
                         {#each [1, 2, 3, 4, 5] as w}
@@ -970,18 +1039,36 @@
                               ]
                             : [0, 0, 0, 0, 0]}
 
-                        {@const activeJudges = rawVals.filter(v => v > 0)}
+                        {@const activeJudges = rawVals.filter((v) => v > 0)}
                         {@const scoredCount = activeJudges.length}
                         {@const sortedVals = [...rawVals].sort((a, b) => a - b)}
-                        {@const minVal = s ? (scoredCount === 5 ? sortedVals[0] : 0) : 0}
-                        {@const maxVal = s ? (scoredCount === 5 ? sortedVals[4] : 0) : 0}
+                        {@const minVal = s
+                            ? scoredCount === 5
+                                ? sortedVals[0]
+                                : 0
+                            : 0}
+                        {@const maxVal = s
+                            ? scoredCount === 5
+                                ? sortedVals[4]
+                                : 0
+                            : 0}
 
-                        {@const calculatedNilaiAwal = s ? (
-                            scoredCount === 5 ? (sortedVals[1] + sortedVals[2] + sortedVals[3]) : rawVals.reduce((a, b) => a + b, 0)
-                        ) : 0}
-                        {@const nilaiAwal = s ? (s.total_score > 0 ? s.total_score : calculatedNilaiAwal) : 0}
+                        {@const calculatedNilaiAwal = s
+                            ? scoredCount === 5
+                                ? sortedVals[1] + sortedVals[2] + sortedVals[3]
+                                : rawVals.reduce((a, b) => a + b, 0)
+                            : 0}
+                        {@const nilaiAwal = s
+                            ? s.total_score > 0
+                                ? s.total_score
+                                : calculatedNilaiAwal
+                            : 0}
                         {@const denda = s ? s.denda : 0}
-                        {@const nilaiAkhir = s ? (s.nilai_akhir > 0 ? s.nilai_akhir : Math.max(0, calculatedNilaiAwal - denda)) : 0}
+                        {@const nilaiAkhir = s
+                            ? s.nilai_akhir > 0
+                                ? s.nilai_akhir
+                                : Math.max(0, calculatedNilaiAwal - denda)
+                            : 0}
                         {@const isActive = !!(
                             activeDrawingId &&
                             Number(activeDrawingId) === Number(item.drawing_id)
@@ -1063,7 +1150,7 @@
                                         : "-"}
                                 </td>
                             {/if}
-                            <td>
+                            <!-- <td>
                                 <button
                                     onclick={() => openScoringModal(item)}
                                     class="btn-gen ghost"
@@ -1071,7 +1158,7 @@
                                 >
                                     <i class="fas fa-pencil"></i> Edit
                                 </button>
-                            </td>
+                            </td> -->
                         </tr>
                     {:else}
                         <tr>
@@ -1501,6 +1588,20 @@
             </div>
         </div>
     {/if}
+
+    <!-- Premium Non-blocking Toast Notification -->
+    {#if toast.show}
+        <div class="toast-container">
+            <div class="toast-item {toast.type}">
+                {#if toast.type === 'success'}
+                    <i class="fas fa-check-circle" style="color: #2ecc71;"></i>
+                {:else}
+                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                {/if}
+                <span>{toast.message}</span>
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -1879,6 +1980,48 @@
 
     .btn-gen.ghost:hover {
         border-color: var(--ink, #2c3e50);
+    }
+
+    /* Toast styles */
+    .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .toast-item {
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideIn 0.2s ease-out;
+    }
+    .toast-item.success {
+        border-left: 4px solid #2ecc71;
+        background: #1a252f;
+    }
+    .toast-item.error {
+        border-left: 4px solid #e74c3c;
+        background: #1a252f;
+    }
+    @keyframes slideIn {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
     .btn-gen.danger {

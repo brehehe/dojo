@@ -270,7 +270,7 @@
                     court_id: assigningCourtId,
                 });
                 const res = await fetch(
-                    `/api/svelte-monitor/referee/court/${assigningCourtId}/state`,
+                    `/api/svelte-monitor/referee/court/${assigningCourtId}/state?${queryParams.toString()}`,
                 );
                 const data = await res.json();
                 if (data && data.referees) {
@@ -309,8 +309,12 @@
             return;
         }
         try {
+            const queryParams = new URLSearchParams({
+                rundown_id: assigningRundownId,
+                session_time_id: assigningSessionId,
+            });
             const res = await fetch(
-                `/api/svelte-monitor/referee/court/${assigningCourtId}/state`,
+                `/api/svelte-monitor/referee/court/${assigningCourtId}/state?${queryParams.toString()}`,
             );
             const data = await res.json();
             if (data && data.referees && data.referees.length > 0) {

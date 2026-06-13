@@ -24,13 +24,23 @@
             </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-center sm:px-4 md:min-w-[180px] md:text-right">
-            @if($court)
-                <h2 class="text-lg font-black tracking-tight text-amber-500 sm:text-xl md:text-2xl lg:text-3xl">{{ $court->name }}</h2>
-                <p class="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[9px] md:text-xs lg:text-xs">Update Otomatis</p>
-            @else
-                <h2 class="text-md font-black text-amber-500 md:text-lg lg:text-xl">Live View</h2>
-            @endif
+        <div class="flex items-center gap-3 self-center md:self-auto">
+            <div wire:ignore>
+                <button id="auto-scroll-btn" onclick="window.toggleAutoScroll()" 
+                    class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 select-none cursor-pointer active:scale-95">
+                    <i class="fas fa-scroll"></i>
+                    Auto Scroll: ON
+                </button>
+            </div>
+
+            <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-center sm:px-4 md:min-w-[180px] md:text-right">
+                @if($court)
+                    <h2 class="text-lg font-black tracking-tight text-amber-500 sm:text-xl md:text-2xl lg:text-3xl">{{ $court->name }}</h2>
+                    <p class="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[9px] md:text-xs lg:text-xs">Update Otomatis</p>
+                @else
+                    <h2 class="text-md font-black text-amber-500 md:text-lg lg:text-xl">Live View</h2>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -314,3 +324,70 @@
         @endif
     </div>
 </div>
+
+<script>
+    (function() {
+        let autoScrollEnabled = true;
+        let isPaused = false;
+        let pauseTimer = null;
+        let scrollDirection = 1; // 1 = down, -1 = up
+
+        function handleUserInteraction() {
+            isPaused = true;
+            if (pauseTimer) clearTimeout(pauseTimer);
+            pauseTimer = setTimeout(() => {
+                isPaused = false;
+            }, 5000); // Resume scrolling after 5 seconds of inactivity
+        }
+
+        setInterval(() => {
+            if (!autoScrollEnabled || isPaused) return;
+
+            const el = document.querySelector('.overflow-auto.custom-scrollbar');
+            if (!el) return;
+
+            if (el.scrollHeight <= el.clientHeight) return;
+
+            if (!el.dataset.hasScrollListeners) {
+                el.addEventListener('wheel', handleUserInteraction, { passive: true });
+                el.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+                el.dataset.hasScrollListeners = 'true';
+            }
+
+            if (scrollDirection === 1) {
+                el.scrollTop += 1;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+                    isPaused = true;
+                    setTimeout(() => {
+                        scrollDirection = -1;
+                        isPaused = false;
+                    }, 3000); // Pause 3s at bottom
+                }
+            } else {
+                el.scrollTop -= 4; // Scroll up faster
+                if (el.scrollTop <= 0) {
+                    el.scrollTop = 0;
+                    scrollDirection = 1;
+                    isPaused = true;
+                    setTimeout(() => {
+                        isPaused = false;
+                    }, 3000); // Pause 3s at top
+                }
+            }
+        }, 30);
+
+        window.toggleAutoScroll = function() {
+            autoScrollEnabled = !autoScrollEnabled;
+            const btn = document.getElementById('auto-scroll-btn');
+            if (btn) {
+                if (autoScrollEnabled) {
+                    btn.className = 'flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 select-none cursor-pointer active:scale-95';
+                    btn.innerHTML = '<i class="fas fa-scroll"></i> Auto Scroll: ON';
+                } else {
+                    btn.className = 'flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 select-none cursor-pointer active:scale-95';
+                    btn.innerHTML = '<i class="fas fa-hand"></i> Auto Scroll: OFF';
+                }
+            }
+        };
+    })();
+</script>

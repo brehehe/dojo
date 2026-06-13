@@ -21,7 +21,7 @@ class NewRegistrationShow extends Component
 
     public bool $isAddingAthlete = false;
 
-    public ?int $editingMatchNumberId = null;
+    public array $editingPivotIds = [];
 
     public array $selectedTechniqueIds = [];
 
@@ -53,6 +53,10 @@ class NewRegistrationShow extends Component
     public $editEvent2 = '';
 
     public $editEvent3 = '';
+
+    public bool $joinOtherAgeGroup = false;
+
+    public string $eventAgeGroup = '';
 
     public function mount($registration): void
     {
@@ -119,36 +123,86 @@ class NewRegistrationShow extends Component
 
     public function getGroupedMatchesProperty(): array
     {
+        $pivotRecords = DB::table('athlete_match_number')
+            ->where('registration_id', $this->registration->id)
+            ->orderBy('id')
+            ->get();
+
+        $groupedPivots = $pivotRecords->groupBy('match_number_id');
+
+        $matchNumberIds = $groupedPivots->keys()->toArray();
+        $matchNumbers = MatchNumber::with('ageGroup')->whereIn('id', $matchNumberIds)->get()->keyBy('id');
+
+        $regAthletes = $this->registration->athletes->keyBy('id');
+
         $matches = [];
 
-        foreach ($this->registration->athletes as $athlete) {
-            $athleteMatches = $athlete->matchNumbers()
-                ->wherePivot('registration_id', $this->registration->id)
-                ->orderBy('name')
-                ->get();
+        foreach ($groupedPivots as $mId => $pivots) {
+            $match = $matchNumbers->get($mId);
+            if (! $match) {
+                continue;
+            }
 
-            foreach ($athleteMatches as $match) {
-                $mId = $match->id;
+            $maxAthletes = $match->max_athletes ?: 1;
 
-                if (! isset($matches[$mId])) {
-                    $matches[$mId] = [
-                        'details' => $match,
-                        'max_athletes' => $match->max_athletes,
-                        'techniques' => json_decode($match->pivot->technique_ids ?? '[]', true),
-                        'athletes' => [],
-                    ];
+            // Automatically assign team_number if null based on sequential chunking
+            $hasNullTeam = $pivots->contains(fn ($p) => is_null($p->team_number));
+            if ($hasNullTeam) {
+                $tempChunks = $pivots->chunk($maxAthletes);
+                foreach ($tempChunks as $cIdx => $chunk) {
+                    $assignedNum = $cIdx + 1;
+                    foreach ($chunk as $p) {
+                        if (is_null($p->team_number)) {
+                            DB::table('athlete_match_number')
+                                ->where('id', $p->id)
+                                ->update(['team_number' => $assignedNum]);
+                            $p->team_number = $assignedNum;
+                        }
+                    }
+                }
+            }
+
+            // Group by team_number
+            $teamGroups = $pivots->groupBy('team_number')->sortKeys();
+            $totalTeams = $teamGroups->count();
+
+            foreach ($teamGroups as $teamNum => $chunk) {
+                $teamPivotIds = $chunk->pluck('id')->toArray();
+                $firstPivot = $chunk->first();
+                $techniques = json_decode($firstPivot->technique_ids ?? '[]', true);
+
+                $teamAthletes = [];
+                foreach ($chunk as $p) {
+                    $ath = $regAthletes->get($p->athlete_id);
+                    if ($ath) {
+                        $teamAthletes[] = [
+                            'model' => $ath,
+                            'techniques' => json_decode($p->technique_ids ?? '[]', true),
+                            'pivot_id' => $p->id,
+                            'team_number' => $p->team_number,
+                        ];
+                    }
                 }
 
-                $matches[$mId]['athletes'][] = [
-                    'model' => $athlete,
-                    'techniques' => json_decode($match->pivot->technique_ids ?? '[]', true),
+                $matches[] = [
+                    'details' => $match,
+                    'max_athletes' => $maxAthletes,
+                    'techniques' => $techniques,
+                    'athletes' => $teamAthletes,
+                    'pivot_ids' => $teamPivotIds,
+                    'team_number' => $totalTeams > 1 ? $teamNum : null,
                 ];
             }
         }
 
-        $matches = array_values($matches);
+        // Sort by match name
         usort($matches, function ($a, $b) {
-            return strcmp($a['details']->name, $b['details']->name);
+            $cmp = strcmp($a['details']->name, $b['details']->name);
+            if ($cmp === 0) {
+                return ($a['team_number'] ?? 1) <=> ($b['team_number'] ?? 1);
+            }
+
+            return $cmp;
         });
 
         return $matches;
@@ -173,6 +227,8 @@ class NewRegistrationShow extends Component
         $this->editEvent1 = '';
         $this->editEvent2 = '';
         $this->editEvent3 = '';
+        $this->joinOtherAgeGroup = false;
+        $this->eventAgeGroup = '';
 
         $this->dispatch('open-edit-modal');
     }
@@ -201,6 +257,22 @@ class NewRegistrationShow extends Component
         $this->editEvent2 = $events[1] ?? '';
         $this->editEvent3 = $events[2] ?? '';
 
+        // Detect if join other age group is bypassed
+        $this->joinOtherAgeGroup = false;
+        $this->eventAgeGroup = '';
+
+        $athAgeGroup = AgeGroup::where('name', $this->editAgeGroup)->first();
+        $athAgeGroupId = $athAgeGroup ? $athAgeGroup->id : null;
+
+        foreach ($events as $eventId) {
+            $matchObj = MatchNumber::find($eventId);
+            if ($matchObj && $athAgeGroupId && $matchObj->age_group_id != $athAgeGroupId) {
+                $this->joinOtherAgeGroup = true;
+                $this->eventAgeGroup = (string) $matchObj->age_group_id;
+                break;
+            }
+        }
+
         $this->dispatch('open-edit-modal');
     }
 
@@ -220,6 +292,15 @@ class NewRegistrationShow extends Component
             'editEvent1' => 'nullable|exists:match_numbers,id',
             'editEvent2' => 'nullable|exists:match_numbers,id',
             'editEvent3' => 'nullable|exists:match_numbers,id',
+            'joinOtherAgeGroup' => 'nullable|boolean',
+            'eventAgeGroup' => [
+                function ($attribute, $value, $fail) {
+                    if ($this->joinOtherAgeGroup && empty($value)) {
+                        $fail('Kelompok Usia Tandingan wajib dipilih jika Gabung Kelompok Usia Lain diaktifkan.');
+                    }
+                },
+                'nullable',
+            ],
         ]);
 
         if ($this->isAddingAthlete) {
@@ -388,19 +469,31 @@ class NewRegistrationShow extends Component
 
     public function getAvailableEventsProperty(): array
     {
-        $query = MatchNumber::with('ageGroup')->where(function ($q) {
-            $q->where('gender', $this->editGender)
-                ->orWhere('gender', 'Mix');
-        });
-
+        $ageGroupIds = [];
         if (! empty($this->editAgeGroup)) {
             $ageGroup = AgeGroup::where('name', $this->editAgeGroup)->first();
             if ($ageGroup) {
-                $query->where('age_group_id', $ageGroup->id);
+                $ageGroupIds[] = $ageGroup->id;
             }
         }
 
-        return $query->orderBy('name')
+        if ($this->joinOtherAgeGroup && ! empty($this->eventAgeGroup)) {
+            $ageGroupIds[] = (int) $this->eventAgeGroup;
+        }
+
+        $ageGroupIds = array_unique(array_filter($ageGroupIds));
+
+        if (empty($ageGroupIds)) {
+            return [];
+        }
+
+        return MatchNumber::with('ageGroup')
+            ->whereIn('age_group_id', $ageGroupIds)
+            ->where(function ($q) {
+                $q->where('gender', $this->editGender)
+                    ->orWhere('gender', 'Mix');
+            })
+            ->orderBy('name')
             ->get()
             ->map(function ($mn) {
                 $ageGroupName = $mn->ageGroup?->name ? ' - '.$mn->ageGroup->name : '';
@@ -420,19 +513,23 @@ class NewRegistrationShow extends Component
         return AgeGroup::orderBy('order')->pluck('name')->toArray();
     }
 
-    public function openEditTechniques(int $matchNumberId): void
+    public function openEditTechniques(array $pivotIds): void
     {
-        $this->editingMatchNumberId = $matchNumberId;
+        $this->editingPivotIds = $pivotIds;
 
         // Load existing techniques from the first athlete in this match
-        $firstAthleteMatch = DB::table('athlete_match_number')
-            ->where('registration_id', $this->registration->id)
-            ->where('match_number_id', $matchNumberId)
-            ->first();
+        $firstPivotId = $pivotIds[0] ?? null;
+        if ($firstPivotId) {
+            $firstAthleteMatch = DB::table('athlete_match_number')
+                ->where('id', $firstPivotId)
+                ->first();
 
-        $this->selectedTechniqueIds = $firstAthleteMatch
-            ? (json_decode($firstAthleteMatch->technique_ids ?? '[]', true) ?? [])
-            : [];
+            $this->selectedTechniqueIds = $firstAthleteMatch
+                ? (json_decode($firstAthleteMatch->technique_ids ?? '[]', true) ?? [])
+                : [];
+        } else {
+            $this->selectedTechniqueIds = [];
+        }
 
         $this->newTechniqueId = '';
         $this->dispatch('open-techniques-modal');
@@ -476,15 +573,16 @@ class NewRegistrationShow extends Component
 
     public function saveTechniques(): void
     {
-        DB::table('athlete_match_number')
-            ->where('registration_id', $this->registration->id)
-            ->where('match_number_id', $this->editingMatchNumberId)
-            ->update([
-                'technique_ids' => json_encode($this->selectedTechniqueIds),
-                'updated_at' => now(),
-            ]);
+        if (! empty($this->editingPivotIds)) {
+            DB::table('athlete_match_number')
+                ->whereIn('id', $this->editingPivotIds)
+                ->update([
+                    'technique_ids' => json_encode($this->selectedTechniqueIds),
+                    'updated_at' => now(),
+                ]);
+        }
 
-        $this->editingMatchNumberId = null;
+        $this->editingPivotIds = [];
 
         // Refresh registration
         $this->registration->load(['athletes.matchNumbers', 'officials']);
@@ -493,6 +591,23 @@ class NewRegistrationShow extends Component
         $this->dispatch('swal', [
             'title' => 'Tersimpan!',
             'text' => 'Komposisi teknik berhasil diperbarui.',
+            'icon' => 'success',
+        ]);
+    }
+
+    public function updateAthleteTeam(int $pivotId, int $newTeamNumber): void
+    {
+        DB::table('athlete_match_number')
+            ->where('id', $pivotId)
+            ->update([
+                'team_number' => $newTeamNumber,
+                'updated_at' => now(),
+            ]);
+
+        $this->registration->load(['athletes.matchNumbers', 'officials']);
+        $this->dispatch('swal', [
+            'title' => 'Tim Diubah!',
+            'text' => 'Kenshi berhasil dipindahkan ke tim yang dipilih.',
             'icon' => 'success',
         ]);
     }

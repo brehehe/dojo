@@ -180,8 +180,8 @@ class RefereeScoringController extends Controller
         $participantCalled = false;
         if ($activeMatch) {
             $participantCalled = $activeMatch->draft_type === 'embu'
-                ? ! is_null($activeMatch->active_registration_id)
-                : ! is_null($activeMatch->active_bracket_node);
+                ? ! is_null($assignedCourt?->active_registration_id ?? $activeMatch->active_registration_id)
+                : ! is_null($assignedCourt?->active_bracket_node ?? $activeMatch->active_bracket_node);
         }
 
         $isFormOpen = false;
@@ -221,13 +221,14 @@ class RefereeScoringController extends Controller
             }
 
             if ($activeMatch->draft_type === 'embu') {
-                if ($activeMatch->active_registration_id) {
+                $activeRegId = $assignedCourt?->active_registration_id ?? $activeMatch->active_registration_id;
+                if ($activeRegId) {
                     $registration = Registration::with([
                         'contingent',
                         'athletes.matchNumbers' => fn ($query) => $query
                             ->whereIn('match_numbers.id', $matchNumberIds)
-                            ->wherePivot('registration_id', $activeMatch->active_registration_id),
-                    ])->find($activeMatch->active_registration_id);
+                            ->wherePivot('registration_id', $activeRegId),
+                    ])->find($activeRegId);
 
                     if ($registration) {
                         $activeContingentName = $registration->contingent?->name ?? '-';
@@ -345,7 +346,7 @@ class RefereeScoringController extends Controller
             $id = null;
             if ($activeMatch->draft_type === 'embu') {
                 $drawingId = $assignedCourt?->active_drawing_id;
-                $id = $drawingId ?: $activeMatch->active_registration_id;
+                $id = $drawingId ?: ($assignedCourt?->active_registration_id ?? $activeMatch->active_registration_id);
             } else {
                 $bracketNode = $activeMatch->active_bracket_node;
                 if ($bracketNode) {
@@ -479,17 +480,22 @@ class RefereeScoringController extends Controller
             // 2. Sync to Main Table for Quick Access
             $column = 'judge_'.$judgeIndex;
 
-            $registrationId = $activeMatch->active_registration_id;
+            $registrationId = $assignedCourt?->active_registration_id ?? $activeMatch->active_registration_id;
             if (! $registrationId && $drawingId) {
                 $drawing = DrawingMatchNumber::find($drawingId);
                 $registrationId = $drawing?->registration_id;
             }
+
+            $activeDrawing = $drawingId ? DrawingMatchNumber::find($drawingId) : null;
+            $roundLabel = $activeDrawing?->round ?? ($activeMatch?->round ?? 'Penyisihan');
 
             EmbuScore::updateOrCreate(
                 [
                     'match_number_id' => $targetMatchId,
                     'registration_id' => $registrationId,
                     'drawing_id' => $drawingId ?? null,
+                    'round_label' => $roundLabel,
+                    'tiebreak_round' => 0,
                 ],
                 [$column => $totalScore]
             );
@@ -578,17 +584,22 @@ class RefereeScoringController extends Controller
             // 2. Sync to Main Table
             $column = 'judge_'.$judgeIndex;
 
-            $registrationId = $activeMatch->active_registration_id;
+            $registrationId = $assignedCourt?->active_registration_id ?? $activeMatch->active_registration_id;
             if (! $registrationId && $drawingId) {
                 $drawing = DrawingMatchNumber::find($drawingId);
                 $registrationId = $drawing?->registration_id;
             }
+
+            $activeDrawing = $drawingId ? DrawingMatchNumber::find($drawingId) : null;
+            $roundLabel = $activeDrawing?->round ?? ($activeMatch?->round ?? 'Penyisihan');
 
             EmbuScore::updateOrCreate(
                 [
                     'match_number_id' => $targetMatchId,
                     'registration_id' => $registrationId,
                     'drawing_id' => $drawingId ?? null,
+                    'round_label' => $roundLabel,
+                    'tiebreak_round' => 0,
                 ],
                 [$column => $totalScore]
             );

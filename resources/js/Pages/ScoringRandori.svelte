@@ -134,6 +134,12 @@
             if (data.success) {
                 timerState = data.timer_state;
                 running = true;
+                if (!timerState.elapsed_ms || timerState.elapsed_ms < 1000) {
+                    if (!playedIntervals.has('start')) {
+                        playedIntervals.add('start');
+                        playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                    }
+                }
             }
         } catch (e) {
             console.error(e);

@@ -149,8 +149,22 @@ class AdminTechnicalMeetingEmbuIndex extends Component
             ];
         })->values()->toArray();
 
-        // Shuffle for random drawing
-        shuffle($entries);
+        // Group by contingent, shuffle, then interleave round-robin to avoid consecutive same-contingent matches
+        $grouped = collect($entries)->groupBy('contingent')->shuffle();
+        foreach ($grouped as $contingent => $items) {
+            $grouped[$contingent] = $items->shuffle();
+        }
+
+        $spreadEntries = [];
+        $maxPerContingent = $grouped->max(fn ($c) => $c->count());
+        for ($i = 0; $i < $maxPerContingent; $i++) {
+            foreach ($grouped as $members) {
+                if ($members->count() > $i) {
+                    $spreadEntries[] = $members[$i];
+                }
+            }
+        }
+        $entries = $spreadEntries;
 
         // 3. Determine format and pool records based on THB Pasal H
         if ($totalEntries <= 9) {
@@ -263,7 +277,22 @@ class AdminTechnicalMeetingEmbuIndex extends Component
 
         // Drawing Final round separately so it can be re-shuffled
         if ($format === '2_babak') {
-            shuffle($entries); // Acak ulang urutan untuk Final
+            // Group by contingent, shuffle, then interleave round-robin to avoid consecutive same-contingent matches
+            $grouped = collect($entries)->groupBy('contingent')->shuffle();
+            foreach ($grouped as $contingent => $items) {
+                $grouped[$contingent] = $items->shuffle();
+            }
+
+            $spreadEntries = [];
+            $maxPerContingent = $grouped->max(fn ($c) => $c->count());
+            for ($i = 0; $i < $maxPerContingent; $i++) {
+                foreach ($grouped as $members) {
+                    if ($members->count() > $i) {
+                        $spreadEntries[] = $members[$i];
+                    }
+                }
+            }
+            $entries = $spreadEntries;
 
             foreach ($entries as $index => $entry) {
                 // Get the same court from the first pool (Pool 1)

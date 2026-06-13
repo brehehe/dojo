@@ -38,13 +38,78 @@
         }
     }
 
+    let embuScrollEl = $state(null);
+    let autoScrollEnabled = $state(true);
+
+    let scrollInterval;
+    let pauseTimer = null;
+    let isPaused = false;
+    let scrollDirection = 1; // 1 = down, -1 = up
+
+    function handleUserInteraction() {
+        isPaused = true;
+        if (pauseTimer) clearTimeout(pauseTimer);
+        pauseTimer = setTimeout(() => {
+            isPaused = false;
+        }, 5000); // Resume auto-scrolling after 5 seconds of inactivity
+    }
+
+    function startAutoScroll() {
+        if (scrollInterval) clearInterval(scrollInterval);
+        scrollInterval = setInterval(() => {
+            const el = match?.draft_type === 'embu' ? embuScrollEl : scrollEl;
+            
+            console.log('[AutoScroll Debug]', {
+                enabled: autoScrollEnabled,
+                isPaused: isPaused,
+                elExists: !!el,
+                matchType: match?.draft_type,
+                scrollTop: el ? el.scrollTop : null,
+                scrollHeight: el ? el.scrollHeight : null,
+                clientHeight: el ? el.clientHeight : null,
+                isScrollable: el ? el.scrollHeight > el.clientHeight : false
+            });
+
+            if (!autoScrollEnabled || isPaused) return;
+            if (!el) return;
+
+            if (el.scrollHeight <= el.clientHeight) return;
+
+            if (scrollDirection === 1) {
+                el.scrollTop += 1;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+                    isPaused = true;
+                    console.log('[AutoScroll] Reached bottom, pausing 3s');
+                    setTimeout(() => {
+                        scrollDirection = -1;
+                        isPaused = false;
+                    }, 3000); // Pause 3s at the bottom
+                }
+            } else {
+                el.scrollTop -= 4; // Scroll up faster
+                if (el.scrollTop <= 0) {
+                    el.scrollTop = 0;
+                    scrollDirection = 1;
+                    isPaused = true;
+                    console.log('[AutoScroll] Reached top, pausing 3s');
+                    setTimeout(() => {
+                        isPaused = false;
+                    }, 3000); // Pause 3s at the top
+                }
+            }
+        }, 30);
+    }
+
     onMount(() => {
         sync();
         pollInterval = setInterval(sync, 5000); // Poll every 5 seconds
+        startAutoScroll();
     });
 
     onDestroy(() => {
         clearInterval(pollInterval);
+        if (scrollInterval) clearInterval(scrollInterval);
+        if (pauseTimer) clearTimeout(pauseTimer);
     });
 
     // Embu helper to check if scoring started
@@ -214,13 +279,21 @@
             </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-center sm:px-4 md:min-w-[180px] md:text-right">
-            {#if court}
-                <h2 class="text-lg font-black tracking-tight text-amber-500 sm:text-xl md:text-2xl lg:text-3xl">{court.name}</h2>
-                <p class="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[9px] md:text-xs lg:text-xs">Update Otomatis</p>
-            {:else}
-                <h2 class="text-md font-black text-amber-500 md:text-lg lg:text-xl">Live View</h2>
-            {/if}
+        <div class="flex items-center gap-3 self-center md:self-auto">
+            <button onclick={() => autoScrollEnabled = !autoScrollEnabled} 
+                class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border select-none cursor-pointer active:scale-95 {autoScrollEnabled ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'}">
+                <i class="fas {autoScrollEnabled ? 'fa-scroll' : 'fa-hand'}"></i>
+                Auto Scroll: {autoScrollEnabled ? 'ON' : 'OFF'}
+            </button>
+
+            <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-center sm:px-4 md:min-w-[180px] md:text-right">
+                {#if court}
+                    <h2 class="text-lg font-black tracking-tight text-amber-500 sm:text-xl md:text-2xl lg:text-3xl">{court.name}</h2>
+                    <p class="mt-0.5 text-[8px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[9px] md:text-xs lg:text-xs">Update Otomatis</p>
+                {:else}
+                    <h2 class="text-md font-black text-amber-500 md:text-lg lg:text-xl">Live View</h2>
+                {/if}
+            </div>
         </div>
     </div>
 
@@ -240,7 +313,14 @@
             </div>
         {:else if match.draft_type === 'embu'}
             <!-- EMBU TABLE -->
-            <div class="h-full w-full overflow-auto custom-scrollbar p-3 sm:p-4 md:p-6 lg:p-8">
+            <div 
+                bind:this={embuScrollEl}
+                onwheel={handleUserInteraction}
+                onpointerdown={handleUserInteraction}
+                role="region"
+                aria-label="Embu Scrollable Container"
+                class="h-full w-full overflow-auto custom-scrollbar p-3 sm:p-4 md:p-6 lg:p-8"
+            >
                 <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
                         <p class="text-[10px] font-black uppercase tracking-[0.24em] text-amber-500">Kategori</p>
@@ -338,8 +418,9 @@
             <!-- RANDORI BRACKET -->
             <div
                 bind:this={scrollEl}
-                onmousedown={startDrag}
+                onmousedown={(e) => { startDrag(e); handleUserInteraction(); }}
                 onmousemove={drag}
+                onwheel={handleUserInteraction}
                 role="region"
                 aria-label="Tournament Bracket Grid"
                 class="relative h-full w-full cursor-grab overflow-auto custom-scrollbar bg-[linear-gradient(180deg,_rgba(248,250,252,0.96)_0%,_rgba(241,245,249,0.92)_100%)] p-3 select-none active:cursor-grabbing sm:p-4 md:p-6 lg:p-8"

@@ -934,7 +934,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     window.addEventListener('swal', function (event) {
-      const data = Array.isArray(event.detail) ? event.detail[0] : event.detail;
+      const data = Array.isArray(event.detail) ? event.detail[0] : (event.detail[0] || event.detail);
       Swal.fire({
         title: data.title,
         text: data.text,

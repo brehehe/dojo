@@ -992,8 +992,8 @@ class NewScoringRandoriIndex extends Component
         TournamentResult::whereIn('match_number_id', $this->matchNumberIds)->delete();
 
         foreach ($juara as $rank => $athlete) {
-            if ($rank > 2) {
-                continue; // Only Juara 1 & 2 for Randori
+            if ($rank > 4) {
+                continue; // Support Juara 3 Bersama (up to rank 4) for Randori
             }
 
             if (! $athlete || ! isset($athlete['id']) || $athlete['id'] === 'BYE') {
@@ -1184,15 +1184,19 @@ class NewScoringRandoriIndex extends Component
             ];
         }
 
-        // If the database has no saved results, fall back to what's in drawing_data
+        // Merge/Fallback to drawingData juara for ranks not present in savedResults (like 3 and 4)
+        $drawingJuara = $this->drawingData['juara'] ?? [];
+        foreach ($drawingJuara as $rank => $athlete) {
+            if (! isset($juaraMap[$rank])) {
+                $juaraMap[$rank] = $athlete;
+            }
+        }
+
         if (empty($juaraMap)) {
-            $juaraMap = $this->drawingData['juara'] ?? [];
-            if (empty($juaraMap)) {
-                $gf = $this->drawingData['grand_final'] ?? null;
-                if ($gf && ($gf['winner'] ?? null)) {
-                    $juaraMap[1] = $gf['winner_data'];
-                    $juaraMap[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
-                }
+            $gf = $this->drawingData['grand_final'] ?? null;
+            if ($gf && ($gf['winner'] ?? null)) {
+                $juaraMap[1] = $gf['winner_data'];
+                $juaraMap[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
             }
         }
 

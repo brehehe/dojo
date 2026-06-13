@@ -155,23 +155,36 @@ class SvelteMonitorController extends Controller
         ]);
     }
 
-    public function monitorRefereeState(Court $court): JsonResponse
+    public function monitorRefereeState(Request $request, Court $court): JsonResponse
     {
-        $referees = ActiveCourtReferee::with('referee.user')
-            ->where('court_id', $court->id)
-            ->orderBy('judge_index')
-            ->get();
+        $rundownId = $request->query('rundown_id');
+        $sessionId = $request->query('session_time_id');
 
-        if ($referees->isEmpty()) {
-            $activeDrawing = $court->activeDrawing;
-            if ($activeDrawing) {
-                $referees = ScheduleReferee::with('referee.user')
-                    ->where('court_id', $court->id)
-                    ->where('rundown_id', $activeDrawing->rundown_id)
-                    ->where('session_time_id', $activeDrawing->session_time_id)
-                    ->where('judge_index', '>', 0)
-                    ->orderBy('judge_index')
-                    ->get();
+        if ($rundownId && $sessionId) {
+            $referees = ScheduleReferee::with('referee.user')
+                ->where('court_id', $court->id)
+                ->where('rundown_id', $rundownId)
+                ->where('session_time_id', $sessionId)
+                ->where('judge_index', '>', 0)
+                ->orderBy('judge_index')
+                ->get();
+        } else {
+            $referees = ActiveCourtReferee::with('referee.user')
+                ->where('court_id', $court->id)
+                ->orderBy('judge_index')
+                ->get();
+
+            if ($referees->isEmpty()) {
+                $activeDrawing = $court->activeDrawing;
+                if ($activeDrawing) {
+                    $referees = ScheduleReferee::with('referee.user')
+                        ->where('court_id', $court->id)
+                        ->where('rundown_id', $activeDrawing->rundown_id)
+                        ->where('session_time_id', $activeDrawing->session_time_id)
+                        ->where('judge_index', '>', 0)
+                        ->orderBy('judge_index')
+                        ->get();
+                }
             }
         }
 
@@ -1747,14 +1760,19 @@ class SvelteMonitorController extends Controller
             ];
         }
 
+        // Always fallback to drawingData['juara'] for missing ranks (like rank 3 and 4 in single elimination)
+        $drawingJuara = $drawingData['juara'] ?? [];
+        foreach ($drawingJuara as $rank => $athlete) {
+            if (! isset($juaraMap[$rank])) {
+                $juaraMap[$rank] = $athlete;
+            }
+        }
+
         if (empty($juaraMap)) {
-            $juaraMap = $drawingData['juara'] ?? [];
-            if (empty($juaraMap)) {
-                $gf = $drawingData['grand_final'] ?? null;
-                if ($gf && ($gf['winner'] ?? null)) {
-                    $juaraMap[1] = $gf['winner_data'];
-                    $juaraMap[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
-                }
+            $gf = $drawingData['grand_final'] ?? null;
+            if ($gf && ($gf['winner'] ?? null)) {
+                $juaraMap[1] = $gf['winner_data'];
+                $juaraMap[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
             }
         }
 
@@ -2383,7 +2401,7 @@ class SvelteMonitorController extends Controller
         TournamentResult::whereIn('match_number_id', $matchNumberIds)->delete();
 
         foreach ($juara as $rank => $athlete) {
-            if ($rank > 2) {
+            if ($rank > 4) {
                 continue;
             }
 
@@ -2459,10 +2477,15 @@ class SvelteMonitorController extends Controller
 
         $nilaiAkhir = max(0, $total - $denda);
 
-        $drawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
-            ->where('registration_id', $registrationId)
-            ->where('round', $round)
-            ->first();
+        $drawingId = $request->input('drawing_id');
+        if ($drawingId) {
+            $drawing = DrawingMatchNumber::find($drawingId);
+        } else {
+            $drawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+                ->where('registration_id', $registrationId)
+                ->where('round', $round)
+                ->first();
+        }
 
         $score = EmbuScore::updateOrCreate(
             [

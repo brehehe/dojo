@@ -822,6 +822,16 @@
                         </select>
                     </div>
 
+                    <div class="tm-filter-group" style="margin-top: 12px;">
+                        <div class="tm-filter-label">Jenis Kelamin</div>
+                        <select wire:model.live="filterGender" class="tm-filter-sel">
+                            <option value="">— Semua Gender —</option>
+                            <option value="Male">Putra</option>
+                            <option value="Female">Putri</option>
+                            <option value="Mix">Campuran</option>
+                        </select>
+                    </div>
+
                     <div class="tm-search-box">
                         <input type="text" wire:model.live.debounce.300ms="searchMatchNumber"
                             placeholder="Cari nomor pertandingan...">

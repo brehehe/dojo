@@ -443,12 +443,15 @@
                                         <h4>{{ $data['details']->name }}
                                             {{ $data['details']->ageGroup?->name }}
                                             {{ $data['details']->gender_indo }}
+                                            @if(isset($data['team_number']))
+                                                - Tim {{ $data['team_number'] }}
+                                            @endif
                                         </h4>
                                         <p>{{ ucfirst($data['details']->draft_type ?? '-') }}</p>
                                     </div>
                                 </div>
                                 @if(($data['details']->draft_type ?? '') == 'embu')
-                                <button wire:click="openEditTechniques({{ $data['details']->id }})" class="btn-verify" style="padding: 6px 12px; font-size: 11px; background: #9b59b6; color: white; border: none; border-radius: 8px;">
+                                <button wire:click="openEditTechniques({{ json_encode($data['pivot_ids']) }})" class="btn-verify" style="padding: 6px 12px; font-size: 11px; background: #9b59b6; color: white; border: none; border-radius: 8px;">
                                     <i class="fa-solid fa-list-check"></i> Edit Teknik
                                 </button>
                                 @endif
@@ -499,8 +502,21 @@
                                                 <td data-label="#">{{ $i < count($athletes) ? $i + 1 : '' }}</td>
                                                 <td data-label="Nama Atlet">
                                                     @if(isset($athletes[$i]))
-                                                    <div style="font-weight:600;">{{ $athletes[$i]['model']->name }}</div>
-                                                    <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athletes[$i]['model']->nik }}</div>
+                                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                                        <div>
+                                                            <div style="font-weight:600;">{{ $athletes[$i]['model']->name }}</div>
+                                                            <div style="font-size:11px;color:var(--smoke);font-family:monospace;">{{ $athletes[$i]['model']->nik }}</div>
+                                                        </div>
+                                                        @if(isset($athletes[$i]['team_number']))
+                                                        <div style="margin-left:auto;">
+                                                            <select wire:change="updateAthleteTeam({{ $athletes[$i]['pivot_id'] }}, $event.target.value)" style="padding: 4px 8px; font-size: 11px; border: 1px solid var(--paper2); border-radius: 6px; background: #fff; color: var(--ink); font-weight: 600; cursor: pointer;">
+                                                                @for($t = 1; $t <= 5; $t++)
+                                                                    <option value="{{ $t }}" {{ $athletes[$i]['team_number'] == $t ? 'selected' : '' }}>Tim {{ $t }}</option>
+                                                                @endfor
+                                                            </select>
+                                                        </div>
+                                                        @endif
+                                                    </div>
                                                     @endif
                                                 </td>
                                                 <td data-label="Tingkat">{{ isset($athletes[$i]) ? ($athletes[$i]['model']->pivot->rank ?? '-') : '' }}</td>
@@ -583,6 +599,34 @@
                         @endforeach
                     </select>
                     @error('editAgeGroup') <span style="color:var(--red);font-size:11px;">{{ $message }}</span> @enderror
+
+                    {{-- Bypass Toggle --}}
+                    <div style="margin-top:8px; display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" id="join_other_age_group" 
+                               wire:model.live="joinOtherAgeGroup" 
+                               style="cursor:pointer; width:16px; height:16px;">
+                        <label for="join_other_age_group" style="margin:0; font-size:12px; cursor:pointer; font-weight:700; color:#e67e22;">
+                            Gabung Kelompok Usia Lain (Bypass)
+                        </label>
+                    </div>
+
+                    @if($joinOtherAgeGroup)
+                        <div style="margin-top:8px; padding: 10px; background: rgba(230, 126, 34, 0.05); border: 1px dashed rgba(230, 126, 34, 0.3); border-radius: 12px;">
+                            <label style="font-size:11px; font-weight:bold; color:var(--ink); margin-bottom: 4px; display:block;">Pilih Kelompok Usia Tandingan *</label>
+                            <select wire:model.live="eventAgeGroup" style="font-size:12px; height:36px; padding: 4px 8px; width: 100%; border: 1px solid var(--paper2); border-radius: 8px;">
+                                <option value="">-- Pilih Kelompok Tandingan --</option>
+                                @foreach($this->ageGroupsList as $group)
+                                    @php
+                                        $agId = \App\Models\Group\AgeGroup::where('name', $group)->value('id');
+                                    @endphp
+                                    <option value="{{ $agId }}">{{ $group }}</option>
+                                @endforeach
+                            </select>
+                            @error('eventAgeGroup')
+                                <span style="color:var(--red);font-size:11px;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    @endif
                 </div>
                 <div class="form-group">
                     <label>Asal Dojo</label>
@@ -647,12 +691,12 @@
     @endif
 
     {{-- EDIT MODAL FOR TECHNIQUES --}}
-    @if($editingMatchNumberId)
+    @if(!empty($editingPivotIds))
     <div class="modal-overlay">
         <div class="modal-card" style="max-width: 480px;">
             <div class="modal-header">
                 <h3>Edit Komposisi Teknik</h3>
-                <button wire:click="$set('editingMatchNumberId', null)" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;">&times;</button>
+                <button wire:click="$set('editingPivotIds', [])" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;">&times;</button>
             </div>
             <div class="modal-body" style="grid-template-columns: 1fr; gap: 12px;">
                 <div class="form-group" style="border-bottom:1px solid var(--paper2);padding-bottom:10px;margin-bottom:10px;">
@@ -700,7 +744,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button wire:click="$set('editingMatchNumberId', null)" class="btn-prem secondary">Batal</button>
+                <button wire:click="$set('editingPivotIds', [])" class="btn-prem secondary">Batal</button>
                 <button wire:click="saveTechniques" class="btn-prem primary"><i class="fa-solid fa-save"></i> Simpan Teknik</button>
             </div>
         </div>
