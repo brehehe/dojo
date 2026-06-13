@@ -70,6 +70,18 @@
     // Audio & PA state
     let isPlayingAnnouncer = $state(false);
     let currentAudio = null;
+    let buzzerPool = [];
+
+    // Toast Notification State
+    let toast = $state({ show: false, message: '', type: 'success' });
+    let toastTimeout;
+    function showToast(message, type = 'success') {
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toast = { show: true, message, type };
+        toastTimeout = setTimeout(() => {
+            toast.show = false;
+        }, 3000);
+    }
 
     // Polling interval
     let pollInterval;
@@ -121,6 +133,14 @@
     // Timer Actions
     async function startTimer() {
         if (!courtId) return;
+        // Optimistic UI updates
+        running = true;
+        if (!timerState.elapsed_ms || timerState.elapsed_ms < 1000) {
+            if (!playedIntervals.has('start')) {
+                playedIntervals.add('start');
+                playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+            }
+        }
         try {
             const res = await fetch('/admin/api/scoring/timer-control', {
                 method: 'POST',
@@ -134,20 +154,18 @@
             if (data.success) {
                 timerState = data.timer_state;
                 running = true;
-                if (!timerState.elapsed_ms || timerState.elapsed_ms < 1000) {
-                    if (!playedIntervals.has('start')) {
-                        playedIntervals.add('start');
-                        playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
-                    }
-                }
+            } else {
+                running = false;
             }
         } catch (e) {
+            running = false;
             console.error(e);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        running = false;
         try {
             const res = await fetch('/admin/api/scoring/timer-control', {
                 method: 'POST',
@@ -161,14 +179,20 @@
             if (data.success) {
                 timerState = data.timer_state;
                 running = false;
+            } else {
+                running = true;
             }
         } catch (e) {
+            running = true;
             console.error(e);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        running = false;
+        time = 0;
+        countdown = 0;
         try {
             const res = await fetch('/admin/api/scoring/timer-control', {
                 method: 'POST',
@@ -215,14 +239,17 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
                 fetchState();
+            } else {
+                showToast(data.message || 'Gagal memanggil pertandingan', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -240,14 +267,17 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
                 fetchState();
+            } else {
+                showToast(data.message || 'Gagal memanggil Grand Final', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -263,12 +293,15 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 activeMatch = null;
                 fetchState();
+            } else {
+                showToast(data.message || 'Gagal menutup pertandingan', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -288,11 +321,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 fetchState();
+            } else {
+                showToast(data.message || 'Gagal menyimpan juara', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -311,13 +347,16 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
+            } else {
+                showToast(data.message || 'Gagal memanggil wasit', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -336,11 +375,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 fetchState();
+            } else {
+                showToast(data.message || 'Gagal memperbaiki bracket', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -486,14 +528,15 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 activeMatch = null;
                 fetchState();
             } else {
-                alert(data.message || 'Gagal menyimpan hasil penilaian.');
+                showToast(data.message || 'Gagal menyimpan hasil penilaian.', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -519,11 +562,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(data.text);
+                showToast(data.text, 'success');
                 fetchState();
+            } else {
+                showToast(data.message || 'Gagal mereset lapangan', 'error');
             }
         } catch (e) {
             console.error(e);
+            showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
@@ -547,7 +593,13 @@
     // Audio sound systems
     function playBuzzer(src) {
         try {
-            const audio = new Audio(src);
+            let audio = buzzerPool.find(a => a.paused || a.ended);
+            if (!audio) {
+                audio = new Audio(src);
+                audio.preload = 'auto';
+                buzzerPool.push(audio);
+            }
+            audio.currentTime = 0;
             audio.play().catch(e => console.warn('Buzzer error:', e));
         } catch (e) {
             console.warn('Audio error:', e);
@@ -1354,6 +1406,20 @@
             </div>
         </div>
     </div>
+
+    <!-- Premium Non-blocking Toast Notification -->
+    {#if toast.show}
+        <div class="toast-container">
+            <div class="toast-item {toast.type}">
+                {#if toast.type === 'success'}
+                    <i class="fas fa-check-circle" style="color: #2ecc71;"></i>
+                {:else}
+                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                {/if}
+                <span>{toast.message}</span>
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -1681,5 +1747,47 @@
 
     .btn-gen.ghost:hover {
         border-color: var(--ink, #2c3e50);
+    }
+
+    /* Toast styles */
+    .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .toast-item {
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: slideIn 0.2s ease-out;
+    }
+    .toast-item.success {
+        border-left: 4px solid #2ecc71;
+        background: #1a252f;
+    }
+    .toast-item.error {
+        border-left: 4px solid #e74c3c;
+        background: #1a252f;
+    }
+    @keyframes slideIn {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 </style>
