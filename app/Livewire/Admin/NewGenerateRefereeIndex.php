@@ -524,7 +524,11 @@ class NewGenerateRefereeIndex extends Component
                 })->orWhere('license_number', $operator, '%'.$this->searchReferee.'%');
             });
         }
-        $referees = $refereesQuery->get()->sortBy([['certification_level', 'asc']]);
+        $referees = $refereesQuery
+            ->join('users', 'referees.user_id', '=', 'users.id')
+            ->orderBy('referees.certification_level')
+            ->select('referees.*')
+            ->get();
 
         return view('livewire.admin.new-generate-referee-index', [
             'paginatedShifts' => $paginatedShifts,

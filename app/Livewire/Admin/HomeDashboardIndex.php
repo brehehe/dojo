@@ -17,10 +17,19 @@ class HomeDashboardIndex extends Component
     {
         $totalAthletes = Athlete::count();
         $totalContingents = Contingent::count();
-        $totalRegistrations = Registration::count();
-        $verifiedCount = Registration::where('status', 'verified')->count();
-        $pendingCount = Registration::where('status', 'pending')->count();
-        $totalAmount = Registration::where('status', 'verified')->sum('final_amount');
+
+        // Single aggregate query instead of 4 separate queries
+        $regStats = Registration::selectRaw("
+            COUNT(*) as total_registrations,
+            SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified_count,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+            SUM(CASE WHEN status = 'verified' THEN final_amount ELSE 0 END) as total_amount
+        ")->first();
+
+        $totalRegistrations = (int) $regStats->total_registrations;
+        $verifiedCount = (int) $regStats->verified_count;
+        $pendingCount = (int) $regStats->pending_count;
+        $totalAmount = (float) $regStats->total_amount;
 
         $verificationRate = $totalRegistrations > 0
             ? round(($verifiedCount / $totalRegistrations) * 100, 1)

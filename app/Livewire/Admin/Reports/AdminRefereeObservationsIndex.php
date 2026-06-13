@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Reports;
 use App\Models\Contingent;
 use App\Models\Referee;
 use App\Models\RefereeObservation;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -73,18 +74,19 @@ class AdminRefereeObservationsIndex extends Component
         ]);
     }
 
-    public function render()
+    /**
+     * Apply active filters to a query builder instance.
+     */
+    private function applyFilters(Builder $query): Builder
     {
         $operator = DB::connection()->getDriverName() === 'sqlite' ? 'like' : 'ilike';
 
-        $query = RefereeObservation::with(['contingent', 'referee.user']);
-
-        // Apply filters
         if (! empty($this->search)) {
-            $query->where(function ($q) use ($operator) {
-                $q->where('observer_name', $operator, '%'.$this->search.'%')
-                    ->orWhereHas('referee.user', function ($sub) use ($operator) {
-                        $sub->where('name', $operator, '%'.$this->search.'%');
+            $search = $this->search;
+            $query->where(function ($q) use ($operator, $search) {
+                $q->where('observer_name', $operator, '%'.$search.'%')
+                    ->orWhereHas('referee.user', function ($sub) use ($operator, $search) {
+                        $sub->where('name', $operator, '%'.$search.'%');
                     });
             });
         }
@@ -105,77 +107,75 @@ class AdminRefereeObservationsIndex extends Component
             $query->whereDate('observation_date', $this->dateFilter);
         }
 
-        // Calculate statistics based on current filters
-        $statsQuery = RefereeObservation::query();
-        if (! empty($this->search)) {
-            $statsQuery->where(function ($q) use ($operator) {
-                $q->where('observer_name', $operator, '%'.$this->search.'%')
-                    ->orWhereHas('referee.user', function ($sub) use ($operator) {
-                        $sub->where('name', $operator, '%'.$this->search.'%');
-                    });
-            });
-        }
-        if (! empty($this->refereeFilter)) {
-            $statsQuery->where('referee_id', $this->refereeFilter);
-        }
-        if (! empty($this->contingentFilter)) {
-            $statsQuery->where('contingent_id', $this->contingentFilter);
-        }
-        if (! empty($this->courtFilter)) {
-            $statsQuery->where('court', $this->courtFilter);
-        }
-        if (! empty($this->dateFilter)) {
-            $statsQuery->whereDate('observation_date', $this->dateFilter);
-        }
+        return $query;
+    }
 
-        $totalObservations = $statsQuery->count();
-        $averageScore = $statsQuery->avg('total_score') ?: 0;
-        $excellentOrGoodCount = (clone $statsQuery)->whereIn('category', ['SANGAT BAIK', 'BAIK'])->count();
-        $poorCount = (clone $statsQuery)->where('category', 'KURANG')->count();
+    public function render()
+    {
+        // Main paginated query with eager loads to prevent N+1
+        $query = $this->applyFilters(
+            RefereeObservation::with(['contingent', 'referee.user'])
+        );
 
-        // Calculate Category Distribution count for charts
-        $rawCategories = (clone $statsQuery)->select('category', DB::raw('count(*) as count'))
+        $observations = $query->latest()->paginate($this->perPage);
+
+        // Stats: single query using conditional aggregates instead of 4 separate COUNT/AVG queries
+        $stats = $this->applyFilters(RefereeObservation::query())
+            ->selectRaw("
+                COUNT(*) as total_observations,
+                AVG(total_score) as average_score,
+                SUM(CASE WHEN category IN ('SANGAT BAIK', 'BAIK') THEN 1 ELSE 0 END) as excellent_or_good_count,
+                SUM(CASE WHEN category = 'KURANG' THEN 1 ELSE 0 END) as poor_count
+            ")
+            ->first();
+
+        $totalObservations = (int) $stats->total_observations;
+        $averageScore = round((float) ($stats->average_score ?? 0), 1);
+        $excellentOrGoodCount = (int) $stats->excellent_or_good_count;
+        $poorCount = (int) $stats->poor_count;
+
+        // Category distribution — single grouped query
+        $rawCategories = $this->applyFilters(RefereeObservation::query())
+            ->select('category', DB::raw('count(*) as count'))
             ->groupBy('category')
             ->pluck('count', 'category')
             ->toArray();
 
-        $categories = ['SANGAT BAIK', 'BAIK', 'CUKUP', 'KURANG'];
         $categoryChartData = [];
-        foreach ($categories as $cat) {
-            $count = 0;
+        foreach (['SANGAT BAIK', 'BAIK', 'CUKUP', 'KURANG'] as $cat) {
+            $categoryChartData[$cat] = 0;
             foreach ($rawCategories as $rawCat => $rawCount) {
                 if (strtoupper(trim($rawCat)) === $cat) {
-                    $count = (int) $rawCount;
+                    $categoryChartData[$cat] = (int) $rawCount;
                     break;
                 }
             }
-            $categoryChartData[$cat] = $count;
         }
 
-        // Calculate Court Average Scores for charts
-        $rawCourts = (clone $statsQuery)->select('court', DB::raw('avg(total_score) as avg_score'))
+        // Court average scores — single grouped query
+        $rawCourts = $this->applyFilters(RefereeObservation::query())
+            ->select('court', DB::raw('avg(total_score) as avg_score'))
             ->groupBy('court')
             ->pluck('avg_score', 'court')
             ->toArray();
 
-        $courts = ['Court 1', 'Court 2', 'Court 3', 'Court 4', 'Court 5'];
         $courtChartData = [];
-        foreach ($courts as $crt) {
-            $avg = 0.0;
+        foreach (['Court 1', 'Court 2', 'Court 3', 'Court 4', 'Court 5'] as $crt) {
+            $courtChartData[$crt] = 0.0;
             foreach ($rawCourts as $rawCrt => $rawAvg) {
                 if (trim($rawCrt) === $crt) {
-                    $avg = round((float) $rawAvg, 1);
+                    $courtChartData[$crt] = round((float) $rawAvg, 1);
                     break;
                 }
             }
-            $courtChartData[$crt] = $avg;
         }
 
-        $observations = $query->latest()->paginate($this->perPage);
-
-        $referees = Referee::with('user')->get()->sortBy(function ($ref) {
-            return $ref->name;
-        });
+        // Dropdown data — sorted at DB level, not in PHP memory
+        $referees = Referee::with('user')
+            ->join('users', 'referees.user_id', '=', 'users.id')
+            ->orderBy('users.name')
+            ->select('referees.*')
+            ->get();
 
         $contingents = Contingent::orderBy('name')->get();
 
@@ -189,7 +189,7 @@ class AdminRefereeObservationsIndex extends Component
             'referees' => $referees,
             'contingents' => $contingents,
             'totalObservations' => $totalObservations,
-            'averageScore' => round($averageScore, 1),
+            'averageScore' => $averageScore,
             'excellentOrGoodCount' => $excellentOrGoodCount,
             'poorCount' => $poorCount,
             'categoryChartData' => $categoryChartData,

@@ -380,12 +380,15 @@ class NewScoringIndex extends Component
             ->first();
         $currentDateRundown = Rundown::where('date', $now->toDateString())->first();
 
-        // Attach current referees for each court's context (Live Display)
+        // Load all court referees in one query, then attach in PHP — prevents N+1
+        $activeCourtReferees = ActiveCourtReferee::with('referee.user')
+            ->whereIn('court_id', $courts->pluck('id'))
+            ->orderBy('judge_index')
+            ->get()
+            ->groupBy('court_id');
+
         foreach ($courts as $court) {
-            $court->current_referees = ActiveCourtReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->orderBy('judge_index')
-                ->get();
+            $court->current_referees = $activeCourtReferees->get($court->id, collect());
         }
 
         $sessions = SessionTime::orderBy('start_time')->get();
@@ -512,9 +515,12 @@ class NewScoringIndex extends Component
             })->orWhere('license_number', 'ilike', '%'.$this->searchReferee.'%')
                 ->orWhere('certification_level', 'ilike', '%'.$this->searchReferee.'%');
         }
-        $allReferees = $refereesQuery->get()->sortBy([
-            ['certification_level', 'asc'],
-        ]);
+        // Sort at DB level via join instead of get()->sortBy() in PHP memory
+        $allReferees = $refereesQuery
+            ->join('users', 'referees.user_id', '=', 'users.id')
+            ->orderBy('referees.certification_level')
+            ->select('referees.*')
+            ->get();
 
         return view('livewire.admin.new-scoring-index', [
             'drawings' => $query->paginate(10),

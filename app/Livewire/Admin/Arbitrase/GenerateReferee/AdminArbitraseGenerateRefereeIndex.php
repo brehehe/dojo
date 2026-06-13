@@ -263,9 +263,11 @@ class AdminArbitraseGenerateRefereeIndex extends Component
                 ->orWhere('certification_level', 'ilike', '%'.$this->searchReferee.'%');
         }
 
-        $referees = $refereesQuery->get()->sortBy([
-            ['certification_level', 'asc'],
-        ]);
+        $referees = $refereesQuery
+            ->join('users', 'referees.user_id', '=', 'users.id')
+            ->orderBy('referees.certification_level')
+            ->select('referees.*')
+            ->get();
 
         return view('livewire.admin.arbitrase.generate-referee.admin-arbitrase-generate-referee-index', [
             'paginatedShifts' => $paginatedShifts,

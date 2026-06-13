@@ -497,9 +497,11 @@ class RefereeObservationForm extends Component
 
     public function render()
     {
-        $referees = Referee::with('user')->get()->sortBy(function ($referee) {
-            return $referee->name;
-        });
+        $referees = Referee::with('user')
+            ->join('users', 'referees.user_id', '=', 'users.id')
+            ->orderBy('users.name')
+            ->select('referees.*')
+            ->get();
 
         $courts = Court::orderBy('order')->get();
 

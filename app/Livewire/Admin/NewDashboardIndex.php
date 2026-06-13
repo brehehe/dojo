@@ -26,10 +26,19 @@ class NewDashboardIndex extends Component
     {
         $totalAthletes = Athlete::count();
         $totalContingents = Contingent::count();
-        $totalRegistrations = Registration::count();
-        $verifiedCount = Registration::where('status', 'verified')->count();
-        $pendingCount = Registration::where('status', 'pending')->count();
-        $totalAmount = Registration::where('status', 'verified')->sum('final_amount');
+
+        // Single aggregate query instead of 4 separate queries
+        $regStats = Registration::selectRaw("
+            COUNT(*) as total_registrations,
+            SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) as verified_count,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+            SUM(CASE WHEN status = 'verified' THEN final_amount ELSE 0 END) as total_amount
+        ")->first();
+
+        $totalRegistrations = (int) $regStats->total_registrations;
+        $verifiedCount = (int) $regStats->verified_count;
+        $pendingCount = (int) $regStats->pending_count;
+        $totalAmount = (float) $regStats->total_amount;
 
         $verificationRate = $totalRegistrations > 0
             ? round(($verifiedCount / $totalRegistrations) * 100, 1)
@@ -100,10 +109,17 @@ class NewDashboardIndex extends Component
 
     public function getMedalStats(): array
     {
+        // Single aggregate query instead of 3 separate COUNT queries
+        $stats = TournamentResult::selectRaw("
+            SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) as gold,
+            SUM(CASE WHEN rank = 2 THEN 1 ELSE 0 END) as silver,
+            SUM(CASE WHEN rank IN (3, 4) THEN 1 ELSE 0 END) as bronze
+        ")->first();
+
         return [
-            'gold' => TournamentResult::where('rank', 1)->count(),
-            'silver' => TournamentResult::where('rank', 2)->count(),
-            'bronze' => TournamentResult::whereIn('rank', [3, 4])->count(),
+            'gold' => (int) $stats->gold,
+            'silver' => (int) $stats->silver,
+            'bronze' => (int) $stats->bronze,
         ];
     }
 

@@ -93,17 +93,7 @@ use App\Livewire\Admin\NewWeightGroupIndex;
 use App\Livewire\Admin\Profile\AdminProfileIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationIndex;
 use App\Livewire\Admin\Registration\AdminRegistrationShow;
-use App\Livewire\Admin\Reports\AdminAthleteBiodataReport;
-use App\Livewire\Admin\Reports\AdminMatchClassReport;
 use App\Livewire\Admin\Reports\AdminRefereeObservationsIndex;
-use App\Livewire\Admin\Reports\AdminRegistrationByNameReport;
-use App\Livewire\Admin\Reports\AdminRegistrationByNumberReport;
-use App\Livewire\Admin\SmartWasit\AdminLaporanPerbabakIndex;
-use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIawIndex;
-use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIkIndex;
-use App\Livewire\Admin\SmartWasit\AdminLaporanRankingIvIndex;
-use App\Livewire\Admin\SmartWasit\AdminLaporanRankingSkwIndex;
-use App\Livewire\Admin\SmartWasit\AdminLaporanSmartWasitSummaryIndex;
 use App\Livewire\Admin\SmartWasit\NewLaporanPerbabakIndex;
 use App\Livewire\Admin\SmartWasit\NewLaporanRankingIawIndex;
 use App\Livewire\Admin\SmartWasit\NewLaporanRankingIkIndex;
@@ -317,16 +307,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/match-numbers/verified', AdminMatchNumberVerifiedIndex::class)->name('match-numbers.verified');
 
         // Registration by Number Report (Excel)
-        Route::get('/reports/registration-by-number', AdminRegistrationByNumberReport::class)->name('reports.registration-by-number');
 
         // Registration by Name Report (Excel)
-        Route::get('/reports/registration-by-name', AdminRegistrationByNameReport::class)->name('reports.registration-by-name');
 
         // Match Number & Class Report (Excel)
-        Route::get('/reports/match-class', AdminMatchClassReport::class)->name('reports.match-class');
 
         // Athlete Biodata Report (Grid)
-        Route::get('/reports/athlete-biodata', AdminAthleteBiodataReport::class)->name('reports.athlete-biodata');
         Route::get('/reports/contingent-observations', AdminRefereeObservationsIndex::class)->name('reports.contingent-observations');
 
         Route::prefix('technical-meeting')->name('technical-meeting.')->group(function () {
@@ -372,14 +358,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/ranking-ik', NewLaporanRankingIkIndex::class)->name('ranking-ik');
             Route::get('/ranking-iv', NewLaporanRankingIvIndex::class)->name('ranking-iv');
             Route::get('/perbabak', NewLaporanPerbabakIndex::class)->name('perbabak');
-
-            // Legacy Views (Old UI)
-            Route::get('/old-summary', AdminLaporanSmartWasitSummaryIndex::class)->name('old-summary');
-            Route::get('/old-ranking-skw', AdminLaporanRankingSkwIndex::class)->name('old-ranking-skw');
-            Route::get('/old-ranking-iaw', AdminLaporanRankingIawIndex::class)->name('old-ranking-iaw');
-            Route::get('/old-ranking-ik', AdminLaporanRankingIkIndex::class)->name('old-ranking-ik');
-            Route::get('/old-ranking-iv', AdminLaporanRankingIvIndex::class)->name('old-ranking-iv');
-            Route::get('/old-perbabak', AdminLaporanPerbabakIndex::class)->name('old-perbabak');
         });
 
         Route::prefix('panitera')->name('panitera.')->group(function () {
