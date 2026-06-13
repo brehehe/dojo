@@ -125,7 +125,6 @@
                 alert(data.message || "Gagal mengaktifkan pertandingan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -209,7 +208,6 @@
                 fetchState(drawings.current_page);
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -235,7 +233,6 @@
                 fetchState(drawings.current_page);
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -281,7 +278,6 @@
                     selectedReferees = [];
                 }
             } catch (e) {
-                console.error(e);
             }
         } else {
             selectedReferees = [];
@@ -328,7 +324,6 @@
                 alert("Jadwal wasit untuk sesi ini tidak ditemukan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -365,7 +360,6 @@
                 alert(data.message || "Gagal menyimpan penugasan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -395,7 +389,6 @@
                 alert(data.message || "Gagal mengosongkan penugasan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 

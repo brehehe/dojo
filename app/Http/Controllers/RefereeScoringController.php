@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RefereeSaveScoreRequest;
+use App\Http\Requests\RefereeSubmitScoreRequest;
 use App\Models\ActiveCourtReferee;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
@@ -14,7 +16,6 @@ use App\Models\Registration;
 use App\Models\ScheduleReferee;
 use App\Models\Technique\Technique;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -410,7 +411,7 @@ class RefereeScoringController extends Controller
     /**
      * Handle real-time auto-saving of scoring details.
      */
-    public function save(Request $request): JsonResponse
+    public function save(RefereeSaveScoreRequest $request): JsonResponse
     {
         $user = Auth::user();
         if (! $user) {
@@ -510,7 +511,7 @@ class RefereeScoringController extends Controller
     /**
      * Submit scores and signature.
      */
-    public function submit(Request $request): JsonResponse
+    public function submit(RefereeSubmitScoreRequest $request): JsonResponse
     {
         $user = Auth::user();
         if (! $user) {
@@ -528,9 +529,6 @@ class RefereeScoringController extends Controller
         $judgeIndex = $stateResult['judgeIndex'];
 
         $signature = $request->input('signature');
-        if (! $signature) {
-            return response()->json(['success' => false, 'message' => 'Tanda tangan wajib diisi.'], 400);
-        }
 
         $drawingId = $assignedCourt?->active_drawing_id;
         if ($activeMatch->draft_type === 'embu') {

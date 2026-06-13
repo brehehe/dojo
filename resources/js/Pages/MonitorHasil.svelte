@@ -59,17 +59,6 @@
         scrollInterval = setInterval(() => {
             const el = match?.draft_type === 'embu' ? embuScrollEl : scrollEl;
             
-            console.log('[AutoScroll Debug]', {
-                enabled: autoScrollEnabled,
-                isPaused: isPaused,
-                elExists: !!el,
-                matchType: match?.draft_type,
-                scrollTop: el ? el.scrollTop : null,
-                scrollHeight: el ? el.scrollHeight : null,
-                clientHeight: el ? el.clientHeight : null,
-                isScrollable: el ? el.scrollHeight > el.clientHeight : false
-            });
-
             if (!autoScrollEnabled || isPaused) return;
             if (!el) return;
 
@@ -79,7 +68,6 @@
                 el.scrollTop += 1;
                 if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
                     isPaused = true;
-                    console.log('[AutoScroll] Reached bottom, pausing 3s');
                     setTimeout(() => {
                         scrollDirection = -1;
                         isPaused = false;
@@ -91,7 +79,6 @@
                     el.scrollTop = 0;
                     scrollDirection = 1;
                     isPaused = true;
-                    console.log('[AutoScroll] Reached top, pausing 3s');
                     setTimeout(() => {
                         isPaused = false;
                     }, 3000); // Pause 3s at the top

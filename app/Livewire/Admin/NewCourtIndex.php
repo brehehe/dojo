@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Court\Court;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -65,7 +66,7 @@ class NewCourtIndex extends Component
                 ], [
                     'name' => 'Petugas '.$model->name,
                     'court_id' => $model->id,
-                    'password' => bcrypt('password'), // Password default
+                    'password' => bcrypt(Str::random(12)),
                     'email_verified_at' => now(),
                 ]);
 
@@ -87,7 +88,7 @@ class NewCourtIndex extends Component
                 $user = User::create([
                     'name' => 'Petugas '.$court->name,
                     'email' => 'court'.$court->id.'@gmail.com',
-                    'password' => bcrypt('password'), // Password default
+                    'password' => bcrypt(Str::random(12)),
                     'court_id' => $court->id,
                     'email_verified_at' => now(),
                 ]);
@@ -127,7 +128,7 @@ class NewCourtIndex extends Component
             ['email' => $email],
             [
                 'name' => 'Tablet '.$court->name.' - '.ucwords(str_replace('wasit', 'Wasit ', $suffix)),
-                'password' => bcrypt('password'),
+                'password' => bcrypt(Str::random(12)),
                 'court_id' => $court->id,
                 'judge_index' => $index,
                 'email_verified_at' => now(),

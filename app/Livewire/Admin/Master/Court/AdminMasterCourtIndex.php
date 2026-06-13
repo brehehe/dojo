@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Master\Court;
 use App\Models\Court\Court;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -111,7 +112,7 @@ class AdminMasterCourtIndex extends Component
             ['email' => $email],
             [
                 'name' => 'Tablet '.$court->name.' - '.ucwords(str_replace('wasit', 'Wasit ', $suffix)),
-                'password' => bcrypt('password'),
+                'password' => bcrypt(Str::random(12)),
                 'court_id' => $court->id,
                 'judge_index' => $index,
                 'email_verified_at' => now(),

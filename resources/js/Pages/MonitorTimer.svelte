@@ -62,7 +62,7 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(e => console.warn(e));
+            audio.play().catch(() => {});
         } catch(e) {}
     }
 
@@ -93,7 +93,7 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn('Failed to preload buzzer audio:', e);
+            // Silent fail for audio preload
         }
 
         // Initial sync

@@ -229,6 +229,9 @@ class AdminMasterAthleteFormIndex extends Component
             'rank' => 'nullable',
             'age_group' => 'nullable',
             'bpjs_status' => 'required',
+            'bpjs_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'identity_card' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'identity_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ];
 
         $this->validate($rules);

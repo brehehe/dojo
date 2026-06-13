@@ -163,7 +163,6 @@
             }
         } catch (e) {
             running = false;
-            console.error(e);
         }
     }
 
@@ -190,7 +189,6 @@
             }
         } catch (e) {
             running = true;
-            console.error(e);
         }
     }
 
@@ -218,7 +216,6 @@
                 countdown = 0;
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -267,7 +264,6 @@
                 );
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -308,7 +304,6 @@
         } catch (e) {
             activeDrawingId = originalActiveDrawingId;
             actionInFlight = false;
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -349,7 +344,6 @@
         } catch (e) {
             activeDrawingId = originalActiveDrawingId;
             actionInFlight = false;
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -381,7 +375,6 @@
                 showToast(data.message || "Gagal memanggil wasit", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -412,7 +405,6 @@
                 showToast(data.message || "Gagal mereset lapangan", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -450,7 +442,6 @@
                 );
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -483,7 +474,6 @@
                 showToast(data.message || "Gagal loloskan ke final.", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -541,7 +531,6 @@
                 showToast(data.message || "Gagal menyimpan nilai", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -573,9 +562,9 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch((e) => console.warn("Buzzer error:", e));
+            audio.play().catch(() => {});
         } catch (e) {
-            console.warn("Audio error:", e);
+            // Silent fail for audio
         }
     }
 
@@ -585,7 +574,6 @@
     }
 
     function playAnnouncer(text) {
-        console.log("Announcer requested:", text);
         stopAnnouncer();
         isPlayingAnnouncer = true;
 
@@ -661,7 +649,7 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn("Failed to preload buzzer audio:", e);
+            // Silent fail for audio preload
         }
 
         fetchState();
