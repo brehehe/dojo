@@ -12,6 +12,7 @@
     let offset = $state(0);
     let stateObj = $state({ status: 'stopped', elapsed_ms: 0, started_at_ms: null, countdown_end_ms: null });
     let playedIntervals = $state(new Set());
+    let buzzerPool = [];
 
     let pollInterval;
     let localTickInterval;
@@ -54,7 +55,13 @@
 
     function playBuzzer() {
         try {
-            let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+            let audio = buzzerPool.find(a => a.paused || a.ended);
+            if (!audio) {
+                audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                audio.preload = 'auto';
+                buzzerPool.push(audio);
+            }
+            audio.currentTime = 0;
             audio.play().catch(e => console.warn(e));
         } catch(e) {}
     }
@@ -77,6 +84,18 @@
     }
 
     onMount(() => {
+        // Preload buzzer audio to eliminate latency
+        try {
+            for (let i = 0; i < 3; i++) {
+                let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                audio.preload = 'auto';
+                audio.load();
+                buzzerPool.push(audio);
+            }
+        } catch (e) {
+            console.warn('Failed to preload buzzer audio:', e);
+        }
+
         // Initial sync
         sync();
 

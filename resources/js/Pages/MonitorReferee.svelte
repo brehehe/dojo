@@ -29,7 +29,7 @@
 
     onMount(() => {
         sync();
-        pollInterval = setInterval(sync, 5000); // Poll every 5s just like wire:poll.5s
+        pollInterval = setInterval(sync, 1000); // Poll every 1s for near-instant updates
 
         timeInterval = setInterval(() => {
             currentTime = new Date();
@@ -44,10 +44,10 @@
     function getJudgeLabel(index) {
         switch (index) {
             case 1: return 'Wasit Nasional (Ketua)';
-            case 2: return 'Wasit Daerah 1';
-            case 3: return 'Wasit Daerah 2';
-            case 4: return 'Wasit Pembantu 1';
-            case 5: return 'Wasit Pembantu 2';
+            case 2: return 'Wasit 1';
+            case 3: return 'Wasit 2';
+            case 4: return 'Wasit 3';
+            case 5: return 'Wasit 4';
             default: return `Wasit Juri ${index}`;
         }
     }
@@ -126,8 +126,8 @@
                             
                             <div class="mt-4 pt-4 border-t border-slate-50 flex flex-col gap-2">
                                 <div class="bg-slate-50 rounded-xl py-2 px-4 border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Sertifikasi</span>
-                                    <span class="text-sm font-black text-slate-600 uppercase">{schedule.referee?.certification_level || '-'}</span>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Kota</span>
+                                    <span class="text-sm font-black text-slate-600 uppercase">{schedule.referee?.city || '-'}</span>
                                 </div>
                                 <div class="bg-slate-50 rounded-xl py-2 px-4 border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
                                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Provinsi</span>

@@ -112,7 +112,7 @@ test('manual referee assignment restricts to exactly 5 referees', function () {
     for ($i = 0; $i < 6; $i++) {
         $u = User::factory()->create();
         $u->assignRole($rolePerwasitan);
-        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT UTAMA']);
+        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Jakarta']);
     }
 
     // 3. Create Court, Rundown, Session
@@ -278,7 +278,7 @@ test('manual referee assignment prevents duplicate assignments in the same sessi
     for ($i = 0; $i < 10; $i++) {
         $u = User::factory()->create();
         $u->assignRole($rolePerwasitan);
-        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT UTAMA']);
+        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Jakarta']);
     }
 
     $court1 = Court::create(['name' => 'Court 1', 'order' => 1]);
@@ -595,4 +595,255 @@ test('referee scoring dashboard correctly resolves active athlete names for Rand
     $component = Livewire::test(RefereeScoringDashboard::class);
 
     expect($component->get('activeAthleteNames'))->toBe(['Ahmad Red (Merah)', 'Budi White (Putih)']);
+});
+
+test('autoGenerateAllReferees does not assign WASIT UTAMA to judge positions 2-5', function () {
+    $roleArbitrase = Role::firstOrCreate(['name' => 'Arbitrase']);
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 1 Arbitrator
+    $userArb = User::factory()->create();
+    $userArb->assignRole($roleArbitrase);
+    $refArb = Referee::create(['user_id' => $userArb->id, 'certification_level' => 'Nasional']);
+
+    // Create 2 Wasit Utama and 4 Daerah referees (total 6 referees)
+    $refereeIds = [];
+    $wasitUtamaIds = [];
+    $daerahIds = [];
+    for ($i = 0; $i < 2; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $r = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT UTAMA']);
+        $wasitUtamaIds[] = $r->id;
+    }
+    for ($i = 0; $i < 4; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $r = Referee::create(['user_id' => $u->id, 'certification_level' => 'Daerah']);
+        $daerahIds[] = $r->id;
+    }
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    DrawingMatchNumber::create([
+        'match_number_id' => $matchNumber->id,
+        'registration_id' => $registration->id,
+        'draft_type' => 'embu',
+        'court_id' => $court->id,
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'sequence_number' => 1,
+        'round' => 'Penyisihan',
+    ]);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('autoGenerateAllReferees');
+
+    // Get all assigned referees for positions 2-5 (judge_index > 1)
+    $assignedPositionsTwoToFive = ScheduleReferee::where('rundown_id', $rundown->id)
+        ->where('session_time_id', $session->id)
+        ->where('court_id', $court->id)
+        ->where('judge_index', '>', 1)
+        ->pluck('referee_id')
+        ->toArray();
+
+    // Verify none of them are in $wasitUtamaIds
+    foreach ($assignedPositionsTwoToFive as $rId) {
+        expect($wasitUtamaIds)->not->toContain($rId);
+    }
+});
+
+test('manual referee assignment fails if less than 2 non-pembantus are selected', function () {
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 1 WASIT UTAMA and 4 WASIT PEMBANTU (only 1 non-pembantu)
+    $referees = [];
+    $u1 = User::factory()->create();
+    $u1->assignRole($rolePerwasitan);
+    $referees[] = Referee::create(['user_id' => $u1->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Jakarta']);
+
+    for ($i = 0; $i < 4; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Jakarta']);
+    }
+
+    $court = Court::create(['name' => 'Lapangan A', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    $component = Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('openAssignModal', $rundown->id, $session->id, $court->id);
+
+    foreach ($referees as $r) {
+        $component->call('toggleReferee', $r->id);
+    }
+
+    $component->call('saveReferees')
+        ->assertHasErrors(['referees' => 'Posisi 1 dan 2 harus diisi oleh Wasit Utama atau Wasit (tidak boleh Wasit Pembantu).']);
+});
+
+test('manual referee assignment fails if no two referees share the same city', function () {
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 5 referees from 5 different cities
+    $referees = [];
+    $cities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang'];
+    for ($i = 0; $i < 5; $i++) {
+        $u = User::factory()->create();
+        $u->assignRole($rolePerwasitan);
+        $referees[] = Referee::create(['user_id' => $u->id, 'certification_level' => 'WASIT', 'city' => $cities[$i]]);
+    }
+
+    $court = Court::create(['name' => 'Lapangan A', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    $component = Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('openAssignModal', $rundown->id, $session->id, $court->id);
+
+    foreach ($referees as $r) {
+        $component->call('toggleReferee', $r->id);
+    }
+
+    $component->call('saveReferees')
+        ->assertHasErrors(['referees' => 'Dalam 1 lapangan, minimal harus ada 2 wasit yang berasal dari kota yang sama.']);
+});
+
+test('manual referee assignment succeeds and orders correctly', function () {
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 1 WASIT UTAMA, 2 WASIT, 2 WASIT PEMBANTU (satisfying city constraint with 2 in Jakarta)
+    $referees = [];
+    $u1 = User::factory()->create();
+    $u1->assignRole($rolePerwasitan);
+    $referees[] = Referee::create(['user_id' => $u1->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Jakarta']); // pembantu
+
+    $u2 = User::factory()->create();
+    $u2->assignRole($rolePerwasitan);
+    $referees[] = Referee::create(['user_id' => $u2->id, 'certification_level' => 'WASIT', 'city' => 'Jakarta']); // wasit
+
+    $u3 = User::factory()->create();
+    $u3->assignRole($rolePerwasitan);
+    $referees[] = Referee::create(['user_id' => $u3->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Bandung']); // utama
+
+    $u4 = User::factory()->create();
+    $u4->assignRole($rolePerwasitan);
+    $referees[] = Referee::create(['user_id' => $u4->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Surabaya']); // pembantu
+
+    $u5 = User::factory()->create();
+    $u5->assignRole($rolePerwasitan);
+    $referees[] = Referee::create(['user_id' => $u5->id, 'certification_level' => 'WASIT', 'city' => 'Medan']); // wasit
+
+    $court = Court::create(['name' => 'Lapangan A', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    $component = Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('openAssignModal', $rundown->id, $session->id, $court->id);
+
+    foreach ($referees as $r) {
+        $component->call('toggleReferee', $r->id);
+    }
+
+    $component->call('saveReferees')
+        ->assertHasNoErrors();
+
+    // Verify ordering: Pos 1 must be WASIT UTAMA, Pos 2 must be WASIT (non-pembantu), Pos 3-5 is the rest
+    $orderedAssignments = ScheduleReferee::where('court_id', $court->id)
+        ->orderBy('judge_index')
+        ->get();
+
+    expect($orderedAssignments[0]->referee->certification_level)->toBe('WASIT UTAMA');
+    expect($orderedAssignments[1]->referee->certification_level)->toBe('WASIT');
+    expect($orderedAssignments[2]->referee->certification_level)->toBe('WASIT');
+    expect($orderedAssignments[3]->referee->certification_level)->toBe('WASIT PEMBANTU');
+    expect($orderedAssignments[4]->referee->certification_level)->toBe('WASIT PEMBANTU');
+});
+
+test('autoGenerateAll generates a panel meeting the city and role constraints', function () {
+    $roleArbitrase = Role::firstOrCreate(['name' => 'Arbitrase']);
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 1 Arbitrator
+    $uArb = User::factory()->create();
+    $uArb->assignRole($roleArbitrase);
+    Referee::create(['user_id' => $uArb->id, 'certification_level' => 'Nasional']);
+
+    // Create 6 referees: 1 WASIT UTAMA (Jakarta), 1 WASIT (Jakarta), 2 WASIT (Surabaya), 2 WASIT PEMBANTU (Bandung)
+    $u1 = User::factory()->create();
+    $u1->assignRole($rolePerwasitan);
+    Referee::create(['user_id' => $u1->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Jakarta']);
+
+    $u2 = User::factory()->create();
+    $u2->assignRole($rolePerwasitan);
+    Referee::create(['user_id' => $u2->id, 'certification_level' => 'WASIT', 'city' => 'Jakarta']);
+
+    $u3 = User::factory()->create();
+    $u3->assignRole($rolePerwasitan);
+    Referee::create(['user_id' => $u3->id, 'certification_level' => 'WASIT', 'city' => 'Surabaya']);
+
+    $u4 = User::factory()->create();
+    $u4->assignRole($rolePerwasitan);
+    Referee::create(['user_id' => $u4->id, 'certification_level' => 'WASIT', 'city' => 'Surabaya']);
+
+    $u5 = User::factory()->create();
+    $u5->assignRole($rolePerwasitan);
+    Referee::create(['user_id' => $u5->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Bandung']);
+
+    $u6 = User::factory()->create();
+    $u6->assignRole($rolePerwasitan);
+    Referee::create(['user_id' => $u6->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Bandung']);
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    DrawingMatchNumber::create([
+        'match_number_id' => $matchNumber->id,
+        'registration_id' => $registration->id,
+        'draft_type' => 'embu',
+        'court_id' => $court->id,
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'sequence_number' => 1,
+        'round' => 'Penyisihan',
+    ]);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('autoGenerateAllReferees');
+
+    $orderedAssignments = ScheduleReferee::where('court_id', $court->id)
+        ->where('judge_index', '>', 0)
+        ->orderBy('judge_index')
+        ->get();
+
+    expect($orderedAssignments->count())->toBe(5);
+
+    // Verify same city constraint: at least 2 share a city
+    $cities = $orderedAssignments->pluck('referee.city')->toArray();
+    $cityCounts = array_count_values($cities);
+    $hasSameCity = false;
+    foreach ($cityCounts as $c => $count) {
+        if ($count >= 2) {
+            $hasSameCity = true;
+        }
+    }
+    expect($hasSameCity)->toBeTrue();
+
+    // Verify role constraints
+    expect($orderedAssignments[0]->referee->certification_level)->not->toBe('WASIT PEMBANTU');
+    expect($orderedAssignments[1]->referee->certification_level)->not->toBe('WASIT PEMBANTU');
 });

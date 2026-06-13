@@ -66,6 +66,7 @@
         judge_5: 0,
     });
     let modalDenda = $state(0);
+    let actionInFlight = $state(false);
 
     // Polling interval
     let pollInterval;
@@ -109,7 +110,9 @@
                 firstDrawing = data.firstDrawing;
                 availablePools = data.availablePools;
                 tiedIds = data.tiedIds;
-                activeDrawingId = data.activeDrawingId;
+                if (!actionInFlight) {
+                    activeDrawingId = data.activeDrawingId;
+                }
                 assignedArbitrase = data.assignedArbitrase;
                 assignedReferees = data.assignedReferees;
                 assignedKoordinators = data.assignedKoordinators;
@@ -258,7 +261,10 @@
                 showToast(data.text, "success");
                 fetchState();
             } else {
-                showToast(data.message || "Gagal menyelesaikan pertandingan", "error");
+                showToast(
+                    data.message || "Gagal menyelesaikan pertandingan",
+                    "error",
+                );
             }
         } catch (e) {
             console.error(e);
@@ -268,6 +274,7 @@
 
     // Call participant
     async function callParticipant(drawingId) {
+        actionInFlight = true;
         const originalActiveDrawingId = activeDrawingId;
         activeDrawingId = drawingId; // Optimistic update
         try {
@@ -290,13 +297,17 @@
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
-                fetchState();
+                activeDrawingId = drawingId;
+                actionInFlight = false;
+                await fetchState();
             } else {
                 activeDrawingId = originalActiveDrawingId;
+                actionInFlight = false;
                 showToast(data.message || "Gagal memanggil kontingen", "error");
             }
         } catch (e) {
             activeDrawingId = originalActiveDrawingId;
+            actionInFlight = false;
             console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
@@ -304,6 +315,7 @@
 
     // Dismiss participant
     async function dismissParticipant() {
+        actionInFlight = true;
         const originalActiveDrawingId = activeDrawingId;
         activeDrawingId = null; // Optimistic update
         try {
@@ -326,13 +338,17 @@
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, "success");
-                fetchState();
+                activeDrawingId = null;
+                actionInFlight = false;
+                await fetchState();
             } else {
                 activeDrawingId = originalActiveDrawingId;
+                actionInFlight = false;
                 showToast(data.message || "Gagal menutup kontingen", "error");
             }
         } catch (e) {
             activeDrawingId = originalActiveDrawingId;
+            actionInFlight = false;
             console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
@@ -428,7 +444,10 @@
                 showToast(data.text, "success");
                 fetchState();
             } else {
-                showToast(data.message || "Gagal melakukan tanding ulang", "error");
+                showToast(
+                    data.message || "Gagal melakukan tanding ulang",
+                    "error",
+                );
             }
         } catch (e) {
             console.error(e);
@@ -547,7 +566,7 @@
     // Audio functions
     function playBuzzer(src) {
         try {
-            let audio = buzzerPool.find(a => a.paused || a.ended);
+            let audio = buzzerPool.find((a) => a.paused || a.ended);
             if (!audio) {
                 audio = new Audio(src);
                 audio.preload = "auto";
@@ -571,27 +590,7 @@
         isPlayingAnnouncer = true;
 
         function playBeepAndSpeak() {
-            if (!isPlayingAnnouncer) return;
-
-            currentAudio = new Audio("/asset/music/nada-suara.mp3");
-            currentAudio.volume = 0.6;
-
-            let playPromise = currentAudio.play();
-
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        currentAudio.onended = () => {
-                            if (!isPlayingAnnouncer) return;
-                            setTimeout(() => speak(text), 500);
-                        };
-                    })
-                    .catch(() => {
-                        speak(text);
-                    });
-            } else {
-                speak(text);
-            }
+            speak(text);
         }
 
         function speak(rawText) {
@@ -653,6 +652,18 @@
 
     // Lifecycle
     onMount(() => {
+        // Preload buzzer audio to eliminate latency
+        try {
+            for (let i = 0; i < 3; i++) {
+                let audio = new Audio("/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3");
+                audio.preload = "auto";
+                audio.load();
+                buzzerPool.push(audio);
+            }
+        } catch (e) {
+            console.warn("Failed to preload buzzer audio:", e);
+        }
+
         fetchState();
 
         // 300ms Polling for state
@@ -1069,6 +1080,24 @@
                                 ? s.nilai_akhir
                                 : Math.max(0, calculatedNilaiAwal - denda)
                             : 0}
+                        {@const outIndices = (() => {
+                            if (!s || scoredCount !== 5) return [];
+                            let minIdx = -1;
+                            let maxIdx = -1;
+                            for (let i = 0; i < 5; i++) {
+                                if (rawVals[i] === minVal) {
+                                    minIdx = i;
+                                    break;
+                                }
+                            }
+                            for (let i = 0; i < 5; i++) {
+                                if (i !== minIdx && rawVals[i] === maxVal) {
+                                    maxIdx = i;
+                                    break;
+                                }
+                            }
+                            return [minIdx, maxIdx];
+                        })()}
                         {@const isActive = !!(
                             activeDrawingId &&
                             Number(activeDrawingId) === Number(item.drawing_id)
@@ -1102,8 +1131,7 @@
                             </td>
                             {#each [0, 1, 2, 3, 4] as idx}
                                 {@const val = rawVals[idx]}
-                                {@const isOut =
-                                    s && (val === minVal || val === maxVal)}
+                                {@const isOut = outIndices.includes(idx)}
                                 <td>
                                     {#if val > 0}
                                         <span
@@ -1328,7 +1356,7 @@
                                     ><i class="fas fa-times"></i> Tutup</button
                                 >
                             {:else}
-                                <button
+                                <!-- <button
                                     onclick={() =>
                                         callParticipant(item.drawing_id)}
                                     class="btn-gen primary"
@@ -1341,6 +1369,16 @@
                                     {:else}
                                         Panggil
                                     {/if}
+                                </button> -->
+
+                                <button
+                                    onclick={() =>
+                                        callParticipant(item.drawing_id)}
+                                    class="btn-gen primary"
+                                    style="width:100%;"
+                                >
+                                    <i class="fas fa-bullhorn"></i>
+                                    Panggil
                                 </button>
                             {/if}
                         </div>
@@ -1593,10 +1631,11 @@
     {#if toast.show}
         <div class="toast-container">
             <div class="toast-item {toast.type}">
-                {#if toast.type === 'success'}
+                {#if toast.type === "success"}
                     <i class="fas fa-check-circle" style="color: #2ecc71;"></i>
                 {:else}
-                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"
+                    ></i>
                 {/if}
                 <span>{toast.message}</span>
             </div>
@@ -1996,7 +2035,7 @@
         color: #fff;
         padding: 12px 24px;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         font-family: inherit;
         font-size: 14px;
         font-weight: 600;

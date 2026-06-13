@@ -102,7 +102,7 @@
 
     onMount(() => {
         sync();
-        pollInterval = setInterval(sync, 5000); // Poll every 5 seconds
+        pollInterval = setInterval(sync, 1000); // Poll every 1 second
         startAutoScroll();
     });
 

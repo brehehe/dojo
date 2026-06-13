@@ -71,6 +71,7 @@
     let isPlayingAnnouncer = $state(false);
     let currentAudio = null;
     let buzzerPool = [];
+    let actionInFlight = $state(false);
 
     // Toast Notification State
     let toast = $state({ show: false, message: '', type: 'success' });
@@ -113,7 +114,9 @@
                 timerState = data.timerState;
                 courtId = data.courtId;
                 randoriResults = data.randoriResults || {};
-                activeBracketNode = data.activeBracketNode;
+                if (!actionInFlight) {
+                    activeBracketNode = data.activeBracketNode;
+                }
 
                 // Sync Timer local state with server state
                 offset = (timerState.server_time_ms || Date.now()) - Date.now();
@@ -222,6 +225,26 @@
 
     // Call Match / Grand Final / Dismiss
     async function callMatch(nodeKey, roundIdx, matchIdx, bracket) {
+        actionInFlight = true;
+        const originalActiveNode = activeBracketNode;
+        activeBracketNode = nodeKey; // Optimistic update
+        
+        // Find match details locally and set activeMatch optimistically
+        let matchData = null;
+        if (bracket === 'ub') {
+            matchData = drawingData.upper_bracket?.rounds[roundIdx]?.[matchIdx];
+        } else if (bracket === 'lb') {
+            matchData = drawingData.lower_bracket?.rounds[roundIdx]?.[matchIdx];
+        } else {
+            matchData = drawingData.grand_final;
+        }
+        activeMatch = {
+            bracket,
+            round: roundIdx,
+            match: matchIdx,
+            data: matchData
+        };
+
         try {
             const res = await fetch('/admin/api/scoring/randori/call-match', {
                 method: 'POST',
@@ -243,17 +266,28 @@
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
-                fetchState();
+                activeBracketNode = nodeKey;
+                actionInFlight = false;
+                await fetchState();
             } else {
+                activeBracketNode = originalActiveNode;
+                activeMatch = null;
+                actionInFlight = false;
                 showToast(data.message || 'Gagal memanggil pertandingan', 'error');
             }
         } catch (e) {
+            activeBracketNode = originalActiveNode;
+            activeMatch = null;
+            actionInFlight = false;
             console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     async function callGrandFinal() {
+        actionInFlight = true;
+        const originalActiveNode = activeBracketNode;
+        activeBracketNode = 'gf_0_0'; // Optimistic update
         try {
             const res = await fetch('/admin/api/scoring/randori/call-grand-final', {
                 method: 'POST',
@@ -271,17 +305,26 @@
                 if (data.announcement_text) {
                     playAnnouncer(data.announcement_text);
                 }
-                fetchState();
+                activeBracketNode = 'gf_0_0';
+                actionInFlight = false;
+                await fetchState();
             } else {
+                activeBracketNode = originalActiveNode;
+                actionInFlight = false;
                 showToast(data.message || 'Gagal memanggil Grand Final', 'error');
             }
         } catch (e) {
+            activeBracketNode = originalActiveNode;
+            actionInFlight = false;
             console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     async function dismissMatch() {
+        actionInFlight = true;
+        const originalActiveNode = activeBracketNode;
+        activeBracketNode = null; // Optimistic update
         try {
             const res = await fetch('/admin/api/scoring/randori/dismiss-match', {
                 method: 'POST',
@@ -295,11 +338,17 @@
             if (data.success) {
                 showToast(data.text, 'success');
                 activeMatch = null;
-                fetchState();
+                activeBracketNode = null;
+                actionInFlight = false;
+                await fetchState();
             } else {
+                activeBracketNode = originalActiveNode;
+                actionInFlight = false;
                 showToast(data.message || 'Gagal menutup pertandingan', 'error');
             }
         } catch (e) {
+            activeBracketNode = originalActiveNode;
+            actionInFlight = false;
             console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
@@ -617,25 +666,7 @@
         isPlayingAnnouncer = true;
 
         function playBeepAndSpeak() {
-            if (!isPlayingAnnouncer) return;
-
-            currentAudio = new Audio('/asset/music/nada-suara.mp3');
-            currentAudio.volume = 0.6;
-
-            let playPromise = currentAudio.play();
-
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    currentAudio.onended = () => {
-                        if (!isPlayingAnnouncer) return;
-                        setTimeout(() => speak(text), 500);
-                    };
-                }).catch(() => {
-                    speak(text);
-                });
-            } else {
-                speak(text);
-            }
+            speak(text);
         }
 
         function speak(rawText) {
@@ -694,6 +725,18 @@
 
     // Lifecycle
     onMount(() => {
+        // Preload buzzer audio to eliminate latency
+        try {
+            for (let i = 0; i < 3; i++) {
+                let audio = new Audio('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                audio.preload = 'auto';
+                audio.load();
+                buzzerPool.push(audio);
+            }
+        } catch (e) {
+            console.warn('Failed to preload buzzer audio:', e);
+        }
+
         fetchState();
 
         pollInterval = setInterval(fetchState, 300);

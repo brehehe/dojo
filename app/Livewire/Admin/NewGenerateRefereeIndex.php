@@ -151,35 +151,47 @@ class NewGenerateRefereeIndex extends Component
                 return;
             }
 
-            // Get selected referee models to check their certification levels
+            // Get selected referee models to check their certification levels and cities
             $selectedModels = Referee::whereIn('id', $this->selectedReferees)->get();
-            $wasitUtama = $selectedModels->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
-            $others = $selectedModels->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA');
 
-            // Enforce Wasit Utama only if there are Wasit Utama in the system
-            $hasSystemWasitUtama = Referee::where('certification_level', 'WASIT UTAMA')->exists();
+            // Validate same city constraint: at least 2 referees from the same city
+            $cities = $selectedModels->pluck('city')->filter(fn ($c) => ! empty(trim($c)))->map(fn ($c) => strtolower(trim($c)))->toArray();
+            $cityCounts = array_count_values($cities);
+            $hasSameCity = false;
+            foreach ($cityCounts as $count) {
+                if ($count >= 2) {
+                    $hasSameCity = true;
+                    break;
+                }
+            }
 
-            if ($hasSystemWasitUtama && $wasitUtama->isEmpty()) {
-                $this->addError('referees', 'Minimal 1 Wasit Utama harus dipilih untuk menjadi Wasit Pertama.');
+            if (! $hasSameCity) {
+                $this->addError('referees', 'Dalam 1 lapangan, minimal harus ada 2 wasit yang berasal dari kota yang sama.');
 
                 return;
             }
 
-            // Reorder so that a Wasit Utama is first (judge_index = 1)
-            $orderedIds = [];
-            if ($wasitUtama->isNotEmpty()) {
-                $firstUtama = $wasitUtama->first();
-                $orderedIds[] = $firstUtama->id;
+            // Separate non-pembantu and pembantu
+            $nonPembantus = $selectedModels->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU');
+            $pembantus = $selectedModels->filter(fn ($r) => $r->certification_level === 'WASIT PEMBANTU');
 
-                $remainingUtama = $wasitUtama->slice(1);
-                foreach ($remainingUtama as $r) {
-                    $orderedIds[] = $r->id;
-                }
-                foreach ($others as $r) {
-                    $orderedIds[] = $r->id;
-                }
-            } else {
-                $orderedIds = $this->selectedReferees;
+            if ($nonPembantus->count() < 2) {
+                $this->addError('referees', 'Posisi 1 dan 2 harus diisi oleh Wasit Utama atau Wasit (tidak boleh Wasit Pembantu).');
+
+                return;
+            }
+
+            // Sort non-pembantus so WASIT UTAMA comes first
+            $nonPembantusSorted = $nonPembantus->sortBy(fn ($r) => $r->certification_level === 'WASIT UTAMA' ? 0 : 1)->values();
+
+            // Place first two non-pembantus in positions 1 and 2, and the rest in 3, 4, 5
+            $orderedIds = [];
+            $orderedIds[] = $nonPembantusSorted[0]->id;
+            $orderedIds[] = $nonPembantusSorted[1]->id;
+
+            $remaining = $nonPembantusSorted->slice(2)->concat($pembantus)->values();
+            foreach ($remaining as $r) {
+                $orderedIds[] = $r->id;
             }
 
             DB::beginTransaction();
@@ -212,19 +224,14 @@ class NewGenerateRefereeIndex extends Component
             $q->role('Arbitrase');
         })->pluck('id')->toArray();
 
-        $wasitUtamaIds = Referee::whereHas('user', function ($q) {
+        // Get all pool referees (Perwasitan or Koordinator Lapangan)
+        $allReferees = Referee::whereHas('user', function ($q) {
             $q->whereHas('roles', function ($r) {
                 $r->whereIn('name', ['Perwasitan', 'Koordinator Lapangan']);
             });
-        })->where('certification_level', 'WASIT UTAMA')->pluck('id')->toArray();
+        })->get();
 
-        $refereeIds = Referee::whereHas('user', function ($q) {
-            $q->whereHas('roles', function ($r) {
-                $r->whereIn('name', ['Perwasitan', 'Koordinator Lapangan']);
-            });
-        })->pluck('id')->toArray();
-
-        if (count($arbitraseIds) < 1 || count($refereeIds) < 5) {
+        if (count($arbitraseIds) < 1 || $allReferees->count() < 5) {
             $this->dispatch('swal', [
                 'title' => 'Gagal!',
                 'text' => 'Master Wasit minimal harus ada 1 Dewan Arbitrase dan 5 Wasit Lapangan.',
@@ -295,26 +302,124 @@ class NewGenerateRefereeIndex extends Component
                         ->toArray();
                     $assignedInShift = array_values(array_diff($assignedInShift, $existingCourtRefs));
 
-                    $panelIds = [];
+                    // Filter available referees in this shift
+                    $availableRefs = $allReferees->reject(fn ($r) => in_array($r->id, $assignedInShift));
 
-                    // 1. Pick a Wasit Utama if available and not already assigned in this shift
-                    if (! empty($wasitUtamaIds)) {
-                        $availableUtama = array_values(array_diff($wasitUtamaIds, $assignedInShift));
-                        if (! empty($availableUtama)) {
-                            $randomUtamaId = collect($availableUtama)->random();
-                            $panelIds[] = $randomUtamaId;
+                    $selectedRefs = null;
+
+                    // Find cities with multiple referees
+                    $citiesWithMultiple = $availableRefs->filter(fn ($r) => ! empty(trim($r->city)))
+                        ->groupBy(fn ($r) => strtolower(trim($r->city)))
+                        ->filter(fn ($group) => $group->count() >= 2);
+
+                    if ($citiesWithMultiple->isNotEmpty()) {
+                        $citiesWithMultiple = $citiesWithMultiple->shuffle();
+                        foreach ($citiesWithMultiple as $city => $refsInCity) {
+                            $pair = $refsInCity->random(2);
+                            $restPool = $availableRefs->reject(fn ($r) => $pair->contains('id', $r->id));
+
+                            $utamas = $restPool->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+                            $wasits = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA' && $r->certification_level !== 'WASIT PEMBANTU');
+
+                            $totalNonPembantus = $pair->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count() + $utamas->count() + $wasits->count();
+
+                            if ($totalNonPembantus >= 2 && $availableRefs->count() >= 5) {
+                                $chosenRefs = collect($pair);
+
+                                // Prefer to include exactly 1 WASIT UTAMA in the panel if one is available and not in the pair
+                                $hasUtama = $chosenRefs->contains(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+                                if (! $hasUtama && $utamas->isNotEmpty()) {
+                                    $chosenUtama = $utamas->random();
+                                    $chosenRefs->push($chosenUtama);
+                                    $restPool = $restPool->reject(fn ($r) => $r->id === $chosenUtama->id);
+                                }
+
+                                // Ensure we have at least 2 non-pembantus
+                                $nonPembantuCount = $chosenRefs->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count();
+                                $neededNonPembantu = max(0, 2 - $nonPembantuCount);
+                                if ($neededNonPembantu > 0) {
+                                    $nonPembantuRest = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU' && $r->certification_level !== 'WASIT UTAMA');
+                                    if ($nonPembantuRest->count() >= $neededNonPembantu) {
+                                        $addedNonPembantus = $nonPembantuRest->random($neededNonPembantu);
+                                        $chosenRefs = $chosenRefs->concat($addedNonPembantus);
+                                        $restPool = $restPool->reject(fn ($r) => $addedNonPembantus->contains('id', $r->id));
+                                    } else {
+                                        $nonPembantuRestAll = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU');
+                                        $addedNonPembantus = $nonPembantuRestAll->random(min($neededNonPembantu, $nonPembantuRestAll->count()));
+                                        $chosenRefs = $chosenRefs->concat($addedNonPembantus);
+                                        $restPool = $restPool->reject(fn ($r) => $addedNonPembantus->contains('id', $r->id));
+                                    }
+                                }
+
+                                // Fill the rest to 5, avoiding WASIT UTAMA
+                                $stillNeeded = 5 - $chosenRefs->count();
+                                if ($stillNeeded > 0) {
+                                    $otherRest = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA');
+                                    if ($otherRest->count() >= $stillNeeded) {
+                                        $addedOthers = $otherRest->random($stillNeeded);
+                                        $chosenRefs = $chosenRefs->concat($addedOthers);
+                                    } else {
+                                        $addedOthers = $restPool->random($stillNeeded);
+                                        $chosenRefs = $chosenRefs->concat($addedOthers);
+                                    }
+                                }
+
+                                $selectedRefs = $chosenRefs;
+                                break;
+                            }
                         }
                     }
 
-                    // 2. Pick the other 4 (or 5 if there's no available Wasit Utama)
-                    $neededCount = 5 - count($panelIds);
-                    $availableOthers = array_values(array_diff($refereeIds, array_merge($assignedInShift, $panelIds)));
-                    if (count($availableOthers) < $neededCount) {
-                        // Fallback to all referee pool (excluding currently selected panel IDs)
-                        $availableOthers = array_values(array_diff($refereeIds, $panelIds));
+                    // Fallback 1: If same city constraint cannot be satisfied, ignore it but respect the non-pembantu rule
+                    if (! $selectedRefs) {
+                        $utamas = $availableRefs->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+                        $wasits = $availableRefs->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA' && $r->certification_level !== 'WASIT PEMBANTU');
+
+                        if ($utamas->count() + $wasits->count() >= 2 && $availableRefs->count() >= 5) {
+                            $chosenRefs = collect();
+                            if ($utamas->isNotEmpty()) {
+                                $chosenRefs->push($utamas->random());
+                            }
+                            $neededNonPembantu = max(0, 2 - $chosenRefs->count());
+                            if ($neededNonPembantu > 0) {
+                                $chosenRefs = $chosenRefs->concat($wasits->random($neededNonPembantu));
+                            }
+                            $restPool = $availableRefs->reject(fn ($r) => $chosenRefs->contains('id', $r->id));
+                            $restPoolSorted = $restPool->sortBy(fn ($r) => $r->certification_level === 'WASIT UTAMA' ? 1 : 0)->values();
+                            $chosenRefs = $chosenRefs->concat($restPoolSorted->take(5 - $chosenRefs->count()));
+                            $selectedRefs = $chosenRefs;
+                        }
                     }
-                    $randomOtherIds = collect($availableOthers)->random(min($neededCount, count($availableOthers)))->toArray();
-                    $panelIds = array_merge($panelIds, $randomOtherIds);
+
+                    // Fallback 2: Pick randomly
+                    if (! $selectedRefs) {
+                        if ($availableRefs->count() >= 5) {
+                            $selectedRefs = $availableRefs->random(5);
+                        } else {
+                            $selectedRefs = $allReferees->random(min(5, $allReferees->count()));
+                        }
+                    }
+
+                    // Order the selected refs correctly
+                    $selectedRefsArray = $selectedRefs->values();
+                    $nonPembantus = $selectedRefsArray->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU');
+                    $pembantus = $selectedRefsArray->filter(fn ($r) => $r->certification_level === 'WASIT PEMBANTU');
+
+                    // Sort non-pembantus so WASIT UTAMA comes first
+                    $nonPembantusSorted = $nonPembantus->sortBy(fn ($r) => $r->certification_level === 'WASIT UTAMA' ? 0 : 1)->values();
+
+                    $orderedIds = [];
+                    if ($nonPembantusSorted->count() >= 2) {
+                        $orderedIds[] = $nonPembantusSorted[0]->id;
+                        $orderedIds[] = $nonPembantusSorted[1]->id;
+
+                        $remaining = $nonPembantusSorted->slice(2)->concat($pembantus)->values();
+                        foreach ($remaining as $r) {
+                            $orderedIds[] = $r->id;
+                        }
+                    } else {
+                        $orderedIds = $selectedRefsArray->pluck('id')->toArray();
+                    }
 
                     ScheduleReferee::where('rundown_id', $shift->rundown_id)
                         ->where('session_time_id', $shift->session_time_id)
@@ -322,7 +427,7 @@ class NewGenerateRefereeIndex extends Component
                         ->where('judge_index', '>', 0)
                         ->delete();
 
-                    foreach ($panelIds as $index => $refereeId) {
+                    foreach ($orderedIds as $index => $refereeId) {
                         ScheduleReferee::create([
                             'rundown_id' => $shift->rundown_id,
                             'session_time_id' => $shift->session_time_id,
@@ -332,7 +437,7 @@ class NewGenerateRefereeIndex extends Component
                         ]);
                     }
 
-                    $assignedInShift = array_values(array_unique(array_merge($assignedInShift, $panelIds)));
+                    $assignedInShift = array_values(array_unique(array_merge($assignedInShift, $orderedIds)));
                     $countGenerated++;
                 } else {
                     // Make sure existing court referees are added to assignedInShift

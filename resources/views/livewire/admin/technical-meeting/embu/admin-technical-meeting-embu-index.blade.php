@@ -523,10 +523,20 @@
                                                 @foreach($sorted->values() as $rankIdx => $score)
                                                     @php
                                                         $judges = [$score->judge_1, $score->judge_2, $score->judge_3, $score->judge_4, $score->judge_5];
-                                                        sort($judges);
-                                                        $minVal = $judges[0];
-                                                        $maxVal = $judges[4];
+                                                        $sorted2 = $judges;
+                                                        sort($sorted2);
+                                                        $minVal = $sorted2[0];
+                                                        $maxVal = $sorted2[4];
                                                         $isJuara = !$isPenyisihan && $rankIdx === 0;
+
+                                                        $minIdx = array_search($minVal, $judges);
+                                                        $maxIdx = -1;
+                                                        foreach ($judges as $idx => $val) {
+                                                            if ($idx !== $minIdx && $val == $maxVal) {
+                                                                $maxIdx = $idx;
+                                                                break;
+                                                            }
+                                                        }
                                                     @endphp
                                                     <tr class="{{ $loop->even ? 'bg-slate-100' : 'bg-white' }} hover:bg-slate-50 transition-colors group">
                                                         {{-- Rank --}}
@@ -549,11 +559,10 @@
                                                             @endif
                                                         </td>
                                                         {{-- Judge Scores --}}
-                                                        @foreach([$score->judge_1, $score->judge_2, $score->judge_3, $score->judge_4, $score->judge_5] as $ji => $judgeVal)
+                                                        @foreach($judges as $ji => $judgeVal)
                                                             <td class="px-3 py-3 text-center border-r border-slate-200">
-                                                                @php $sorted2 = [$score->judge_1, $score->judge_2, $score->judge_3, $score->judge_4, $score->judge_5]; sort($sorted2); @endphp
                                                                 <span class="text-[15px] font-black rounded px-1
-                                                                    {{ $judgeVal == $sorted2[0] || $judgeVal == $sorted2[4]
+                                                                    {{ $ji === $minIdx || $ji === $maxIdx
                                                                         ? 'line-through text-rose-400 bg-rose-50'
                                                                         : 'text-emerald-700 bg-emerald-50' }}">{{ number_format($judgeVal, 1) }}</span>
                                                             </td>

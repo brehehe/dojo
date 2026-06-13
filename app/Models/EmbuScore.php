@@ -9,6 +9,31 @@ class EmbuScore extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            $judges = [
+                (float) $model->judge_1,
+                (float) $model->judge_2,
+                (float) $model->judge_3,
+                (float) $model->judge_4,
+                (float) $model->judge_5,
+            ];
+
+            $scoredCount = count(array_filter($judges, fn ($v) => $v > 0));
+
+            if ($scoredCount === 5) {
+                sort($judges);
+                $total = $judges[1] + $judges[2] + $judges[3];
+            } else {
+                $total = array_sum($judges);
+            }
+
+            $model->total_score = $total;
+            $model->nilai_akhir = max(0.0, $total - (float) $model->denda);
+        });
+    }
+
     protected $fillable = [
         'match_number_id',
         'registration_id',

@@ -931,6 +931,12 @@ class SvelteMonitorController extends Controller
             'active_bracket_node' => $draftType !== 'embu' ? '0_0' : null,
         ]);
 
+        Cache::put("court_{$court->id}_timer", [
+            'status' => 'stopped',
+            'elapsed_ms' => 0,
+            'started_at_ms' => null,
+        ]);
+
         $contingentName = $drawing->registration?->contingent?->name ?? '—';
         $poolLabel = $drawing->pool ? 'Pool '.$drawing->pool->name : null;
         $sessionLabel = $drawing->sessionTime?->name;
@@ -1500,6 +1506,12 @@ class SvelteMonitorController extends Controller
                 'active_bracket_node' => null,
             ]);
 
+            Cache::put("court_{$drawing->court_id}_timer", [
+                'status' => 'stopped',
+                'elapsed_ms' => 0,
+                'started_at_ms' => null,
+            ]);
+
             $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
             if (! empty($metaAthleteIds)) {
                 $athletes = Athlete::whereIn('id', $metaAthleteIds)->pluck('name')->implode(', ');
@@ -1591,23 +1603,23 @@ class SvelteMonitorController extends Controller
         $isGroup = $matchNumber ? ($matchNumber->max_athletes > 1) : false;
 
         if ($isGroup) {
-            if ($seconds >= 50 && $seconds <= 89) {
+            if ($seconds >= 80 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 50) {
+            } elseif ($seconds <= 79) {
                 $denda = 10;
-            } elseif ($seconds >= 121 && $seconds <= 135) {
+            } elseif ($seconds >= 121 && $seconds <= 130) {
                 $denda = 5;
-            } elseif ($seconds > 135) {
+            } elseif ($seconds >= 131) {
                 $denda = 10;
             }
         } else {
-            if ($seconds >= 46 && $seconds <= 59) {
+            if ($seconds >= 50 && $seconds <= 59) {
                 $denda = 5;
-            } elseif ($seconds <= 45) {
+            } elseif ($seconds <= 49) {
                 $denda = 10;
-            } elseif ($seconds >= 91 && $seconds <= 105) {
+            } elseif ($seconds >= 91 && $seconds <= 100) {
                 $denda = 5;
-            } elseif ($seconds >= 106) {
+            } elseif ($seconds >= 101) {
                 $denda = 10;
             }
         }
@@ -2109,6 +2121,12 @@ class SvelteMonitorController extends Controller
                 'active_bracket_node' => $nodeKey,
             ]);
 
+            Cache::put("court_{$drawing->court_id}_timer", [
+                'status' => 'stopped',
+                'elapsed_ms' => 0,
+                'started_at_ms' => null,
+            ]);
+
             $drawingData = $matchNumber->fresh()->drawing_data ?? [];
             $targetBracket = $bracket === 'ub' ? 'upper_bracket' : ($bracket === 'lb' ? 'lower_bracket' : $bracket);
             $match = $drawingData[$targetBracket]['rounds'][$roundIdx][$matchIdx] ?? null;
@@ -2162,6 +2180,12 @@ class SvelteMonitorController extends Controller
                 'active_drawing_id' => $drawing->id,
                 'active_registration_id' => null,
                 'active_bracket_node' => 'gf_0_0',
+            ]);
+
+            Cache::put("court_{$drawing->court_id}_timer", [
+                'status' => 'stopped',
+                'elapsed_ms' => 0,
+                'started_at_ms' => null,
             ]);
 
             $drawingData = $matchNumber->fresh()->drawing_data ?? [];

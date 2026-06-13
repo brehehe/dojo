@@ -37,6 +37,7 @@
     let notes = $state("");
     let signature = $state(null);
     let isFullscreen = $state(false);
+    let submitting = $state(false);
 
     let pollInterval;
 
@@ -162,6 +163,7 @@
     }
 
     async function submitScore() {
+        if (submitting) return;
         if (!signature) {
             if (window.Swal) {
                 window.Swal.fire({
@@ -177,6 +179,7 @@
             return;
         }
 
+        submitting = true;
         try {
             const res = await fetch("/admin/referee/scoring/submit", {
                 method: "POST",
@@ -193,10 +196,13 @@
                     signature,
                 }),
             });
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
             const data = await res.json();
             if (data.success) {
                 if (window.Swal) {
-                    window.Swal.fire({
+                    await window.Swal.fire({
                         icon: "success",
                         title: "Skor Tersimpan",
                         text: data.message,
@@ -218,6 +224,17 @@
             }
         } catch (e) {
             console.error("Error submitting scores:", e);
+            if (window.Swal) {
+                window.Swal.fire({
+                    icon: "error",
+                    title: "Gagal Menyimpan",
+                    text: "Terjadi kesalahan pada server atau koneksi internet terputus. Silakan coba lagi.",
+                });
+            } else {
+                alert("Terjadi kesalahan pada server atau koneksi internet terputus. Silakan coba lagi.");
+            }
+        } finally {
+            submitting = false;
         }
     }
 
@@ -1151,8 +1168,13 @@
                                 type="button"
                                 onclick={submitScore}
                                 class="ref-btn-submit"
+                                disabled={submitting}
                             >
-                                <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
+                                {#if submitting}
+                                    <i class="fa-solid fa-spinner animate-spin"></i> Menyimpan...
+                                {:else}
+                                    <i class="fa-solid fa-paper-plane"></i> Simpan Penilaian
+                                {/if}
                             </button>
                         </div>
                     </div>
@@ -1271,8 +1293,8 @@
 
     .ref-fullscreen-btn {
         position: fixed;
-        top: 14px;
-        right: 30px;
+        top: 50px;
+        left: 30px;
         z-index: 80;
         display: inline-flex;
         align-items: center;
@@ -2006,6 +2028,13 @@
 
     .ref-btn-submit:active {
         transform: scale(0.98);
+    }
+
+    .ref-btn-submit:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
     }
 
     /* ── RANDORI INFO ── */
