@@ -1,6 +1,8 @@
 <script>
     import { onMount, onDestroy } from "svelte";
     import SignaturePad from "../Components/SignaturePad.svelte";
+    import { createAdaptivePolling } from "../lib/adaptivePolling";
+    import { conditionalJsonFetch } from "../lib/conditionalFetch";
 
     // Svelte 5 states
     let loading = $state(true);
@@ -41,6 +43,21 @@
 
     // Echo channels
     let currentCourtChannelId = null;
+    const pollDelay = 4000;
+    let destroyed = false;
+    let queuedFetchTimeout;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let polling;
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
 
     function subscribeToCourt(newCourtId) {
         if (!newCourtId || currentCourtChannelId === newCourtId) return;
@@ -50,6 +67,8 @@
         currentCourtChannelId = newCourtId;
         if (window.Echo) {
             window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
                 fetchState();
             });
         }
@@ -75,9 +94,18 @@
     let totalScore = $derived(techniqueSubtotal + expressionSubtotal);
 
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
-            const res = await fetch("/admin/referee/scoring/state");
-            const data = await res.json();
+            const { data, notModified } = await conditionalJsonFetch("/admin/referee/scoring/state");
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data.error) {
                 loading = false;
                 return;
@@ -124,7 +152,17 @@
             loading = false;
         } catch (e) {
             console.error("Error fetching scoring state:", e);
-            loading = false;
+            if (!destroyed) {
+                loading = false;
+            }
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -309,17 +347,28 @@
     }
 
     onMount(() => {
+        destroyed = false;
         document.body.classList.add("referee-scoring-immersive");
         document.addEventListener("fullscreenchange", syncFullscreen);
-        fetchState();
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+        });
+        polling.start();
     });
 
     onDestroy(() => {
+        destroyed = true;
+        fetchQueued = false;
         document.body.classList.remove("referee-scoring-immersive");
         document.removeEventListener("fullscreenchange", syncFullscreen);
         if (window.Echo && currentCourtChannelId) {
             window.Echo.leave(`court.${currentCourtChannelId}`);
         }
+        polling?.stop();
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
     });
 </script>
 

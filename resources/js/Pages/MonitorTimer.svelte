@@ -1,5 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
 
     // Props passed from Inertia
     let { courtId } = $props();
@@ -14,13 +16,36 @@
     let playedIntervals = $state(new Set());
     let buzzerPool = [];
 
-    let pollInterval;
     let localTickInterval;
+    const pollDelay = 3000;
+    let destroyed = false;
+    let queuedSyncTimeout;
+    let syncInFlight = false;
+    let syncQueued = false;
+    let polling;
+
+    function scheduleQueuedSync() {
+        if (destroyed) return;
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
+        queuedSyncTimeout = setTimeout(() => {
+            queuedSyncTimeout = null;
+            if (!destroyed) sync();
+        }, pollDelay);
+    }
 
     async function sync() {
+        if (destroyed) return;
+        if (syncInFlight) {
+            syncQueued = true;
+            return;
+        }
+
+        syncInFlight = true;
         try {
-            let res = await fetch(`/api/svelte-monitor/timer/court/${courtId}/state`);
-            let data = await res.json();
+            let { data, notModified } = await conditionalJsonFetch(`/api/svelte-monitor/timer/court/${courtId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (!data) return;
 
             court = data.court;
@@ -50,6 +75,14 @@
             }
         } catch (e) {
             console.error('Error syncing timer state:', e);
+        } finally {
+            syncInFlight = false;
+            if (syncQueued && !destroyed) {
+                syncQueued = false;
+                scheduleQueuedSync();
+            } else if (destroyed) {
+                syncQueued = false;
+            }
         }
     }
 
@@ -84,6 +117,7 @@
     }
 
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -102,6 +136,8 @@
         // Listen to CourtUpdated event on court.{courtId} channel
         if (window.Echo) {
             window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
                 if (e.timer_state) {
                     offset = e.timer_state.server_time_ms - Date.now();
                     stateObj = e.timer_state;
@@ -129,6 +165,15 @@
                 }
             });
         }
+
+        polling = createAdaptivePolling({
+            fetchNow: sync,
+            normalInterval: pollDelay,
+            healthyInterval: 10000,
+            staleAfter: 10000,
+            immediate: false,
+        });
+        polling.start();
 
         // High-speed local interpolation (30ms) for smooth layout
         localTickInterval = setInterval(() => {
@@ -182,10 +227,14 @@
     });
 
     onDestroy(() => {
+        destroyed = true;
+        syncQueued = false;
         if (window.Echo) {
             window.Echo.leave(`court.${courtId}`);
         }
+        polling?.stop();
         clearInterval(localTickInterval);
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
     });
 </script>
 

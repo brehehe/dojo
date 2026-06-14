@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Events\CourtUpdated;
 use App\Http\Requests\TimerControlRequest;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 
 class TimerController extends Controller
 {
+    public function __construct(
+        protected StateCache $stateCache,
+    ) {}
+
     public function timerControl(TimerControlRequest $request): JsonResponse
     {
         $courtId = $request->input('court_id');
@@ -41,6 +46,7 @@ class TimerController extends Controller
         }
 
         Cache::put("court_{$courtId}_timer", $state);
+        $this->stateCache->bumpCourt($courtId, bumpDashboard: false);
         $state['server_time_ms'] = floor(microtime(true) * 1000);
 
         event(new CourtUpdated($courtId, $state, 'timer'));

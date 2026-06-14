@@ -7,6 +7,7 @@ use App\Events\MatchUpdated;
 use App\Http\Requests\RandoriCallMatchRequest;
 use App\Http\Requests\RandoriConfirmChampionRequest;
 use App\Http\Requests\RandoriSubmitScoringRequest;
+use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\MatchNumberMerge;
@@ -15,6 +16,7 @@ use App\Models\SchedulePanitera;
 use App\Models\ScheduleReferee;
 use App\Models\TournamentResult;
 use App\Services\BracketService;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -24,6 +26,7 @@ class RandoriScoringController extends Controller
 {
     public function __construct(
         protected BracketService $bracketService,
+        protected StateCache $stateCache,
     ) {}
 
     public function scoringRandoriState(Request $request, MatchNumber $matchNumber): JsonResponse
@@ -146,7 +149,7 @@ class RandoriScoringController extends Controller
         // Fetch randori results
         $randoriResults = RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)->get()->keyBy('bracket_node');
 
-        return response()->json([
+        $data = [
             'matchNumber' => $matchNumber,
             'merge' => $merge,
             'displayName' => $displayName,
@@ -161,7 +164,12 @@ class RandoriScoringController extends Controller
             'courtId' => $courtId,
             'randoriResults' => $randoriResults,
             'activeBracketNode' => $matchNumber->active_bracket_node,
-        ]);
+        ];
+
+        return $this->stateCache->conditionalJson($request, $data, [
+            'match' => $this->stateCache->version('match', $matchNumber->id),
+            'court' => $courtId ? $this->stateCache->version('court', $courtId) : 1,
+        ], 0);
     }
 
     public function randoriRepairBracket(Request $request): JsonResponse
@@ -344,6 +352,7 @@ class RandoriScoringController extends Controller
         $matchNumber->update(['drawing_data' => $data]);
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'bracket'));
         }
 
@@ -476,8 +485,11 @@ class RandoriScoringController extends Controller
                 'started_at_ms' => null,
             ]);
 
+            $this->stateCache->bumpCourt($drawing->court_id);
+
             event(new CourtUpdated($drawing->court_id, null, 'court'));
             foreach ($matchNumberIds as $id) {
+                $this->stateCache->bumpMatch($id);
                 event(new MatchUpdated($id, 'match_called'));
             }
 
@@ -543,8 +555,11 @@ class RandoriScoringController extends Controller
                 'started_at_ms' => null,
             ]);
 
+            $this->stateCache->bumpCourt($drawing->court_id);
+
             event(new CourtUpdated($drawing->court_id, null, 'court'));
             foreach ($matchNumberIds as $id) {
+                $this->stateCache->bumpMatch($id);
                 event(new MatchUpdated($id, 'match_called'));
             }
 
@@ -591,12 +606,14 @@ class RandoriScoringController extends Controller
         if ($drawing && $drawing->court_id) {
             Cache::put("court_{$drawing->court_id}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
             $drawing->court->update(['active_match_id' => null, 'active_drawing_id' => null, 'active_registration_id' => null, 'active_bracket_node' => null]);
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
 
         MatchNumber::whereIn('id', $matchNumberIds)->update(['active_bracket_node' => null]);
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'match_dismissed'));
         }
 
@@ -754,10 +771,12 @@ class RandoriScoringController extends Controller
         if ($drawing && $drawing->court_id) {
             Cache::put("court_{$drawing->court_id}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
             $drawing->court->update(['active_match_id' => null, 'active_drawing_id' => null, 'active_registration_id' => null, 'active_bracket_node' => null]);
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'score_submitted'));
         }
 
@@ -836,7 +855,18 @@ class RandoriScoringController extends Controller
         }
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'champions_confirmed'));
+        }
+
+        $courtId = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+            ->whereNotNull('court_id')
+            ->value('court_id')
+            ?? Court::whereIn('active_match_id', $matchNumberIds)->value('id');
+
+        if ($courtId) {
+            $this->stateCache->bumpCourt($courtId);
+            event(new CourtUpdated($courtId, null, 'court'));
         }
 
         return response()->json([

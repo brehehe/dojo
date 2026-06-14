@@ -2,16 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CourtUpdated;
 use App\Http\Requests\ResetActiveRefereesRequest;
 use App\Http\Requests\ResetCourtRefereesRequest;
 use App\Http\Requests\SaveRefereeAssignmentRequest;
 use App\Models\ActiveCourtReferee;
 use App\Models\ScheduleReferee;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class RefereeAssignmentController extends Controller
 {
+    public function __construct(
+        protected StateCache $stateCache,
+    ) {}
+
     public function saveRefereeAssignment(SaveRefereeAssignmentRequest $request): JsonResponse
     {
         $courtId = $request->input('court_id');
@@ -47,6 +53,8 @@ class RefereeAssignmentController extends Controller
             }
 
             DB::commit();
+            $this->stateCache->bumpCourt($courtId);
+            event(new CourtUpdated($courtId, null, 'referee_assignment'));
 
             return response()->json([
                 'success' => true,
@@ -66,6 +74,8 @@ class RefereeAssignmentController extends Controller
     {
         $courtId = $request->input('court_id');
         ActiveCourtReferee::where('court_id', $courtId)->delete();
+        $this->stateCache->bumpCourt($courtId);
+        event(new CourtUpdated($courtId, null, 'referee_assignment'));
 
         return response()->json([
             'success' => true,
@@ -86,6 +96,8 @@ class RefereeAssignmentController extends Controller
             ->delete();
 
         ActiveCourtReferee::where('court_id', $courtId)->delete();
+        $this->stateCache->bumpCourt($courtId);
+        event(new CourtUpdated($courtId, null, 'referee_assignment'));
 
         return response()->json([
             'success' => true,

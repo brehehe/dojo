@@ -1,6 +1,8 @@
 <script>
     import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
+    import { createAdaptivePolling } from "../lib/adaptivePolling";
+    import { conditionalJsonFetch } from "../lib/conditionalFetch";
 
     let {
         matchId,
@@ -79,22 +81,16 @@
         currentCourtChannelId = newCourtId;
         if (window.Echo) {
             window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
                 if (e.timer_state) {
-                    offset = e.timer_state.server_time_ms - Date.now();
-                    timerState = e.timer_state;
                     let wasRunning = running;
-                    running = (e.timer_state.status === 'running');
+                    if (!syncTimerFromServer(e.timer_state)) return;
                     if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
                         if (!playedIntervals.has('start')) {
                             playedIntervals.add('start');
                             playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
                         }
-                    }
-                    if (e.timer_state.status !== 'countdown') {
-                        countdown = 0;
-                    }
-                    if (!running && time < 500) {
-                        playedIntervals.clear();
                     }
                 } else {
                     fetchState();
@@ -111,6 +107,116 @@
     let lastTickSecond = -1;
     let playedIntervals = new Set();
     let interpolInterval;
+    let lastTimerServerTimeMs = 0;
+    const timerSyncToleranceMs = 250;
+    const pollDelay = 4000;
+    let destroyed = false;
+    let queuedFetchTimeout;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let polling;
+
+    function currentElapsedMs() {
+        if (running && timerState.started_at_ms) {
+            return Math.max(
+                0,
+                (timerState.elapsed_ms || 0) +
+                    (Date.now() + offset - timerState.started_at_ms),
+            );
+        }
+
+        return Math.max(time, timerState.elapsed_ms || 0);
+    }
+
+    function snapshotTimerUiState() {
+        return {
+            timerState: { ...timerState },
+            time,
+            running,
+            countdown,
+            offset,
+            lastTickSecond,
+            playedIntervals: new Set(playedIntervals),
+        };
+    }
+
+    function restoreTimerUiState(snapshot) {
+        timerState = { ...snapshot.timerState };
+        time = snapshot.time;
+        running = snapshot.running;
+        countdown = snapshot.countdown;
+        offset = snapshot.offset;
+        lastTickSecond = snapshot.lastTickSecond;
+        playedIntervals = new Set(snapshot.playedIntervals);
+    }
+
+    function elapsedFromTimerState(serverTimerState) {
+        const elapsed = serverTimerState?.elapsed_ms || 0;
+
+        if (serverTimerState?.status === "running" && serverTimerState.started_at_ms) {
+            const serverNow = serverTimerState.server_time_ms ?? Date.now() + offset;
+
+            return Math.max(0, elapsed + (serverNow - serverTimerState.started_at_ms));
+        }
+
+        return Math.max(0, elapsed);
+    }
+
+    function syncTimerFromServer(serverTimerState) {
+        if (!serverTimerState) return;
+        const serverTimeMs = Number(serverTimerState.server_time_ms || 0);
+
+        if (serverTimeMs && serverTimeMs < lastTimerServerTimeMs) {
+            return false;
+        }
+
+        const serverElapsed = elapsedFromTimerState(serverTimerState);
+        const sameRunningTimer =
+            timerState.status === "running" &&
+            serverTimerState.status === "running" &&
+            timerState.started_at_ms === serverTimerState.started_at_ms;
+
+        if (sameRunningTimer && serverElapsed + timerSyncToleranceMs < time) {
+            return false;
+        }
+
+        if (serverTimeMs) {
+            lastTimerServerTimeMs = serverTimeMs;
+            offset = serverTimerState.server_time_ms - Date.now();
+        }
+
+        timerState = serverTimerState;
+        running = serverTimerState.status === "running";
+
+        if (running) {
+            time = sameRunningTimer ? Math.max(time, serverElapsed) : serverElapsed;
+        } else {
+            time = serverElapsed;
+        }
+
+        if (serverTimerState.status !== "countdown") {
+            countdown = 0;
+        }
+
+        if (!running && time < 500) {
+            playedIntervals.clear();
+        }
+
+        return true;
+    }
+
+    function applyServerTimerState(serverTimerState) {
+        syncTimerFromServer(serverTimerState);
+    }
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
 
     // Derived state
     let sessionDate = $derived(
@@ -123,15 +229,24 @@
     );
 
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
             const queryParams = new URLSearchParams();
             if (currentRound) queryParams.append("round", currentRound);
             if (selectedPoolId) queryParams.append("pool_id", selectedPoolId);
 
-            const res = await fetch(
+            const { data, notModified } = await conditionalJsonFetch(
                 `/admin/api/scoring/embu/${matchId}/state?${queryParams.toString()}`,
             );
-            const data = await res.json();
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data) {
                 matchNumber = data.matchNumber;
                 merge = data.merge;
@@ -149,22 +264,22 @@
                 assignedReferees = data.assignedReferees;
                 assignedKoordinators = data.assignedKoordinators;
                 assignedPaniteras = data.assignedPaniteras;
-                timerState = data.timerState;
                 courtId = data.courtId;
                 subscribeToCourt(courtId);
 
                 // Sync Timer local state with server state
-                offset = (timerState.server_time_ms || Date.now()) - Date.now();
-                running = timerState.status === "running";
-                if (timerState.status !== "countdown") {
-                    countdown = 0;
-                }
-                if (!running && time < 500) {
-                    playedIntervals.clear();
-                }
+                syncTimerFromServer(data.timerState);
             }
         } catch (e) {
             console.error("Error fetching Embu scoring state:", e);
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -172,7 +287,17 @@
     async function startTimer() {
         if (!courtId) return;
         // Optimistic UI updates
+        const timerSnapshot = snapshotTimerUiState();
+        const elapsed = currentElapsedMs();
+        timerState = {
+            status: "running",
+            elapsed_ms: elapsed,
+            started_at_ms: Date.now() + offset,
+            countdown_end_ms: null,
+        };
+        time = elapsed;
         running = true;
+        countdown = 0;
         if (time < 1000) {
             playBuzzer("/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3");
         }
@@ -189,19 +314,29 @@
             });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = true;
             } else {
-                running = false;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = false;
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        const pausedAt = currentElapsedMs();
+        timerState = {
+            status: "paused",
+            elapsed_ms: pausedAt,
+            started_at_ms: null,
+            countdown_end_ms: null,
+        };
+        time = pausedAt;
         running = false;
+        countdown = 0;
         try {
             const res = await fetch("/admin/api/scoring/timer-control", {
                 method: "POST",
@@ -215,18 +350,25 @@
             });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = false;
             } else {
-                running = true;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = true;
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        timerState = {
+            status: "stopped",
+            elapsed_ms: 0,
+            started_at_ms: null,
+            countdown_end_ms: null,
+        };
         running = false;
         time = 0;
         countdown = 0;
@@ -243,12 +385,15 @@
             });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 time = 0;
                 running = false;
                 countdown = 0;
+            } else {
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
@@ -673,6 +818,7 @@
 
     // Lifecycle
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -689,9 +835,20 @@
 
         if (window.Echo) {
             window.Echo.channel(`match.${matchId}`).listen("MatchUpdated", (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
                 fetchState();
             });
         }
+
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
@@ -699,7 +856,7 @@
                 let expected =
                     (timerState.elapsed_ms || 0) +
                     (Date.now() + offset - timerState.started_at_ms);
-                time = expected;
+                time = Math.max(time, expected);
                 let currentSecond = Math.floor(time / 1000);
 
                 // Get active registration info to see if Tandoku
@@ -765,13 +922,17 @@
     });
 
     onDestroy(() => {
+        destroyed = true;
+        fetchQueued = false;
         if (window.Echo) {
             window.Echo.leave(`match.${matchId}`);
             if (currentCourtChannelId) {
                 window.Echo.leave(`court.${currentCourtChannelId}`);
             }
         }
+        polling?.stop();
         clearInterval(interpolInterval);
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
         stopAnnouncer();
     });
 

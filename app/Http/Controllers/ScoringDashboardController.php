@@ -16,6 +16,7 @@ use App\Models\Pool\Pool;
 use App\Models\RandoriMatchResult;
 use App\Models\Referee;
 use App\Models\Rundown\Rundown;
+use App\Services\StateCache;
 use App\Models\SessionTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,10 @@ use Inertia\Response;
 
 class ScoringDashboardController extends Controller
 {
+    public function __construct(
+        protected StateCache $stateCache,
+    ) {}
+
     public function scoringIndex(): Response
     {
         return Inertia::render('ScoringDashboard');
@@ -80,11 +85,14 @@ class ScoringDashboardController extends Controller
 
         $courts = $query->get();
 
+        $refereesByCourt = ActiveCourtReferee::with('referee.user')
+            ->whereIn('court_id', $courts->pluck('id'))
+            ->orderBy('judge_index')
+            ->get()
+            ->groupBy('court_id');
+
         foreach ($courts as $court) {
-            $court->current_referees = ActiveCourtReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->orderBy('judge_index')
-                ->get();
+            $court->current_referees = $refereesByCourt->get($court->id, collect())->values();
         }
 
         $sessions = SessionTime::orderBy('start_time')->get();
@@ -212,7 +220,7 @@ class ScoringDashboardController extends Controller
             ['certification_level', 'asc'],
         ])->values();
 
-        return response()->json([
+        $data = [
             'drawings' => $drawings,
             'courts' => $courts,
             'sessions' => $sessions,
@@ -223,6 +231,10 @@ class ScoringDashboardController extends Controller
             'ageGroups' => $ageGroups,
             'matchNumbers' => $matchNumbers,
             'allReferees' => $allReferees,
+        ];
+
+        return $this->stateCache->conditionalJson($request, $data, [
+            'dashboard' => $this->stateCache->version('dashboard'),
         ]);
     }
 
@@ -269,6 +281,9 @@ class ScoringDashboardController extends Controller
             'started_at_ms' => null,
         ]);
 
+        $this->stateCache->bumpCourt($court->id);
+        $this->stateCache->bumpMatch($drawing->match_number_id);
+
         $contingentName = $drawing->registration?->contingent?->name ?? '—';
         $poolLabel = $drawing->pool ? 'Pool '.$drawing->pool->name : null;
         $sessionLabel = $drawing->sessionTime?->name;
@@ -303,6 +318,8 @@ class ScoringDashboardController extends Controller
 
         Cache::forget("court_{$courtId}_timer");
 
+        $this->stateCache->bumpCourt($courtId);
+
         event(new CourtUpdated($courtId, null, 'court'));
 
         return response()->json([
@@ -325,6 +342,8 @@ class ScoringDashboardController extends Controller
 
             Cache::forget("court_{$court->id}_timer");
 
+            $this->stateCache->bumpCourt($court->id);
+
             event(new CourtUpdated($court->id, null, 'court'));
         }
 
@@ -332,6 +351,7 @@ class ScoringDashboardController extends Controller
             'active_registration_id' => null,
             'active_bracket_node' => null,
         ]);
+        $this->stateCache->bump('dashboard');
 
         return response()->json([
             'success' => true,

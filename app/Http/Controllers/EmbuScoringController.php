@@ -18,6 +18,7 @@ use App\Models\MatchNumberMerge;
 use App\Models\SchedulePanitera;
 use App\Models\ScheduleReferee;
 use App\Services\BracketService;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,6 +28,7 @@ class EmbuScoringController extends Controller
 {
     public function __construct(
         protected BracketService $bracketService,
+        protected StateCache $stateCache,
     ) {}
 
     public function scoringEmbuState(Request $request, MatchNumber $matchNumber): JsonResponse
@@ -82,7 +84,7 @@ class EmbuScoringController extends Controller
         }
 
         // Fetch all drawings for the current merge group and round
-        $drawingsQuery = DrawingMatchNumber::with(['registration.contingent'])
+        $drawingsQuery = DrawingMatchNumber::with(['matchNumber', 'registration.contingent', 'registration.athletes'])
             ->whereIn('match_number_id', $matchNumberIds)
             ->where('round', $currentRound);
 
@@ -91,12 +93,35 @@ class EmbuScoringController extends Controller
         }
 
         $drawingsList = $drawingsQuery->orderBy('sequence_number')->get();
+        $pivotAthletes = Athlete::whereHas('matchNumbers', function ($query) use ($matchNumberIds) {
+            $query->whereIn('match_numbers.id', $matchNumberIds);
+        })
+            ->with(['matchNumbers' => fn ($query) => $query->whereIn('match_numbers.id', $matchNumberIds)])
+            ->get()
+            ->flatMap(function ($athlete) {
+                return $athlete->matchNumbers->map(function ($matchNumber) use ($athlete) {
+                    return [
+                        'key' => $matchNumber->id.':'.$matchNumber->pivot->registration_id,
+                        'athlete' => $athlete,
+                    ];
+                });
+            })
+            ->groupBy('key')
+            ->map(fn ($items) => $items->pluck('athlete')->unique('id')->values());
 
         $allScores = EmbuScore::whereIn('match_number_id', $matchNumberIds)
             ->where('round_label', $currentRound)
             ->get();
 
-        $registrations = $drawingsList->map(function ($drawing) use ($allScores, $matchNumberIds, $currentRound) {
+        $penyisihanScores = $currentRound === 'Final'
+            ? EmbuScore::whereIn('match_number_id', $matchNumberIds)
+                ->where('round_label', 'Penyisihan')
+                ->orderByDesc('tiebreak_round')
+                ->get()
+                ->groupBy('registration_id')
+            : collect();
+
+        $registrations = $drawingsList->map(function ($drawing) use ($allScores, $currentRound, $pivotAthletes, $penyisihanScores) {
             $regId = $drawing->registration_id;
             $matchId = $drawing->match_number_id;
             $registration = $drawing->registration;
@@ -104,12 +129,9 @@ class EmbuScoringController extends Controller
             $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
 
             if (! empty($metaAthleteIds)) {
-                $athletes = Athlete::whereIn('id', $metaAthleteIds)->get();
+                $athletes = $drawing->registration?->athletes->whereIn('id', $metaAthleteIds)->values() ?? collect();
             } else {
-                $athletes = Athlete::whereHas('matchNumbers', function ($q) use ($matchId, $regId) {
-                    $q->where('match_numbers.id', $matchId)
-                        ->where('athlete_match_number.registration_id', $regId);
-                })->get();
+                $athletes = $pivotAthletes->get($matchId.':'.$regId, collect());
             }
 
             $score = $allScores->where('registration_id', $regId)
@@ -144,11 +166,7 @@ class EmbuScoringController extends Controller
             $penyisihanScore = null;
 
             if ($currentRound === 'Final') {
-                $penyisihanScore = EmbuScore::whereIn('match_number_id', $matchNumberIds)
-                    ->where('registration_id', $regId)
-                    ->where('round_label', 'Penyisihan')
-                    ->orderByDesc('tiebreak_round')
-                    ->first();
+                $penyisihanScore = $penyisihanScores->get($regId, collect())->first();
 
                 if ($penyisihanScore) {
                     $accumulatedScore += $penyisihanScore->nilai_akhir;
@@ -270,7 +288,7 @@ class EmbuScoringController extends Controller
         ];
         $timerState['server_time_ms'] = floor(microtime(true) * 1000);
 
-        return response()->json([
+        $data = [
             'matchNumber' => $matchNumber,
             'merge' => $merge,
             'displayName' => $displayName,
@@ -287,7 +305,12 @@ class EmbuScoringController extends Controller
             'assignedPaniteras' => $assignedPaniteras,
             'timerState' => $timerState,
             'courtId' => $courtId,
-        ]);
+        ];
+
+        return $this->stateCache->conditionalJson($request, $data, [
+            'match' => $this->stateCache->version('match', $matchNumber->id),
+            'court' => $courtId ? $this->stateCache->version('court', $courtId) : 1,
+        ], 0);
     }
 
     public function embuCallOfficials(Request $request): JsonResponse
@@ -402,6 +425,9 @@ class EmbuScoringController extends Controller
                 'started_at_ms' => null,
             ]);
 
+            $this->stateCache->bumpCourt($drawing->court_id);
+            $this->stateCache->bumpMatch($drawing->match_number_id);
+
             $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
             if (! empty($metaAthleteIds)) {
                 $athletes = Athlete::whereIn('id', $metaAthleteIds)->pluck('name')->implode(', ');
@@ -434,6 +460,7 @@ class EmbuScoringController extends Controller
                 ->first();
             $matchNumberIds = $mergeDetails ? DB::table('match_number_merge_details')->where('match_number_merge_id', $mergeDetails->match_number_merge_id)->pluck('match_number_id')->toArray() : [$drawing->match_number_id];
             foreach ($matchNumberIds as $id) {
+                $this->stateCache->bumpMatch($id);
                 event(new MatchUpdated($id, 'participant_called'));
             }
 
@@ -463,6 +490,8 @@ class EmbuScoringController extends Controller
                 'started_at_ms' => null,
             ]);
 
+            $this->stateCache->bumpCourt($courtId);
+
             Court::where('id', $courtId)->update([
                 'active_registration_id' => null,
                 'active_drawing_id' => null,
@@ -472,6 +501,7 @@ class EmbuScoringController extends Controller
         }
 
         if ($courtId) {
+            $this->stateCache->bumpCourt($courtId);
             event(new CourtUpdated($courtId, null, 'court'));
         }
 
@@ -481,6 +511,7 @@ class EmbuScoringController extends Controller
         $matchNumberIds = $mergeDetails ? DB::table('match_number_merge_details')->where('match_number_merge_id', $mergeDetails->match_number_merge_id)->pluck('match_number_id')->toArray() : [$matchId];
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'participant_dismissed'));
         }
 
@@ -589,9 +620,11 @@ class EmbuScoringController extends Controller
         }
 
         if ($courtId) {
+            $this->stateCache->bumpCourt($courtId);
             event(new CourtUpdated($courtId, null, 'court'));
         }
         event(new MatchUpdated($drawing->match_number_id, 'match_finished'));
+        $this->stateCache->bumpMatch($drawing->match_number_id);
 
         return response()->json([
             'success' => true,
@@ -676,9 +709,11 @@ class EmbuScoringController extends Controller
         $this->bracketService->recalculateRanks($matchNumberIds, $round);
 
         if ($drawing && $drawing->court_id) {
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'score_saved'));
         }
 
@@ -744,9 +779,11 @@ class EmbuScoringController extends Controller
 
         $drawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->first();
         if ($drawing && $drawing->court_id) {
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'tiebreak_requested'));
         }
 
@@ -853,9 +890,11 @@ class EmbuScoringController extends Controller
 
         $drawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->first();
         if ($drawing && $drawing->court_id) {
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'advanced_to_final'));
         }
 

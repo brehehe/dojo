@@ -1,5 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
 
     // Props passed from Inertia
     let { courtId = null, matchId = null } = $props();
@@ -13,7 +15,21 @@
     let activeNodeKey = $state(null);
     let loaded = $state(false);
 
-    let pollInterval;
+    const pollDelay = 5000;
+    let destroyed = false;
+    let queuedSyncTimeout;
+    let syncInFlight = false;
+    let syncQueued = false;
+    let polling;
+
+    function scheduleQueuedSync() {
+        if (destroyed) return;
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
+        queuedSyncTimeout = setTimeout(() => {
+            queuedSyncTimeout = null;
+            if (!destroyed) sync();
+        }, pollDelay);
+    }
 
     // Computed polling URL
     const url = $derived(courtId
@@ -21,9 +37,18 @@
         : `/api/svelte-monitor/hasil/match/${matchId}/state`);
 
     async function sync() {
+        if (destroyed) return;
+        if (syncInFlight) {
+            syncQueued = true;
+            return;
+        }
+
+        syncInFlight = true;
         try {
-            let res = await fetch(url);
-            let data = await res.json();
+            let { data, notModified } = await conditionalJsonFetch(url);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (!data) return;
 
             court = data.court;
@@ -35,6 +60,14 @@
             loaded = true;
         } catch (e) {
             console.error('Error syncing hasil monitor state:', e);
+        } finally {
+            syncInFlight = false;
+            if (syncQueued && !destroyed) {
+                syncQueued = false;
+                scheduleQueuedSync();
+            } else if (destroyed) {
+                syncQueued = false;
+            }
         }
     }
 
@@ -88,23 +121,38 @@
     }
 
     onMount(() => {
+        destroyed = false;
         sync();
         if (window.Echo) {
             if (courtId) {
                 window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                    if (destroyed) return;
+                    polling?.markRealtimeHealthy();
                     sync();
                 });
             }
             if (matchId) {
                 window.Echo.channel(`match.${matchId}`).listen('MatchUpdated', (e) => {
+                    if (destroyed) return;
+                    polling?.markRealtimeHealthy();
                     sync();
                 });
             }
         }
+        polling = createAdaptivePolling({
+            fetchNow: sync,
+            normalInterval: pollDelay,
+            healthyInterval: 20000,
+            staleAfter: 20000,
+            immediate: false,
+        });
+        polling.start();
         startAutoScroll();
     });
 
     onDestroy(() => {
+        destroyed = true;
+        syncQueued = false;
         if (window.Echo) {
             if (courtId) {
                 window.Echo.leave(`court.${courtId}`);
@@ -113,8 +161,10 @@
                 window.Echo.leave(`match.${matchId}`);
             }
         }
+        polling?.stop();
         if (scrollInterval) clearInterval(scrollInterval);
         if (pauseTimer) clearTimeout(pauseTimer);
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
     });
 
     // Embu helper to check if scoring started
