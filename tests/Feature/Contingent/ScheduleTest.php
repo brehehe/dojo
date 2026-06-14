@@ -122,3 +122,58 @@ test('contingent user can switch tabs to view brackets', function () {
         ->assertSee('Kenshi A')
         ->assertSee('Malang Contingent');
 });
+
+test('contingent user schedule view only displays specific athletes assigned to the match drawing', function () {
+    // Add another athlete to the same contingent registration
+    $athlete2 = Athlete::create([
+        'name' => 'Kenshi C Extra',
+        'nik' => '9876543210123456',
+        'gender' => 'Male',
+        'birth_place' => 'Surabaya',
+        'birth_date' => '2010-01-01',
+        'address' => 'Surabaya',
+        'bpjs_number' => '54321',
+        'bpjs_status' => 'Aktif',
+    ]);
+
+    $this->registration->athletes()->attach($athlete2->id, [
+        'weight' => 50,
+        'kyu' => 'Kyu 5',
+        'rank' => 'Kyu 5',
+        'age_group' => 'Pemula',
+        'dojo_origin' => 'Dojo Surabaya',
+        'city' => 'Surabaya',
+        'match_type' => 'Tanding',
+    ]);
+
+    // Create an Embu match & drawing containing only Kenshi A
+    $embuMatch = MatchNumber::create([
+        'name' => 'Test Embu Solo',
+        'gender' => 'Male',
+        'draft_type' => 'embu',
+        'age_group_id' => $this->ageGroup->id,
+        'drawing_generated_at' => now(),
+    ]);
+
+    DrawingMatchNumber::create([
+        'match_number_id' => $embuMatch->id,
+        'registration_id' => $this->registration->id,
+        'draft_type' => 'embu',
+        'schedule_date' => '2026-06-15',
+        'sequence_number' => 2,
+        'round' => 'Penyisihan',
+        'metadata' => [
+            'athlete_name' => 'Kenshi A',
+            'athlete_ids' => [$this->athlete->id],
+            'contingent' => 'Surabaya Contingent',
+            'start_time' => '09:00',
+        ],
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test(Schedule::class)
+        ->assertStatus(200)
+        ->assertSee('Test Embu Solo')
+        ->assertSee('Kenshi A')
+        ->assertDontSee('Kenshi C Extra');
+});

@@ -858,3 +858,62 @@ test('allows user to trigger export and downloads referee assignment excel file'
         ->call('export')
         ->assertFileDownloaded('penugasan_wasit_'.now()->format('Ymd_His').'.xlsx');
 });
+
+test('autoGenerateAllReferees includes at least one female referee in each court panel when available', function () {
+    $roleArbitrase = Role::firstOrCreate(['name' => 'Arbitrase']);
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 1 Arbitrator
+    $uArb = User::factory()->create();
+    $uArb->assignRole($roleArbitrase);
+    Referee::create(['user_id' => $uArb->id, 'certification_level' => 'Nasional']);
+
+    // Create 5 male referees and 1 female referee
+    // Constraints: same city for at least 2 refs (e.g. Jakarta)
+    $ref1 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Jakarta', 'gender' => 'L']);
+    $ref2 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT', 'city' => 'Jakarta', 'gender' => 'L']);
+    $ref3 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT', 'city' => 'Surabaya', 'gender' => 'L']);
+    $ref4 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT', 'city' => 'Surabaya', 'gender' => 'L']);
+    $ref5 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Bandung', 'gender' => 'L']);
+    $refFemale = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Bandung', 'gender' => 'P']); // female
+
+    // Assign roles to referee users
+    $ref1->user->assignRole($rolePerwasitan);
+    $ref2->user->assignRole($rolePerwasitan);
+    $ref3->user->assignRole($rolePerwasitan);
+    $ref4->user->assignRole($rolePerwasitan);
+    $ref5->user->assignRole($rolePerwasitan);
+    $refFemale->user->assignRole($rolePerwasitan);
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    DrawingMatchNumber::create([
+        'match_number_id' => $matchNumber->id,
+        'registration_id' => $registration->id,
+        'draft_type' => 'embu',
+        'court_id' => $court->id,
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'sequence_number' => 1,
+        'round' => 'Penyisihan',
+    ]);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('autoGenerateAllReferees');
+
+    $panelReferees = ScheduleReferee::where('court_id', $court->id)
+        ->where('judge_index', '>', 0)
+        ->get();
+
+    expect($panelReferees->count())->toBe(5);
+
+    $hasFemale = $panelReferees->contains(fn ($sr) => $sr->referee->gender === 'P');
+    expect($hasFemale)->toBeTrue();
+});

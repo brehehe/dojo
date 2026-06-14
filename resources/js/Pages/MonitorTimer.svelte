@@ -110,7 +110,7 @@
                     running = (e.timer_state.status === 'running');
 
                     // Play buzzer when timer newly starts
-                    if (runninpg && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
                         if (!playedIntervals.has('start')) {
                             playedIntervals.add('start');
                             playBuzzer();

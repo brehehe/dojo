@@ -49,17 +49,36 @@ test('can load data from database for unregistered athlete report', function () 
         'name' => 'Athlete B',
         'gender' => 'Male',
     ]);
+    $athleteC = Athlete::factory()->create([
+        'name' => 'Athlete C',
+        'gender' => 'Male',
+    ]);
+    $athleteD = Athlete::factory()->create([
+        'name' => 'Athlete D',
+        'gender' => 'Male',
+    ]);
 
     $contingentA = Contingent::factory()->create();
     $contingentB = Contingent::factory()->create();
+    $contingentC = Contingent::factory()->create();
+    $contingentD = Contingent::factory()->create();
+
     $registrationA = Registration::create(['contingent_id' => $contingentA->id]);
     $registrationB = Registration::create(['contingent_id' => $contingentB->id]);
+    $registrationC = Registration::create(['contingent_id' => $contingentC->id]);
+    $registrationD = Registration::create(['contingent_id' => $contingentD->id]);
 
     $registrationA->athletes()->attach([
         $athleteA->id => ['age_group' => 'Pemula'],
     ]);
     $registrationB->athletes()->attach([
         $athleteB->id => ['age_group' => 'Pemula'],
+    ]);
+    $registrationC->athletes()->attach([
+        $athleteC->id => ['age_group' => 'Pemula'],
+    ]);
+    $registrationD->athletes()->attach([
+        $athleteD->id => ['age_group' => 'Pemula'],
     ]);
 
     $mn1->athletes()->attach([
@@ -69,24 +88,27 @@ test('can load data from database for unregistered athlete report', function () 
 
     $mn2->athletes()->attach([
         $athleteA->id => ['registration_id' => $registrationA->id],
+        $athleteB->id => ['registration_id' => $registrationB->id],
+        $athleteC->id => ['registration_id' => $registrationC->id],
+        $athleteD->id => ['registration_id' => $registrationD->id],
     ]);
 
     Livewire::actingAs($user)
         ->test(NewUnregisteredAthleteReportIndex::class)
         ->assertHasNoErrors()
-        ->assertSet('totalAthletes', 2)
-        ->assertSet('totalRegisteredAthletes', 2)
+        ->assertSet('totalAthletes', 4)
+        ->assertSet('totalRegisteredAthletes', 4)
         ->assertSet('totalUnregisteredAthletes', 0)
         ->assertSet('totalMatchesWithAthletes', 2)
         ->assertSet('totalMatchesWithoutAthletes', 0)
-        ->assertSet('totalEksebisi', 1)
+        ->assertSet('totalEksebisi', 4)
         ->assertSet('totalNonEksebisi', 2)
         ->assertSet('totalEmbuEksebisi', 0)
         ->assertSet('totalEmbuNonEksebisi', 2)
-        ->assertSet('totalRandoriEksebisi', 1)
+        ->assertSet('totalRandoriEksebisi', 4)
         ->assertSet('totalRandoriNonEksebisi', 0)
         ->assertSet('ageGroupStats', [
-            'Pemula' => 2,
+            'Pemula' => 4,
             'Remaja A' => 0,
             'Remaja B' => 0,
             'Dewasa' => 0,

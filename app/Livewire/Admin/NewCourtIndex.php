@@ -59,14 +59,19 @@ class NewCourtIndex extends Component
         DB::transaction(function () {
             if ($this->courtIdBeingEdited) {
                 $model = Court::findOrFail($this->courtIdBeingEdited);
-                $model->update(['name' => $this->name]);
+
+                $updateData = ['name' => $this->name];
+                if (! $model->order) {
+                    $updateData['order'] = (Court::max('order') ?? 0) + 1;
+                }
+                $model->update($updateData);
 
                 $user = User::updateOrCreate([
                     'email' => 'court'.$model->id.'@gmail.com',
                 ], [
                     'name' => 'Petugas '.$model->name,
                     'court_id' => $model->id,
-                    'password' => bcrypt(Str::random(12)),
+                    'password' => bcrypt('password'),
                     'email_verified_at' => now(),
                 ]);
 
@@ -88,7 +93,7 @@ class NewCourtIndex extends Component
                 $user = User::create([
                     'name' => 'Petugas '.$court->name,
                     'email' => 'court'.$court->id.'@gmail.com',
-                    'password' => bcrypt(Str::random(12)),
+                    'password' => bcrypt('password'),
                     'court_id' => $court->id,
                     'email_verified_at' => now(),
                 ]);

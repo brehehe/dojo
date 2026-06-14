@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
 
     // Svelte 5 bindable props
     let { value = $bindable(null), name = '' } = $props();
@@ -9,38 +9,88 @@
     let drawing = false;
     let hasDrawing = $state(false);
 
-    function getMousePos(e) {
+    // Coordinate mapping helper to translate viewport touch coordinates to fixed backing store resolution
+    function getEventPos(e) {
+        if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        let clientX = 0;
+        let clientY = 0;
+        
+        // Touch events
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        } else {
+            // MouseEvent or PointerEvent
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        const canvasX = clientX - rect.left;
+        const canvasY = clientY - rect.top;
+        
+        // Calculate scaling ratio between backing store (800x300) and CSS display size
+        const scaleX = rect.width > 0 ? (canvas.width / rect.width) : 1;
+        const scaleY = rect.height > 0 ? (canvas.height / rect.height) : 1;
+        
         return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
+            x: canvasX * scaleX,
+            y: canvasY * scaleY
         };
     }
 
-    function startDrawing(e) {
-        e.preventDefault();
+    function handleStart(e) {
+        if (e.cancelable) {
+            e.preventDefault();
+        }
         drawing = true;
-        ctx.beginPath();
-        const pos = getMousePos(e);
-        ctx.moveTo(pos.x, pos.y);
+        
+        const pos = getEventPos(e);
+        if (ctx) {
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        // Capture pointer if PointerEvent is supported (to handle dragging off the canvas)
+        if (e.pointerId !== undefined && canvas && canvas.setPointerCapture) {
+            try {
+                canvas.setPointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
     }
 
-    function draw(e) {
+    function handleMove(e) {
         if (!drawing) return;
-        e.preventDefault();
-        const pos = getMousePos(e);
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        hasDrawing = true;
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+        
+        const pos = getEventPos(e);
+        if (ctx) {
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            hasDrawing = true;
+        }
     }
 
-    let lastRenderedValue = $state(null);
-
-    function stopDrawing() {
+    function handleEnd(e) {
         if (!drawing) return;
         drawing = false;
+
+        if (e.pointerId !== undefined && canvas && canvas.releasePointerCapture) {
+            try {
+                canvas.releasePointerCapture(e.pointerId);
+            } catch (err) {
+                // ignore
+            }
+        }
+        
         save();
     }
 
@@ -53,8 +103,10 @@
         lastRenderedValue = null;
     }
 
+    let lastRenderedValue = $state(null);
+
     function save() {
-        if (!hasDrawing) {
+        if (!hasDrawing || !canvas) {
             value = null;
             lastRenderedValue = null;
             return;
@@ -64,70 +116,87 @@
         lastRenderedValue = value;
     }
 
-    function resizeCanvas() {
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        
-        // Keep existing drawing data if any
-        const currentData = value;
-        
-        canvas.width = rect.width || 300;
-        canvas.height = rect.height || 120;
-        
-        ctx = canvas.getContext('2d');
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        if (currentData) {
-            hasDrawing = true;
-            lastRenderedValue = currentData;
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = currentData;
-        }
-    }
-
+    // Single Svelte 5 reactive effect to sync values passed from the parent.
+    // We only track "value" reactively, everything else is untracked to prevent self-clearing loops.
     $effect(() => {
-        if (!canvas) return;
+        const currentValue = value;
         
-        if (!ctx) {
-            ctx = canvas.getContext('2d');
-            ctx.strokeStyle = '#2c3e50';
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-        }
+        untrack(() => {
+            if (!canvas) return;
+            
+            if (!ctx) {
+                // Set backing store dimensions once
+                canvas.width = 800;
+                canvas.height = 300;
 
-        if (value === null || value === '') {
-            if (hasDrawing || lastRenderedValue !== null) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                hasDrawing = false;
-                lastRenderedValue = null;
+                ctx = canvas.getContext('2d');
+                ctx.strokeStyle = '#1e293b'; // Slate 800 color for smooth pen
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
             }
-        } else if (value !== lastRenderedValue) {
-            // Draw the base64 image
-            hasDrawing = true;
-            lastRenderedValue = value;
-            const img = new Image();
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = value;
-        }
+
+            if (currentValue !== lastRenderedValue) {
+                if (currentValue === null || currentValue === '') {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    hasDrawing = false;
+                    lastRenderedValue = null;
+                } else {
+                    hasDrawing = true;
+                    lastRenderedValue = currentValue;
+                    const img = new Image();
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    };
+                    img.src = currentValue;
+                }
+            }
+        });
     });
 
     onMount(() => {
-        // Run resize canvas on mount
-        resizeCanvas();
+        if (canvas) {
+            // Check for PointerEvent support
+            const hasPointerEvents = window.PointerEvent !== undefined;
+
+            if (hasPointerEvents) {
+                // Modern unified pointer events with passive: false to prevent scrolling
+                canvas.addEventListener('pointerdown', handleStart, { passive: false });
+                canvas.addEventListener('pointermove', handleMove, { passive: false });
+                canvas.addEventListener('pointerup', handleEnd, { passive: false });
+                canvas.addEventListener('pointercancel', handleEnd, { passive: false });
+            } else {
+                // Fallback for older legacy browsers
+                canvas.addEventListener('touchstart', handleStart, { passive: false });
+                canvas.addEventListener('touchmove', handleMove, { passive: false });
+                canvas.addEventListener('touchend', handleEnd, { passive: false });
+                canvas.addEventListener('touchcancel', handleEnd, { passive: false });
+
+                canvas.addEventListener('mousedown', handleStart);
+                canvas.addEventListener('mousemove', handleMove);
+                canvas.addEventListener('mouseup', handleEnd);
+                canvas.addEventListener('mouseleave', handleEnd);
+            }
+        }
         
-        window.addEventListener('resize', resizeCanvas);
         return () => {
-            window.removeEventListener('resize', resizeCanvas);
+            if (canvas) {
+                canvas.removeEventListener('pointerdown', handleStart);
+                canvas.removeEventListener('pointermove', handleMove);
+                canvas.removeEventListener('pointerup', handleEnd);
+                canvas.removeEventListener('pointercancel', handleEnd);
+
+                canvas.removeEventListener('touchstart', handleStart);
+                canvas.removeEventListener('touchmove', handleMove);
+                canvas.removeEventListener('touchend', handleEnd);
+                canvas.removeEventListener('touchcancel', handleEnd);
+
+                canvas.removeEventListener('mousedown', handleStart);
+                canvas.removeEventListener('mousemove', handleMove);
+                canvas.removeEventListener('mouseup', handleEnd);
+                canvas.removeEventListener('mouseleave', handleEnd);
+            }
         };
     });
 </script>
@@ -137,16 +206,7 @@
         <label class="sig-pad-label">{name}</label>
     {/if}
     <div class="sig-canvas-container">
-        <canvas
-            bind:this={canvas}
-            onmousedown={startDrawing}
-            onmousemove={draw}
-            onmouseup={stopDrawing}
-            onmouseleave={stopDrawing}
-            ontouchstart={startDrawing}
-            ontouchmove={draw}
-            ontouchend={stopDrawing}
-        ></canvas>
+        <canvas bind:this={canvas}></canvas>
         {#if !hasDrawing}
             <div class="sig-placeholder">Tanda Tangan Di Sini</div>
         {/if}
@@ -184,7 +244,7 @@
         border-radius: 8px;
         height: 120px;
         cursor: crosshair;
-        touch-action: none;
+        touch-action: none !important;
     }
 
     canvas {
@@ -192,6 +252,7 @@
         width: 100%;
         height: 100%;
         border-radius: 8px;
+        touch-action: none !important;
     }
 
     .sig-placeholder {

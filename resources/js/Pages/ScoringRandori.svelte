@@ -1,5 +1,5 @@
 <script>
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy, untrack } from 'svelte';
     import { router } from '@inertiajs/svelte';
     import SignaturePad from '../Components/SignaturePad.svelte';
 
@@ -32,6 +32,7 @@
     let courtId = $state(null);
     let randoriResults = $state({});
     let activeBracketNode = $state(null);
+    let lastLoadedMatchKey = '';
 
     // Active Match scoring form
     let activeMatch = $state(null); // { bracket, round, match, data }
@@ -74,33 +75,47 @@
     let actionInFlight = $state(false);
 
     $effect(() => {
-        if (activeMatch) {
-            const nodeKey = `${activeMatch.bracket}_${activeMatch.round}_${activeMatch.match}`;
-            const result = randoriResults[nodeKey];
-            if (result) {
-                const meta = (typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata) || {};
-                scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-                scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+        const currentMatch = activeMatch;
+        const currentResults = randoriResults;
+        
+        untrack(() => {
+            if (currentMatch) {
+                const nodeKey = `${currentMatch.bracket}_${currentMatch.round}_${currentMatch.match}`;
+                const matchIdKey = `${matchId}_${nodeKey}`;
                 
-                const sigs = meta.signatures || {};
-                sigArbitraseName = sigs.arbitrase?.name || '';
-                sigArbitraseData = sigs.arbitrase?.signature || null;
-                sigKoordinatorName = sigs.koordinator?.name || '';
-                sigKoordinatorData = sigs.koordinator?.signature || null;
-                sigWasitName = sigs.wasit?.name || '';
-                sigWasitData = sigs.wasit?.signature || null;
-                sigPanitera = sigs.panitera || [{ name: '', signature: null }];
-                sigManagerRedName = sigs.manager_red?.name || '';
-                sigManagerRedData = sigs.manager_red?.signature || null;
-                sigManagerWhiteName = sigs.manager_white?.name || '';
-                sigManagerWhiteData = sigs.manager_white?.signature || null;
+                if (lastLoadedMatchKey !== matchIdKey) {
+                    lastLoadedMatchKey = matchIdKey;
+                    
+                    const result = currentResults[nodeKey];
+                    if (result) {
+                        const meta = (typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata) || {};
+                        scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                        scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                        
+                        const sigs = meta.signatures || {};
+                        sigArbitraseName = sigs.arbitrase?.name || '';
+                        sigArbitraseData = sigs.arbitrase?.signature || null;
+                        sigKoordinatorName = sigs.koordinator?.name || '';
+                        sigKoordinatorData = sigs.koordinator?.signature || null;
+                        sigWasitName = sigs.wasit?.name || '';
+                        sigWasitData = sigs.wasit?.signature || null;
+                        sigPanitera = sigs.panitera || [{ name: '', signature: null }];
+                        sigManagerRedName = sigs.manager_red?.name || '';
+                        sigManagerRedData = sigs.manager_red?.signature || null;
+                        sigManagerWhiteName = sigs.manager_white?.name || '';
+                        sigManagerWhiteData = sigs.manager_white?.signature || null;
+                    } else {
+                        resetDetailedScoring();
+                    }
+                }
             } else {
-                resetDetailedScoring();
+                if (lastLoadedMatchKey !== '') {
+                    lastLoadedMatchKey = '';
+                    resetDetailedScoring();
+                }
             }
-        } else {
-            resetDetailedScoring();
-        }
-        recalculateScores();
+            recalculateScores();
+        });
     });
 
     // Toast Notification State

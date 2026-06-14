@@ -418,7 +418,11 @@
                                 <div style="font-size: 9px; font-weight: 750; color: var(--smoke); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Peserta:</div>
                                 @if ($drawing->draft_type === 'embu')
                                     <div style="font-size: 11.5px; font-weight: 700; color: var(--ink);">
-                                        {{ $drawing->registration?->athletes->pluck('name')->join(', ') ?: ($drawing->metadata['athlete_name'] ?? 'TBD') }}
+                                        @if (!empty($drawing->metadata['athlete_ids']) && $drawing->registration)
+                                            {{ $drawing->registration->athletes->whereIn('id', $drawing->metadata['athlete_ids'])->pluck('name')->join(', ') ?: ($drawing->metadata['athlete_name'] ?? 'TBD') }}
+                                        @else
+                                            {{ $drawing->registration?->athletes->pluck('name')->join(', ') ?: ($drawing->metadata['athlete_name'] ?? 'TBD') }}
+                                        @endif
                                     </div>
                                 @else
                                     <div style="font-size: 11.5px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 6px;">
