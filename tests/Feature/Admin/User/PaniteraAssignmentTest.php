@@ -249,3 +249,10 @@ it('can reset and regenerate all officer assignments', function () {
     expect(SchedulePanitera::where('user_id', $dummyUser->id)->exists())->toBeFalse();
     expect(SchedulePanitera::count())->toBeGreaterThan(0);
 });
+
+it('allows admin to trigger export and downloads panitera assignment excel file', function () {
+    Livewire::actingAs($this->admin)
+        ->test(NewGeneratePaniteraIndex::class)
+        ->call('export')
+        ->assertFileDownloaded('penugasan_panitera_'.now()->format('Ymd_His').'.xlsx');
+});

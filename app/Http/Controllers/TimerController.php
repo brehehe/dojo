@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CourtUpdated;
 use App\Http\Requests\TimerControlRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -41,6 +42,8 @@ class TimerController extends Controller
 
         Cache::put("court_{$courtId}_timer", $state);
         $state['server_time_ms'] = floor(microtime(true) * 1000);
+
+        event(new CourtUpdated($courtId, $state, 'timer'));
 
         return response()->json([
             'success' => true,

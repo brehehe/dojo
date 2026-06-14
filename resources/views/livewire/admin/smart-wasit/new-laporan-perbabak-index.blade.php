@@ -290,7 +290,10 @@
                                     </div>
                                     <div>
                                         <div style="font-weight:700; text-transform:uppercase; font-size:11px; line-height:1.2">
-                                            {{ $item->matchNumber->athletes->where('pivot.registration_id', $item->scorable_id)->pluck('name')->join(' & ') }}
+                                             @php
+                                                 $regId = $item->scorable instanceof \App\Models\DrawingMatchNumber ? $item->scorable->registration_id : $item->scorable_id;
+                                             @endphp
+                                             {{ $item->matchNumber->athletes->where('pivot.registration_id', $regId)->pluck('name')->join(' & ') }}
                                         </div>
                                          <div style="font-size:10px; font-weight:800; color:#3498db; text-transform:uppercase; margin-top:2px">
                                              Juri: {{ $item->referee->name }}

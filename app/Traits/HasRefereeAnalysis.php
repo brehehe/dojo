@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Court\Court;
+use App\Models\DrawingMatchNumber;
 use App\Models\Referee;
 use App\Models\RefereeObservation;
 use App\Models\RefereeScoreDetail;
@@ -14,20 +15,32 @@ trait HasRefereeAnalysis
     protected function getRefereeAnalysis($filters = [])
     {
         // 1. Get all scores for calculation
-        $query = RefereeScoreDetail::where('scorable_type', Registration::class)
-            ->where('total_calculated_score', '>', 0)
+        $query = RefereeScoreDetail::where('total_calculated_score', '>', 0)
             ->join('drawing_match_numbers', function ($join) {
                 $join->on('referee_score_details.match_number_id', '=', 'drawing_match_numbers.match_number_id')
-                    ->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id');
+                    ->where(function ($q) {
+                        $q->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.id')
+                            ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                            ->orOn('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
+                            ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    });
             })
             ->join('match_numbers', 'referee_score_details.match_number_id', '=', 'match_numbers.id')
             ->join('courts', 'drawing_match_numbers.court_id', '=', 'courts.id')
-            ->select('referee_score_details.*', 'courts.name as court_name');
+            ->select('referee_score_details.*', 'courts.name as court_name', 'drawing_match_numbers.registration_id');
 
         // Apply filters
         if (! empty($filters['search'])) {
-            $query->whereHas('scorable.athletes', function ($q) use ($filters) {
-                $q->where('name', 'ilike', '%'.$filters['search'].'%');
+            $query->where(function ($q) use ($filters) {
+                $q->whereHasMorph('scorable', [Registration::class], function ($sub) use ($filters) {
+                    $sub->whereHas('athletes', function ($ath) use ($filters) {
+                        $ath->where('name', 'ilike', '%'.$filters['search'].'%');
+                    });
+                })->orWhereHasMorph('scorable', [DrawingMatchNumber::class], function ($sub) use ($filters) {
+                    $sub->whereHas('registration.athletes', function ($ath) use ($filters) {
+                        $ath->where('name', 'ilike', '%'.$filters['search'].'%');
+                    });
+                });
             });
         }
 
@@ -77,15 +90,21 @@ trait HasRefereeAnalysis
         }
 
         if (! empty($filters['contingentId'])) {
-            $query->whereHasMorph('scorable', [Registration::class], function ($q) use ($filters) {
-                $q->where('contingent_id', $filters['contingentId']);
+            $query->where(function ($q) use ($filters) {
+                $q->whereHasMorph('scorable', [Registration::class], function ($sub) use ($filters) {
+                    $sub->where('contingent_id', $filters['contingentId']);
+                })->orWhereHasMorph('scorable', [DrawingMatchNumber::class], function ($sub) use ($filters) {
+                    $sub->whereHas('registration', function ($reg) use ($filters) {
+                        $reg->where('contingent_id', $filters['contingentId']);
+                    });
+                });
             });
         }
 
         $details = $query->get();
 
         // 2. Calculate Reference Scores (Average per Match/Registration)
-        $referenceScores = $details->groupBy('scorable_id')->map(function ($group) {
+        $referenceScores = $details->groupBy('registration_id')->map(function ($group) {
             return $group->avg('total_calculated_score');
         });
 
@@ -99,7 +118,7 @@ trait HasRefereeAnalysis
             }
 
             $scores = $rfDetails->pluck('total_calculated_score')->values()->toArray();
-            $refs = $rfDetails->map(fn ($d) => $referenceScores[$d->scorable_id] ?? 0)->values()->toArray();
+            $refs = $rfDetails->map(fn ($d) => $referenceScores[$d->registration_id] ?? 0)->values()->toArray();
 
             // IAW (Referee Accuracy Index): (Σ Nilai Wasit / Σ Nilai Referensi) × 100%
             $sumWasit = array_sum($scores);

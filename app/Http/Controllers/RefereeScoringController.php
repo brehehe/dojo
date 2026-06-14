@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CourtUpdated;
+use App\Events\MatchUpdated;
 use App\Http\Requests\RefereeSaveScoreRequest;
 use App\Http\Requests\RefereeSubmitScoreRequest;
 use App\Models\ActiveCourtReferee;
@@ -502,6 +504,12 @@ class RefereeScoringController extends Controller
             );
         });
 
+        $targetMatchId = $this->getSpecificMatchId($activeMatch, $assignedCourt);
+        if ($assignedCourt) {
+            event(new CourtUpdated($assignedCourt->id, null, 'referee_saved'));
+        }
+        event(new MatchUpdated($targetMatchId, 'referee_saved'));
+
         return response()->json([
             'success' => true,
             'totalScore' => $totalScore,
@@ -602,6 +610,12 @@ class RefereeScoringController extends Controller
                 [$column => $totalScore]
             );
         });
+
+        $targetMatchId = $this->getSpecificMatchId($activeMatch, $assignedCourt);
+        if ($assignedCourt) {
+            event(new CourtUpdated($assignedCourt->id, null, 'referee_submitted'));
+        }
+        event(new MatchUpdated($targetMatchId, 'referee_submitted'));
 
         return response()->json([
             'success' => true,

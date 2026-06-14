@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CourtUpdated;
 use App\Http\Requests\ActivateMatchRequest;
 use App\Http\Requests\ClearCourtRequest;
 use App\Models\ActiveCourtReferee;
@@ -280,6 +281,8 @@ class ScoringDashboardController extends Controller
             '→ '.$court->name,
         ]));
 
+        event(new CourtUpdated($court->id, null, 'court'));
+
         return response()->json([
             'success' => true,
             'title' => 'Pertandingan Aktif!',
@@ -300,6 +303,8 @@ class ScoringDashboardController extends Controller
 
         Cache::forget("court_{$courtId}_timer");
 
+        event(new CourtUpdated($courtId, null, 'court'));
+
         return response()->json([
             'success' => true,
             'text' => $court->name.' sekarang idle / kosong.',
@@ -319,6 +324,8 @@ class ScoringDashboardController extends Controller
             ]);
 
             Cache::forget("court_{$court->id}_timer");
+
+            event(new CourtUpdated($court->id, null, 'court'));
         }
 
         MatchNumber::query()->update([

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CourtUpdated;
+use App\Events\MatchUpdated;
 use App\Http\Requests\EmbuAdvanceToFinalRequest;
 use App\Http\Requests\EmbuCallParticipantRequest;
 use App\Http\Requests\EmbuFinishMatchRequest;
@@ -426,6 +428,15 @@ class EmbuScoringController extends Controller
 
             $announcementText = "Panggilan untuk kontingen {$contingent}. Atas nama {$athletes}. Silakan menuju {$courtName}. Untuk kategori {$matchName}{$poolName}.";
 
+            event(new CourtUpdated($drawing->court_id, null, 'court'));
+            $mergeDetails = DB::table('match_number_merge_details')
+                ->where('match_number_id', $drawing->match_number_id)
+                ->first();
+            $matchNumberIds = $mergeDetails ? DB::table('match_number_merge_details')->where('match_number_merge_id', $mergeDetails->match_number_merge_id)->pluck('match_number_id')->toArray() : [$drawing->match_number_id];
+            foreach ($matchNumberIds as $id) {
+                event(new MatchUpdated($id, 'participant_called'));
+            }
+
             return response()->json([
                 'success' => true,
                 'announcement_text' => $announcementText,
@@ -458,6 +469,19 @@ class EmbuScoringController extends Controller
                 'active_match_id' => null,
                 'active_bracket_node' => null,
             ]);
+        }
+
+        if ($courtId) {
+            event(new CourtUpdated($courtId, null, 'court'));
+        }
+
+        $mergeDetails = DB::table('match_number_merge_details')
+            ->where('match_number_id', $matchId)
+            ->first();
+        $matchNumberIds = $mergeDetails ? DB::table('match_number_merge_details')->where('match_number_merge_id', $mergeDetails->match_number_merge_id)->pluck('match_number_id')->toArray() : [$matchId];
+
+        foreach ($matchNumberIds as $id) {
+            event(new MatchUpdated($id, 'participant_dismissed'));
         }
 
         return response()->json([
@@ -564,6 +588,11 @@ class EmbuScoringController extends Controller
             $matchNumber->update(['active_registration_id' => null]);
         }
 
+        if ($courtId) {
+            event(new CourtUpdated($courtId, null, 'court'));
+        }
+        event(new MatchUpdated($drawing->match_number_id, 'match_finished'));
+
         return response()->json([
             'success' => true,
             'denda' => $denda,
@@ -646,6 +675,13 @@ class EmbuScoringController extends Controller
 
         $this->bracketService->recalculateRanks($matchNumberIds, $round);
 
+        if ($drawing && $drawing->court_id) {
+            event(new CourtUpdated($drawing->court_id, null, 'court'));
+        }
+        foreach ($matchNumberIds as $id) {
+            event(new MatchUpdated($id, 'score_saved'));
+        }
+
         return response()->json([
             'success' => true,
             'text' => 'Nilai Berhasil Disimpan. Total: '.number_format($total, 1).' | Nilai Akhir: '.number_format($nilaiAkhir, 1),
@@ -704,6 +740,14 @@ class EmbuScoringController extends Controller
                 'denda' => 0,
                 'tiebreak_round' => $nextTiebreak,
             ]);
+        }
+
+        $drawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->first();
+        if ($drawing && $drawing->court_id) {
+            event(new CourtUpdated($drawing->court_id, null, 'court'));
+        }
+        foreach ($matchNumberIds as $id) {
+            event(new MatchUpdated($id, 'tiebreak_requested'));
         }
 
         return response()->json([
@@ -805,6 +849,14 @@ class EmbuScoringController extends Controller
                     'sequence_number' => $seq++,
                 ]
             );
+        }
+
+        $drawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->first();
+        if ($drawing && $drawing->court_id) {
+            event(new CourtUpdated($drawing->court_id, null, 'court'));
+        }
+        foreach ($matchNumberIds as $id) {
+            event(new MatchUpdated($id, 'advanced_to_final'));
         }
 
         return response()->json([

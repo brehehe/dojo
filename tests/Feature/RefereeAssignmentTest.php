@@ -847,3 +847,14 @@ test('autoGenerateAll generates a panel meeting the city and role constraints', 
     expect($orderedAssignments[0]->referee->certification_level)->not->toBe('WASIT PEMBANTU');
     expect($orderedAssignments[1]->referee->certification_level)->not->toBe('WASIT PEMBANTU');
 });
+
+test('allows user to trigger export and downloads referee assignment excel file', function () {
+    $role = Role::findOrCreate('Admin', 'web');
+    $admin = User::factory()->create();
+    $admin->assignRole($role);
+
+    Livewire::actingAs($admin)
+        ->test(NewGenerateRefereeIndex::class)
+        ->call('export')
+        ->assertFileDownloaded('penugasan_wasit_'.now()->format('Ymd_His').'.xlsx');
+});

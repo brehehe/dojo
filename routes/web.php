@@ -124,6 +124,7 @@ use App\Livewire\Contingent\Schedule;
 use App\Livewire\Contingent\Setup;
 use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
+use App\Livewire\PublicSchedule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -136,6 +137,8 @@ Route::get('/welcome/3', [WelcomeController::class, 'template3'])->name('welcome
 Route::get('/welcome/4', [WelcomeController::class, 'template4'])->name('welcome.4');
 Route::get('/welcome/4/{color}', [WelcomeController::class, 'template4Color'])->name('welcome.4.color');
 Route::get('/welcome/5', [WelcomeController::class, 'template5'])->name('welcome.5');
+
+Route::get('/jadwal-pertandingan', PublicSchedule::class)->name('public-schedule');
 
 Route::view('/piala_walikotasby2026', 'register')->name('register');
 

@@ -36,6 +36,8 @@
         hasDrawing = true;
     }
 
+    let lastRenderedValue = $state(null);
+
     function stopDrawing() {
         if (!drawing) return;
         drawing = false;
@@ -43,18 +45,23 @@
     }
 
     function clear() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (ctx && canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
         hasDrawing = false;
         value = null;
+        lastRenderedValue = null;
     }
 
     function save() {
         if (!hasDrawing) {
             value = null;
+            lastRenderedValue = null;
             return;
         }
         // Save as base64 PNG image
         value = canvas.toDataURL('image/png');
+        lastRenderedValue = value;
     }
 
     function resizeCanvas() {
@@ -75,6 +82,7 @@
         
         if (currentData) {
             hasDrawing = true;
+            lastRenderedValue = currentData;
             const img = new Image();
             img.onload = () => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -82,6 +90,36 @@
             img.src = currentData;
         }
     }
+
+    $effect(() => {
+        if (!canvas) return;
+        
+        if (!ctx) {
+            ctx = canvas.getContext('2d');
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        if (value === null || value === '') {
+            if (hasDrawing || lastRenderedValue !== null) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                hasDrawing = false;
+                lastRenderedValue = null;
+            }
+        } else if (value !== lastRenderedValue) {
+            // Draw the base64 image
+            hasDrawing = true;
+            lastRenderedValue = value;
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = value;
+        }
+    });
 
     onMount(() => {
         // Run resize canvas on mount

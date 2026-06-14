@@ -29,8 +29,8 @@ class RandoriSubmitScoringRequest extends FormRequest
             'match' => 'required|integer|min:0',
             'score_red' => 'required|integer|min:0',
             'score_blue' => 'required|integer|min:0',
-            'scoring_aka' => 'nullable|string',
-            'scoring_shiro' => 'nullable|string',
+            'scoring_aka' => 'nullable',
+            'scoring_shiro' => 'nullable',
             'signatures' => 'required|array',
         ];
     }

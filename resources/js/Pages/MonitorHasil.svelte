@@ -89,12 +89,30 @@
 
     onMount(() => {
         sync();
-        pollInterval = setInterval(sync, 1000); // Poll every 1 second
+        if (window.Echo) {
+            if (courtId) {
+                window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                    sync();
+                });
+            }
+            if (matchId) {
+                window.Echo.channel(`match.${matchId}`).listen('MatchUpdated', (e) => {
+                    sync();
+                });
+            }
+        }
         startAutoScroll();
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        if (window.Echo) {
+            if (courtId) {
+                window.Echo.leave(`court.${courtId}`);
+            }
+            if (matchId) {
+                window.Echo.leave(`match.${matchId}`);
+            }
+        }
         if (scrollInterval) clearInterval(scrollInterval);
         if (pauseTimer) clearTimeout(pauseTimer);
     });

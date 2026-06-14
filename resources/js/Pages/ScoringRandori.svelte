@@ -73,6 +73,36 @@
     let buzzerPool = [];
     let actionInFlight = $state(false);
 
+    $effect(() => {
+        if (activeMatch) {
+            const nodeKey = `${activeMatch.bracket}_${activeMatch.round}_${activeMatch.match}`;
+            const result = randoriResults[nodeKey];
+            if (result) {
+                const meta = (typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata) || {};
+                scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                
+                const sigs = meta.signatures || {};
+                sigArbitraseName = sigs.arbitrase?.name || '';
+                sigArbitraseData = sigs.arbitrase?.signature || null;
+                sigKoordinatorName = sigs.koordinator?.name || '';
+                sigKoordinatorData = sigs.koordinator?.signature || null;
+                sigWasitName = sigs.wasit?.name || '';
+                sigWasitData = sigs.wasit?.signature || null;
+                sigPanitera = sigs.panitera || [{ name: '', signature: null }];
+                sigManagerRedName = sigs.manager_red?.name || '';
+                sigManagerRedData = sigs.manager_red?.signature || null;
+                sigManagerWhiteName = sigs.manager_white?.name || '';
+                sigManagerWhiteData = sigs.manager_white?.signature || null;
+            } else {
+                resetDetailedScoring();
+            }
+        } else {
+            resetDetailedScoring();
+        }
+        recalculateScores();
+    });
+
     // Toast Notification State
     let toast = $state({ show: false, message: '', type: 'success' });
     let toastTimeout;
@@ -84,8 +114,40 @@
         }, 3000);
     }
 
-    // Polling interval
-    let pollInterval;
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (e.timer_state) {
+                    offset = e.timer_state.server_time_ms - Date.now();
+                    timerState = e.timer_state;
+                    let wasRunning = running;
+                    running = (e.timer_state.status === 'running');
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                        }
+                    }
+                    if (e.timer_state.status !== 'countdown') {
+                        countdown = 0;
+                    }
+                    if (!running && time < 500) {
+                        playedIntervals.clear();
+                    }
+                } else {
+                    fetchState();
+                }
+            });
+        }
+    }
 
     // Timer local tick states
     let time = $state(0);
@@ -113,6 +175,7 @@
                 juaraMap = data.juara || {};
                 timerState = data.timerState;
                 courtId = data.courtId;
+                subscribeToCourt(courtId);
                 randoriResults = data.randoriResults || {};
                 if (!actionInFlight) {
                     activeBracketNode = data.activeBracketNode;
@@ -461,7 +524,6 @@
 
     // Open Match modal / scoring form
     function openMatchModal(bracket, roundIdx, matchIdx) {
-        const nodeKey = `${bracket}_${roundIdx}_${matchIdx}`;
         let matchData = null;
         if (bracket === 'ub') {
             matchData = drawingData.upper_bracket?.rounds[roundIdx]?.[matchIdx];
@@ -477,29 +539,6 @@
             match: matchIdx,
             data: matchData
         };
-
-        const result = randoriResults[nodeKey];
-        if (result) {
-            const meta = typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata;
-            scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-            scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-            
-            const sigs = meta.signatures || {};
-            sigArbitraseName = sigs.arbitrase?.name || '';
-            sigArbitraseData = sigs.arbitrase?.signature || null;
-            sigKoordinatorName = sigs.koordinator?.name || '';
-            sigKoordinatorData = sigs.koordinator?.signature || null;
-            sigWasitName = sigs.wasit?.name || '';
-            sigWasitData = sigs.wasit?.signature || null;
-            sigPanitera = sigs.panitera || [{ name: '', signature: null }];
-            sigManagerRedName = sigs.manager_red?.name || '';
-            sigManagerRedData = sigs.manager_red?.signature || null;
-            sigManagerWhiteName = sigs.manager_white?.name || '';
-            sigManagerWhiteData = sigs.manager_white?.signature || null;
-        } else {
-            resetDetailedScoring();
-        }
-        recalculateScores();
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -726,8 +765,11 @@
         }
 
         fetchState();
-
-        pollInterval = setInterval(fetchState, 300);
+        if (window.Echo) {
+            window.Echo.channel(`match.${matchId}`).listen('MatchUpdated', (e) => {
+                fetchState();
+            });
+        }
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
@@ -768,7 +810,12 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        if (window.Echo) {
+            window.Echo.leave(`match.${matchId}`);
+            if (currentCourtChannelId) {
+                window.Echo.leave(`court.${currentCourtChannelId}`);
+            }
+        }
         clearInterval(interpolInterval);
         stopAnnouncer();
     });

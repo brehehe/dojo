@@ -39,7 +39,21 @@
     let isFullscreen = $state(false);
     let submitting = $state(false);
 
-    let pollInterval;
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                fetchState();
+            });
+        }
+    }
 
     // Derived values (Svelte 5)
     let techniqueSubtotal = $derived(
@@ -72,6 +86,9 @@
             referee = data.referee;
             activeDrawing = data.activeDrawing;
             assignedCourt = data.assignedCourt;
+            if (assignedCourt && assignedCourt.id) {
+                subscribeToCourt(assignedCourt.id);
+            }
             assignedSession = data.assignedSession;
             assignedRundown = data.assignedRundown;
             judgeIndex = data.judgeIndex;
@@ -85,24 +102,23 @@
             isTabletMode = data.isTabletMode;
 
             // Handle match change or participant called transition
-            if (currentActiveIdentifier !== data.currentActiveIdentifier) {
-                currentActiveIdentifier = data.currentActiveIdentifier;
-                activeMatch = data.activeMatch;
-                isFormOpen = data.isFormOpen;
+            const identifierChanged = currentActiveIdentifier !== data.currentActiveIdentifier;
+            const formOpened = !isFormOpen && data.isFormOpen;
+            const formClosed = isFormOpen && !data.isFormOpen;
 
+            currentActiveIdentifier = data.currentActiveIdentifier;
+            activeMatch = data.activeMatch;
+            isFormOpen = data.isFormOpen;
+
+            if (identifierChanged || formOpened) {
                 // Sync scores & comments
-                if (data.isFormOpen) {
-                    for (const key in embuItems) {
-                        embuItems[key] = data.embuItems?.[key] || 0;
-                    }
-                    notes = data.notes || "";
-                    signature = data.signature || null;
-                } else {
-                    resetLocalForm();
+                for (const key in embuItems) {
+                    embuItems[key] = data.embuItems?.[key] || 0;
                 }
-            } else {
-                activeMatch = data.activeMatch;
-                isFormOpen = data.isFormOpen;
+                notes = data.notes || "";
+                signature = data.signature || null;
+            } else if (formClosed) {
+                resetLocalForm();
             }
 
             loading = false;
@@ -296,13 +312,14 @@
         document.body.classList.add("referee-scoring-immersive");
         document.addEventListener("fullscreenchange", syncFullscreen);
         fetchState();
-        pollInterval = setInterval(fetchState, 1500);
     });
 
     onDestroy(() => {
         document.body.classList.remove("referee-scoring-immersive");
         document.removeEventListener("fullscreenchange", syncFullscreen);
-        clearInterval(pollInterval);
+        if (window.Echo && currentCourtChannelId) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
     });
 </script>
 
@@ -1785,13 +1802,23 @@
         min-width: 0;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 600px) {
         .ref-score-cell {
             padding: 6px 4px;
         }
         .ref-score-table-grid thead th {
             padding: 10px 6px;
             font-size: 10px;
+        }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+        .ref-score-cell {
+            padding: 14px 10px;
+        }
+        .ref-score-table-grid thead th {
+            padding: 14px 12px;
+            font-size: 13px;
         }
     }
 
@@ -1874,7 +1901,7 @@
         letter-spacing: 0.05em;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 600px) {
         .ref-score-aspect {
             font-size: 15px;
         }
@@ -1895,6 +1922,31 @@
         }
         .ref-score-range-hint {
             font-size: 11px;
+        }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+        .ref-score-aspect {
+            font-size: 20px;
+        }
+        .ref-score-desc {
+            font-size: 16px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        .ref-score-weight,
+        .ref-score-no,
+        .ref-score-standard {
+            font-size: 22px;
+        }
+        .ref-score-input {
+            font-size: 34px;
+            max-width: 130px;
+            padding: 10px 4px;
+            height: 60px;
+        }
+        .ref-score-range-hint {
+            font-size: 14px;
         }
     }
 

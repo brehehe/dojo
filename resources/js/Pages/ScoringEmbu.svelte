@@ -68,8 +68,40 @@
     let modalDenda = $state(0);
     let actionInFlight = $state(false);
 
-    // Polling interval
-    let pollInterval;
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (e.timer_state) {
+                    offset = e.timer_state.server_time_ms - Date.now();
+                    timerState = e.timer_state;
+                    let wasRunning = running;
+                    running = (e.timer_state.status === 'running');
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                        }
+                    }
+                    if (e.timer_state.status !== 'countdown') {
+                        countdown = 0;
+                    }
+                    if (!running && time < 500) {
+                        playedIntervals.clear();
+                    }
+                } else {
+                    fetchState();
+                }
+            });
+        }
+    }
 
     // Timer interpolation state
     let time = $state(0);
@@ -119,6 +151,7 @@
                 assignedPaniteras = data.assignedPaniteras;
                 timerState = data.timerState;
                 courtId = data.courtId;
+                subscribeToCourt(courtId);
 
                 // Sync Timer local state with server state
                 offset = (timerState.server_time_ms || Date.now()) - Date.now();
@@ -654,8 +687,11 @@
 
         fetchState();
 
-        // 300ms Polling for state
-        pollInterval = setInterval(fetchState, 300);
+        if (window.Echo) {
+            window.Echo.channel(`match.${matchId}`).listen("MatchUpdated", (e) => {
+                fetchState();
+            });
+        }
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
@@ -729,7 +765,12 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        if (window.Echo) {
+            window.Echo.leave(`match.${matchId}`);
+            if (currentCourtChannelId) {
+                window.Echo.leave(`court.${currentCourtChannelId}`);
+            }
+        }
         clearInterval(interpolInterval);
         stopAnnouncer();
     });
@@ -1205,8 +1246,7 @@
                         class="fas fa-stopwatch"
                         style="color:#f1c40f; margin-right:8px;"
                     ></i>
-                    Live Match Timer &bull; {activeRegItem.athletes[0]?.name ||
-                        "Peserta"}
+                    Live Match Timer &bull; {activeRegItem.athletes ? activeRegItem.athletes.map(a => a.name).join(" & ") : "Peserta"}
                 </h3>
                 <button
                     onclick={() =>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exports\RefereeAssignmentExport;
 use App\Models\DrawingMatchNumber;
 use App\Models\Referee;
 use App\Models\ScheduleReferee;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.premium', ['title' => 'Penugasan Wasit (Referee Assignment)'])]
 class NewGenerateRefereeIndex extends Component
@@ -481,6 +483,11 @@ class NewGenerateRefereeIndex extends Component
         }
 
         $this->autoGenerateAllReferees();
+    }
+
+    public function export()
+    {
+        return Excel::download(new RefereeAssignmentExport, 'penugasan_wasit_'.now()->format('Ymd_His').'.xlsx');
     }
 
     public function render()

@@ -99,12 +99,18 @@
 
     onMount(() => {
         sync();
-        pollInterval = setInterval(sync, 1000); // Poll state every 1s
+        if (window.Echo) {
+            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                sync();
+            });
+        }
         startAutoScroll();
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        if (window.Echo) {
+            window.Echo.leave(`court.${courtId}`);
+        }
         clearInterval(scrollInterval);
     });
 
