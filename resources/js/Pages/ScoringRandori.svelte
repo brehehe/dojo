@@ -171,6 +171,98 @@
     let playedIntervals = new Set();
     let interpolInterval;
 
+    let lastTimerServerTimeMs = 0;
+    const timerSyncToleranceMs = 250;
+
+    function currentElapsedMs() {
+        if (running && timerState.started_at_ms) {
+            return Math.max(
+                0,
+                (timerState.elapsed_ms || 0) +
+                    (Date.now() + offset - timerState.started_at_ms),
+            );
+        }
+        return Math.max(time, timerState.elapsed_ms || 0);
+    }
+
+    function snapshotTimerUiState() {
+        return {
+            timerState: { ...timerState },
+            time,
+            running,
+            countdown,
+            offset,
+            lastTickSecond,
+            playedIntervals: new Set(playedIntervals),
+        };
+    }
+
+    function restoreTimerUiState(snapshot) {
+        timerState = { ...snapshot.timerState };
+        time = snapshot.time;
+        running = snapshot.running;
+        countdown = snapshot.countdown;
+        offset = snapshot.offset;
+        lastTickSecond = snapshot.lastTickSecond;
+        playedIntervals = new Set(snapshot.playedIntervals);
+    }
+
+    function elapsedFromTimerState(serverTimerState) {
+        const elapsed = serverTimerState?.elapsed_ms || 0;
+        if (serverTimerState?.status === "running" && serverTimerState.started_at_ms) {
+            const serverNow = serverTimerState.server_time_ms ?? Date.now() + offset;
+            return Math.max(0, elapsed + (serverNow - serverTimerState.started_at_ms));
+        }
+        return Math.max(0, elapsed);
+    }
+
+    function syncTimerFromServer(serverTimerState) {
+        if (!serverTimerState) return;
+        const serverTimeMs = Number(serverTimerState.server_time_ms || 0);
+
+        if (serverTimeMs && serverTimeMs < lastTimerServerTimeMs) {
+            return false;
+        }
+
+        const serverElapsed = elapsedFromTimerState(serverTimerState);
+        const sameRunningTimer =
+            timerState.status === "running" &&
+            serverTimerState.status === "running" &&
+            timerState.started_at_ms === serverTimerState.started_at_ms;
+
+        if (sameRunningTimer && serverElapsed + timerSyncToleranceMs < time) {
+            return false;
+        }
+
+        if (serverTimeMs) {
+            lastTimerServerTimeMs = serverTimeMs;
+            offset = serverTimerState.server_time_ms - Date.now();
+        }
+
+        timerState = serverTimerState;
+        running = serverTimerState.status === "running";
+
+        if (running) {
+            time = sameRunningTimer ? Math.max(time, serverElapsed) : serverElapsed;
+        } else {
+            time = serverElapsed;
+        }
+
+        if (serverTimerState.status !== "countdown") {
+            countdown = 0;
+        }
+
+        if (!running && time < 500) {
+            playedIntervals.clear();
+        }
+
+        return true;
+    }
+
+    function applyServerTimerState(serverTimerState) {
+        syncTimerFromServer(serverTimerState);
+    }
+
     let destroyed = false;
     let fetchInFlight = false;
     let fetchQueued = false;
