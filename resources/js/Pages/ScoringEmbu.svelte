@@ -448,6 +448,7 @@
 
     // Call participant
     async function callParticipant(drawingId) {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveDrawingId = activeDrawingId;
         activeDrawingId = drawingId; // Optimistic update
@@ -488,6 +489,7 @@
 
     // Dismiss participant
     async function dismissParticipant() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveDrawingId = activeDrawingId;
         activeDrawingId = null; // Optimistic update
@@ -859,13 +861,15 @@
                 time = Math.max(time, expected);
                 let currentSecond = Math.floor(time / 1000);
 
-                // Get active registration info to see if Tandoku
+                // Get active registration info to see if Tandoku or Pemula (Short Duration)
                 const activeReg = activeRegItem;
-                let isTandoku = activeReg ? !activeReg.is_group : true;
+                let isPemula = matchNumber?.age_group_id === 1 || matchNumber?.age_group?.name?.toLowerCase() === 'pemula';
+                let isTandoku = activeReg ? !activeReg.is_group : (matchNumber ? matchNumber.max_athletes === 1 : true);
+                let isShortDuration = isPemula || isTandoku;
                 let buzzerSound =
                     "/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3";
 
-                if (isTandoku) {
+                if (isShortDuration) {
                     if (
                         (currentSecond === 60 && !playedIntervals.has(60)) ||
                         (currentSecond === 90 && !playedIntervals.has(90)) ||
@@ -976,6 +980,16 @@
 </script>
 
 <div class="tm-page">
+    {#if actionInFlight}
+        <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+            <div style="background-color: white; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 320px; text-align: center; border: 1px solid #f1f5f9;">
+                <div style="font-size: 32px; color: #4f46e5;"><i class="fas fa-spinner fa-spin"></i></div>
+                <div style="font-weight: 700; color: #1e293b;">Memproses Panggilan...</div>
+                <div style="font-size: 12px; color: #64748b;">Mohon tunggu, sistem sedang memproses panggilan monitor.</div>
+            </div>
+        </div>
+    {/if}
+
     <div style="position: fixed; top: 20px; right: 30px; z-index: 90;">
         <button
             onclick={clearAllCourts}
@@ -1481,9 +1495,7 @@
                 <div
                     style="margin-top:12px; font-size:11px; color:var(--smoke); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;"
                 >
-                    Target Waktu: {activeRegItem.is_group
-                        ? "1:30 - 2:00"
-                        : "1:30"}
+                    Target Waktu: {(matchNumber?.age_group_id === 1 || matchNumber?.age_group?.name?.toLowerCase() === 'pemula' || (activeRegItem ? !activeRegItem.is_group : (matchNumber ? matchNumber.max_athletes === 1 : true))) ? "1:00 - 1:30" : "1:30 - 2:00"}
                 </div>
             </div>
         </div>

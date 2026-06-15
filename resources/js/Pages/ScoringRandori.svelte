@@ -446,6 +446,7 @@
 
     // Call Match / Grand Final / Dismiss
     async function callMatch(nodeKey, roundIdx, matchIdx, bracket) {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = nodeKey; // Optimistic update
@@ -505,6 +506,7 @@
     }
 
     async function callGrandFinal() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = 'gf_0_0'; // Optimistic update
@@ -541,6 +543,7 @@
     }
 
     async function dismissMatch() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = null; // Optimistic update
@@ -1022,6 +1025,16 @@
 </script>
 
 <div class="tm-page">
+    {#if actionInFlight}
+        <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+            <div style="background-color: white; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 320px; text-align: center; border: 1px solid #f1f5f9;">
+                <div style="font-size: 32px; color: #4f46e5;"><i class="fas fa-spinner fa-spin"></i></div>
+                <div style="font-weight: 700; color: #1e293b;">Memproses Panggilan...</div>
+                <div style="font-size: 12px; color: #64748b;">Mohon tunggu, sistem sedang memproses panggilan monitor.</div>
+            </div>
+        </div>
+    {/if}
+
     <div style="position: fixed; top: 20px; right: 30px; z-index: 90;">
         <button onclick={clearAllCourts}
             class="btn-gen danger"
