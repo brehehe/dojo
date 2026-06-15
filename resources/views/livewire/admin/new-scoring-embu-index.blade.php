@@ -872,10 +872,12 @@
                                 let expected = (this.state.elapsed_ms || 0) + (Date.now() + this.offset - this.state.started_at_ms);
                                 this.time = expected;
                                 let currentSecond = Math.floor(this.time / 1000);
+                                let isPemula = {{ ($matchNumber->age_group_id == 1 || ($matchNumber->ageGroup && strtolower($matchNumber->ageGroup->name) === 'pemula')) ? 'true' : 'false' }};
                                 let isTandoku = {{ ($activeRegItem['is_group'] ?? false) ? 'false' : 'true' }};
+                                let isShortDuration = isPemula || isTandoku;
                                 let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
                 
-                                if (isTandoku) {
+                                if (isShortDuration) {
                                     if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
                                         (currentSecond === 90 && !this.playedIntervals.has(90)) ||
                                         (currentSecond === 120 && !this.playedIntervals.has(120))) {
@@ -970,7 +972,12 @@
                     </div>
                     <div
                         style="margin-top:12px; font-size:11px; color:var(--smoke); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">
-                        Target Waktu: {{ $activeRegItem['is_group'] ?? false ? '1:30 - 2:00' : '1:30' }}
+                        @php
+                            $isPemula = $matchNumber->age_group_id == 1 || ($matchNumber->ageGroup && strtolower($matchNumber->ageGroup->name) === 'pemula');
+                            $isGroup = $activeRegItem['is_group'] ?? false;
+                            $isShortDuration = $isPemula || !$isGroup;
+                        @endphp
+                        Target Waktu: {{ $isShortDuration ? '1:00 - 1:30' : '1:30 - 2:00' }}
                     </div>
                 </div>
             </div>

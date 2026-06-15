@@ -84,7 +84,7 @@ class MonitorController extends Controller
             return $this->stateCache->respond304($request, $versions);
         }
 
-        $cacheKey = $this->stateCache->cacheKey('monitor_court_state', [$court->id], $versions);
+        $cacheKey = "monitor_court_state_{$court->id}";
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load([
                 'activeMatch.athletes.registrations.contingent',
@@ -124,7 +124,7 @@ class MonitorController extends Controller
             return $this->stateCache->respond304($request, $versions);
         }
 
-        $cacheKey = $this->stateCache->cacheKey('monitor_hasil_court_state', [$court->id, $request->query('round', ''), $request->query('pool_id', '')], $versions);
+        $cacheKey = "monitor_hasil_court_state_{$court->id}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
         $data = Cache::remember($cacheKey, 3, function () use ($court, $request) {
             $court->load(['activeMatch', 'activeDrawing']);
             $match = $court->activeMatch
@@ -144,7 +144,7 @@ class MonitorController extends Controller
             return $this->stateCache->respond304($request, $versions);
         }
 
-        $cacheKey = $this->stateCache->cacheKey('monitor_hasil_match_state', [$match->id, $request->query('round', ''), $request->query('pool_id', '')], $versions);
+        $cacheKey = "monitor_hasil_match_state_{$match->id}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
         $data = Cache::remember($cacheKey, 3, function () use ($match, $request) {
             $match->load(['athletes', 'embuScores']);
 
@@ -185,14 +185,15 @@ class MonitorController extends Controller
 
     public function monitorRefereeState(Request $request, Court $court): JsonResponse
     {
-        $rundownId = $request->query('rundown_id');
-        $sessionId = $request->query('session_time_id');
-
         $versions = ['court' => $this->stateCache->version('court', $court->id)];
         if ($this->stateCache->hasValidEtag($request, $versions)) {
             return $this->stateCache->respond304($request, $versions);
         }
-        $cacheKey = $this->stateCache->cacheKey('monitor_referee_state', [$court->id, $rundownId, $sessionId], $versions);
+
+        $rundownId = $request->query('rundown_id');
+        $sessionId = $request->query('session_time_id');
+
+        $cacheKey = "monitor_referee_state_{$court->id}_{$rundownId}_{$sessionId}";
         $data = Cache::remember($cacheKey, 3, function () use ($court, $rundownId, $sessionId) {
             if ($rundownId && $sessionId) {
                 $referees = ScheduleReferee::with('referee.user')
@@ -239,7 +240,8 @@ class MonitorController extends Controller
         if ($this->stateCache->hasValidEtag($request, $versions)) {
             return $this->stateCache->respond304($request, $versions);
         }
-        $cacheKey = $this->stateCache->cacheKey('monitor_rekap_hasil_state', [$court->id], $versions);
+
+        $cacheKey = "monitor_rekap_hasil_state_{$court->id}";
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load(['activeMatch', 'activeDrawing']);
             $match = $court->activeMatch ? MatchNumber::find($court->active_match_id) : null;
@@ -366,7 +368,8 @@ class MonitorController extends Controller
         if ($this->stateCache->hasValidEtag($request, $versions)) {
             return $this->stateCache->respond304($request, $versions);
         }
-        $cacheKey = $this->stateCache->cacheKey('monitor_timer_state', [$court->id], $versions);
+
+        $cacheKey = "monitor_timer_state_{$court->id}";
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load(['activeMatch.ageGroup', 'activeDrawing.registration.contingent']);
             $state = Cache::get("court_{$court->id}_timer", [

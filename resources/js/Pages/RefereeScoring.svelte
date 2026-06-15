@@ -42,14 +42,12 @@
     let isFullscreen = $state(false);
     let submitting = $state(false);
 
-    // Echo channels
-    let currentCourtChannelId = null;
-    const pollDelay = 2000;
     let destroyed = false;
-    let queuedFetchTimeout;
     let fetchInFlight = false;
     let fetchQueued = false;
+    let queuedFetchTimeout;
     let polling;
+    const pollDelay = 2000;
 
     function scheduleQueuedFetch() {
         if (destroyed) return;
@@ -59,6 +57,9 @@
             if (!destroyed) fetchState();
         }, pollDelay);
     }
+
+    // Echo channels
+    let currentCourtChannelId = null;
 
     function subscribeToCourt(newCourtId) {
         if (!newCourtId || currentCourtChannelId === newCourtId) return;

@@ -241,7 +241,9 @@ class ScoringDashboardController extends Controller
             'allReferees' => $allReferees,
         ];
 
-        return $this->stateCache->conditionalJson($request, $data, $versions);
+        return $this->stateCache->conditionalJson($request, $data, [
+            'dashboard' => $this->stateCache->version('dashboard'),
+        ]);
     }
 
     public function activateMatch(ActivateMatchRequest $request): JsonResponse

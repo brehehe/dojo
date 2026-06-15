@@ -17,18 +17,19 @@
     let buzzerPool = [];
 
     let localTickInterval;
-    const pollDelay = 1000;
+
     let destroyed = false;
-    let queuedSyncTimeout;
     let syncInFlight = false;
     let syncQueued = false;
-    let polling;
+    let queuedTimeout = null;
+    let polling = null;
+    const pollDelay = 3000;
 
     function scheduleQueuedSync() {
         if (destroyed) return;
-        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
-        queuedSyncTimeout = setTimeout(() => {
-            queuedSyncTimeout = null;
+        if (queuedTimeout) clearTimeout(queuedTimeout);
+        queuedTimeout = setTimeout(() => {
+            queuedTimeout = null;
             if (!destroyed) sync();
         }, pollDelay);
     }
@@ -184,7 +185,9 @@
                 time = isRandori ? Math.min(expected, 120000) : expected;
 
                 let currentSecond = Math.floor(time / 1000);
+                let isPemula = court && court.active_match && (court.active_match.age_group_id === 1 || (court.active_match.age_group && court.active_match.age_group.name.toLowerCase() === 'pemula'));
                 let isTandoku = court && court.active_match && (court.active_match.name.toLowerCase().includes('tandoku') || court.active_match.max_athletes == 1);
+                let isShortDuration = isPemula || isTandoku;
 
                 if (isRandori) {
                     if (time >= 120000 && !playedIntervals.has(120)) {
@@ -194,7 +197,7 @@
                         playBuzzer();
                     }
                 } else {
-                    if (isTandoku) {
+                    if (isShortDuration) {
                         if ((currentSecond === 60 && !playedIntervals.has(60)) ||
                             (currentSecond === 90 && !playedIntervals.has(90)) ||
                             (currentSecond === 120 && !playedIntervals.has(120))) {

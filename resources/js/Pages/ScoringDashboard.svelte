@@ -1,9 +1,6 @@
 <script>
     import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
-    import { createAdaptivePolling } from "../lib/adaptivePolling";
-    import { conditionalJsonFetch } from "../lib/conditionalFetch";
-    import { postJson } from "../lib/api";
 
     // States
     let drawings = $state({
@@ -46,13 +43,6 @@
 
     // Debouncing helper
     let searchTimeout;
-    let dashboardRefreshTimeout;
-    const dashboardPollDelay = 3000;
-    let dashboardDestroyed = false;
-    let dashboardFetchInFlight = false;
-    let dashboardRefreshQueued = false;
-    let subscribedCourtIds = new Set();
-    let dashboardPolling;
 
     // Filter changes trigger refresh
     $effect(() => {

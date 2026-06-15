@@ -410,9 +410,16 @@ class RefereeScoringController extends Controller
 
         // ─── 3. Load Existing Scores ───────────────────────────────
         $embuItems = [
-            'goho_1' => 0, 'goho_2' => 0, 'goho_3' => 0,
-            'juho_1' => 0, 'juho_2' => 0, 'juho_3' => 0,
-            'ekspresi_1' => 0, 'ekspresi_2' => 0, 'ekspresi_3' => 0, 'ekspresi_4' => 0,
+            'goho_1' => 0,
+            'goho_2' => 0,
+            'goho_3' => 0,
+            'juho_1' => 0,
+            'juho_2' => 0,
+            'juho_3' => 0,
+            'ekspresi_1' => 0,
+            'ekspresi_2' => 0,
+            'ekspresi_3' => 0,
+            'ekspresi_4' => 0,
         ];
         $notes = '';
         $signature = null;
@@ -482,7 +489,10 @@ class RefereeScoringController extends Controller
             'currentActiveIdentifier' => $activeMatch ? $activeMatch->id.'_'.($assignedCourt?->active_drawing_id ?? $activeMatch->active_registration_id ?? $activeMatch->active_bracket_node) : null,
         ];
 
-        return $this->stateCache->conditionalJson($request, $data, $versions);
+        return $this->stateCache->conditionalJson($request, $data, [
+            'match' => $activeMatch ? $this->stateCache->version('match', $activeMatch->id) : 1,
+            'court' => $assignedCourt ? $this->stateCache->version('court', $assignedCourt->id) : 1,
+        ]);
     }
 
     /**

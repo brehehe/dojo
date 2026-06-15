@@ -182,7 +182,7 @@ class RandoriScoringController extends Controller
             'activeBracketNode' => $matchNumber->active_bracket_node,
         ];
 
-        return $this->stateCache->conditionalJson($request, $data, $versions, 0);
+        return response()->json($data);
     }
 
     public function randoriRepairBracket(Request $request): JsonResponse

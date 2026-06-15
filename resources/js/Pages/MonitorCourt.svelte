@@ -17,18 +17,19 @@
     let buzzerPool = [];
 
     let localTickInterval;
-    const pollDelay = 1000;
+
     let destroyed = false;
-    let queuedSyncTimeout;
     let syncInFlight = false;
     let syncQueued = false;
-    let polling;
+    let queuedTimeout = null;
+    let polling = null;
+    const pollDelay = 3000;
 
     function scheduleQueuedSync() {
         if (destroyed) return;
-        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
-        queuedSyncTimeout = setTimeout(() => {
-            queuedSyncTimeout = null;
+        if (queuedTimeout) clearTimeout(queuedTimeout);
+        queuedTimeout = setTimeout(() => {
+            queuedTimeout = null;
             if (!destroyed) sync();
         }, pollDelay);
     }

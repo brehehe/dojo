@@ -351,7 +351,10 @@ class EmbuScoringController extends Controller
             'courtId' => $courtId,
         ];
 
-        return $this->stateCache->conditionalJson($request, $data, $versions, 0);
+        return $this->stateCache->conditionalJson($request, $data, [
+            'match' => $this->stateCache->version('match', $matchNumber->id),
+            'court' => $courtId ? $this->stateCache->version('court', $courtId) : 1,
+        ], 0);
     }
 
     public function embuCallOfficials(Request $request): JsonResponse
@@ -584,10 +587,11 @@ class EmbuScoringController extends Controller
         $seconds = floor($timeMs / 1000);
         $denda = 0;
 
-        $matchNumber = MatchNumber::find($drawing->match_number_id);
+        $matchNumber = MatchNumber::with('ageGroup')->find($drawing->match_number_id);
+        $isPemula = $matchNumber && ($matchNumber->age_group_id == 1 || ($matchNumber->ageGroup && strtolower($matchNumber->ageGroup->name) === 'pemula'));
         $isGroup = $matchNumber ? ($matchNumber->max_athletes > 1) : false;
 
-        if ($isGroup) {
+        if ($isGroup && ! $isPemula) {
             if ($seconds >= 80 && $seconds <= 89) {
                 $denda = 5;
             } elseif ($seconds <= 79) {
