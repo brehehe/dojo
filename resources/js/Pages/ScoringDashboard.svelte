@@ -1,6 +1,8 @@
 <script>
     import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
+    import { createAdaptivePolling } from "../lib/adaptivePolling";
+    import { conditionalJsonFetch } from "../lib/conditionalFetch";
 
     // States
     let drawings = $state({
