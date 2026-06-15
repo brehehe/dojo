@@ -23,7 +23,7 @@
     let syncQueued = false;
     let queuedTimeout = null;
     let polling = null;
-    const pollDelay = 3000;
+    const pollDelay = 1000;
 
     function scheduleQueuedSync() {
         if (destroyed) return;
@@ -134,44 +134,11 @@
         // Initial sync
         sync();
 
-        // Listen to CourtUpdated event on court.{courtId} channel
-        if (window.Echo) {
-            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
-                if (destroyed) return;
-                polling?.markRealtimeHealthy();
-                if (e.timer_state) {
-                    offset = e.timer_state.server_time_ms - Date.now();
-                    stateObj = e.timer_state;
-
-                    let wasRunning = running;
-                    running = (e.timer_state.status === 'running');
-
-                    // Play buzzer when timer newly starts
-                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
-                        if (!playedIntervals.has('start')) {
-                            playedIntervals.add('start');
-                            playBuzzer();
-                        }
-                    }
-
-                    if (e.timer_state.status !== 'countdown') {
-                        countdown = 0;
-                    }
-
-                    if (!running && time < 500) {
-                        playedIntervals.clear();
-                    }
-                } else {
-                    sync();
-                }
-            });
-        }
-
         polling = createAdaptivePolling({
             fetchNow: sync,
             normalInterval: pollDelay,
-            healthyInterval: 10000,
-            staleAfter: 10000,
+            healthyInterval: pollDelay,
+            staleAfter: pollDelay,
             immediate: false,
         });
         polling.start();
@@ -232,12 +199,9 @@
     onDestroy(() => {
         destroyed = true;
         syncQueued = false;
-        if (window.Echo) {
-            window.Echo.leave(`court.${courtId}`);
-        }
         polling?.stop();
         clearInterval(localTickInterval);
-        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
+        if (queuedTimeout) clearTimeout(queuedTimeout);
     });
 </script>
 
