@@ -2,6 +2,9 @@
     import { onMount, onDestroy, untrack } from 'svelte';
     import { router } from '@inertiajs/svelte';
     import SignaturePad from '../Components/SignaturePad.svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
+    import { postJson } from '../lib/api';
 
     // Props
     let { matchId, urlRound = null, urlPoolId = null, urlFrom = null } = $props();
@@ -27,7 +30,8 @@
     let timerState = $state({
         status: 'stopped',
         elapsed_ms: 0,
-        started_at_ms: null
+        started_at_ms: null,
+        countdown_end_ms: null
     });
     let courtId = $state(null);
     let randoriResults = $state({});
@@ -140,22 +144,16 @@
         currentCourtChannelId = newCourtId;
         if (window.Echo) {
             window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
                 if (e.timer_state) {
-                    offset = e.timer_state.server_time_ms - Date.now();
-                    timerState = e.timer_state;
                     let wasRunning = running;
-                    running = (e.timer_state.status === 'running');
+                    if (!syncTimerFromServer(e.timer_state)) return;
                     if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
                         if (!playedIntervals.has('start')) {
                             playedIntervals.add('start');
                             playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
                         }
-                    }
-                    if (e.timer_state.status !== 'countdown') {
-                        countdown = 0;
-                    }
-                    if (!running && time < 500) {
-                        playedIntervals.clear();
                     }
                 } else {
                     fetchState();
@@ -172,11 +170,130 @@
     let lastTickSecond = -1;
     let playedIntervals = new Set();
     let interpolInterval;
+    let lastTimerServerTimeMs = 0;
+    const timerSyncToleranceMs = 250;
+    const pollDelay = 2000;
+    let destroyed = false;
+    let queuedFetchTimeout;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let polling;
+
+    function currentElapsedMs() {
+        let elapsed;
+
+        if (running && timerState.started_at_ms) {
+            elapsed = (timerState.elapsed_ms || 0) + (Date.now() + offset - timerState.started_at_ms);
+        } else {
+            elapsed = Math.max(time, timerState.elapsed_ms || 0);
+        }
+
+        return Math.min(Math.max(0, elapsed), 120000);
+    }
+
+    function snapshotTimerUiState() {
+        return {
+            timerState: { ...timerState },
+            time,
+            running,
+            countdown,
+            offset,
+            lastTickSecond,
+            playedIntervals: new Set(playedIntervals),
+        };
+    }
+
+    function restoreTimerUiState(snapshot) {
+        timerState = { ...snapshot.timerState };
+        time = snapshot.time;
+        running = snapshot.running;
+        countdown = snapshot.countdown;
+        offset = snapshot.offset;
+        lastTickSecond = snapshot.lastTickSecond;
+        playedIntervals = new Set(snapshot.playedIntervals);
+    }
+
+    function elapsedFromTimerState(serverTimerState) {
+        const elapsed = serverTimerState?.elapsed_ms || 0;
+
+        if (serverTimerState?.status === 'running' && serverTimerState.started_at_ms) {
+            const serverNow = serverTimerState.server_time_ms ?? Date.now() + offset;
+
+            return Math.min(Math.max(0, elapsed + (serverNow - serverTimerState.started_at_ms)), 120000);
+        }
+
+        return Math.min(Math.max(0, elapsed), 120000);
+    }
+
+    function syncTimerFromServer(serverTimerState) {
+        if (!serverTimerState) return;
+        const serverTimeMs = Number(serverTimerState.server_time_ms || 0);
+
+        if (serverTimeMs && serverTimeMs < lastTimerServerTimeMs) {
+            return false;
+        }
+
+        const serverElapsed = elapsedFromTimerState(serverTimerState);
+        const sameRunningTimer =
+            timerState.status === 'running' &&
+            serverTimerState.status === 'running' &&
+            timerState.started_at_ms === serverTimerState.started_at_ms;
+
+        if (sameRunningTimer && serverElapsed + timerSyncToleranceMs < time) {
+            return false;
+        }
+
+        if (serverTimeMs) {
+            lastTimerServerTimeMs = serverTimeMs;
+            offset = serverTimerState.server_time_ms - Date.now();
+        }
+
+        timerState = serverTimerState;
+        running = serverTimerState.status === 'running';
+
+        if (running) {
+            time = sameRunningTimer ? Math.max(time, serverElapsed) : serverElapsed;
+        } else {
+            time = serverElapsed;
+        }
+
+        if (serverTimerState.status !== 'countdown') {
+            countdown = 0;
+        }
+
+        if (!running && time < 500) {
+            playedIntervals.clear();
+        }
+
+        return true;
+    }
+
+    function applyServerTimerState(serverTimerState) {
+        syncTimerFromServer(serverTimerState);
+    }
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
 
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
-            const res = await fetch(`/admin/api/scoring/randori/${matchId}/state`);
-            const data = await res.json();
+            const { data, notModified } = await conditionalJsonFetch(`/admin/api/scoring/randori/${matchId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data) {
                 matchNumber = data.matchNumber;
                 merge = data.merge;
@@ -188,7 +305,6 @@
                 assignedKoordinators = data.assignedKoordinators;
                 assignedPaniteras = data.assignedPaniteras;
                 juaraMap = data.juara || {};
-                timerState = data.timerState;
                 courtId = data.courtId;
                 subscribeToCourt(courtId);
                 randoriResults = data.randoriResults || {};
@@ -197,17 +313,18 @@
                 }
 
                 // Sync Timer local state with server state
-                offset = (timerState.server_time_ms || Date.now()) - Date.now();
-                running = (timerState.status === 'running');
-                if (timerState.status !== 'countdown') {
-                    countdown = 0;
-                }
-                if (!running && time < 500) {
-                    playedIntervals.clear();
-                }
+                syncTimerFromServer(data.timerState);
             }
         } catch (e) {
             console.error('Error fetching Randori scoring state:', e);
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -215,7 +332,17 @@
     async function startTimer() {
         if (!courtId) return;
         // Optimistic UI updates
+        const timerSnapshot = snapshotTimerUiState();
+        const elapsed = currentElapsedMs();
+        timerState = {
+            status: 'running',
+            elapsed_ms: elapsed,
+            started_at_ms: Date.now() + offset,
+            countdown_end_ms: null
+        };
+        time = elapsed;
         running = true;
+        countdown = 0;
         if (!timerState.elapsed_ms || timerState.elapsed_ms < 1000) {
             if (!playedIntervals.has('start')) {
                 playedIntervals.add('start');
@@ -223,72 +350,71 @@
             }
         }
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'start' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'start' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = true;
             } else {
-                running = false;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = false;
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        const pausedAt = currentElapsedMs();
+        timerState = {
+            status: 'paused',
+            elapsed_ms: pausedAt,
+            started_at_ms: null,
+            countdown_end_ms: null
+        };
+        time = pausedAt;
         running = false;
+        countdown = 0;
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'pause' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'pause' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = false;
             } else {
-                running = true;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = true;
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        timerState = {
+            status: 'stopped',
+            elapsed_ms: 0,
+            started_at_ms: null,
+            countdown_end_ms: null
+        };
         running = false;
         time = 0;
         countdown = 0;
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'stop' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'stop' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 time = 0;
                 running = false;
                 countdown = 0;
+            } else {
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
@@ -321,19 +447,12 @@
         };
 
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-match', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-match', {
                     match_id: matchId,
                     node_key: nodeKey,
                     round_idx: roundIdx,
                     match_idx: matchIdx,
                     bracket: bracket
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -363,15 +482,8 @@
         const originalActiveNode = activeBracketNode;
         activeBracketNode = 'gf_0_0'; // Optimistic update
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-grand-final', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-grand-final', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -399,14 +511,7 @@
         const originalActiveNode = activeBracketNode;
         activeBracketNode = null; // Optimistic update
         try {
-            const res = await fetch('/admin/api/scoring/randori/dismiss-match', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ match_id: matchId })
-            });
+            const res = await postJson('/admin/api/scoring/randori/dismiss-match', { match_id: matchId });
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
@@ -430,15 +535,8 @@
     async function confirmChampion() {
         if (!confirm('Sistem akan men-generate Juara 1 & 2 dari hasil Grand Final. Lanjutkan?')) return;
         try {
-            const res = await fetch('/admin/api/scoring/randori/confirm-champion', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/confirm-champion', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -455,15 +553,8 @@
     // Call officials & TTS announcement
     async function callOfficials() {
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-officials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-officials', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -482,15 +573,8 @@
     // Repair bracket
     async function repairBracket() {
         try {
-            const res = await fetch('/admin/api/scoring/randori/repair-bracket', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/repair-bracket', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -595,13 +679,7 @@
         }
 
         try {
-            const res = await fetch('/admin/api/scoring/randori/submit-scoring', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/submit-scoring', {
                     match_id: matchId,
                     bracket: activeMatch.bracket,
                     round: activeMatch.round,
@@ -618,7 +696,6 @@
                         manager_red: { name: sigManagerRedName, signature: sigManagerRedData },
                         manager_white: { name: sigManagerWhiteName, signature: sigManagerWhiteData }
                     }
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -646,13 +723,7 @@
     async function clearAllCourts() {
         if (!confirm('PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?')) return;
         try {
-            const res = await fetch('/admin/api/scoring/clear-all-courts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
+            const res = await postJson('/admin/api/scoring/clear-all-courts');
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
@@ -767,6 +838,7 @@
 
     // Lifecycle
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -782,15 +854,26 @@
         fetchState();
         if (window.Echo) {
             window.Echo.channel(`match.${matchId}`).listen('MatchUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
                 fetchState();
             });
         }
+
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
             if (running && timerState.started_at_ms) {
                 let expected = (timerState.elapsed_ms || 0) + (Date.now() + offset - timerState.started_at_ms);
-                time = Math.min(expected, 120000);
+                time = Math.max(time, Math.min(expected, 120000));
                 let s = Math.floor(time / 1000);
                 if (s >= 120 && !playedIntervals.has(120)) {
                     time = 120000;
@@ -825,13 +908,17 @@
     });
 
     onDestroy(() => {
+        destroyed = true;
+        fetchQueued = false;
         if (window.Echo) {
             window.Echo.leave(`match.${matchId}`);
             if (currentCourtChannelId) {
                 window.Echo.leave(`court.${currentCourtChannelId}`);
             }
         }
+        polling?.stop();
         clearInterval(interpolInterval);
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
         stopAnnouncer();
     });
 
@@ -896,6 +983,9 @@
                 style="color:var(--red); border-color:var(--red);">
                 <i class="fas fa-volume-xmark"></i> Stop Suara
             </button>
+            <a href={`/admin/new-scoring/correction?match_id=${matchId}`} class="btn-gen primary" style="text-decoration:none;">
+                <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai
+            </a>
             <a href={backRoute} class="btn-gen ghost" style="text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>

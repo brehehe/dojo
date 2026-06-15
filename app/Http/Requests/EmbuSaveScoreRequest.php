@@ -34,6 +34,8 @@ class EmbuSaveScoreRequest extends FormRequest
             'scores.judge_5' => 'numeric|min:0|max:10',
             'denda' => 'numeric|min:0',
             'drawing_id' => 'nullable|exists:drawing_match_numbers,id',
+            'waktu' => 'nullable|string',
+            'tiebreak_round' => 'nullable|integer|min:0',
         ];
     }
 

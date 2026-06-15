@@ -6,6 +6,7 @@ use App\Events\CourtUpdated;
 use App\Http\Requests\ActivateMatchRequest;
 use App\Http\Requests\ClearCourtRequest;
 use App\Models\ActiveCourtReferee;
+use App\Models\Athlete;
 use App\Models\Contingent;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
@@ -17,6 +18,7 @@ use App\Models\RandoriMatchResult;
 use App\Models\Referee;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -26,6 +28,10 @@ use Inertia\Response;
 
 class ScoringDashboardController extends Controller
 {
+    public function __construct(
+        protected StateCache $stateCache,
+    ) {}
+
     public function scoringIndex(): Response
     {
         return Inertia::render('ScoringDashboard');
@@ -53,6 +59,11 @@ class ScoringDashboardController extends Controller
 
     public function scoringDashboardState(Request $request): JsonResponse
     {
+        $versions = ['dashboard' => $this->stateCache->version('dashboard')];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+
         $search = $request->input('search', '');
         $filterCourt = $request->input('filterCourt', '');
         $filterSession = $request->input('filterSession', '');
@@ -80,11 +91,14 @@ class ScoringDashboardController extends Controller
 
         $courts = $query->get();
 
+        $refereesByCourt = ActiveCourtReferee::with('referee.user')
+            ->whereIn('court_id', $courts->pluck('id'))
+            ->orderBy('judge_index')
+            ->get()
+            ->groupBy('court_id');
+
         foreach ($courts as $court) {
-            $court->current_referees = ActiveCourtReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->orderBy('judge_index')
-                ->get();
+            $court->current_referees = $refereesByCourt->get($court->id, collect())->values();
         }
 
         $sessions = SessionTime::orderBy('start_time')->get();
@@ -125,7 +139,9 @@ class ScoringDashboardController extends Controller
             )
             ->selectRaw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END as round")
             ->selectRaw('COALESCE(MAX(match_number_merges.name), \'\') as merge_name')
-            ->selectRaw('STRING_AGG(DISTINCT match_numbers.name, \', \') as aggregated_match_names')
+            ->selectRaw(DB::connection()->getDriverName() === 'sqlite'
+                ? 'group_concat(DISTINCT match_numbers.name) as aggregated_match_names'
+                : 'STRING_AGG(DISTINCT match_numbers.name, \', \') as aggregated_match_names')
             ->selectRaw('MIN(drawing_match_numbers.match_number_id) as match_number_id')
             ->selectRaw('MIN(drawing_match_numbers.id) as id')
             ->selectRaw('COUNT(drawing_match_numbers.registration_id) as total_athletes')
@@ -212,7 +228,7 @@ class ScoringDashboardController extends Controller
             ['certification_level', 'asc'],
         ])->values();
 
-        return response()->json([
+        $data = [
             'drawings' => $drawings,
             'courts' => $courts,
             'sessions' => $sessions,
@@ -223,7 +239,9 @@ class ScoringDashboardController extends Controller
             'ageGroups' => $ageGroups,
             'matchNumbers' => $matchNumbers,
             'allReferees' => $allReferees,
-        ]);
+        ];
+
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
     public function activateMatch(ActivateMatchRequest $request): JsonResponse
@@ -269,6 +287,9 @@ class ScoringDashboardController extends Controller
             'started_at_ms' => null,
         ]);
 
+        $this->stateCache->bumpCourt($court->id);
+        $this->stateCache->bumpMatch($drawing->match_number_id);
+
         $contingentName = $drawing->registration?->contingent?->name ?? '—';
         $poolLabel = $drawing->pool ? 'Pool '.$drawing->pool->name : null;
         $sessionLabel = $drawing->sessionTime?->name;
@@ -303,6 +324,8 @@ class ScoringDashboardController extends Controller
 
         Cache::forget("court_{$courtId}_timer");
 
+        $this->stateCache->bumpCourt($courtId);
+
         event(new CourtUpdated($courtId, null, 'court'));
 
         return response()->json([
@@ -325,6 +348,8 @@ class ScoringDashboardController extends Controller
 
             Cache::forget("court_{$court->id}_timer");
 
+            $this->stateCache->bumpCourt($court->id);
+
             event(new CourtUpdated($court->id, null, 'court'));
         }
 
@@ -332,6 +357,7 @@ class ScoringDashboardController extends Controller
             'active_registration_id' => null,
             'active_bracket_node' => null,
         ]);
+        $this->stateCache->bump('dashboard');
 
         return response()->json([
             'success' => true,
@@ -503,6 +529,94 @@ class ScoringDashboardController extends Controller
             'ageGroups' => $ageGroups,
             'matchNumbers' => $matchNumbers,
             'allReferees' => $allReferees,
+        ]);
+    }
+
+    public function scoringCorrectionIndex(Request $request): Response
+    {
+        return Inertia::render('ScoringCorrection', [
+            'urlMatchId' => $request->query('match_id') ? (int) $request->query('match_id') : null,
+        ]);
+    }
+
+    public function scoringCorrectionMatches(): JsonResponse
+    {
+        $matches = MatchNumber::orderBy('name')
+            ->select('id', 'name', 'draft_type')
+            ->get();
+
+        return response()->json($matches);
+    }
+
+    public function scoringCorrectionMatchState(MatchNumber $matchNumber): JsonResponse
+    {
+        $mergeDetails = DB::table('match_number_merge_details')
+            ->where('match_number_id', $matchNumber->id)
+            ->first();
+
+        if ($mergeDetails) {
+            $matchNumberIds = DB::table('match_number_merge_details')
+                ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                ->pluck('match_number_id')
+                ->toArray();
+        } else {
+            $matchNumberIds = [$matchNumber->id];
+        }
+
+        $drawings = DrawingMatchNumber::with([
+            'registration.contingent',
+            'registration.athletes',
+            'matchNumber',
+            'pool',
+        ])
+            ->whereIn('match_number_id', $matchNumberIds)
+            ->orderBy('round')
+            ->orderBy('sequence_number')
+            ->get();
+
+        $pivotAthletes = Athlete::whereHas('matchNumbers', function ($query) use ($matchNumberIds) {
+            $query->whereIn('match_numbers.id', $matchNumberIds);
+        })
+            ->with(['matchNumbers' => fn ($query) => $query->whereIn('match_numbers.id', $matchNumberIds)])
+            ->get()
+            ->flatMap(function ($athlete) {
+                return $athlete->matchNumbers->map(function ($matchNumber) use ($athlete) {
+                    return [
+                        'key' => $matchNumber->id.':'.$matchNumber->pivot->registration_id,
+                        'athlete' => $athlete,
+                    ];
+                });
+            })
+            ->groupBy('key')
+            ->map(fn ($items) => $items->pluck('athlete')->unique('id')->values());
+
+        foreach ($drawings as $drawing) {
+            $regId = $drawing->registration_id;
+            $matchId = $drawing->match_number_id;
+
+            $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            if (! empty($metaAthleteIds)) {
+                $drawingAthletes = $drawing->registration?->athletes->whereIn('id', $metaAthleteIds)->values() ?? collect();
+            } else {
+                $drawingAthletes = $pivotAthletes->get($matchId.':'.$regId, collect());
+            }
+
+            $drawing->setRelation('athletes', $drawingAthletes);
+        }
+
+        $embuScores = EmbuScore::whereIn('match_number_id', $matchNumberIds)
+            ->orderBy('round_label')
+            ->orderBy('tiebreak_round')
+            ->get();
+
+        $randoriResults = RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)->get();
+
+        return response()->json([
+            'matchNumber' => $matchNumber,
+            'matchNumberIds' => $matchNumberIds,
+            'drawings' => $drawings,
+            'embuScores' => $embuScores,
+            'randoriResults' => $randoriResults,
         ]);
     }
 }

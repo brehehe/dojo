@@ -1,6 +1,9 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
+    import { createAdaptivePolling } from "../lib/adaptivePolling";
+    import { conditionalJsonFetch } from "../lib/conditionalFetch";
+    import { postJson } from "../lib/api";
 
     // States
     let drawings = $state({
@@ -43,6 +46,13 @@
 
     // Debouncing helper
     let searchTimeout;
+    let dashboardRefreshTimeout;
+    const dashboardPollDelay = 3000;
+    let dashboardDestroyed = false;
+    let dashboardFetchInFlight = false;
+    let dashboardRefreshQueued = false;
+    let subscribedCourtIds = new Set();
+    let dashboardPolling;
 
     // Filter changes trigger refresh
     $effect(() => {
@@ -59,17 +69,88 @@
             filterMatchNumber,
             filterGender,
         };
-        fetchState();
+        scheduleDashboardRefresh(150, 1);
     });
 
     function handleSearch() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            fetchState();
+            scheduleDashboardRefresh(150, 1);
         }, 300);
     }
 
+    function scheduleDashboardRefresh(delay = 250, page = drawings.current_page || 1) {
+        if (dashboardDestroyed) return;
+        if (dashboardRefreshTimeout) clearTimeout(dashboardRefreshTimeout);
+        dashboardRefreshTimeout = setTimeout(() => {
+            dashboardRefreshTimeout = null;
+            if (dashboardDestroyed) return;
+            refreshDashboardNow(page);
+        }, delay);
+    }
+
+    async function refreshDashboardNow(page = drawings.current_page || 1) {
+        if (dashboardDestroyed) return;
+        if (dashboardRefreshTimeout) {
+            clearTimeout(dashboardRefreshTimeout);
+            dashboardRefreshTimeout = null;
+        }
+        if (dashboardFetchInFlight) {
+            dashboardRefreshQueued = true;
+            return;
+        }
+
+        dashboardFetchInFlight = true;
+        try {
+            await fetchState(page);
+        } finally {
+            dashboardFetchInFlight = false;
+            if (dashboardRefreshQueued && !dashboardDestroyed) {
+                dashboardRefreshQueued = false;
+                scheduleDashboardRefresh(0, drawings.current_page || page);
+            } else if (dashboardDestroyed) {
+                dashboardRefreshQueued = false;
+            }
+        }
+    }
+
+    function subscribeDashboardChannel(channelName, eventName, handler) {
+        if (!window.Echo) return false;
+
+        try {
+            window.Echo.channel(channelName).listen(eventName, handler);
+            return true;
+        } catch (e) {
+            console.error(`Error subscribing to ${channelName}:`, e);
+            return false;
+        }
+    }
+
+    function syncDashboardRealtimeSubscriptions() {
+        if (dashboardDestroyed || !window.Echo) return;
+
+        const nextCourtIds = new Set(courts.map((court) => court.id).filter(Boolean));
+
+        for (const courtId of subscribedCourtIds) {
+            if (!nextCourtIds.has(courtId)) {
+                window.Echo.leave(`court.${courtId}`);
+                subscribedCourtIds.delete(courtId);
+            }
+        }
+
+        for (const courtId of nextCourtIds) {
+            if (subscribedCourtIds.has(courtId)) continue;
+            if (subscribeDashboardChannel(`court.${courtId}`, "CourtUpdated", () => {
+                dashboardPolling?.markRealtimeHealthy();
+                scheduleDashboardRefresh();
+            })) {
+                subscribedCourtIds.add(courtId);
+            }
+        }
+    }
+
     async function fetchState(page = 1) {
+        if (dashboardDestroyed) return;
         try {
             const queryParams = new URLSearchParams({
                 page,
@@ -86,10 +167,12 @@
                 filterGender,
                 searchReferee,
             });
-            const res = await fetch(
+            const { data, notModified } = await conditionalJsonFetch(
                 `/admin/api/scoring/dashboard-state?${queryParams.toString()}`,
             );
-            const data = await res.json();
+            if (dashboardDestroyed) return;
+            if (notModified) return;
+            if (dashboardDestroyed) return;
             if (data) {
                 drawings = data.drawings;
                 courts = data.courts;
@@ -101,6 +184,7 @@
                 ageGroups = data.ageGroups;
                 matchNumbers = data.matchNumbers;
                 allReferees = data.allReferees;
+                syncDashboardRealtimeSubscriptions();
             }
         } catch (e) {
             console.error("Error fetching dashboard state:", e);
@@ -111,20 +195,11 @@
     async function activateMatch(drawingId) {
         if (!confirm("Panggil pertandingan ini ke lapangan?")) return;
         try {
-            const res = await fetch("/admin/api/scoring/activate-match", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ drawing_id: drawingId }),
-            });
+            const res = await postJson("/admin/api/scoring/activate-match", { drawing_id: drawingId });
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
-                fetchState(drawings.current_page);
+                refreshDashboardNow(drawings.current_page);
             } else {
                 alert(data.message || "Gagal mengaktifkan pertandingan.");
             }
@@ -135,20 +210,11 @@
     async function clearCourt(courtId) {
         if (!confirm("Kosongkan lapangan ini?")) return;
         try {
-            const res = await fetch("/admin/api/scoring/clear-court", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ court_id: courtId }),
-            });
+            const res = await postJson("/admin/api/scoring/clear-court", { court_id: courtId });
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
-                fetchState(drawings.current_page);
+                refreshDashboardNow(drawings.current_page);
             }
         } catch (e) {
         }
@@ -162,19 +228,11 @@
         )
             return;
         try {
-            const res = await fetch("/admin/api/scoring/clear-all-courts", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-            });
+            const res = await postJson("/admin/api/scoring/clear-all-courts");
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
-                fetchState(drawings.current_page);
+                refreshDashboardNow(drawings.current_page);
             }
         } catch (e) {
         }
@@ -183,23 +241,14 @@
     async function resetActiveReferees(courtId) {
         if (!confirm("Kosongkan panel wasit aktif untuk lapangan ini?")) return;
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/reset-active-referees",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({ court_id: courtId }),
-                },
+                { court_id: courtId },
             );
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
-                fetchState(drawings.current_page);
+                refreshDashboardNow(drawings.current_page);
             }
         } catch (e) {
         }
@@ -217,7 +266,7 @@
         filterAgeGroup = "";
         filterMatchNumber = "";
         filterGender = "";
-        fetchState(1);
+        refreshDashboardNow(1);
     }
 
     // Referee assignment actions
@@ -322,29 +371,20 @@
             return;
         }
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/save-referee-assignment",
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({
                         court_id: assigningCourtId,
                         rundown_id: assigningRundownId,
                         session_time_id: assigningSessionId,
                         referees: selectedReferees,
-                    }),
                 },
             );
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
                 showRefereeModal = false;
-                fetchState(drawings.current_page);
+                refreshDashboardNow(drawings.current_page);
             } else {
                 alert(data.message || "Gagal menyimpan penugasan.");
             }
@@ -355,25 +395,16 @@
     async function resetCourtReferees() {
         if (!confirm("Kosongkan penugasan wasit untuk sesi ini?")) return;
         try {
-            const res = await fetch("/admin/api/scoring/reset-court-referees", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({
+            const res = await postJson("/admin/api/scoring/reset-court-referees", {
                     court_id: assigningCourtId,
                     rundown_id: assigningRundownId,
                     session_time_id: assigningSessionId,
-                }),
             });
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
                 showRefereeModal = false;
-                fetchState(drawings.current_page);
+                refreshDashboardNow(drawings.current_page);
             } else {
                 alert(data.message || "Gagal mengosongkan penugasan.");
             }
@@ -382,7 +413,27 @@
     }
 
     onMount(() => {
-        fetchState();
+        dashboardDestroyed = false;
+        dashboardPolling = createAdaptivePolling({
+            fetchNow: () => refreshDashboardNow(),
+            normalInterval: dashboardPollDelay,
+            healthyInterval: 30000,
+            staleAfter: 30000,
+        });
+        dashboardPolling.start();
+    });
+
+    onDestroy(() => {
+        dashboardDestroyed = true;
+        dashboardRefreshQueued = false;
+        if (dashboardRefreshTimeout) clearTimeout(dashboardRefreshTimeout);
+        dashboardPolling?.stop();
+
+        if (window.Echo) {
+            for (const courtId of subscribedCourtIds) {
+                window.Echo.leave(`court.${courtId}`);
+            }
+        }
     });
 
     // Filtering referees list
@@ -936,7 +987,7 @@
                         <button
                             disabled={drawings.current_page === 1}
                             onclick={() =>
-                                fetchState(drawings.current_page - 1)}
+                                refreshDashboardNow(drawings.current_page - 1)}
                             class="btn-gen ghost">Prev</button
                         >
                         <span
@@ -947,7 +998,7 @@
                             disabled={drawings.current_page ===
                                 drawings.last_page}
                             onclick={() =>
-                                fetchState(drawings.current_page + 1)}
+                                refreshDashboardNow(drawings.current_page + 1)}
                             class="btn-gen ghost">Next</button
                         >
                     </div>

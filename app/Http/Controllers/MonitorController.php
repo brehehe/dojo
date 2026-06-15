@@ -12,6 +12,7 @@ use App\Models\RandoriMatchResult;
 use App\Models\Registration;
 use App\Models\ScheduleReferee;
 use App\Services\BracketService;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -22,6 +23,7 @@ class MonitorController extends Controller
 {
     public function __construct(
         protected BracketService $bracketService,
+        protected StateCache $stateCache,
     ) {}
 
     // --- Inertia Page Renders ---
@@ -75,9 +77,14 @@ class MonitorController extends Controller
 
     // --- State API Endpoints for Polling ---
 
-    public function monitorCourtState(Court $court): JsonResponse
+    public function monitorCourtState(Request $request, Court $court): JsonResponse
     {
-        $cacheKey = "monitor_court_state_{$court->id}";
+        $versions = ['court' => $this->stateCache->version('court', $court->id)];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+
+        $cacheKey = $this->stateCache->cacheKey('monitor_court_state', [$court->id], $versions);
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load([
                 'activeMatch.athletes.registrations.contingent',
@@ -107,16 +114,17 @@ class MonitorController extends Controller
             ];
         });
 
-        $etag = md5(json_encode($data));
-
-        return response()->json($data)
-            ->header('Cache-Control', 'max-age=3, must-revalidate')
-            ->header('ETag', $etag);
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
     public function monitorHasilCourtState(Request $request, Court $court): JsonResponse
     {
-        $cacheKey = "monitor_hasil_court_state_{$court->id}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
+        $versions = ['court' => $this->stateCache->version('court', $court->id)];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+
+        $cacheKey = $this->stateCache->cacheKey('monitor_hasil_court_state', [$court->id, $request->query('round', ''), $request->query('pool_id', '')], $versions);
         $data = Cache::remember($cacheKey, 3, function () use ($court, $request) {
             $court->load(['activeMatch', 'activeDrawing']);
             $match = $court->activeMatch
@@ -126,27 +134,24 @@ class MonitorController extends Controller
             return $this->getHasilState($match, $court->id, $court, $request);
         });
 
-        $etag = md5(json_encode($data));
-
-        return response()->json($data)
-            ->header('Cache-Control', 'max-age=3, must-revalidate')
-            ->header('ETag', $etag);
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
     public function monitorHasilMatchState(Request $request, MatchNumber $match): JsonResponse
     {
-        $cacheKey = "monitor_hasil_match_state_{$match->id}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
+        $versions = ['match' => $this->stateCache->version('match', $match->id)];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+
+        $cacheKey = $this->stateCache->cacheKey('monitor_hasil_match_state', [$match->id, $request->query('round', ''), $request->query('pool_id', '')], $versions);
         $data = Cache::remember($cacheKey, 3, function () use ($match, $request) {
             $match->load(['athletes', 'embuScores']);
 
             return $this->getHasilState($match, null, null, $request);
         });
 
-        $etag = md5(json_encode($data));
-
-        return response()->json($data)
-            ->header('Cache-Control', 'max-age=3, must-revalidate')
-            ->header('ETag', $etag);
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
     private function getHasilState($match, $courtId, $court, Request $request): array
@@ -183,7 +188,11 @@ class MonitorController extends Controller
         $rundownId = $request->query('rundown_id');
         $sessionId = $request->query('session_time_id');
 
-        $cacheKey = "monitor_referee_state_{$court->id}_{$rundownId}_{$sessionId}";
+        $versions = ['court' => $this->stateCache->version('court', $court->id)];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+        $cacheKey = $this->stateCache->cacheKey('monitor_referee_state', [$court->id, $rundownId, $sessionId], $versions);
         $data = Cache::remember($cacheKey, 3, function () use ($court, $rundownId, $sessionId) {
             if ($rundownId && $sessionId) {
                 $referees = ScheduleReferee::with('referee.user')
@@ -221,16 +230,16 @@ class MonitorController extends Controller
             ];
         });
 
-        $etag = md5(json_encode($data));
-
-        return response()->json($data)
-            ->header('Cache-Control', 'max-age=3, must-revalidate')
-            ->header('ETag', $etag);
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
-    public function monitorRekapitulasiHasilState(Court $court): JsonResponse
+    public function monitorRekapitulasiHasilState(Request $request, Court $court): JsonResponse
     {
-        $cacheKey = "monitor_rekap_hasil_state_{$court->id}";
+        $versions = ['court' => $this->stateCache->version('court', $court->id)];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+        $cacheKey = $this->stateCache->cacheKey('monitor_rekap_hasil_state', [$court->id], $versions);
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load(['activeMatch', 'activeDrawing']);
             $match = $court->activeMatch ? MatchNumber::find($court->active_match_id) : null;
@@ -348,16 +357,16 @@ class MonitorController extends Controller
             ];
         });
 
-        $etag = md5(json_encode($data));
-
-        return response()->json($data)
-            ->header('Cache-Control', 'max-age=3, must-revalidate')
-            ->header('ETag', $etag);
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
-    public function monitorTimerState(Court $court): JsonResponse
+    public function monitorTimerState(Request $request, Court $court): JsonResponse
     {
-        $cacheKey = "monitor_timer_state_{$court->id}";
+        $versions = ['court' => $this->stateCache->version('court', $court->id)];
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
+        $cacheKey = $this->stateCache->cacheKey('monitor_timer_state', [$court->id], $versions);
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load(['activeMatch.ageGroup', 'activeDrawing.registration.contingent']);
             $state = Cache::get("court_{$court->id}_timer", [
@@ -374,11 +383,7 @@ class MonitorController extends Controller
             ];
         });
 
-        $etag = md5(json_encode($data));
-
-        return response()->json($data)
-            ->header('Cache-Control', 'max-age=3, must-revalidate')
-            ->header('ETag', $etag);
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
     // --- Helper methods ---
@@ -454,6 +459,7 @@ class MonitorController extends Controller
         }
 
         $drawings = $query->get();
+        $matchRecords = MatchNumber::whereIn('id', $matchIds)->get()->keyBy('id');
         $drawingRegIds = $drawings->pluck('registration_id')->unique()->filter()->toArray();
 
         $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $drawingRegIds)->get()->keyBy('id');
@@ -468,7 +474,7 @@ class MonitorController extends Controller
                 ->get();
         }
 
-        return $drawings->map(function ($drawing) use ($currentRound, $registrations, $allScores, $penyisihanScores) {
+        return $drawings->map(function ($drawing) use ($currentRound, $registrations, $allScores, $penyisihanScores, $matchRecords) {
             $regId = $drawing->registration_id;
             $reg = $registrations->get($regId);
             $specificMatchId = $drawing->match_number_id;
@@ -557,7 +563,7 @@ class MonitorController extends Controller
                 $accumulatedScore += $effectiveScore->effective_score;
             }
 
-            $matchRecord = MatchNumber::find($specificMatchId);
+            $matchRecord = $matchRecords->get($specificMatchId);
 
             return [
                 'id' => $regId,

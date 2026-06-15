@@ -222,11 +222,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/new-scoring/randori/{matchNumber}', [ScoringDashboardController::class, 'scoringRandori'])->name('new-scoring-randori-index');
         Route::get('/panitera/panggil-drawing', [ScoringDashboardController::class, 'panggilDrawingIndex'])->name('panitera.panggil-drawing');
         Route::get('/api/scoring/panggil-drawing-state', [ScoringDashboardController::class, 'panggilDrawingState'])->name('api.scoring.panggil-drawing-state');
+        Route::get('/new-scoring/correction', [ScoringDashboardController::class, 'scoringCorrectionIndex'])->name('new-scoring.correction');
 
         // Scoring API — authenticated via parent Route::middleware('auth') group.
         // All POST endpoints modify tournament data; GET endpoints expose scoring state.
         Route::prefix('api/scoring')->name('api.scoring.')->middleware('throttle:scoring')->group(function () {
             Route::get('/dashboard-state', [ScoringDashboardController::class, 'scoringDashboardState'])->name('dashboard-state');
+            Route::get('/correction/matches', [ScoringDashboardController::class, 'scoringCorrectionMatches'])->name('correction.matches');
+            Route::get('/correction/match-state/{matchNumber}', [ScoringDashboardController::class, 'scoringCorrectionMatchState'])->name('correction.match-state');
+            Route::post('/correction/embu/save', [EmbuScoringController::class, 'scoringEmbuCorrectionSave'])->name('correction.embu.save');
+            Route::post('/correction/randori/save', [RandoriScoringController::class, 'scoringRandoriCorrectionSave'])->name('correction.randori.save');
             Route::post('/activate-match', [ScoringDashboardController::class, 'activateMatch'])->name('activate-match');
             Route::post('/clear-court', [ScoringDashboardController::class, 'clearCourt'])->name('clear-court');
             Route::post('/clear-all-courts', [ScoringDashboardController::class, 'clearAllCourts'])->name('clear-all-courts');

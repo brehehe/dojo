@@ -7,6 +7,7 @@ use App\Events\MatchUpdated;
 use App\Http\Requests\RandoriCallMatchRequest;
 use App\Http\Requests\RandoriConfirmChampionRequest;
 use App\Http\Requests\RandoriSubmitScoringRequest;
+use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\MatchNumberMerge;
@@ -15,6 +16,7 @@ use App\Models\SchedulePanitera;
 use App\Models\ScheduleReferee;
 use App\Models\TournamentResult;
 use App\Services\BracketService;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -24,6 +26,7 @@ class RandoriScoringController extends Controller
 {
     public function __construct(
         protected BracketService $bracketService,
+        protected StateCache $stateCache,
     ) {}
 
     public function scoringRandoriState(Request $request, MatchNumber $matchNumber): JsonResponse
@@ -32,15 +35,31 @@ class RandoriScoringController extends Controller
             ->where('match_number_id', $matchNumber->id)
             ->first();
 
-        $merge = null;
         if ($mergeDetails) {
-            $merge = MatchNumberMerge::find($mergeDetails->match_number_merge_id);
             $matchNumberIds = DB::table('match_number_merge_details')
                 ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
                 ->pluck('match_number_id')
                 ->toArray();
         } else {
             $matchNumberIds = [$matchNumber->id];
+        }
+
+        $courtId = DB::table('drawing_match_numbers')
+            ->whereIn('match_number_id', $matchNumberIds)
+            ->value('court_id');
+
+        $versions = [
+            'match' => $this->stateCache->version('match', $matchNumber->id),
+            'court' => $courtId ? $this->stateCache->version('court', $courtId) : 1,
+        ];
+
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions, 0);
+        }
+
+        $merge = null;
+        if ($mergeDetails) {
+            $merge = MatchNumberMerge::find($mergeDetails->match_number_merge_id);
         }
 
         $drawingData = $matchNumber->drawing_data ?? [];
@@ -146,7 +165,7 @@ class RandoriScoringController extends Controller
         // Fetch randori results
         $randoriResults = RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)->get()->keyBy('bracket_node');
 
-        return response()->json([
+        $data = [
             'matchNumber' => $matchNumber,
             'merge' => $merge,
             'displayName' => $displayName,
@@ -161,7 +180,9 @@ class RandoriScoringController extends Controller
             'courtId' => $courtId,
             'randoriResults' => $randoriResults,
             'activeBracketNode' => $matchNumber->active_bracket_node,
-        ]);
+        ];
+
+        return $this->stateCache->conditionalJson($request, $data, $versions, 0);
     }
 
     public function randoriRepairBracket(Request $request): JsonResponse
@@ -344,6 +365,7 @@ class RandoriScoringController extends Controller
         $matchNumber->update(['drawing_data' => $data]);
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'bracket'));
         }
 
@@ -476,8 +498,11 @@ class RandoriScoringController extends Controller
                 'started_at_ms' => null,
             ]);
 
+            $this->stateCache->bumpCourt($drawing->court_id);
+
             event(new CourtUpdated($drawing->court_id, null, 'court'));
             foreach ($matchNumberIds as $id) {
+                $this->stateCache->bumpMatch($id);
                 event(new MatchUpdated($id, 'match_called'));
             }
 
@@ -543,8 +568,11 @@ class RandoriScoringController extends Controller
                 'started_at_ms' => null,
             ]);
 
+            $this->stateCache->bumpCourt($drawing->court_id);
+
             event(new CourtUpdated($drawing->court_id, null, 'court'));
             foreach ($matchNumberIds as $id) {
+                $this->stateCache->bumpMatch($id);
                 event(new MatchUpdated($id, 'match_called'));
             }
 
@@ -591,12 +619,14 @@ class RandoriScoringController extends Controller
         if ($drawing && $drawing->court_id) {
             Cache::put("court_{$drawing->court_id}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
             $drawing->court->update(['active_match_id' => null, 'active_drawing_id' => null, 'active_registration_id' => null, 'active_bracket_node' => null]);
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
 
         MatchNumber::whereIn('id', $matchNumberIds)->update(['active_bracket_node' => null]);
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'match_dismissed'));
         }
 
@@ -754,10 +784,12 @@ class RandoriScoringController extends Controller
         if ($drawing && $drawing->court_id) {
             Cache::put("court_{$drawing->court_id}_timer", ['status' => 'stopped', 'elapsed_ms' => 0, 'started_at_ms' => null]);
             $drawing->court->update(['active_match_id' => null, 'active_drawing_id' => null, 'active_registration_id' => null, 'active_bracket_node' => null]);
+            $this->stateCache->bumpCourt($drawing->court_id);
             event(new CourtUpdated($drawing->court_id, null, 'court'));
         }
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'score_submitted'));
         }
 
@@ -836,12 +868,245 @@ class RandoriScoringController extends Controller
         }
 
         foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
             event(new MatchUpdated($id, 'champions_confirmed'));
+        }
+
+        $courtId = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+            ->whereNotNull('court_id')
+            ->value('court_id')
+            ?? Court::whereIn('active_match_id', $matchNumberIds)->value('id');
+
+        if ($courtId) {
+            $this->stateCache->bumpCourt($courtId);
+            event(new CourtUpdated($courtId, null, 'court'));
         }
 
         return response()->json([
             'success' => true,
             'text' => 'Daftar juara telah berhasil dicatat ke sistem.',
         ])->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+
+    public function scoringRandoriCorrectionSave(Request $request): JsonResponse
+    {
+        $matchId = $request->input('match_id');
+        $bracket = $request->input('bracket');
+        $roundIdx = (int) $request->input('round');
+        $matchIdx = (int) $request->input('match');
+
+        $scoreRed = (int) $request->input('score_red');
+        $scoreBlue = (int) $request->input('score_blue');
+
+        $scoringAka = $request->input('scoring_aka');
+        $scoringShiro = $request->input('scoring_shiro');
+
+        if ($scoreRed === $scoreBlue) {
+            return response()->json(['success' => false, 'message' => 'Poin sama (Hikiwake). Silakan tentukan pemenang.'], 400);
+        }
+
+        $winnerSlot = $scoreRed > $scoreBlue ? 'athlete1' : 'athlete2';
+
+        $matchNumber = MatchNumber::findOrFail($matchId);
+
+        $mergeDetails = DB::table('match_number_merge_details')
+            ->where('match_number_id', $matchNumber->id)
+            ->first();
+
+        if ($mergeDetails) {
+            $matchNumberIds = DB::table('match_number_merge_details')
+                ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                ->pluck('match_number_id')
+                ->toArray();
+        } else {
+            $matchNumberIds = [$matchNumber->id];
+        }
+
+        $data = $matchNumber->drawing_data;
+        if ($bracket === 'ub') {
+            $match = $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+        } elseif ($bracket === 'lb') {
+            $match = $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] ?? null;
+        } elseif ($bracket === 'gf') {
+            $match = $data['grand_final'] ?? null;
+        } else {
+            return response()->json(['success' => false, 'message' => 'Bracket tidak valid.'], 400);
+        }
+
+        if (! $match) {
+            return response()->json(['success' => false, 'message' => 'Match tidak ditemukan.'], 404);
+        }
+
+        $winnerData = $match[$winnerSlot] ?? null;
+        $loserSlot = $winnerSlot === 'athlete1' ? 'athlete2' : 'athlete1';
+        $loserData = $match[$loserSlot] ?? null;
+
+        if (! $winnerData) {
+            return response()->json(['success' => false, 'message' => 'Winner data empty.'], 400);
+        }
+
+        // Fetch existing metadata to preserve signatures if they exist
+        $nodeKey = $bracket.'_'.$roundIdx.'_'.$matchIdx;
+        $existingResult = RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)
+            ->where('bracket_node', $nodeKey)
+            ->first();
+
+        $existingMeta = $existingResult ? json_decode($existingResult->metadata, true) : [];
+        $signatures = $existingMeta['signatures'] ?? [
+            'arbitrase' => ['name' => 'Admin Override', 'signature' => 'override'],
+            'koordinator' => ['name' => 'Admin Override', 'signature' => 'override'],
+            'wasit' => ['name' => 'Admin Override', 'signature' => 'override'],
+            'panitera' => [['name' => 'Admin Override', 'signature' => 'override']],
+            'manager_red' => ['name' => 'Admin Override', 'signature' => 'override'],
+            'manager_white' => ['name' => 'Admin Override', 'signature' => 'override'],
+        ];
+
+        $match['winner'] = $winnerSlot;
+        $match['winner_data'] = $winnerData;
+
+        if ($bracket === 'ub') {
+            $data['upper_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
+        } elseif ($bracket === 'lb') {
+            $data['lower_bracket']['rounds'][$roundIdx][$matchIdx] = $match;
+        } elseif ($bracket === 'gf') {
+            $data['grand_final'] = $match;
+        }
+
+        if ($match['winner_next'] ?? null) {
+            if ($match['winner_next']['bracket'] === 'ranked') {
+                $data['juara'][$match['winner_next']['rank']] = $winnerData;
+            } else {
+                $data = $this->bracketService->placeAthlete($data, $match['winner_next'], $winnerData, $matchNumberIds);
+            }
+        }
+
+        if ($loserData && ($match['loser_next'] ?? null)) {
+            if ($match['loser_next']['bracket'] === 'lb') {
+                $data = $this->bracketService->placeAthlete($data, $match['loser_next'], $loserData, $matchNumberIds);
+            } elseif ($match['loser_next']['bracket'] === 'ranked') {
+                $data['juara'][$match['loser_next']['rank']] = $loserData;
+            }
+        }
+
+        if ($bracket === 'gf') {
+            $data['juara'][1] = $winnerData;
+            $data['juara'][2] = $loserData;
+        }
+
+        $data = $this->bracketService->propagateBracketByes($data, $matchNumberIds);
+
+        $targetMatchId = $winnerData['match_number_id'] ?? $matchNumber->id;
+
+        RandoriMatchResult::updateOrCreate(
+            ['match_number_id' => $targetMatchId, 'bracket_node' => $nodeKey],
+            [
+                'bracket_node_index' => $roundIdx.'_'.$matchIdx,
+                'bracket_section' => $bracket,
+                'winner_color' => $winnerSlot,
+                'score_red' => $scoreRed,
+                'score_blue' => $scoreBlue,
+                'metadata' => json_encode([
+                    'scoringAka' => $scoringAka,
+                    'scoringShiro' => $scoringShiro,
+                    'signatures' => $signatures,
+                ]),
+            ]
+        );
+
+        MatchNumber::whereIn('id', $matchNumberIds)->update(['drawing_data' => $data]);
+
+        // Replay all results in order to keep the bracket consistency
+        $results = RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($results as $result) {
+            $parts = explode('_', $result->bracket_node);
+            if (count($parts) < 3) {
+                continue;
+            }
+
+            $bNodeBracket = $parts[0];
+            $bNodeRoundIdx = (int) $parts[1];
+            $bNodeMatchIdx = (int) $parts[2];
+
+            if ($bNodeBracket === 'ub') {
+                $bNodeMatch = $data['upper_bracket']['rounds'][$bNodeRoundIdx][$bNodeMatchIdx] ?? null;
+            } elseif ($bNodeBracket === 'lb') {
+                $bNodeMatch = $data['lower_bracket']['rounds'][$bNodeRoundIdx][$bNodeMatchIdx] ?? null;
+            } elseif ($bNodeBracket === 'gf') {
+                $bNodeMatch = $data['grand_final'] ?? null;
+            } else {
+                continue;
+            }
+
+            if (! $bNodeMatch) {
+                continue;
+            }
+
+            $bNodeWinnerSlot = $result->winner_color;
+            $bNodeLoserSlot = $bNodeWinnerSlot === 'athlete1' ? 'athlete2' : 'athlete1';
+
+            $bNodeWinnerData = $bNodeMatch[$bNodeWinnerSlot] ?? null;
+            $bNodeLoserData = $bNodeMatch[$bNodeLoserSlot] ?? null;
+
+            if (! $bNodeWinnerData) {
+                continue;
+            }
+
+            $bNodeMatch['winner'] = $bNodeWinnerSlot;
+            $bNodeMatch['winner_data'] = $bNodeWinnerData;
+
+            if ($bNodeBracket === 'ub') {
+                $data['upper_bracket']['rounds'][$bNodeRoundIdx][$bNodeMatchIdx] = $bNodeMatch;
+            } elseif ($bNodeBracket === 'lb') {
+                $data['lower_bracket']['rounds'][$bNodeRoundIdx][$bNodeMatchIdx] = $bNodeMatch;
+            } elseif ($bNodeBracket === 'gf') {
+                $data['grand_final'] = $bNodeMatch;
+            }
+
+            if ($bNodeMatch['winner_next'] ?? null) {
+                $data = $this->bracketService->placeAthlete($data, $bNodeMatch['winner_next'], $bNodeWinnerData, $matchNumberIds);
+            }
+
+            if ($bNodeLoserData && ($bNodeMatch['loser_next'] ?? null)) {
+                $lb = $bNodeMatch['loser_next']['bracket'] ?? 'eliminated';
+                if ($lb === 'lb') {
+                    $data = $this->bracketService->placeAthlete($data, $bNodeMatch['loser_next'], $bNodeLoserData, $matchNumberIds);
+                } elseif ($lb === 'ranked') {
+                    $data['juara'][$bNodeMatch['loser_next']['rank']] = $bNodeLoserData;
+                }
+            }
+
+            if ($bNodeBracket === 'gf') {
+                $data['juara'][1] = $bNodeWinnerData;
+                $data['juara'][2] = $bNodeLoserData;
+            }
+        }
+
+        $data = $this->bracketService->propagateBracketByes($data, $matchNumberIds);
+
+        MatchNumber::whereIn('id', $matchNumberIds)->update(['drawing_data' => $data]);
+
+        // Bump cache versions and dispatch event
+        $courtId = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+            ->whereNotNull('court_id')
+            ->value('court_id')
+            ?? Court::whereIn('active_match_id', $matchNumberIds)->value('id');
+
+        if ($courtId) {
+            $this->stateCache->bumpCourt($courtId);
+            event(new CourtUpdated($courtId, null, 'court'));
+        }
+
+        foreach ($matchNumberIds as $id) {
+            $this->stateCache->bumpMatch($id);
+            event(new MatchUpdated($id, 'bracket'));
+        }
+
+        return response()->json([
+            'success' => true,
+            'text' => 'Koreksi nilai Randori berhasil disimpan.',
+        ]);
     }
 }

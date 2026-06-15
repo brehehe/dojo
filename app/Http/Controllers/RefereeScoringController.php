@@ -17,7 +17,9 @@ use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
 use App\Models\ScheduleReferee;
 use App\Models\Technique\Technique;
+use App\Services\StateCache;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -25,6 +27,10 @@ use Inertia\Response;
 
 class RefereeScoringController extends Controller
 {
+    public function __construct(
+        protected StateCache $stateCache,
+    ) {}
+
     /**
      * Renders the immersive referee scoring dashboard (Svelte).
      */
@@ -36,7 +42,7 @@ class RefereeScoringController extends Controller
     /**
      * Fetch the current active match and scoring state for the referee.
      */
-    public function state(): JsonResponse
+    public function state(Request $request): JsonResponse
     {
         $user = Auth::user();
         if (! $user) {
@@ -44,6 +50,73 @@ class RefereeScoringController extends Controller
         }
 
         $isTabletMode = ! empty($user->judge_index) && ! empty($user->court_id);
+        $courtId = null;
+        $activeMatchId = null;
+
+        if ($isTabletMode) {
+            $courtId = $user->court_id;
+            $activeMatchId = DB::table('courts')
+                ->where('id', $courtId)
+                ->value('active_match_id');
+        } else {
+            $refereeId = DB::table('referees')
+                ->where('user_id', $user->id)
+                ->value('id');
+
+            if ($refereeId) {
+                $activeAssignment = DB::table('active_court_referees')
+                    ->where('referee_id', $refereeId)
+                    ->first();
+
+                if ($activeAssignment) {
+                    $courtId = $activeAssignment->court_id;
+                    $activeMatchId = DB::table('courts')
+                        ->where('id', $courtId)
+                        ->value('active_match_id');
+                } else {
+                    $mySchedules = DB::table('schedule_referees')
+                        ->where('referee_id', $refereeId)
+                        ->whereNotNull('court_id')
+                        ->get();
+
+                    foreach ($mySchedules as $schedule) {
+                        $court = DB::table('courts')
+                            ->where('id', $schedule->court_id)
+                            ->first();
+
+                        if (! $court || ! $court->active_match_id) {
+                            continue;
+                        }
+
+                        $activeDrawing = DB::table('drawing_match_numbers')
+                            ->where('id', $court->active_drawing_id)
+                            ->first();
+
+                        if ($activeDrawing) {
+                            $sessionMatch = $activeDrawing->session_time_id == $schedule->session_time_id
+                                && $activeDrawing->rundown_id == $schedule->rundown_id;
+
+                            if (! $sessionMatch) {
+                                continue;
+                            }
+                        }
+
+                        $courtId = $court->id;
+                        $activeMatchId = $court->active_match_id;
+                        break;
+                    }
+                }
+            }
+        }
+
+        $versions = [
+            'match' => $activeMatchId ? $this->stateCache->version('match', $activeMatchId) : 1,
+            'court' => $courtId ? $this->stateCache->version('court', $courtId) : 1,
+        ];
+
+        if ($this->stateCache->hasValidEtag($request, $versions)) {
+            return $this->stateCache->respond304($request, $versions);
+        }
         $referee = null;
         $activeMatch = null;
         $assignedCourt = null;
@@ -385,7 +458,7 @@ class RefereeScoringController extends Controller
         // Get readable judge label
         $judgeLabel = $judgeIndex ? $this->getJudgeLabel($judgeIndex) : null;
 
-        return response()->json([
+        $data = [
             'referee' => $referee,
             'activeMatch' => $activeMatch,
             'activeDrawing' => $activeDrawing,
@@ -407,7 +480,9 @@ class RefereeScoringController extends Controller
             'signature' => $signature,
             'isTabletMode' => $isTabletMode,
             'currentActiveIdentifier' => $activeMatch ? $activeMatch->id.'_'.($assignedCourt?->active_drawing_id ?? $activeMatch->active_registration_id ?? $activeMatch->active_bracket_node) : null,
-        ]);
+        ];
+
+        return $this->stateCache->conditionalJson($request, $data, $versions);
     }
 
     /**
@@ -506,8 +581,10 @@ class RefereeScoringController extends Controller
 
         $targetMatchId = $this->getSpecificMatchId($activeMatch, $assignedCourt);
         if ($assignedCourt) {
+            $this->stateCache->bumpCourt($assignedCourt->id);
             event(new CourtUpdated($assignedCourt->id, null, 'referee_saved'));
         }
+        $this->stateCache->bumpMatch($targetMatchId);
         event(new MatchUpdated($targetMatchId, 'referee_saved'));
 
         return response()->json([
@@ -613,8 +690,10 @@ class RefereeScoringController extends Controller
 
         $targetMatchId = $this->getSpecificMatchId($activeMatch, $assignedCourt);
         if ($assignedCourt) {
+            $this->stateCache->bumpCourt($assignedCourt->id);
             event(new CourtUpdated($assignedCourt->id, null, 'referee_submitted'));
         }
+        $this->stateCache->bumpMatch($targetMatchId);
         event(new MatchUpdated($targetMatchId, 'referee_submitted'));
 
         return response()->json([
