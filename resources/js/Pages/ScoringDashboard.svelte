@@ -44,6 +44,12 @@
     // Debouncing helper
     let searchTimeout;
 
+    // Dashboard lifecycle & refresh states
+    let dashboardDestroyed = false;
+    let dashboardRefreshTimeout = null;
+    let dashboardFetchInFlight = false;
+    let dashboardRefreshQueued = false;
+
     // Filter changes trigger refresh
     $effect(() => {
         // Track filters
