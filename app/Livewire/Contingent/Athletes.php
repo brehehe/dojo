@@ -120,6 +120,7 @@ class Athletes extends Component
             'nik_kenshi' => 'nullable|string|max:255',
             'gender' => 'required|in:Male,Female',
             'birth_date' => 'nullable|date',
+            'photo' => 'nullable|image|max:2048',
         ]);
 
         $data = [

@@ -50,7 +50,7 @@ class Embu9ContingentSeeder extends Seeder
                         ['email' => $email],
                         [
                             'name' => $contingentName,
-                            'password' => Hash::make('password'),
+                            'password' => Hash::make(Str::random(12)),
                         ]
                     );
                     $user->assignRole('Contingent');

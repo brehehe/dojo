@@ -8,10 +8,8 @@
   <link rel="shortcut icon" href="/assets/favicon-CK1QI2Xs.ico">
 
   <!-- Fonts & Icons -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
+  <link rel="stylesheet" href="{{ asset('vendor/font-awesome/css/all.min.css') }}">
 
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   @livewireStyles
@@ -261,7 +259,7 @@
   </nav>
 
   <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{{ asset('vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
   <script>
     window.addEventListener('swal', function (event) {
       const data = Array.isArray(event.detail) ? event.detail[0] : event.detail;

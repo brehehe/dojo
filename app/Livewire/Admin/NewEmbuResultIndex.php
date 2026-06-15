@@ -564,60 +564,43 @@ class NewEmbuResultIndex extends Component
         }
 
         $matchIds = $this->getMatchNumberIds();
-        $existingFinals = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+
+        // Resolve court/session/rundown/pool from form or from any existing final drawing
+        $existingFinal = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', 'Final')
-            ->orderBy('sequence_number')
-            ->get();
+            ->first();
 
-        $usedIds = [];
+        $courtId = $this->finalCourtId ?? $existingFinal?->court_id;
+        $poolId = $this->finalPoolId ?? $existingFinal?->pool_id;
+        $sessionTimeId = $this->finalSessionTimeId ?? $existingFinal?->session_time_id;
+        $rundownId = $this->finalRundownId ?? $existingFinal?->rundown_id;
+        $scheduleDate = $this->finalScheduleDate ?? $existingFinal?->schedule_date;
+
+        // Delete ALL existing Final drawings for this match to avoid duplicates
+        DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+            ->where('round', 'Final')
+            ->delete();
+
+        // Create fresh Final drawings for each qualifier
         foreach ($qualifiers->values() as $seq => $reg) {
-            $existing = $existingFinals->where('sequence_number', $seq + 1)->first();
-
             $meta = [
                 'contingent' => $reg['contingent']?->name ?? 'Unknown',
                 'athlete_name' => $reg['athletes']->pluck('name')->implode(', '),
                 'athlete_ids' => $reg['athlete_ids'] ?? [],
             ];
 
-            if ($existing) {
-                $existingMeta = is_array($existing->metadata) ? $existing->metadata : [];
-                $mergedMeta = array_merge($existingMeta, $meta);
-
-                $existing->update([
-                    'registration_id' => $reg['id'],
-                    'match_number_id' => $reg['match_number_id'],
-                    'metadata' => $mergedMeta,
-                ]);
-                $usedIds[] = $existing->id;
-            } else {
-                $newRecord = DrawingMatchNumber::create([
-                    'match_number_id' => $reg['match_number_id'],
-                    'registration_id' => $reg['id'],
-                    'round' => 'Final',
-                    'draft_type' => 'embu',
-                    'sequence_number' => $seq + 1,
-                    'court_id' => $this->finalCourtId,
-                    'pool_id' => $this->finalPoolId,
-                    'session_time_id' => $this->finalSessionTimeId,
-                    'rundown_id' => $this->finalRundownId,
-                    'schedule_date' => $this->finalScheduleDate,
-                    'metadata' => $meta,
-                ]);
-                $usedIds[] = $newRecord->id;
-            }
-        }
-
-        // Reset any remaining unused slots to empty (registration_id = null), keeping the pre-scheduled slots
-        $unusedFinals = $existingFinals->whereNotIn('id', $usedIds);
-        foreach ($unusedFinals as $unused) {
-            $unusedMeta = is_array($unused->metadata) ? $unused->metadata : [];
-            $unusedMeta['contingent'] = 'TBD';
-            $unusedMeta['athlete_name'] = 'TBD';
-            $unusedMeta['athlete_ids'] = [];
-
-            $unused->update([
-                'registration_id' => null,
-                'metadata' => $unusedMeta,
+            DrawingMatchNumber::create([
+                'match_number_id' => $reg['match_number_id'],
+                'registration_id' => $reg['id'],
+                'round' => 'Final',
+                'draft_type' => 'embu',
+                'sequence_number' => $seq + 1,
+                'court_id' => $courtId,
+                'pool_id' => $poolId,
+                'session_time_id' => $sessionTimeId,
+                'rundown_id' => $rundownId,
+                'schedule_date' => $scheduleDate,
+                'metadata' => $meta,
             ]);
         }
 

@@ -342,7 +342,7 @@
 
                             {{-- Seq --}}
                             <td class="px-4 py-3 text-[15px] text-slate-800 font-bold border-r border-slate-200">
-                                {{ $drawing->sequence_number ?? '-' }}
+                                {{ $loop->iteration + $drawings->firstItem() - 1 }}
                             </td>
 
                             {{-- Match / Kategori --}}

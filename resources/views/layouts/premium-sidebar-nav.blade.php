@@ -156,6 +156,8 @@
                     (Scoring)</a>
                 <a class="nav-item {{ request()->routeIs('admin.panitera.panggil-drawing') ? 'active' : '' }}"
                     href="{{ route('admin.panitera.panggil-drawing') }}"><i class="fa-solid fa-bullhorn"></i> Panggil Lapangan (Waktu)</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-scoring.correction') ? 'active' : '' }}"
+                    href="{{ route('admin.new-scoring.correction') }}"><i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai</a>
                 <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'active' : '' }}"
                     href="{{ route('admin.panitera.scoring.embu.result') }}"><i class="fa-solid fa-trophy"></i> Hasil
                     Embu</a>

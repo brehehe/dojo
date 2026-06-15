@@ -1,5 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
 
     // Props passed from Inertia
     let { courtId } = $props();
@@ -14,13 +16,37 @@
     let loaded = $state(false);
     let buzzerPool = [];
 
-    let pollInterval;
     let localTickInterval;
 
+    let destroyed = false;
+    let syncInFlight = false;
+    let syncQueued = false;
+    let queuedTimeout = null;
+    let polling = null;
+    const pollDelay = 3000;
+
+    function scheduleQueuedSync() {
+        if (destroyed) return;
+        if (queuedTimeout) clearTimeout(queuedTimeout);
+        queuedTimeout = setTimeout(() => {
+            queuedTimeout = null;
+            if (!destroyed) sync();
+        }, pollDelay);
+    }
+
     async function sync() {
+        if (destroyed) return;
+        if (syncInFlight) {
+            syncQueued = true;
+            return;
+        }
+
+        syncInFlight = true;
         try {
-            let res = await fetch(`/api/svelte-monitor/court/${courtId}/state`);
-            let data = await res.json();
+            let { data, notModified } = await conditionalJsonFetch(`/api/svelte-monitor/court/${courtId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (!data) return;
 
             court = data.court;
@@ -40,6 +66,14 @@
             loaded = true;
         } catch (e) {
             console.error('Error syncing court monitor state:', e);
+        } finally {
+            syncInFlight = false;
+            if (syncQueued && !destroyed) {
+                syncQueued = false;
+                scheduleQueuedSync();
+            } else if (destroyed) {
+                syncQueued = false;
+            }
         }
     }
 
@@ -52,7 +86,7 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(e => console.warn(e));
+            audio.play().catch(() => {});
         } catch(e) {}
     }
 
@@ -97,6 +131,7 @@
     });
 
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -106,11 +141,46 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn('Failed to preload buzzer audio:', e);
+            // Silent fail for audio preload
         }
 
         sync();
-        pollInterval = setInterval(sync, 1000); // Poll court state every 1s
+        if (window.Echo) {
+            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                if (e.timer_state) {
+                    offset = e.timer_state.server_time_ms - Date.now();
+                    stateObj = e.timer_state;
+
+                    let wasRunning = running;
+                    running = (e.timer_state.status === 'running');
+
+                    // Play buzzer when timer newly starts
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        playBuzzer();
+                    }
+
+                    if (e.timer_state.status !== 'countdown') {
+                        countdown = 0;
+                    }
+                }
+
+                // If it is not a pure timer update, fetch the full layout details
+                if (e.event_type !== 'timer') {
+                    sync();
+                }
+            });
+        }
+
+        polling = createAdaptivePolling({
+            fetchNow: sync,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // High-speed local interpolation (30ms) for smooth timer
         localTickInterval = setInterval(() => {
@@ -135,8 +205,14 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        syncQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`court.${courtId}`);
+        }
+        polling?.stop();
         clearInterval(localTickInterval);
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
     });
 </script>
 

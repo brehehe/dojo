@@ -1,5 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
 
     // Props passed from Inertia
     let { courtId } = $props();
@@ -12,8 +14,23 @@
     let poolName = $state(null);
     let loaded = $state(false);
 
-    let pollInterval;
     let scrollInterval;
+
+    let destroyed = false;
+    let syncInFlight = false;
+    let syncQueued = false;
+    let queuedTimeout = null;
+    let polling = null;
+    const pollDelay = 3000;
+
+    function scheduleQueuedSync() {
+        if (destroyed) return;
+        if (queuedTimeout) clearTimeout(queuedTimeout);
+        queuedTimeout = setTimeout(() => {
+            queuedTimeout = null;
+            if (!destroyed) sync();
+        }, pollDelay);
+    }
 
     // Scrolling container refs
     let scrollContainer = $state(null);
@@ -24,9 +41,18 @@
     let pauseTicks = 0;
 
     async function sync() {
+        if (destroyed) return;
+        if (syncInFlight) {
+            syncQueued = true;
+            return;
+        }
+
+        syncInFlight = true;
         try {
-            let res = await fetch(`/api/svelte-monitor/rekapitulasi-hasil/court/${courtId}/state`);
-            let data = await res.json();
+            let { data, notModified } = await conditionalJsonFetch(`/api/svelte-monitor/rekapitulasi-hasil/court/${courtId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (!data) return;
 
             court = data.court;
@@ -37,6 +63,14 @@
             loaded = true;
         } catch (e) {
             console.error('Error syncing rekapitulasi hasil state:', e);
+        } finally {
+            syncInFlight = false;
+            if (syncQueued && !destroyed) {
+                syncQueued = false;
+                scheduleQueuedSync();
+            } else if (destroyed) {
+                syncQueued = false;
+            }
         }
     }
 
@@ -98,14 +132,35 @@
     }
 
     onMount(() => {
+        destroyed = false;
         sync();
-        pollInterval = setInterval(sync, 1000); // Poll state every 1s
+        if (window.Echo) {
+            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                sync();
+            });
+        }
+        polling = createAdaptivePolling({
+            fetchNow: sync,
+            normalInterval: pollDelay,
+            healthyInterval: 20000,
+            staleAfter: 20000,
+            immediate: false,
+        });
+        polling.start();
         startAutoScroll();
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        syncQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`court.${courtId}`);
+        }
+        polling?.stop();
         clearInterval(scrollInterval);
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
     });
 
     const currentYear = new Date().getFullYear();

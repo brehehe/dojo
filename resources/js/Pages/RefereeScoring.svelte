@@ -1,6 +1,9 @@
 <script>
     import { onMount, onDestroy } from "svelte";
     import SignaturePad from "../Components/SignaturePad.svelte";
+    import { createAdaptivePolling } from "../lib/adaptivePolling";
+    import { conditionalJsonFetch } from "../lib/conditionalFetch";
+    import { postJson } from "../lib/api";
 
     // Svelte 5 states
     let loading = $state(true);
@@ -39,7 +42,39 @@
     let isFullscreen = $state(false);
     let submitting = $state(false);
 
-    let pollInterval;
+    let destroyed = false;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let queuedFetchTimeout;
+    let polling;
+    const pollDelay = 2000;
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
+
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                fetchState();
+            });
+        }
+    }
 
     // Derived values (Svelte 5)
     let techniqueSubtotal = $derived(
@@ -61,9 +96,18 @@
     let totalScore = $derived(techniqueSubtotal + expressionSubtotal);
 
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
-            const res = await fetch("/admin/referee/scoring/state");
-            const data = await res.json();
+            const { data, notModified } = await conditionalJsonFetch("/admin/referee/scoring/state");
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data.error) {
                 loading = false;
                 return;
@@ -72,6 +116,9 @@
             referee = data.referee;
             activeDrawing = data.activeDrawing;
             assignedCourt = data.assignedCourt;
+            if (assignedCourt && assignedCourt.id) {
+                subscribeToCourt(assignedCourt.id);
+            }
             assignedSession = data.assignedSession;
             assignedRundown = data.assignedRundown;
             judgeIndex = data.judgeIndex;
@@ -85,30 +132,39 @@
             isTabletMode = data.isTabletMode;
 
             // Handle match change or participant called transition
-            if (currentActiveIdentifier !== data.currentActiveIdentifier) {
-                currentActiveIdentifier = data.currentActiveIdentifier;
-                activeMatch = data.activeMatch;
-                isFormOpen = data.isFormOpen;
+            const identifierChanged = currentActiveIdentifier !== data.currentActiveIdentifier;
+            const formOpened = !isFormOpen && data.isFormOpen;
+            const formClosed = isFormOpen && !data.isFormOpen;
 
+            currentActiveIdentifier = data.currentActiveIdentifier;
+            activeMatch = data.activeMatch;
+            isFormOpen = data.isFormOpen;
+
+            if (identifierChanged || formOpened) {
                 // Sync scores & comments
-                if (data.isFormOpen) {
-                    for (const key in embuItems) {
-                        embuItems[key] = data.embuItems?.[key] || 0;
-                    }
-                    notes = data.notes || "";
-                    signature = data.signature || null;
-                } else {
-                    resetLocalForm();
+                for (const key in embuItems) {
+                    embuItems[key] = data.embuItems?.[key] || 0;
                 }
-            } else {
-                activeMatch = data.activeMatch;
-                isFormOpen = data.isFormOpen;
+                notes = data.notes || "";
+                signature = data.signature || null;
+            } else if (formClosed) {
+                resetLocalForm();
             }
 
             loading = false;
         } catch (e) {
             console.error("Error fetching scoring state:", e);
-            loading = false;
+            if (!destroyed) {
+                loading = false;
+            }
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -143,19 +199,9 @@
         }
 
         try {
-            await fetch("/admin/referee/scoring/save", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
-                },
-                body: JSON.stringify({
+            await postJson("/admin/referee/scoring/save", {
                     embuItems: savedEmbuItems,
                     notes,
-                }),
             });
         } catch (e) {
             console.error("Error autosaving scores:", e);
@@ -181,20 +227,10 @@
 
         submitting = true;
         try {
-            const res = await fetch("/admin/referee/scoring/submit", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
-                },
-                body: JSON.stringify({
+            const res = await postJson("/admin/referee/scoring/submit", {
                     embuItems,
                     notes,
                     signature,
-                }),
             });
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
@@ -293,16 +329,28 @@
     }
 
     onMount(() => {
+        destroyed = false;
         document.body.classList.add("referee-scoring-immersive");
         document.addEventListener("fullscreenchange", syncFullscreen);
-        fetchState();
-        pollInterval = setInterval(fetchState, 1500);
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+        });
+        polling.start();
     });
 
     onDestroy(() => {
+        destroyed = true;
+        fetchQueued = false;
         document.body.classList.remove("referee-scoring-immersive");
         document.removeEventListener("fullscreenchange", syncFullscreen);
-        clearInterval(pollInterval);
+        if (window.Echo && currentCourtChannelId) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        polling?.stop();
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
     });
 </script>
 
@@ -1785,13 +1833,23 @@
         min-width: 0;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 600px) {
         .ref-score-cell {
             padding: 6px 4px;
         }
         .ref-score-table-grid thead th {
             padding: 10px 6px;
             font-size: 10px;
+        }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+        .ref-score-cell {
+            padding: 14px 10px;
+        }
+        .ref-score-table-grid thead th {
+            padding: 14px 12px;
+            font-size: 13px;
         }
     }
 
@@ -1874,7 +1932,7 @@
         letter-spacing: 0.05em;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 600px) {
         .ref-score-aspect {
             font-size: 15px;
         }
@@ -1895,6 +1953,31 @@
         }
         .ref-score-range-hint {
             font-size: 11px;
+        }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+        .ref-score-aspect {
+            font-size: 20px;
+        }
+        .ref-score-desc {
+            font-size: 16px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        .ref-score-weight,
+        .ref-score-no,
+        .ref-score-standard {
+            font-size: 22px;
+        }
+        .ref-score-input {
+            font-size: 34px;
+            max-width: 130px;
+            padding: 10px 4px;
+            height: 60px;
+        }
+        .ref-score-range-hint {
+            font-size: 14px;
         }
     }
 

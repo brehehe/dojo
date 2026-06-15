@@ -1,7 +1,10 @@
 <script>
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy, untrack } from 'svelte';
     import { router } from '@inertiajs/svelte';
     import SignaturePad from '../Components/SignaturePad.svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
+    import { postJson } from '../lib/api';
 
     // Props
     let { matchId, urlRound = null, urlPoolId = null, urlFrom = null } = $props();
@@ -27,11 +30,13 @@
     let timerState = $state({
         status: 'stopped',
         elapsed_ms: 0,
-        started_at_ms: null
+        started_at_ms: null,
+        countdown_end_ms: null
     });
     let courtId = $state(null);
     let randoriResults = $state({});
     let activeBracketNode = $state(null);
+    let lastLoadedMatchKey = '';
 
     // Active Match scoring form
     let activeMatch = $state(null); // { bracket, round, match, data }
@@ -73,6 +78,50 @@
     let buzzerPool = [];
     let actionInFlight = $state(false);
 
+    $effect(() => {
+        const currentMatch = activeMatch;
+        const currentResults = randoriResults;
+        
+        untrack(() => {
+            if (currentMatch) {
+                const nodeKey = `${currentMatch.bracket}_${currentMatch.round}_${currentMatch.match}`;
+                const matchIdKey = `${matchId}_${nodeKey}`;
+                
+                if (lastLoadedMatchKey !== matchIdKey) {
+                    lastLoadedMatchKey = matchIdKey;
+                    
+                    const result = currentResults[nodeKey];
+                    if (result) {
+                        const meta = (typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata) || {};
+                        scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                        scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                        
+                        const sigs = meta.signatures || {};
+                        sigArbitraseName = sigs.arbitrase?.name || '';
+                        sigArbitraseData = sigs.arbitrase?.signature || null;
+                        sigKoordinatorName = sigs.koordinator?.name || '';
+                        sigKoordinatorData = sigs.koordinator?.signature || null;
+                        sigWasitName = sigs.wasit?.name || '';
+                        sigWasitData = sigs.wasit?.signature || null;
+                        sigPanitera = sigs.panitera || [{ name: '', signature: null }];
+                        sigManagerRedName = sigs.manager_red?.name || '';
+                        sigManagerRedData = sigs.manager_red?.signature || null;
+                        sigManagerWhiteName = sigs.manager_white?.name || '';
+                        sigManagerWhiteData = sigs.manager_white?.signature || null;
+                    } else {
+                        resetDetailedScoring();
+                    }
+                }
+            } else {
+                if (lastLoadedMatchKey !== '') {
+                    lastLoadedMatchKey = '';
+                    resetDetailedScoring();
+                }
+            }
+            recalculateScores();
+        });
+    });
+
     // Toast Notification State
     let toast = $state({ show: false, message: '', type: 'success' });
     let toastTimeout;
@@ -84,8 +133,34 @@
         }, 3000);
     }
 
-    // Polling interval
-    let pollInterval;
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                if (e.timer_state) {
+                    let wasRunning = running;
+                    if (!syncTimerFromServer(e.timer_state)) return;
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                        }
+                    }
+                } else {
+                    fetchState();
+                }
+            });
+        }
+    }
 
     // Timer local tick states
     let time = $state(0);
@@ -96,10 +171,127 @@
     let playedIntervals = new Set();
     let interpolInterval;
 
+    let lastTimerServerTimeMs = 0;
+    const timerSyncToleranceMs = 250;
+
+    function currentElapsedMs() {
+        if (running && timerState.started_at_ms) {
+            return Math.max(
+                0,
+                (timerState.elapsed_ms || 0) +
+                    (Date.now() + offset - timerState.started_at_ms),
+            );
+        }
+        return Math.max(time, timerState.elapsed_ms || 0);
+    }
+
+    function snapshotTimerUiState() {
+        return {
+            timerState: { ...timerState },
+            time,
+            running,
+            countdown,
+            offset,
+            lastTickSecond,
+            playedIntervals: new Set(playedIntervals),
+        };
+    }
+
+    function restoreTimerUiState(snapshot) {
+        timerState = { ...snapshot.timerState };
+        time = snapshot.time;
+        running = snapshot.running;
+        countdown = snapshot.countdown;
+        offset = snapshot.offset;
+        lastTickSecond = snapshot.lastTickSecond;
+        playedIntervals = new Set(snapshot.playedIntervals);
+    }
+
+    function elapsedFromTimerState(serverTimerState) {
+        const elapsed = serverTimerState?.elapsed_ms || 0;
+        if (serverTimerState?.status === "running" && serverTimerState.started_at_ms) {
+            const serverNow = serverTimerState.server_time_ms ?? Date.now() + offset;
+            return Math.max(0, elapsed + (serverNow - serverTimerState.started_at_ms));
+        }
+        return Math.max(0, elapsed);
+    }
+
+    function syncTimerFromServer(serverTimerState) {
+        if (!serverTimerState) return;
+        const serverTimeMs = Number(serverTimerState.server_time_ms || 0);
+
+        if (serverTimeMs && serverTimeMs < lastTimerServerTimeMs) {
+            return false;
+        }
+
+        const serverElapsed = elapsedFromTimerState(serverTimerState);
+        const sameRunningTimer =
+            timerState.status === "running" &&
+            serverTimerState.status === "running" &&
+            timerState.started_at_ms === serverTimerState.started_at_ms;
+
+        if (sameRunningTimer && serverElapsed + timerSyncToleranceMs < time) {
+            return false;
+        }
+
+        if (serverTimeMs) {
+            lastTimerServerTimeMs = serverTimeMs;
+            offset = serverTimerState.server_time_ms - Date.now();
+        }
+
+        timerState = serverTimerState;
+        running = serverTimerState.status === "running";
+
+        if (running) {
+            time = sameRunningTimer ? Math.max(time, serverElapsed) : serverElapsed;
+        } else {
+            time = serverElapsed;
+        }
+
+        if (serverTimerState.status !== "countdown") {
+            countdown = 0;
+        }
+
+        if (!running && time < 500) {
+            playedIntervals.clear();
+        }
+
+        return true;
+    }
+
+    function applyServerTimerState(serverTimerState) {
+        syncTimerFromServer(serverTimerState);
+    }
+
+    let destroyed = false;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let queuedFetchTimeout;
+    let polling;
+    const pollDelay = 2000;
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
+
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
-            const res = await fetch(`/admin/api/scoring/randori/${matchId}/state`);
-            const data = await res.json();
+            const { data, notModified } = await conditionalJsonFetch(`/admin/api/scoring/randori/${matchId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data) {
                 matchNumber = data.matchNumber;
                 merge = data.merge;
@@ -111,25 +303,26 @@
                 assignedKoordinators = data.assignedKoordinators;
                 assignedPaniteras = data.assignedPaniteras;
                 juaraMap = data.juara || {};
-                timerState = data.timerState;
                 courtId = data.courtId;
+                subscribeToCourt(courtId);
                 randoriResults = data.randoriResults || {};
                 if (!actionInFlight) {
                     activeBracketNode = data.activeBracketNode;
                 }
 
                 // Sync Timer local state with server state
-                offset = (timerState.server_time_ms || Date.now()) - Date.now();
-                running = (timerState.status === 'running');
-                if (timerState.status !== 'countdown') {
-                    countdown = 0;
-                }
-                if (!running && time < 500) {
-                    playedIntervals.clear();
-                }
+                syncTimerFromServer(data.timerState);
             }
         } catch (e) {
             console.error('Error fetching Randori scoring state:', e);
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -137,7 +330,17 @@
     async function startTimer() {
         if (!courtId) return;
         // Optimistic UI updates
+        const timerSnapshot = snapshotTimerUiState();
+        const elapsed = currentElapsedMs();
+        timerState = {
+            status: 'running',
+            elapsed_ms: elapsed,
+            started_at_ms: Date.now() + offset,
+            countdown_end_ms: null
+        };
+        time = elapsed;
         running = true;
+        countdown = 0;
         if (!timerState.elapsed_ms || timerState.elapsed_ms < 1000) {
             if (!playedIntervals.has('start')) {
                 playedIntervals.add('start');
@@ -145,75 +348,71 @@
             }
         }
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'start' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'start' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = true;
             } else {
-                running = false;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = false;
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        const pausedAt = currentElapsedMs();
+        timerState = {
+            status: 'paused',
+            elapsed_ms: pausedAt,
+            started_at_ms: null,
+            countdown_end_ms: null
+        };
+        time = pausedAt;
         running = false;
+        countdown = 0;
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'pause' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'pause' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = false;
             } else {
-                running = true;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = true;
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        timerState = {
+            status: 'stopped',
+            elapsed_ms: 0,
+            started_at_ms: null,
+            countdown_end_ms: null
+        };
         running = false;
         time = 0;
         countdown = 0;
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'stop' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'stop' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 time = 0;
                 running = false;
                 countdown = 0;
+            } else {
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
@@ -225,6 +424,7 @@
 
     // Call Match / Grand Final / Dismiss
     async function callMatch(nodeKey, roundIdx, matchIdx, bracket) {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = nodeKey; // Optimistic update
@@ -246,19 +446,12 @@
         };
 
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-match', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-match', {
                     match_id: matchId,
                     node_key: nodeKey,
                     round_idx: roundIdx,
                     match_idx: matchIdx,
                     bracket: bracket
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -279,25 +472,18 @@
             activeBracketNode = originalActiveNode;
             activeMatch = null;
             actionInFlight = false;
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     async function callGrandFinal() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = 'gf_0_0'; // Optimistic update
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-grand-final', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-grand-final', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -316,24 +502,17 @@
         } catch (e) {
             activeBracketNode = originalActiveNode;
             actionInFlight = false;
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     async function dismissMatch() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = null; // Optimistic update
         try {
-            const res = await fetch('/admin/api/scoring/randori/dismiss-match', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ match_id: matchId })
-            });
+            const res = await postJson('/admin/api/scoring/randori/dismiss-match', { match_id: matchId });
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
@@ -349,7 +528,6 @@
         } catch (e) {
             activeBracketNode = originalActiveNode;
             actionInFlight = false;
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -358,15 +536,8 @@
     async function confirmChampion() {
         if (!confirm('Sistem akan men-generate Juara 1 & 2 dari hasil Grand Final. Lanjutkan?')) return;
         try {
-            const res = await fetch('/admin/api/scoring/randori/confirm-champion', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/confirm-champion', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -376,7 +547,6 @@
                 showToast(data.message || 'Gagal menyimpan juara', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -384,15 +554,8 @@
     // Call officials & TTS announcement
     async function callOfficials() {
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-officials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-officials', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -404,7 +567,6 @@
                 showToast(data.message || 'Gagal memanggil wasit', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -412,15 +574,8 @@
     // Repair bracket
     async function repairBracket() {
         try {
-            const res = await fetch('/admin/api/scoring/randori/repair-bracket', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/repair-bracket', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -430,7 +585,6 @@
                 showToast(data.message || 'Gagal memperbaiki bracket', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -470,7 +624,6 @@
 
     // Open Match modal / scoring form
     function openMatchModal(bracket, roundIdx, matchIdx) {
-        const nodeKey = `${bracket}_${roundIdx}_${matchIdx}`;
         let matchData = null;
         if (bracket === 'ub') {
             matchData = drawingData.upper_bracket?.rounds[roundIdx]?.[matchIdx];
@@ -486,29 +639,6 @@
             match: matchIdx,
             data: matchData
         };
-
-        const result = randoriResults[nodeKey];
-        if (result) {
-            const meta = typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata;
-            scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-            scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-            
-            const sigs = meta.signatures || {};
-            sigArbitraseName = sigs.arbitrase?.name || '';
-            sigArbitraseData = sigs.arbitrase?.signature || null;
-            sigKoordinatorName = sigs.koordinator?.name || '';
-            sigKoordinatorData = sigs.koordinator?.signature || null;
-            sigWasitName = sigs.wasit?.name || '';
-            sigWasitData = sigs.wasit?.signature || null;
-            sigPanitera = sigs.panitera || [{ name: '', signature: null }];
-            sigManagerRedName = sigs.manager_red?.name || '';
-            sigManagerRedData = sigs.manager_red?.signature || null;
-            sigManagerWhiteName = sigs.manager_white?.name || '';
-            sigManagerWhiteData = sigs.manager_white?.signature || null;
-        } else {
-            resetDetailedScoring();
-        }
-        recalculateScores();
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -550,13 +680,7 @@
         }
 
         try {
-            const res = await fetch('/admin/api/scoring/randori/submit-scoring', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/submit-scoring', {
                     match_id: matchId,
                     bracket: activeMatch.bracket,
                     round: activeMatch.round,
@@ -573,7 +697,6 @@
                         manager_red: { name: sigManagerRedName, signature: sigManagerRedData },
                         manager_white: { name: sigManagerWhiteName, signature: sigManagerWhiteData }
                     }
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -584,7 +707,6 @@
                 showToast(data.message || 'Gagal menyimpan hasil penilaian.', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -602,13 +724,7 @@
     async function clearAllCourts() {
         if (!confirm('PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?')) return;
         try {
-            const res = await fetch('/admin/api/scoring/clear-all-courts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
+            const res = await postJson('/admin/api/scoring/clear-all-courts');
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
@@ -617,7 +733,6 @@
                 showToast(data.message || 'Gagal mereset lapangan', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -649,9 +764,9 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(e => console.warn('Buzzer error:', e));
+            audio.play().catch(() => {});
         } catch (e) {
-            console.warn('Audio error:', e);
+            // Silent fail for audio
         }
     }
 
@@ -661,7 +776,6 @@
     }
 
     function playAnnouncer(text) {
-        console.log('Announcer requested:', text);
         stopAnnouncer();
         isPlayingAnnouncer = true;
 
@@ -725,6 +839,7 @@
 
     // Lifecycle
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -734,18 +849,32 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn('Failed to preload buzzer audio:', e);
+            // Silent fail for audio preload
         }
 
         fetchState();
+        if (window.Echo) {
+            window.Echo.channel(`match.${matchId}`).listen('MatchUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                fetchState();
+            });
+        }
 
-        pollInterval = setInterval(fetchState, 300);
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
             if (running && timerState.started_at_ms) {
                 let expected = (timerState.elapsed_ms || 0) + (Date.now() + offset - timerState.started_at_ms);
-                time = Math.min(expected, 120000);
+                time = Math.max(time, Math.min(expected, 120000));
                 let s = Math.floor(time / 1000);
                 if (s >= 120 && !playedIntervals.has(120)) {
                     time = 120000;
@@ -780,8 +909,17 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        fetchQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`match.${matchId}`);
+            if (currentCourtChannelId) {
+                window.Echo.leave(`court.${currentCourtChannelId}`);
+            }
+        }
+        polling?.stop();
         clearInterval(interpolInterval);
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
         stopAnnouncer();
     });
 
@@ -810,6 +948,16 @@
 </script>
 
 <div class="tm-page">
+    {#if actionInFlight}
+        <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+            <div style="background-color: white; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 320px; text-align: center; border: 1px solid #f1f5f9;">
+                <div style="font-size: 32px; color: #4f46e5;"><i class="fas fa-spinner fa-spin"></i></div>
+                <div style="font-weight: 700; color: #1e293b;">Memproses Panggilan...</div>
+                <div style="font-size: 12px; color: #64748b;">Mohon tunggu, sistem sedang memproses panggilan monitor.</div>
+            </div>
+        </div>
+    {/if}
+
     <div style="position: fixed; top: 20px; right: 30px; z-index: 90;">
         <button onclick={clearAllCourts}
             class="btn-gen danger"
@@ -846,6 +994,9 @@
                 style="color:var(--red); border-color:var(--red);">
                 <i class="fas fa-volume-xmark"></i> Stop Suara
             </button>
+            <a href={`/admin/new-scoring/correction?match_id=${matchId}`} class="btn-gen primary" style="text-decoration:none;">
+                <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai
+            </a>
             <a href={backRoute} class="btn-gen ghost" style="text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>

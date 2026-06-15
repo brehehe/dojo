@@ -184,24 +184,24 @@ class AdminArbitraseScoringEmbuDetail extends Component
 
         if ($isGroup) {
             // Beregu / Pasangan (Target 90s - 120s)
-            if ($seconds >= 50 && $seconds <= 89) {
+            if ($seconds >= 80 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 50) {
+            } elseif ($seconds >= 121 && $seconds <= 130) {
+                $denda = 5;
+            } elseif ($seconds >= 0 && $seconds <= 79) {
                 $denda = 10;
-            } elseif ($seconds >= 121 && $seconds <= 135) {
-                $denda = 5;
-            } elseif ($seconds > 135) {
+            } elseif ($seconds >= 131) {
                 $denda = 10;
             }
         } else {
             // Single / Solo / Tandoku (Target 60s - 90s)
-            if ($seconds >= 46 && $seconds <= 59) {
+            if ($seconds >= 50 && $seconds <= 59) {
                 $denda = 5;
-            } elseif ($seconds <= 45) {
+            } elseif ($seconds >= 91 && $seconds <= 100) {
+                $denda = 5;
+            } elseif ($seconds >= 0 && $seconds <= 49) {
                 $denda = 10;
-            } elseif ($seconds >= 91 && $seconds <= 105) {
-                $denda = 5;
-            } elseif ($seconds >= 106) {
+            } elseif ($seconds >= 101) {
                 $denda = 10;
             }
         }

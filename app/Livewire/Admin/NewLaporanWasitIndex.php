@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Exports\RefereeAnalysisExport;
 use App\Models\Court\Court;
+use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Referee;
@@ -97,14 +98,27 @@ class NewLaporanWasitIndex extends Component
         ]);
 
         // Get detailed log for the bottom section
-        $query = RefereeScoreDetail::with(['referee', 'scorable.contingent'])
+        $query = RefereeScoreDetail::with([
+            'referee',
+            'scorable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    Registration::class => ['contingent'],
+                    DrawingMatchNumber::class => ['registration.contingent'],
+                ]);
+            },
+        ])
             ->join('drawing_match_numbers', function ($join) {
                 $join->on('referee_score_details.match_number_id', '=', 'drawing_match_numbers.match_number_id')
-                    ->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id');
+                    ->where(function ($q) {
+                        $q->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.id')
+                            ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                            ->orOn('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
+                            ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    });
             })
             ->join('courts', 'drawing_match_numbers.court_id', '=', 'courts.id')
             ->select('referee_score_details.*', 'courts.name as court_name')
-            ->where('scorable_type', Registration::class)
+            ->whereIn('referee_score_details.scorable_type', [Registration::class, DrawingMatchNumber::class])
             ->where('total_calculated_score', '>', 0);
 
         // Apply filters to log query
@@ -167,7 +181,9 @@ class NewLaporanWasitIndex extends Component
                     'date' => $item->created_at->format('d/m/Y'),
                     'court' => $item->court_name ?? 'N/A',
                     'referee' => $item->referee->name,
-                    'contingent' => $item->scorable->contingent->name ?? 'N/A',
+                    'contingent' => $item->scorable_type === DrawingMatchNumber::class
+                        ? ($item->scorable->registration->contingent->name ?? 'N/A')
+                        : ($item->scorable->contingent->name ?? 'N/A'),
                     'teknik' => round($teknik, 2),
                     'ekspresi' => round($ekspresi, 2),
                     'total' => round($item->total_calculated_score, 2),

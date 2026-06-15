@@ -1,7 +1,8 @@
 {
     "agents": [
-        "gemini"
+        "antigravity"
     ],
+    "cloud": false,
     "guidelines": true,
     "mcp": true,
     "nightwatch_mcp": false,
@@ -12,6 +13,7 @@
         "volt-development",
         "pest-testing",
         "inertia-svelte-development",
+        "echo-development",
         "tailwindcss-development"
     ]
 }

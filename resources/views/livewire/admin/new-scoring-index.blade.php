@@ -698,7 +698,7 @@
                                         $detailRoute = 'admin.new-scoring-' . $drawing->draft_type . '-index';
                                     @endphp
                                     <tr>
-                                        <td style="font-weight:700;">{{ $drawing->sequence_number ?? '-' }}</td>
+                                        <td style="font-weight:700;">{{ $loop->iteration + $drawings->firstItem() - 1 }}</td>
                                         <td>
                                             <span class="draw-badge {{ $isRandori ? 'randori' : 'embu' }} mb-1"
                                                 style="margin-bottom:4px;display:inline-block;">{{ $drawing->draft_type }}</span>

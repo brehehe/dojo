@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\SmartWasit;
 
 use App\Exports\RefereeAnalysisExport;
 use App\Models\Court\Court;
+use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Referee;
@@ -63,20 +64,40 @@ class NewLaporanSmartWasitSummaryIndex extends Component
         $refereeAnalysis = $this->getRefereeAnalysis($filters);
 
         // Get detailed log for the bottom section
-        $query = RefereeScoreDetail::with(['referee', 'scorable.contingent'])
+        $query = RefereeScoreDetail::with([
+            'referee',
+            'scorable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    Registration::class => ['contingent'],
+                    DrawingMatchNumber::class => ['registration.contingent'],
+                ]);
+            },
+        ])
             ->join('drawing_match_numbers', function ($join) {
                 $join->on('referee_score_details.match_number_id', '=', 'drawing_match_numbers.match_number_id')
-                    ->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id');
+                    ->where(function ($q) {
+                        $q->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.id')
+                            ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                            ->orOn('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
+                            ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    });
             })
             ->join('courts', 'drawing_match_numbers.court_id', '=', 'courts.id')
             ->select('referee_score_details.*', 'courts.name as court_name')
-            ->where('scorable_type', Registration::class)
             ->where('total_calculated_score', '>', 0);
 
         // Apply filters to log query as well
         if (! empty($this->search)) {
-            $query->whereHas('scorable.athletes', function ($q) {
-                $q->where('name', 'ilike', '%'.$this->search.'%');
+            $query->where(function ($q) {
+                $q->whereHasMorph('scorable', [Registration::class], function ($sub) {
+                    $sub->whereHas('athletes', function ($ath) {
+                        $ath->where('name', 'ilike', '%'.$this->search.'%');
+                    });
+                })->orWhereHasMorph('scorable', [DrawingMatchNumber::class], function ($sub) {
+                    $sub->whereHas('registration.athletes', function ($ath) {
+                        $ath->where('name', 'ilike', '%'.$this->search.'%');
+                    });
+                });
             });
         }
 
@@ -123,11 +144,20 @@ class NewLaporanSmartWasitSummaryIndex extends Component
                     }
                 }
 
+                $contingentName = 'N/A';
+                if ($item->scorable) {
+                    if ($item->scorable instanceof DrawingMatchNumber) {
+                        $contingentName = $item->scorable->registration->contingent->name ?? 'N/A';
+                    } else {
+                        $contingentName = $item->scorable->contingent->name ?? 'N/A';
+                    }
+                }
+
                 return (object) [
                     'date' => $item->created_at->format('d/m/Y'),
                     'court' => $item->court_name ?? 'N/A',
                     'referee' => $item->referee->name,
-                    'contingent' => $item->scorable->contingent->name ?? 'N/A',
+                    'contingent' => $contingentName,
                     'teknik' => round($teknik, 2),
                     'ekspresi' => round($ekspresi, 2),
                     'total' => round($item->total_calculated_score, 2),

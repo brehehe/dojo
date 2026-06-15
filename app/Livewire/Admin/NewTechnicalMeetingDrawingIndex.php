@@ -887,6 +887,60 @@ class NewTechnicalMeetingDrawingIndex extends Component
         ]);
     }
 
+    public function resetAllScoring(): void
+    {
+        set_time_limit(0);
+
+        EmbuScore::query()->delete();
+        RandoriJudgeScore::query()->delete();
+        RefereeScoreDetail::query()->delete();
+        EmbuChampion::query()->delete();
+        RandoriMatchResult::query()->delete();
+        TournamentResult::query()->delete();
+
+        // Sync drawing_data for all Randori matches
+        $randoriMatches = MatchNumber::where('draft_type', 'randori')
+            ->whereNotNull('drawing_generated_at')
+            ->get();
+
+        foreach ($randoriMatches as $match) {
+            if (! empty($match->drawing_data)) {
+                $cleanedData = $this->cleanRandoriDrawingData($match->drawing_data);
+                $match->update(['drawing_data' => $cleanedData]);
+                $this->syncDrawingMatchNumbersFromData($match->id, $cleanedData);
+            }
+        }
+
+        // Clear Embu final registrations and delete tiebreaks for all Embu matches
+        $embuMatches = MatchNumber::where('draft_type', 'embu')->get();
+        foreach ($embuMatches as $match) {
+            DrawingMatchNumber::where('match_number_id', $match->id)
+                ->where('round', 'like', '%Tiebreak%')
+                ->delete();
+
+            $finalDrawings = DrawingMatchNumber::where('match_number_id', $match->id)
+                ->where('round', 'Final')
+                ->get();
+
+            foreach ($finalDrawings as $fd) {
+                $meta = is_array($fd->metadata) ? $fd->metadata : [];
+                $meta['contingent'] = 'TBD';
+                $meta['athlete_name'] = 'TBD';
+                $meta['athlete_ids'] = [];
+                $fd->update([
+                    'registration_id' => null,
+                    'metadata' => $meta,
+                ]);
+            }
+        }
+
+        $this->dispatch('swal', [
+            'icon' => 'success',
+            'title' => 'Reset Penilaian Selesai',
+            'text' => 'Semua data penilaian telah direset tanpa mengubah jadwal.',
+        ]);
+    }
+
     public function exportExcel()
     {
         return Excel::download(new ScheduleExport, 'Jadwal_Pertandingan_Kempo.xlsx');
@@ -1521,6 +1575,189 @@ class NewTechnicalMeetingDrawingIndex extends Component
         MatchNumber::whereIn('id', $matchNumberIds)->update(['drawing_data' => null, 'drawing_generated_at' => null]);
 
         $this->dispatch('swal', ['icon' => 'success', 'title' => 'Drawing Direset', 'text' => 'Data drawing berhasil dihapus.', 'timer' => 2000]);
+    }
+
+    public function resetScoring(): void
+    {
+        if (! $this->filterMatchNumberId && ! $this->filterMergeId) {
+            return;
+        }
+
+        $matchNumberIds = [];
+        if ($this->filterMergeId) {
+            $merge = MatchNumberMerge::with('matchNumbers')->findOrFail($this->filterMergeId);
+            $matchNumberIds = $merge->matchNumbers->pluck('id')->toArray();
+        } else {
+            $matchNumberIds = [$this->filterMatchNumberId];
+        }
+
+        // 1. Delete scores/results
+        EmbuScore::whereIn('match_number_id', $matchNumberIds)->delete();
+        RandoriJudgeScore::whereIn('match_number_id', $matchNumberIds)->delete();
+        RefereeScoreDetail::whereIn('match_number_id', $matchNumberIds)->delete();
+        EmbuChampion::whereIn('match_number_id', $matchNumberIds)->delete();
+        RandoriMatchResult::whereIn('match_number_id', $matchNumberIds)->delete();
+        TournamentResult::whereIn('match_number_id', $matchNumberIds)->delete();
+
+        // 2. Clean drawing data & schedule slots
+        $matches = MatchNumber::whereIn('id', $matchNumberIds)->get();
+        foreach ($matches as $match) {
+            if ($match->draft_type === 'randori' && ! empty($match->drawing_data)) {
+                $cleanedData = $this->cleanRandoriDrawingData($match->drawing_data);
+                $match->update(['drawing_data' => $cleanedData]);
+
+                // Update DrawingMatchNumber records
+                $this->syncDrawingMatchNumbersFromData($match->id, $cleanedData);
+            } elseif ($match->draft_type === 'embu') {
+                // Clear Final drawings' registration_id & reset metadata, delete tiebreak drawings
+                DrawingMatchNumber::where('match_number_id', $match->id)
+                    ->where('round', 'like', '%Tiebreak%')
+                    ->delete();
+
+                $finalDrawings = DrawingMatchNumber::where('match_number_id', $match->id)
+                    ->where('round', 'Final')
+                    ->get();
+
+                foreach ($finalDrawings as $fd) {
+                    $meta = is_array($fd->metadata) ? $fd->metadata : [];
+                    $meta['contingent'] = 'TBD';
+                    $meta['athlete_name'] = 'TBD';
+                    $meta['athlete_ids'] = [];
+                    $fd->update([
+                        'registration_id' => null,
+                        'metadata' => $meta,
+                    ]);
+                }
+            }
+        }
+
+        $this->dispatch('swal', ['icon' => 'success', 'title' => 'Penilaian Direset', 'text' => 'Data penilaian berhasil dihapus tanpa mengubah jadwal.', 'timer' => 2000]);
+    }
+
+    private function cleanRandoriDrawingData(array $data): array
+    {
+        // Upper bracket: Keep round 0 athletes, clear round > 0 athletes
+        if (isset($data['upper_bracket']['rounds'])) {
+            foreach ($data['upper_bracket']['rounds'] as $rIdx => &$round) {
+                foreach ($round as $mIdx => &$match) {
+                    $match['winner'] = null;
+                    $match['winner_data'] = null;
+                    $match['is_bye'] = false;
+                    if ($rIdx > 0) {
+                        $match['athlete1'] = null;
+                        $match['athlete2'] = null;
+                    }
+                }
+            }
+        }
+
+        // Lower bracket: Clear all athletes & winners
+        if (isset($data['lower_bracket']['rounds'])) {
+            foreach ($data['lower_bracket']['rounds'] as $rIdx => &$round) {
+                foreach ($round as $mIdx => &$match) {
+                    $match['athlete1'] = null;
+                    $match['athlete2'] = null;
+                    $match['winner'] = null;
+                    $match['winner_data'] = null;
+                    $match['is_bye'] = false;
+                }
+            }
+        }
+
+        // Grand final: Clear athletes & winners
+        if (isset($data['grand_final'])) {
+            $data['grand_final']['athlete1'] = null;
+            $data['grand_final']['athlete2'] = null;
+            $data['grand_final']['winner'] = null;
+            $data['grand_final']['winner_data'] = null;
+        }
+
+        // Juara list: Clear
+        $data['juara'] = [];
+
+        // Now, propagate BYEs
+        $ubRounds = $data['upper_bracket']['rounds'] ?? [];
+        $lbRounds = $data['lower_bracket']['rounds'] ?? [];
+
+        if (! empty($lbRounds)) {
+            $this->propagateBracketByes($ubRounds, $lbRounds);
+        } else {
+            // Single elimination bye propagation
+            foreach ($ubRounds as $rIdx => &$round) {
+                foreach ($round as $mIdx => &$match) {
+                    $a1Bye = isset($match['athlete1']['id']) && $match['athlete1']['id'] === 'BYE';
+                    $a2Bye = isset($match['athlete2']['id']) && $match['athlete2']['id'] === 'BYE';
+                    if ($a1Bye && $match['athlete2'] !== null) {
+                        $match['is_bye'] = true;
+                        $match['winner'] = 'athlete2';
+                        $match['winner_data'] = $match['athlete2'];
+                    } elseif ($a2Bye && $match['athlete1'] !== null) {
+                        $match['is_bye'] = true;
+                        $match['winner'] = 'athlete1';
+                        $match['winner_data'] = $match['athlete1'];
+                    }
+
+                    if ($match['is_bye'] && isset($match['winner_next']['bracket']) && $match['winner_next']['bracket'] === 'ub') {
+                        $wn = $match['winner_next'];
+                        $ubRounds[$wn['round']][$wn['match']][$wn['slot']] = $match['winner_data'];
+                    }
+                }
+            }
+        }
+
+        $data['upper_bracket']['rounds'] = $ubRounds;
+        $data['lower_bracket']['rounds'] = $lbRounds;
+
+        return $data;
+    }
+
+    private function syncDrawingMatchNumbersFromData(int $matchNumberId, array $data): void
+    {
+        $drawings = DrawingMatchNumber::where('match_number_id', $matchNumberId)->get();
+
+        foreach ($drawings as $d) {
+            $meta = $d->metadata;
+            if (is_string($meta)) {
+                $meta = json_decode($meta, true);
+            }
+
+            if (! isset($meta['node_key'])) {
+                continue;
+            }
+
+            $nodeKey = $meta['node_key'];
+            $side = ($meta['side'] ?? '') === 'RED' ? 'athlete1' : 'athlete2';
+
+            $athlete = null;
+            if (str_starts_with($nodeKey, 'ub_')) {
+                $parts = explode('_', $nodeKey);
+                $rIdx = (int) $parts[1];
+                $mIdx = (int) $parts[2];
+                $athlete = $data['upper_bracket']['rounds'][$rIdx][$mIdx][$side] ?? null;
+            } elseif (str_starts_with($nodeKey, 'lb_')) {
+                $parts = explode('_', $nodeKey);
+                $rIdx = (int) $parts[1];
+                $mIdx = (int) $parts[2];
+                $athlete = $data['lower_bracket']['rounds'][$rIdx][$mIdx][$side] ?? null;
+            } elseif ($nodeKey === 'gf_0_0') {
+                $athlete = $data['grand_final'][$side] ?? null;
+            }
+
+            if ($athlete && isset($athlete['id']) && $athlete['id'] !== 'BYE') {
+                $d->registration_id = $athlete['registration_id'] ?? null;
+                $meta['athlete_id'] = $athlete['id'] ?? null;
+                $meta['athlete_name'] = $athlete['name'] ?? 'TBD';
+                $meta['contingent'] = $athlete['contingent'] ?? 'TBD';
+            } else {
+                $d->registration_id = null;
+                $meta['athlete_id'] = null;
+                $meta['athlete_name'] = 'TBD';
+                $meta['contingent'] = 'TBD';
+            }
+
+            $d->metadata = $meta;
+            $d->save();
+        }
     }
 
     private function getAvailableOfficials($rundownId, $sessionTimeId, &$localBusyKoor, &$localBusyPanitera)

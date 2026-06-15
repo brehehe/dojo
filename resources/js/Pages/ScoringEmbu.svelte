@@ -1,6 +1,9 @@
 <script>
     import { onMount, onDestroy } from "svelte";
     import { router } from "@inertiajs/svelte";
+    import { createAdaptivePolling } from "../lib/adaptivePolling";
+    import { conditionalJsonFetch } from "../lib/conditionalFetch";
+    import { postJson } from "../lib/api";
 
     let {
         matchId,
@@ -68,8 +71,34 @@
     let modalDenda = $state(0);
     let actionInFlight = $state(false);
 
-    // Polling interval
-    let pollInterval;
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                if (e.timer_state) {
+                    let wasRunning = running;
+                    if (!syncTimerFromServer(e.timer_state)) return;
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                        }
+                    }
+                } else {
+                    fetchState();
+                }
+            });
+        }
+    }
 
     // Timer interpolation state
     let time = $state(0);
@@ -79,6 +108,114 @@
     let lastTickSecond = -1;
     let playedIntervals = new Set();
     let interpolInterval;
+
+    let lastTimerServerTimeMs = 0;
+    const timerSyncToleranceMs = 250;
+
+    function currentElapsedMs() {
+        if (running && timerState.started_at_ms) {
+            return Math.max(
+                0,
+                (timerState.elapsed_ms || 0) +
+                    (Date.now() + offset - timerState.started_at_ms),
+            );
+        }
+        return Math.max(time, timerState.elapsed_ms || 0);
+    }
+
+    function snapshotTimerUiState() {
+        return {
+            timerState: { ...timerState },
+            time,
+            running,
+            countdown,
+            offset,
+            lastTickSecond,
+            playedIntervals: new Set(playedIntervals),
+        };
+    }
+
+    function restoreTimerUiState(snapshot) {
+        timerState = { ...snapshot.timerState };
+        time = snapshot.time;
+        running = snapshot.running;
+        countdown = snapshot.countdown;
+        offset = snapshot.offset;
+        lastTickSecond = snapshot.lastTickSecond;
+        playedIntervals = new Set(snapshot.playedIntervals);
+    }
+
+    function elapsedFromTimerState(serverTimerState) {
+        const elapsed = serverTimerState?.elapsed_ms || 0;
+        if (serverTimerState?.status === "running" && serverTimerState.started_at_ms) {
+            const serverNow = serverTimerState.server_time_ms ?? Date.now() + offset;
+            return Math.max(0, elapsed + (serverNow - serverTimerState.started_at_ms));
+        }
+        return Math.max(0, elapsed);
+    }
+
+    function syncTimerFromServer(serverTimerState) {
+        if (!serverTimerState) return;
+        const serverTimeMs = Number(serverTimerState.server_time_ms || 0);
+
+        if (serverTimeMs && serverTimeMs < lastTimerServerTimeMs) {
+            return false;
+        }
+
+        const serverElapsed = elapsedFromTimerState(serverTimerState);
+        const sameRunningTimer =
+            timerState.status === "running" &&
+            serverTimerState.status === "running" &&
+            timerState.started_at_ms === serverTimerState.started_at_ms;
+
+        if (sameRunningTimer && serverElapsed + timerSyncToleranceMs < time) {
+            return false;
+        }
+
+        if (serverTimeMs) {
+            lastTimerServerTimeMs = serverTimeMs;
+            offset = serverTimerState.server_time_ms - Date.now();
+        }
+
+        timerState = serverTimerState;
+        running = serverTimerState.status === "running";
+
+        if (running) {
+            time = sameRunningTimer ? Math.max(time, serverElapsed) : serverElapsed;
+        } else {
+            time = serverElapsed;
+        }
+
+        if (serverTimerState.status !== "countdown") {
+            countdown = 0;
+        }
+
+        if (!running && time < 500) {
+            playedIntervals.clear();
+        }
+
+        return true;
+    }
+
+    function applyServerTimerState(serverTimerState) {
+        syncTimerFromServer(serverTimerState);
+    }
+
+    let destroyed = false;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let queuedFetchTimeout;
+    let polling;
+    const pollDelay = 2000;
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
 
     // Derived state
     let sessionDate = $derived(
@@ -91,15 +228,24 @@
     );
 
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
             const queryParams = new URLSearchParams();
             if (currentRound) queryParams.append("round", currentRound);
             if (selectedPoolId) queryParams.append("pool_id", selectedPoolId);
 
-            const res = await fetch(
+            const { data, notModified } = await conditionalJsonFetch(
                 `/admin/api/scoring/embu/${matchId}/state?${queryParams.toString()}`,
             );
-            const data = await res.json();
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data) {
                 matchNumber = data.matchNumber;
                 merge = data.merge;
@@ -117,21 +263,22 @@
                 assignedReferees = data.assignedReferees;
                 assignedKoordinators = data.assignedKoordinators;
                 assignedPaniteras = data.assignedPaniteras;
-                timerState = data.timerState;
                 courtId = data.courtId;
+                subscribeToCourt(courtId);
 
                 // Sync Timer local state with server state
-                offset = (timerState.server_time_ms || Date.now()) - Date.now();
-                running = timerState.status === "running";
-                if (timerState.status !== "countdown") {
-                    countdown = 0;
-                }
-                if (!running && time < 500) {
-                    playedIntervals.clear();
-                }
+                syncTimerFromServer(data.timerState);
             }
         } catch (e) {
             console.error("Error fetching Embu scoring state:", e);
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -139,86 +286,86 @@
     async function startTimer() {
         if (!courtId) return;
         // Optimistic UI updates
+        const timerSnapshot = snapshotTimerUiState();
+        const elapsed = currentElapsedMs();
+        timerState = {
+            status: "running",
+            elapsed_ms: elapsed,
+            started_at_ms: Date.now() + offset,
+            countdown_end_ms: null,
+        };
+        time = elapsed;
         running = true;
+        countdown = 0;
         if (time < 1000) {
             playBuzzer("/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3");
         }
         try {
-            const res = await fetch("/admin/api/scoring/timer-control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ court_id: courtId, action: "start" }),
-            });
+            const res = await postJson("/admin/api/scoring/timer-control", { court_id: courtId, action: "start" });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = true;
             } else {
-                running = false;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = false;
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        const pausedAt = currentElapsedMs();
+        timerState = {
+            status: "paused",
+            elapsed_ms: pausedAt,
+            started_at_ms: null,
+            countdown_end_ms: null,
+        };
+        time = pausedAt;
         running = false;
+        countdown = 0;
         try {
-            const res = await fetch("/admin/api/scoring/timer-control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ court_id: courtId, action: "pause" }),
-            });
+            const res = await postJson("/admin/api/scoring/timer-control", { court_id: courtId, action: "pause" });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = false;
             } else {
-                running = true;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = true;
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        timerState = {
+            status: "stopped",
+            elapsed_ms: 0,
+            started_at_ms: null,
+            countdown_end_ms: null,
+        };
         running = false;
         time = 0;
         countdown = 0;
         try {
-            const res = await fetch("/admin/api/scoring/timer-control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ court_id: courtId, action: "stop" }),
-            });
+            const res = await postJson("/admin/api/scoring/timer-control", { court_id: courtId, action: "stop" });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 time = 0;
                 running = false;
                 countdown = 0;
+            } else {
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
@@ -230,31 +377,13 @@
         );
         try {
             // First pause the timer on server
-            await fetch("/admin/api/scoring/timer-control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ court_id: courtId, action: "pause" }),
-            });
+            await postJson("/admin/api/scoring/timer-control", { court_id: courtId, action: "pause" });
 
             // Finish the match on server
-            const res = await fetch("/admin/api/scoring/embu/finish-match", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({
+            const res = await postJson("/admin/api/scoring/embu/finish-match", {
                     drawing_id: drawingId,
                     time_ms: capturedTime,
                     round: currentRound,
-                }),
             });
             const data = await res.json();
             if (data.success) {
@@ -267,29 +396,20 @@
                 );
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
     // Call participant
     async function callParticipant(drawingId) {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveDrawingId = activeDrawingId;
         activeDrawingId = drawingId; // Optimistic update
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/embu/call-participant",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({ drawing_id: drawingId }),
-                },
+                { drawing_id: drawingId },
             );
             const data = await res.json();
             if (data.success) {
@@ -308,31 +428,22 @@
         } catch (e) {
             activeDrawingId = originalActiveDrawingId;
             actionInFlight = false;
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
     // Dismiss participant
     async function dismissParticipant() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveDrawingId = activeDrawingId;
         activeDrawingId = null; // Optimistic update
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/embu/dismiss-participant",
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({
                         match_id: matchId,
                         court_id: courtId,
-                    }),
                 },
             );
             const data = await res.json();
@@ -349,7 +460,6 @@
         } catch (e) {
             activeDrawingId = originalActiveDrawingId;
             actionInFlight = false;
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -357,19 +467,10 @@
     // Call officials
     async function callOfficials() {
         try {
-            const res = await fetch("/admin/api/scoring/embu/call-officials", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({
+            const res = await postJson("/admin/api/scoring/embu/call-officials", {
                     match_id: matchId,
                     round: currentRound,
                     pool_id: selectedPoolId,
-                }),
             });
             const data = await res.json();
             if (data.success) {
@@ -381,7 +482,6 @@
                 showToast(data.message || "Gagal memanggil wasit", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -395,15 +495,7 @@
         )
             return;
         try {
-            const res = await fetch("/admin/api/scoring/clear-all-courts", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-            });
+            const res = await postJson("/admin/api/scoring/clear-all-courts");
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, "success");
@@ -412,7 +504,6 @@
                 showToast(data.message || "Gagal mereset lapangan", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -422,21 +513,12 @@
         if (!confirm("Lakukan tanding ulang untuk nilai yang seri ini?"))
             return;
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/embu/request-tiebreak",
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({
                         match_id: matchId,
                         registration_ids: tiedIds,
                         round: currentRound,
-                    }),
                 },
             );
             const data = await res.json();
@@ -450,7 +532,6 @@
                 );
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -459,19 +540,10 @@
     async function advanceToFinal() {
         if (!confirm("Siap loloskan ke Final babak ini?")) return;
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/embu/advance-to-final",
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({
                         match_id: matchId,
-                    }),
                 },
             );
             const data = await res.json();
@@ -483,7 +555,6 @@
                 showToast(data.message || "Gagal loloskan ke final.", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -515,22 +586,13 @@
     // Save Scoring override
     async function saveScore() {
         try {
-            const res = await fetch("/admin/api/scoring/embu/save-score", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({
+            const res = await postJson("/admin/api/scoring/embu/save-score", {
                     match_id: matchId,
                     registration_id: activeRegistrationIdForModal,
                     drawing_id: activeDrawingIdForModal,
                     round: currentRound,
                     scores: modalScores,
                     denda: modalDenda,
-                }),
             });
             const data = await res.json();
             if (data.success) {
@@ -541,7 +603,6 @@
                 showToast(data.message || "Gagal menyimpan nilai", "error");
             }
         } catch (e) {
-            console.error(e);
             showToast("Terjadi kesalahan koneksi", "error");
         }
     }
@@ -573,9 +634,9 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch((e) => console.warn("Buzzer error:", e));
+            audio.play().catch(() => {});
         } catch (e) {
-            console.warn("Audio error:", e);
+            // Silent fail for audio
         }
     }
 
@@ -585,7 +646,6 @@
     }
 
     function playAnnouncer(text) {
-        console.log("Announcer requested:", text);
         stopAnnouncer();
         isPlayingAnnouncer = true;
 
@@ -652,6 +712,7 @@
 
     // Lifecycle
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -661,13 +722,27 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn("Failed to preload buzzer audio:", e);
+            // Silent fail for audio preload
         }
 
         fetchState();
 
-        // 300ms Polling for state
-        pollInterval = setInterval(fetchState, 300);
+        if (window.Echo) {
+            window.Echo.channel(`match.${matchId}`).listen("MatchUpdated", (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                fetchState();
+            });
+        }
+
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
@@ -675,16 +750,18 @@
                 let expected =
                     (timerState.elapsed_ms || 0) +
                     (Date.now() + offset - timerState.started_at_ms);
-                time = expected;
+                time = Math.max(time, expected);
                 let currentSecond = Math.floor(time / 1000);
 
-                // Get active registration info to see if Tandoku
+                // Get active registration info to see if Tandoku or Pemula (Short Duration)
                 const activeReg = activeRegItem;
-                let isTandoku = activeReg ? !activeReg.is_group : true;
+                let isPemula = matchNumber?.age_group_id === 1 || matchNumber?.age_group?.name?.toLowerCase() === 'pemula';
+                let isTandoku = activeReg ? !activeReg.is_group : (matchNumber ? matchNumber.max_athletes === 1 : true);
+                let isShortDuration = isPemula || isTandoku;
                 let buzzerSound =
                     "/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3";
 
-                if (isTandoku) {
+                if (isShortDuration) {
                     if (
                         (currentSecond === 60 && !playedIntervals.has(60)) ||
                         (currentSecond === 90 && !playedIntervals.has(90)) ||
@@ -741,8 +818,17 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        fetchQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`match.${matchId}`);
+            if (currentCourtChannelId) {
+                window.Echo.leave(`court.${currentCourtChannelId}`);
+            }
+        }
+        polling?.stop();
         clearInterval(interpolInterval);
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
         stopAnnouncer();
     });
 
@@ -786,6 +872,16 @@
 </script>
 
 <div class="tm-page">
+    {#if actionInFlight}
+        <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+            <div style="background-color: white; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 320px; text-align: center; border: 1px solid #f1f5f9;">
+                <div style="font-size: 32px; color: #4f46e5;"><i class="fas fa-spinner fa-spin"></i></div>
+                <div style="font-weight: 700; color: #1e293b;">Memproses Panggilan...</div>
+                <div style="font-size: 12px; color: #64748b;">Mohon tunggu, sistem sedang memproses panggilan monitor.</div>
+            </div>
+        </div>
+    {/if}
+
     <div style="position: fixed; top: 20px; right: 30px; z-index: 90;">
         <button
             onclick={clearAllCourts}
@@ -827,6 +923,9 @@
             >
                 <i class="fas fa-volume-xmark"></i> Stop Suara
             </button>
+            <a href={`/admin/new-scoring/correction?match_id=${matchId}`} class="btn-gen primary">
+                <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai & Denda
+            </a>
             <a href={backRoute} class="btn-gen ghost">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
@@ -1217,8 +1316,7 @@
                         class="fas fa-stopwatch"
                         style="color:#f1c40f; margin-right:8px;"
                     ></i>
-                    Live Match Timer &bull; {activeRegItem.athletes[0]?.name ||
-                        "Peserta"}
+                    Live Match Timer &bull; {activeRegItem.athletes ? activeRegItem.athletes.map(a => a.name).join(" & ") : "Peserta"}
                 </h3>
                 <button
                     onclick={() =>
@@ -1292,9 +1390,7 @@
                 <div
                     style="margin-top:12px; font-size:11px; color:var(--smoke); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;"
                 >
-                    Target Waktu: {activeRegItem.is_group
-                        ? "1:30 - 2:00"
-                        : "1:30"}
+                    Target Waktu: {(matchNumber?.age_group_id === 1 || matchNumber?.age_group?.name?.toLowerCase() === 'pemula' || (activeRegItem ? !activeRegItem.is_group : (matchNumber ? matchNumber.max_athletes === 1 : true))) ? "1:00 - 1:30" : "1:30 - 2:00"}
                 </div>
             </div>
         </div>

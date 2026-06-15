@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Court\Court;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CourtSeeder extends Seeder
 {
@@ -23,7 +24,7 @@ class CourtSeeder extends Seeder
             $user = User::create([
                 'name' => 'Petugas '.$court->name,
                 'email' => 'court'.$i.'@gmail.com',
-                'password' => bcrypt('password'),
+                'password' => bcrypt(Str::random(12)),
                 'court_id' => $court->id,
                 'email_verified_at' => now(),
             ]);
