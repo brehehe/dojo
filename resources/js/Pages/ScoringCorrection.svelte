@@ -317,6 +317,12 @@
                 {#each matches as m}
                     <option value={String(m.id)}>
                         [{m.draft_type.toUpperCase()}] {m.name}
+                        {#if m.age_group?.name}
+                            - {m.age_group.name}
+                        {/if}
+                        {#if m.gender}
+                            ({m.gender === 'Male' ? 'Laki-laki' : m.gender === 'Female' ? 'Perempuan' : m.gender === 'Mix' ? 'Campuran' : m.gender})
+                        {/if}
                     </option>
                 {/each}
             </select>
@@ -335,7 +341,16 @@
                 {matchState.matchNumber.draft_type.toUpperCase()}
             </span>
             <h2>{matchState.matchNumber.name}</h2>
-            <p>ID Pertandingan: {matchState.matchNumber.id} | Maksimal Atlet: {matchState.matchNumber.max_athletes}</p>
+            <p>
+                ID Pertandingan: {matchState.matchNumber.id} 
+                | Maksimal Atlet: {matchState.matchNumber.max_athletes}
+                {#if matchState.matchNumber.age_group}
+                    | Kategori Umur: {matchState.matchNumber.age_group.name}
+                {/if}
+                {#if matchState.matchNumber.gender}
+                    | Gender: {matchState.matchNumber.gender === 'Male' ? 'Laki-laki' : matchState.matchNumber.gender === 'Female' ? 'Perempuan' : matchState.matchNumber.gender === 'Mix' ? 'Campuran' : matchState.matchNumber.gender}
+                {/if}
+            </p>
         </div>
 
         {#if matchState.matchNumber.draft_type === 'embu'}

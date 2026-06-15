@@ -543,8 +543,9 @@ class ScoringDashboardController extends Controller
 
     public function scoringCorrectionMatches(): JsonResponse
     {
-        $matches = MatchNumber::orderBy('name')
-            ->select('id', 'name', 'draft_type')
+        $matches = MatchNumber::with('ageGroup:id,name')
+            ->orderBy('name')
+            ->select('id', 'name', 'draft_type', 'gender', 'age_group_id')
             ->get();
 
         return response()->json($matches);
@@ -552,6 +553,8 @@ class ScoringDashboardController extends Controller
 
     public function scoringCorrectionMatchState(MatchNumber $matchNumber): JsonResponse
     {
+        $matchNumber->load('ageGroup');
+
         $mergeDetails = DB::table('match_number_merge_details')
             ->where('match_number_id', $matchNumber->id)
             ->first();
