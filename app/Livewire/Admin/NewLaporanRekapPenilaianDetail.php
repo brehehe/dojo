@@ -29,7 +29,7 @@ class NewLaporanRekapPenilaianDetail extends Component
 
     public string $displayName = '';
 
-    public string $printMode = 'rekap'; // 'rekap', 'juri', 'atlet' for Embu; 'rekap', 'per-match' for Randori
+    public string $printMode = 'rekap'; // 'rekap', 'juri', 'atlet', 'catatan', 'scorecard' for Embu; 'rekap', 'per-match' for Randori
 
     public string $selectedJuri = '1'; // '1', '2', '3', '4', '5', or 'all'
 
@@ -146,6 +146,7 @@ class NewLaporanRekapPenilaianDetail extends Component
                     'registration_id' => $regId,
                     'athletes' => $athletes->unique('id'),
                     'contingent' => $drawing->registration?->contingent,
+                    'pool_name' => $drawing->pool?->name,
                     'score' => $score,
                     'nilai_awal' => $nilaiAwal,
                     'nilai_akhir' => $nilaiAkhir,

@@ -323,13 +323,18 @@ Route::middleware('auth')->group(function () {
         // Verified Match Numbers report
         Route::get('/match-numbers/verified', AdminMatchNumberVerifiedIndex::class)->name('match-numbers.verified');
 
-        // Registration by Number Report (Excel)
+        // Registration by Number Report (redirects to verified match numbers page — dedicated pages not yet built)
+        Route::get('/reports/registration-by-number', AdminMatchNumberVerifiedIndex::class)->name('reports.registration-by-number');
 
-        // Registration by Name Report (Excel)
+        // Registration by Name Report
+        Route::get('/reports/registration-by-name', AdminMatchNumberVerifiedIndex::class)->name('reports.registration-by-name');
 
-        // Match Number & Class Report (Excel)
+        // Match Number & Class Report
+        Route::get('/reports/match-class', AdminMatchNumberVerifiedIndex::class)->name('reports.match-class');
 
-        // Athlete Biodata Report (Grid)
+        // Athlete Biodata Report
+        Route::get('/reports/athlete-biodata', AdminMatchNumberVerifiedIndex::class)->name('reports.athlete-biodata');
+
         Route::get('/reports/contingent-observations', AdminRefereeObservationsIndex::class)->name('reports.contingent-observations');
 
         Route::prefix('technical-meeting')->name('technical-meeting.')->group(function () {
@@ -386,6 +391,8 @@ Route::middleware('auth')->group(function () {
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
                 Route::get('/embu-testbench', AdminEmbuScoringTestbench::class)->name('embu.testbench');
                 Route::get('/embu-result', NewEmbuResultIndex::class)->name('embu.result');
+                Route::get('/randori-result', [ScoringDashboardController::class, 'scoringRandoriResult'])->name('randori.result');
+                Route::get('/randori-hasil-print', [ScoringDashboardController::class, 'randoriHasilPrint'])->name('randori.hasil-print');
             });
             Route::get('/announcer', AnnouncerIndex::class)->name('announcer');
         });

@@ -9,7 +9,10 @@ use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
+use App\Models\Referee;
+use App\Models\RefereeScoreDetail;
 use App\Models\Registration;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -121,6 +124,84 @@ test('detail component renders Embu in different print modes', function () {
         ->assertSee('Kenshi A')
         ->assertSee('Surabaya A')
         ->assertSee('25.50');
+
+    // Create a referee to satisfy database foreign keys
+    $user = User::factory()->create(['name' => 'Wasit Agung']);
+    $referee = Referee::create([
+        'user_id' => $user->id,
+        'certification_level' => 'Nasional',
+        'city' => 'Jakarta',
+    ]);
+
+    // Create a RefereeScoreDetail with notes
+    RefereeScoreDetail::create([
+        'match_number_id' => $this->embuMatch->id,
+        'referee_id' => $referee->id,
+        'judge_index' => 1,
+        'scorable_type' => DrawingMatchNumber::class,
+        'scorable_id' => $this->embuDrawing->id,
+        'total_calculated_score' => 8.5,
+        'notes' => 'Gerakan goho sangat mantap',
+        'details' => [
+            'goho_1' => 8.5,
+            'goho_2' => 8.4,
+            'goho_3' => 8.6,
+            'juho_1' => 8.5,
+            'juho_2' => 8.5,
+            'juho_3' => 8.5,
+            'ekspresi_1' => 8.5,
+            'ekspresi_2' => 8.5,
+            'ekspresi_3' => 8.5,
+            'ekspresi_4' => 8.5,
+        ],
+    ]);
+
+    // Test catatan print mode - all juris (combined)
+    Livewire::test(NewLaporanRekapPenilaianDetail::class, ['matchNumber' => $this->embuMatch])
+        ->set('printMode', 'catatan')
+        ->set('selectedJuri', 'all')
+        ->assertSee('Rekap Catatan')
+        ->assertSee('Nilai Juri')
+        ->assertSee('Kenshi A')
+        ->assertSee('Surabaya A')
+        ->assertSee('Gerakan goho sangat mantap');
+
+    // Test catatan print mode - specific juri (e.g. Juri 1)
+    Livewire::test(NewLaporanRekapPenilaianDetail::class, ['matchNumber' => $this->embuMatch])
+        ->set('printMode', 'catatan')
+        ->set('selectedJuri', '1')
+        ->assertSee('Laporan Catatan')
+        ->assertSee('Nilai Juri 1')
+        ->assertSee('Kenshi A')
+        ->assertSee('Surabaya A')
+        ->assertSee('Gerakan goho sangat mantap');
+
+    // Test catatan print mode - each juri separate
+    Livewire::test(NewLaporanRekapPenilaianDetail::class, ['matchNumber' => $this->embuMatch])
+        ->set('printMode', 'catatan')
+        ->set('selectedJuri', 'each')
+        ->assertSee('Laporan Catatan')
+        ->assertSee('Nilai Juri 1')
+        ->assertSee('Nilai Juri 2')
+        ->assertSee('Nilai Juri 3')
+        ->assertSee('Nilai Juri 4')
+        ->assertSee('Nilai Juri 5');
+
+    // Test scorecard print mode - specific juri (e.g. Juri 1)
+    Livewire::test(NewLaporanRekapPenilaianDetail::class, ['matchNumber' => $this->embuMatch])
+        ->set('printMode', 'scorecard')
+        ->set('selectedJuri', '1')
+        ->set('selectedAthleteReg', 'all')
+        ->assertSee('Lembar Penilaian Embu Detail')
+        ->assertSee('Penguasaan Teknik (60)')
+        ->assertSee('Ekspresi (40)')
+        ->assertSee('Sub Total 1 (Teknik)')
+        ->assertSee('Sub Total 2 (Ekspresi)')
+        ->assertSee('TOTAL SKOR')
+        ->assertSee('8.5')
+        ->assertSee('8.4')
+        ->assertSee('8.6')
+        ->assertSee('Gerakan goho sangat mantap');
 });
 
 test('detail component renders Randori in different print modes', function () {

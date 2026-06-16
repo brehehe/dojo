@@ -246,6 +246,11 @@
                 <a href="{{ route('admin.arbitrase.rekapitulasi-embu') }}"
                     class="block py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.arbitrase.rekapitulasi-embu') ? 'text-white' : 'text-slate-500 hover:text-slate-300' }}">Rekapitulasi
                     Embu</a>
+                <a href="{{ route('admin.panitera.scoring.randori.hasil-print') }}"
+                    class="flex items-center py-2 text-[14px] font-semibold transition-colors {{ request()->routeIs('admin.panitera.scoring.randori.hasil-print') ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300' }}">
+                    <span class="flex-1">Cetak Hasil Randori</span>
+                    <span class="text-[10px] font-black bg-amber-900/50 text-amber-400 px-1.5 py-0.5 rounded uppercase">PDF</span>
+                </a>
             </div>
         </div>
         @endrole

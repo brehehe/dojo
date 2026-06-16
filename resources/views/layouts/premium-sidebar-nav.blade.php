@@ -143,7 +143,7 @@
 
     {{-- Sistem Panitera --}}
     @hasanyrole('Super Admin|Admin|Panitera|Koordinator Lapangan|Court')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result') || request()->routeIs('admin.panitera.panggil-drawing')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result') || request()->routeIs('admin.panitera.scoring.randori.result') || request()->routeIs('admin.panitera.panggil-drawing')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Panitera</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -161,6 +161,9 @@
                 <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'active' : '' }}"
                     href="{{ route('admin.panitera.scoring.embu.result') }}"><i class="fa-solid fa-trophy"></i> Hasil
                     Embu</a>
+                <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.randori.result') ? 'active' : '' }}"
+                    href="{{ route('admin.panitera.scoring.randori.result') }}"><i class="fa-solid fa-trophy"></i> Hasil
+                    Randori</a>
             </div>
         </div>
     @endhasanyrole

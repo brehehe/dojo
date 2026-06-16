@@ -624,4 +624,14 @@ class ScoringDashboardController extends Controller
             'randoriResults' => $randoriResults,
         ]);
     }
+
+    public function scoringRandoriResult(): Response
+    {
+        return Inertia::render('NewScoringDetailRandori');
+    }
+
+    public function randoriHasilPrint(): Response
+    {
+        return Inertia::render('RandoriHasilPrint');
+    }
 }
