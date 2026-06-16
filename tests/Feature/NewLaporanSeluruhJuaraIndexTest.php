@@ -169,15 +169,16 @@ test('index component groups merged match numbers into a single row', function (
 
     // Attach participants
     $contingentC = Contingent::factory()->create(['name' => 'Contingent C']);
-    $regC = Registration::create(['contingent_id' => $contingentC->id]);
+    $regC1 = Registration::create(['contingent_id' => $contingentC->id]);
+    $regC2 = Registration::create(['contingent_id' => $contingentC->id]);
 
     $athlete7 = Athlete::factory()->create(['name' => 'Kenshi 7', 'gender' => 'Female']);
     $athlete7->contingents()->attach($contingentC->id, ['is_primary' => true]);
-    $athlete7->matchNumbers()->attach($mnA->id, ['registration_id' => $regC->id]);
+    $athlete7->matchNumbers()->attach($mnA->id, ['registration_id' => $regC1->id]);
 
     $athlete8 = Athlete::factory()->create(['name' => 'Kenshi 8', 'gender' => 'Female']);
     $athlete8->contingents()->attach($contingentC->id, ['is_primary' => true]);
-    $athlete8->matchNumbers()->attach($mnB->id, ['registration_id' => $regC->id]);
+    $athlete8->matchNumbers()->attach($mnB->id, ['registration_id' => $regC2->id]);
 
     // Fetch data and assert merge grouping
     $component = Livewire::actingAs($this->admin)->test(NewLaporanSeluruhJuaraIndex::class);
