@@ -414,9 +414,9 @@
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, "success");
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
                 activeDrawingId = drawingId;
                 actionInFlight = false;
                 await fetchState();
@@ -475,9 +475,9 @@
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, "success");
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
             } else {
                 showToast(data.message || "Gagal memanggil wasit", "error");
             }
@@ -646,6 +646,7 @@
     }
 
     function playAnnouncer(text) {
+        return; // Disabled without deleting to run offline
         stopAnnouncer();
         isPlayingAnnouncer = true;
 
@@ -916,13 +917,13 @@
             >
                 <i class="fas fa-bullhorn"></i> Panggil Official
             </button>
-            <button
+            <!-- <button
                 onclick={stopAnnouncer}
                 class="btn-gen ghost"
                 style="color:var(--red); border-color:var(--red);"
             >
                 <i class="fas fa-volume-xmark"></i> Stop Suara
-            </button>
+            </button> -->
             <a href={`/admin/new-scoring/correction?match_id=${matchId}`} class="btn-gen primary">
                 <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai & Denda
             </a>
@@ -1202,7 +1203,7 @@
                             Number(activeDrawingId) === Number(item.drawing_id)
                         )}
                         <tr style={isActive ? "background:#fdfbf7;" : ""}>
-                            <td>{item.sequence_number || no + 1}</td>
+                            <td>{no + 1}</td>
                             <td class="text-left">
                                 <div
                                     style="font-weight:700; color:var(--ink); font-size:13px; text-transform:uppercase;"
@@ -1412,7 +1413,7 @@
                     <div class="queue-card {isActive ? 'active' : ''}">
                         <div class="queue-hdr">
                             <div class="queue-num">
-                                {item.sequence_number || no + 1}
+                                {no + 1}
                             </div>
                             <div class="queue-info">
                                 <div class="queue-name">

@@ -7,12 +7,17 @@ use App\Models\MatchNumber\MatchNumber;
 use App\Models\Registration;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.premium')]
 class Standings extends Component
 {
+    #[Url]
     public string $filterType = 'embu';
+
+    #[Url]
+    public string $roundFilter = 'Penyisihan';
 
     public function mount(): void
     {
@@ -38,10 +43,13 @@ class Standings extends Component
                 ->whereHas('drawings', fn ($q) => $q->whereIn('registration_id', $registrationIds))
                 ->pluck('id');
 
-            $standings = EmbuScore::whereIn('match_number_id', $matchNumberIds)
+            $query = EmbuScore::whereIn('match_number_id', $matchNumberIds)
                 ->with(['matchNumber.ageGroup', 'registration.contingent'])
-                ->orderBy('match_number_id')
-                ->orderBy('rank')
+                ->where('round_label', $this->roundFilter);
+
+            $standings = $query->orderBy('match_number_id')
+                ->orderBy('nilai_akhir', 'desc')
+                ->orderByRaw('COALESCE(rank, 999999) ASC')
                 ->get()
                 ->groupBy('match_number_id');
         } else {

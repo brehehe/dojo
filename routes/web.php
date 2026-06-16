@@ -231,6 +231,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/correction/matches', [ScoringDashboardController::class, 'scoringCorrectionMatches'])->name('correction.matches');
             Route::get('/correction/match-state/{matchNumber}', [ScoringDashboardController::class, 'scoringCorrectionMatchState'])->name('correction.match-state');
             Route::post('/correction/embu/save', [EmbuScoringController::class, 'scoringEmbuCorrectionSave'])->name('correction.embu.save');
+            Route::post('/correction/embu/delete', [EmbuScoringController::class, 'scoringEmbuCorrectionDelete'])->name('correction.embu.delete');
             Route::post('/correction/randori/save', [RandoriScoringController::class, 'scoringRandoriCorrectionSave'])->name('correction.randori.save');
             Route::post('/activate-match', [ScoringDashboardController::class, 'activateMatch'])->name('activate-match');
             Route::post('/clear-court', [ScoringDashboardController::class, 'clearCourt'])->name('clear-court');
@@ -454,3 +455,7 @@ Route::prefix('api/svelte-monitor')->name('api.svelte-monitor.')->middleware('th
     Route::get('/rekapitulasi-hasil/court/{court}/state', [MonitorController::class, 'monitorRekapitulasiHasilState'])->name('rekapitulasi-hasil.state');
     Route::get('/timer/court/{court}/state', [MonitorController::class, 'monitorTimerState'])->name('timer.state');
 });
+
+// Cek Rekap Nilai Online
+Route::get('/cek-rekap-nilai-online', [MonitorController::class, 'cekRekapNilaiOnline'])->name('cek-rekap-nilai-online');
+Route::get('/api/cek-rekap-nilai-online/state', [MonitorController::class, 'cekRekapNilaiOnlineState'])->name('api.cek-rekap-nilai-online.state');

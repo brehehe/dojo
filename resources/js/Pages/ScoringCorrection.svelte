@@ -30,6 +30,7 @@
     // Modal state for Embu
     let showEmbuModal = $state(false);
     let activeDrawing = $state(null);
+    let activeScore = $state(null);
     let embuScores = $state({
         judge_1: 0,
         judge_2: 0,
@@ -109,22 +110,19 @@
     }
 
     // Embu Correction
-    function openEmbuEdit(drawing) {
+    function openEmbuEdit(drawing, score = null) {
         activeDrawing = drawing;
-        const existingScore = matchState.embuScores.find(s => 
-            s.drawing_id === drawing.id || 
-            (s.registration_id === drawing.registration_id && s.match_number_id === drawing.match_number_id)
-        );
+        activeScore = score;
         embuScores = {
-            judge_1: existingScore?.judge_1 || 0,
-            judge_2: existingScore?.judge_2 || 0,
-            judge_3: existingScore?.judge_3 || 0,
-            judge_4: existingScore?.judge_4 || 0,
-            judge_5: existingScore?.judge_5 || 0
+            judge_1: score?.judge_1 || 0,
+            judge_2: score?.judge_2 || 0,
+            judge_3: score?.judge_3 || 0,
+            judge_4: score?.judge_4 || 0,
+            judge_5: score?.judge_5 || 0
         };
-        embuDenda = existingScore?.denda || 0;
-        embuWaktu = existingScore?.waktu || "00:00";
-        selectedTiebreakRound = existingScore?.tiebreak_round || 0;
+        embuDenda = score?.denda || 0;
+        embuWaktu = score?.waktu || "00:00";
+        selectedTiebreakRound = score?.tiebreak_round || 0;
         autoDenda = true;
         showEmbuModal = true;
     }
@@ -179,6 +177,7 @@
         isSaving = true;
         try {
             const res = await postJson("/admin/api/scoring/correction/embu/save", {
+                score_id: activeScore?.id || null,
                 match_id: matchState.matchNumber.id,
                 registration_id: activeDrawing.registration_id,
                 drawing_id: activeDrawing.id,
@@ -200,6 +199,24 @@
             showToast("Terjadi kesalahan koneksi", "error");
         } finally {
             isSaving = false;
+        }
+    }
+
+    async function deleteEmbuScore(score) {
+        if (!confirm("Apakah Anda yakin ingin menghapus nilai ini?")) return;
+        try {
+            const res = await postJson("/admin/api/scoring/correction/embu/delete", {
+                score_id: score.id
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.text, "success");
+                fetchMatchState();
+            } else {
+                showToast(data.message || "Gagal menghapus nilai", "error");
+            }
+        } catch (e) {
+            showToast("Terjadi kesalahan koneksi", "error");
         }
     }
 
@@ -276,12 +293,57 @@
     }
 
     // Utility helper
-    function getRegistrationScore(drawing) {
-        if (!matchState) return null;
-        return matchState.embuScores.find(s => 
-            s.drawing_id === drawing.id || 
-            (s.registration_id === drawing.registration_id && s.match_number_id === drawing.match_number_id)
+    function getRegistrationScores(drawing) {
+        if (!matchState) return [];
+        
+        // 1. First, find all scores that have this drawing's ID exactly.
+        const exactScores = matchState.embuScores.filter(s => s.drawing_id === drawing.id);
+        if (exactScores.length > 0) {
+            return exactScores;
+        }
+        
+        // 2. If no exact score by drawing_id, find all drawings for this registration/round.
+        const siblingDrawings = matchState.drawings.filter(d => 
+            d.registration_id === drawing.registration_id && 
+            d.match_number_id === drawing.match_number_id && 
+            d.round === drawing.round
         );
+        
+        // Find our drawing's index among sibling drawings
+        const drawingIndex = siblingDrawings.findIndex(d => d.id === drawing.id);
+        
+        // 3. Find all scores for this registration/round that don't have a drawing_id (or are null).
+        const nullDrawingScores = matchState.embuScores.filter(s => 
+            !s.drawing_id &&
+            s.registration_id === drawing.registration_id && 
+            s.match_number_id === drawing.match_number_id && 
+            s.round_label === drawing.round
+        );
+        
+        // Match the score at drawingIndex
+        if (drawingIndex !== -1 && drawingIndex < nullDrawingScores.length) {
+            return [nullDrawingScores[drawingIndex]];
+        }
+        
+        return [];
+    }
+
+    function formatDateTime(dateStr) {
+        if (!dateStr) return "—";
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return dateStr;
+            return date.toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }) + " " + date.toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        } catch (e) {
+            return dateStr;
+        }
     }
 </script>
 
@@ -370,46 +432,91 @@
                                 <th>Denda</th>
                                 <th>Total</th>
                                 <th>Akhir</th>
+                                <th>Terakhir Diupdate</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {#each matchState.drawings as drawing, idx}
-                                {@const s = getRegistrationScore(drawing)}
-                                <tr>
-                                    <td>{idx + 1}</td>
-                                    <td>
-                                        <span class="badge round-label">{drawing.round}</span>
-                                    </td>
-                                    <td>{drawing.pool?.name || '—'}</td>
-                                    <td>
-                                        <div class="contingent-name">{drawing.registration?.contingent?.name || '—'}</div>
-                                        <div class="athletes-list">
-                                            {drawing.athletes?.map(a => a.name).join(' & ') || '—'}
-                                        </div>
-                                    </td>
-                                    <td class="monospace font-bold">
-                                        {#if s}
-                                            {s.judge_1.toFixed(1)} / {s.judge_2.toFixed(1)} / {s.judge_3.toFixed(1)} / {s.judge_4.toFixed(1)} / {s.judge_5.toFixed(1)}
-                                        {:else}
-                                            —
-                                        {/if}
-                                    </td>
-                                    <td class="monospace">{s?.waktu || '—'}</td>
-                                    <td class="text-danger font-bold">-{s?.denda || 0}</td>
-                                    <td class="monospace">{s?.total_score?.toFixed(1) || '—'}</td>
-                                    <td class="monospace font-bold text-success" style="font-size: 15px;">
-                                        {s?.nilai_akhir?.toFixed(1) || '—'}
-                                    </td>
-                                    <td>
-                                        <button onclick={() => openEmbuEdit(drawing)} class="btn-action">
-                                            <i class="fa-solid fa-pen-to-square"></i> Koreksi
-                                        </button>
-                                    </td>
-                                </tr>
+                                {@const scores = getRegistrationScores(drawing)}
+                                {#if scores.length === 0}
+                                    <tr>
+                                        <td>{idx + 1}</td>
+                                        <td>
+                                            <span class="badge round-label">{drawing.round}</span>
+                                        </td>
+                                        <td>{drawing.pool?.name || '—'}</td>
+                                        <td>
+                                            <div class="contingent-name">{drawing.registration?.contingent?.name || '—'}</div>
+                                            <div class="athletes-list">
+                                                {drawing.athletes?.map(a => a.name).join(' & ') || '—'}
+                                            </div>
+                                        </td>
+                                        <td colspan="6" class="text-center text-muted" style="font-style: italic;">
+                                            Belum ada nilai
+                                        </td>
+                                        <td>
+                                            <button onclick={() => openEmbuEdit(drawing, null)} class="btn-action">
+                                                <i class="fa-solid fa-plus"></i> Input Nilai
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {:else}
+                                    {#each scores as s, sIdx}
+                                        <tr style={scores.length > 1 ? "background-color: #fce8e6; font-weight: 700; color: #c0392b;" : ""}>
+                                            <td>{idx + 1}{scores.length > 1 ? `.${sIdx + 1}` : ''}</td>
+                                            <td>
+                                                <span class="badge round-label">{drawing.round}</span>
+                                                {#if scores.length > 1}
+                                                    <span class="badge bg-danger" style="margin-left:4px; font-size:9px; background-color:#e74c3c; color:#fff; padding:2px 4px; border-radius:4px; font-weight: 900;">Duplikat</span>
+                                                {/if}
+                                            </td>
+                                            <td>{drawing.pool?.name || '—'}</td>
+                                            <td>
+                                                <div class="contingent-name">{drawing.registration?.contingent?.name || '—'}</div>
+                                                <div class="athletes-list">
+                                                    {drawing.athletes?.map(a => a.name).join(' & ') || '—'}
+                                                </div>
+                                            </td>
+                                            <td class="monospace font-bold">
+                                                {#if [s.judge_1, s.judge_2, s.judge_3, s.judge_4, s.judge_5].every(v => v !== null && v !== undefined)}
+                                                    {@const vals = [s.judge_1, s.judge_2, s.judge_3, s.judge_4, s.judge_5]}
+                                                    {@const sortedIdx = vals.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v)}
+                                                    {@const droppedIdxSet = new Set([sortedIdx[0].i, sortedIdx[4].i])}
+                                                    {#each vals as v, i}
+                                                        <span style={droppedIdxSet.has(i) ? 'text-decoration:line-through; color:#bdc3c7; font-weight:400;' : 'color:#2c3e50; font-weight:900;'}>
+                                                            {v.toFixed(1)}
+                                                        </span>{#if i < 4}<span style="color:#dee2e6;"> / </span>{/if}
+                                                    {/each}
+                                                {:else}
+                                                    {s.judge_1?.toFixed(1) ?? '—'} / {s.judge_2?.toFixed(1) ?? '—'} / {s.judge_3?.toFixed(1) ?? '—'} / {s.judge_4?.toFixed(1) ?? '—'} / {s.judge_5?.toFixed(1) ?? '—'}
+                                                {/if}
+                                            </td>
+                                            <td class="monospace">{s.waktu || '—'}</td>
+                                            <td class="text-danger font-bold">-{s.denda || 0}</td>
+                                            <td class="monospace">{s.total_score?.toFixed(1) || '—'}</td>
+                                            <td class="monospace font-bold text-success" style="font-size: 15px;">
+                                                {s.nilai_akhir?.toFixed(1) || '—'}
+                                            </td>
+                                            <td class="monospace" style="font-size: 11px; color: var(--smoke);">
+                                                {formatDateTime(s.updated_at)}
+                                            </td>
+                                            <td>
+                                                <div style="display: flex; gap: 8px;">
+                                                    <button onclick={() => openEmbuEdit(drawing, s)} class="btn-action">
+                                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                                    </button>
+                                                    <button onclick={() => deleteEmbuScore(s)} class="btn-action" style="background:#e74c3c; color:#fff; border-color:#e74c3c;">
+                                                        <i class="fa-solid fa-trash"></i> Hapus
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {/each}
+                                {/if}
                             {:else}
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted">Belum ada peserta terdaftar.</td>
+                                    <td colspan="11" class="text-center text-muted">Belum ada peserta terdaftar.</td>
                                 </tr>
                             {/each}
                         </tbody>

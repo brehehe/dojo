@@ -59,9 +59,7 @@
         yusei_kachi: 0
     });
 
-    // Signatures
-    let sigArbitraseName = $state('');
-    let sigArbitraseData = $state(null);
+    // Signatures (Arbitrase removed — only 5 TTD)
     let sigKoordinatorName = $state('');
     let sigKoordinatorData = $state(null);
     let sigWasitName = $state('');
@@ -97,8 +95,6 @@
                         scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
                         
                         const sigs = meta.signatures || {};
-                        sigArbitraseName = sigs.arbitrase?.name || '';
-                        sigArbitraseData = sigs.arbitrase?.signature || null;
                         sigKoordinatorName = sigs.koordinator?.name || '';
                         sigKoordinatorData = sigs.koordinator?.signature || null;
                         sigWasitName = sigs.wasit?.name || '';
@@ -456,9 +452,9 @@
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
                 activeBracketNode = nodeKey;
                 actionInFlight = false;
                 await fetchState();
@@ -488,9 +484,9 @@
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
                 activeBracketNode = 'gf_0_0';
                 actionInFlight = false;
                 await fetchState();
@@ -560,9 +556,9 @@
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
             } else {
                 showToast(data.message || 'Gagal memanggil wasit', 'error');
             }
@@ -591,8 +587,8 @@
 
     // Score Calculations
     function recalculateScores() {
-        scoreRed = (scoringAka.mujoken_kachi * 15) + (scoringAka.ippon * 10) + (scoringAka.waza_ari * 5) + (scoringAka.yusei_kachi * 5) - (scoringAka.hasil_batsu_5 * 5) - (scoringAka.hasil_batsu_10 * 10);
-        scoreBlue = (scoringShiro.mujoken_kachi * 15) + (scoringShiro.ippon * 10) + (scoringShiro.waza_ari * 5) + (scoringShiro.yusei_kachi * 5) - (scoringShiro.hasil_batsu_5 * 5) - (scoringShiro.hasil_batsu_10 * 10);
+        scoreRed = Math.max(0, (scoringAka.mujoken_kachi * 15) + (scoringAka.ippon * 10) + (scoringAka.waza_ari * 5) + (scoringAka.yusei_kachi * 5) - (scoringAka.hasil_batsu_5 * 5) - (scoringAka.hasil_batsu_10 * 10));
+        scoreBlue = Math.max(0, (scoringShiro.mujoken_kachi * 15) + (scoringShiro.ippon * 10) + (scoringShiro.waza_ari * 5) + (scoringShiro.yusei_kachi * 5) - (scoringShiro.hasil_batsu_5 * 5) - (scoringShiro.hasil_batsu_10 * 10));
     }
 
     function updateScore(side, key, delta) {
@@ -608,8 +604,6 @@
     function resetDetailedScoring() {
         scoringAka = { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
         scoringShiro = { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-        sigArbitraseName = '';
-        sigArbitraseData = null;
         sigKoordinatorName = '';
         sigKoordinatorData = null;
         sigWasitName = '';
@@ -649,10 +643,6 @@
 
     // Submit scoring result
     async function submitScoring() {
-        if (!sigArbitraseName || !sigArbitraseData) {
-            alert('Nama dan Tanda tangan Arbitrase wajib diisi.');
-            return;
-        }
         if (!sigKoordinatorName || !sigKoordinatorData) {
             alert('Nama dan Tanda tangan Koordinator wajib diisi.');
             return;
@@ -690,7 +680,6 @@
                     scoring_aka: scoringAka,
                     scoring_shiro: scoringShiro,
                     signatures: {
-                        arbitrase: { name: sigArbitraseName, signature: sigArbitraseData },
                         koordinator: { name: sigKoordinatorName, signature: sigKoordinatorData },
                         wasit: { name: sigWasitName, signature: sigWasitData },
                         panitera: sigPanitera,
@@ -776,6 +765,7 @@
     }
 
     function playAnnouncer(text) {
+        return; // Disabled without deleting to run offline
         stopAnnouncer();
         isPlayingAnnouncer = true;
 
@@ -990,10 +980,10 @@
                 style="background:var(--red); box-shadow:0 4px 12px rgba(192,57,43,0.2);">
                 <i class="fas fa-bullhorn"></i> Panggil Official
             </button>
-            <button onclick={stopAnnouncer} class="btn-gen ghost"
+            <!-- <button onclick={stopAnnouncer} class="btn-gen ghost"
                 style="color:var(--red); border-color:var(--red);">
                 <i class="fas fa-volume-xmark"></i> Stop Suara
-            </button>
+            </button> -->
             <a href={`/admin/new-scoring/correction?match_id=${matchId}`} class="btn-gen primary" style="text-decoration:none;">
                 <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai
             </a>
@@ -1216,17 +1206,10 @@
                 <!-- SIGNATURE PAD FOR OFFICIALS -->
                 <div class="mt-6 border-t border-slate-200 pt-6 mb-6">
                     <div class="text-[13px] font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <i class="fas fa-signature text-rose-500"></i> Pengesahan & Tanda Tangan Hasil Pertandingan
+                        <i class="fas fa-signature text-rose-500"></i> Pengesahan &amp; Tanda Tangan Hasil Pertandingan
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- ARBITRASE -->
-                        <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Arbitrase</label>
-                            <input type="text" bind:value={sigArbitraseName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Arbitrase...">
-                            <SignaturePad bind:value={sigArbitraseData} name="Tanda Tangan Arbitrase" />
-                        </div>
-
                         <!-- KOORDINATOR -->
                         <div class="flex flex-col gap-2">
                             <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Koordinator</label>
@@ -1250,16 +1233,16 @@
 
                         <!-- MANAGER AKA (RED) -->
                         <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-black text-rose-500 uppercase tracking-widest">Manajer Pita Merah (AKA)</label>
-                            <input type="text" bind:value={sigManagerRedName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manajer Aka...">
-                            <SignaturePad bind:value={sigManagerRedData} name="Tanda Tangan Manajer Merah" />
+                            <label class="text-[11px] font-black text-rose-500 uppercase tracking-widest">Manager Merah (AKA)</label>
+                            <input type="text" bind:value={sigManagerRedName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manager Merah...">
+                            <SignaturePad bind:value={sigManagerRedData} name="Tanda Tangan Manager Merah" />
                         </div>
 
                         <!-- MANAGER SHIRO (WHITE) -->
-                        <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-black text-blue-500 uppercase tracking-widest">Manajer Pita Putih (SHIRO)</label>
-                            <input type="text" bind:value={sigManagerWhiteName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manajer Shiro...">
-                            <SignaturePad bind:value={sigManagerWhiteData} name="Tanda Tangan Manajer Putih" />
+                        <div class="flex flex-col gap-2 md:col-span-2 md:max-w-[calc(50%-12px)]">
+                            <label class="text-[11px] font-black text-blue-500 uppercase tracking-widest">Manager Putih (SHIRO)</label>
+                            <input type="text" bind:value={sigManagerWhiteName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manager Putih...">
+                            <SignaturePad bind:value={sigManagerWhiteData} name="Tanda Tangan Manager Putih" />
                         </div>
                     </div>
                 </div>
@@ -1492,8 +1475,113 @@
             </div>
         {/if}
 
+
+        <!-- REKAP PENILAIAN -->
+        {#if Object.keys(randoriResults).length > 0}
+            {@const buildRekap = () => {
+                const rows = [];
+                // Upper bracket
+                (drawingData.upper_bracket?.rounds || []).forEach((round, rIdx) => {
+                    round.forEach((match, mIdx) => {
+                        if (match.winner) {
+                            const key = `ub_${rIdx}_${mIdx}`;
+                            const res = randoriResults[key];
+                            rows.push({ key, bracket: 'ub', rIdx, mIdx, match, res });
+                        }
+                    });
+                });
+                // Lower bracket
+                (drawingData.lower_bracket?.rounds || []).forEach((round, rIdx) => {
+                    round.forEach((match, mIdx) => {
+                        if (match.winner) {
+                            const key = `lb_${rIdx}_${mIdx}`;
+                            const res = randoriResults[key];
+                            rows.push({ key, bracket: 'lb', rIdx, mIdx, match, res });
+                        }
+                    });
+                });
+                // Grand final
+                if (drawingData.grand_final?.winner) {
+                    const res = randoriResults['gf_0_0'];
+                    rows.push({ key: 'gf_0_0', bracket: 'gf', rIdx: 0, mIdx: 0, match: drawingData.grand_final, res });
+                }
+                return rows;
+            }}
+            {@const rekapRows = buildRekap()}
+            {#if rekapRows.length > 0}
+                <div class="bracket-wrapper" style="overflow:visible;">
+                    <div class="bracket-hdr" style="background:linear-gradient(135deg,#1a1a2e,#16213e); color:#fff;">
+                        <i class="fas fa-list-ol" style="color:#f39c12;"></i> REKAP PENILAIAN — Hasil Pertandingan
+                        <span style="margin-left:auto; font-size:11px; opacity:0.7;">{rekapRows.length} pertandingan selesai</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:600px;">
+                            <thead>
+                                <tr style="background:#f8f9fa; border-bottom:2px solid #e9ecef;">
+                                    <th style="padding:10px 14px; text-align:left; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d; white-space:nowrap;">Babak</th>
+                                    <th style="padding:10px 14px; text-align:left; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#e74c3c;">Pita Merah</th>
+                                    <th style="padding:10px 14px; text-align:center; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d;">Nilai</th>
+                                    <th style="padding:10px 14px; text-align:center; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d;">Hasil</th>
+                                    <th style="padding:10px 14px; text-align:center; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d;">Nilai</th>
+                                    <th style="padding:10px 14px; text-align:right; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#2980b9;">Pita Putih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {#each rekapRows as row}
+                                    {@const redWon = row.match.winner === 'athlete1'}
+                                    {@const blueWon = row.match.winner === 'athlete2'}
+                                    {@const bracketLabel = row.bracket === 'ub' ? 'UB' : row.bracket === 'lb' ? 'LB' : 'GF'}
+                                    {@const scoreRed = row.res?.score_red ?? '—'}
+                                    {@const scoreBlue = row.res?.score_blue ?? '—'}
+                                    <tr style="border-bottom:1px solid #f1f3f5;">
+                                        <td style="padding:10px 14px; white-space:nowrap;">
+                                            <span style="font-size:10px; font-weight:900; background:{row.bracket==='ub'?'#2980b9':row.bracket==='lb'?'#d35400':'#f39c12'}; color:#fff; padding:2px 7px; border-radius:6px; text-transform:uppercase;">
+                                                {bracketLabel} {row.bracket !== 'gf' ? `R${row.rIdx + 1}` : ''}
+                                            </span>
+                                            {#if row.bracket !== 'gf'}
+                                                <span style="font-size:11px; color:#adb5bd; margin-left:6px;">M{row.mIdx + 1}</span>
+                                            {/if}
+                                        </td>
+                                        <td style="padding:10px 14px;">
+                                            <div style="font-size:13px; font-weight:{redWon?'900':'600'}; color:{redWon?'#c0392b':'#495057'};">{row.match.athlete1?.name || '—'}</div>
+                                            {#if row.match.athlete1?.contingent}
+                                                <div style="font-size:11px; color:#adb5bd;">{row.match.athlete1.contingent}</div>
+                                            {/if}
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:center;">
+                                            <span style="font-size:18px; font-weight:900; color:{redWon?'#e74c3c':'#adb5bd'};">{scoreRed}</span>
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:center;">
+                                            {#if redWon}
+                                                <span style="font-size:10px; font-weight:900; background:#27ae60; color:#fff; padding:3px 10px; border-radius:20px;">← MENANG</span>
+                                            {:else if blueWon}
+                                                <span style="font-size:10px; font-weight:900; background:#27ae60; color:#fff; padding:3px 10px; border-radius:20px;">MENANG →</span>
+                                            {:else}
+                                                <span style="font-size:10px; color:#adb5bd;">—</span>
+                                            {/if}
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:center;">
+                                            <span style="font-size:18px; font-weight:900; color:{blueWon?'#2980b9':'#adb5bd'};">{scoreBlue}</span>
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:right;">
+                                            <div style="font-size:13px; font-weight:{blueWon?'900':'600'}; color:{blueWon?'#1a5276':'#495057'};">{row.match.athlete2?.name || '—'}</div>
+                                            {#if row.match.athlete2?.contingent}
+                                                <div style="font-size:11px; color:#adb5bd; text-align:right;">{row.match.athlete2.contingent}</div>
+                                            {/if}
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {/if}
+        {/if}
+
+
         <!-- FINAL CHAMPIONS LEADERBOARD -->
         {#if Object.keys(juaraMap).length > 0}
+            {@const thirdPlaceAthletes = Object.entries(juaraMap).filter(([k]) => parseFloat(k) >= 3 && parseFloat(k) < 4).map(([, v]) => v).filter(Boolean)}
             <div class="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden mt-12 mb-8">
                 <div class="px-6 py-4 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
@@ -1511,29 +1599,65 @@
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {#each [1, 2, 3, 4] as rank}
-                            {@const athlete = juaraMap[rank]}
-                            {@const conf = rank === 1 ? { label: 'Juara 1', icon: '🥇', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600' } :
-                                          rank === 2 ? { label: 'Juara 2', icon: '🥈', bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600' } :
-                                          { label: 'Juara 3 Bersama', icon: '🥉', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600' }}
+                        <!-- Juara 1 -->
+                        <div class="relative group">
+                            <div class="h-full px-5 py-8 rounded-2xl border {juaraMap[1] ? 'border-amber-200 bg-amber-50' : 'border-slate-100 bg-white'} flex flex-col items-center text-center transition-all duration-300 {juaraMap[1] ? 'shadow-md shadow-amber-500/5' : ''}">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥇</div>
+                                <div class="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-3">Juara 1</div>
+                                {#if juaraMap[1]}
+                                    <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{juaraMap[1].name}</div>
+                                    <div class="text-xs font-bold text-slate-500">{juaraMap[1].contingent || '—'}</div>
+                                {:else}
+                                    <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
+                                    <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
+                                {/if}
+                            </div>
+                        </div>
+
+                        <!-- Juara 2 -->
+                        <div class="relative group">
+                            <div class="h-full px-5 py-8 rounded-2xl border {juaraMap[2] ? 'border-slate-200 bg-slate-50' : 'border-slate-100 bg-white'} flex flex-col items-center text-center transition-all duration-300 {juaraMap[2] ? 'shadow-md' : ''}">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥈</div>
+                                <div class="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-3">Juara 2</div>
+                                {#if juaraMap[2]}
+                                    <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{juaraMap[2].name}</div>
+                                    <div class="text-xs font-bold text-slate-500">{juaraMap[2].contingent || '—'}</div>
+                                {:else}
+                                    <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
+                                    <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
+                                {/if}
+                            </div>
+                        </div>
+
+                        <!-- Juara 3 & Juara 3 Bersama -->
+                        {#if thirdPlaceAthletes.length > 0}
+                            {#each thirdPlaceAthletes as a, idx}
+                                {@const cardLabel = (idx === 0 && thirdPlaceAthletes.length === 1) || idx > 0 ? 'Juara 3 Bersama' : 'Juara 3'}
+                                <div class="relative group">
+                                    <div class="h-full px-5 py-8 rounded-2xl border border-orange-200 bg-orange-50 flex flex-col items-center text-center transition-all duration-300 shadow-md shadow-orange-500/5">
+                                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥉</div>
+                                        <div class="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] mb-3">{cardLabel}</div>
+                                        <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{a.name}</div>
+                                        <div class="text-xs font-bold text-slate-500">{a.contingent || '—'}</div>
+                                    </div>
+                                </div>
+                            {/each}
+                        {:else}
                             <div class="relative group">
-                                <div class="h-full px-5 py-8 rounded-2xl border {athlete ? `${conf.border} ${conf.bg}` : 'border-slate-100 bg-white'} flex flex-col items-center text-center transition-all duration-300 {athlete ? 'shadow-md shadow-amber-500/5' : ''}">
-                                    <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{conf.icon}</div>
-                                    <div class="text-[10px] font-black {conf.text} uppercase tracking-[0.2em] mb-3">{conf.label}</div>
-                                    {#if athlete}
-                                        <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{athlete.name}</div>
-                                        <div class="text-xs font-bold text-slate-500">{athlete.contingent || '—'}</div>
-                                    {:else}
-                                        <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
-                                        <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
-                                    {/if}
+                                <div class="h-full px-5 py-8 rounded-2xl border border-slate-100 bg-white flex flex-col items-center text-center">
+                                    <div class="text-4xl mb-4">🥉</div>
+                                    <div class="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] mb-3">Juara 3 / Juara 3 Bersama</div>
+                                    <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
+                                    <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
                                 </div>
                             </div>
-                        {/each}
+                        {/if}
                     </div>
                 </div>
             </div>
         {/if}
+
+
     {/if}
 
     <!-- OFFICIALS BOTTOM LIST -->

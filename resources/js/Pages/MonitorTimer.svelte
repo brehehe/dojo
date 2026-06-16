@@ -134,11 +134,42 @@
         // Initial sync
         sync();
 
+        if (window.Echo) {
+            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                if (e.timer_state) {
+                    offset = e.timer_state.server_time_ms - Date.now();
+                    stateObj = e.timer_state;
+
+                    let wasRunning = running;
+                    running = (e.timer_state.status === 'running');
+
+                    // Play buzzer when timer newly starts
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer();
+                        }
+                    }
+
+                    if (e.timer_state.status !== 'countdown') {
+                        countdown = 0;
+                    }
+                }
+
+                // If it is not a pure timer update, fetch the full layout details
+                if (e.event_type !== 'timer') {
+                    sync();
+                }
+            });
+        }
+
         polling = createAdaptivePolling({
             fetchNow: sync,
             normalInterval: pollDelay,
-            healthyInterval: pollDelay,
-            staleAfter: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
             immediate: false,
         });
         polling.start();
@@ -199,6 +230,9 @@
     onDestroy(() => {
         destroyed = true;
         syncQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`court.${courtId}`);
+        }
         polling?.stop();
         clearInterval(localTickInterval);
         if (queuedTimeout) clearTimeout(queuedTimeout);

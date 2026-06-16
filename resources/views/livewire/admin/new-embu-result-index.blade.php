@@ -173,6 +173,20 @@
             .result-item.tied {
                 background: rgba(192, 57, 43, 0.05);
             }
+            .result-item.ctg-duplicate {
+                background-color: #fffdeb !important;
+                border-left: 4px solid #f1c40f !important;
+            }
+            .result-item.ctg-duplicate:hover {
+                background-color: #fffbeb !important;
+            }
+            .result-item.ctg-unique {
+                background-color: #f0fdf4 !important;
+                border-left: 4px solid #2ecc71 !important;
+            }
+            .result-item.ctg-unique:hover {
+                background-color: #dcfce7 !important;
+            }
             
             .rank-badge {
                 width: 32px;
@@ -354,6 +368,17 @@
         </div>
 
         @if($selectedMatchId)
+            @php
+                $hasAnyDuplicate = false;
+                foreach ($contingentCounts as $cId => $count) {
+                    if ($count >= 2) {
+                        $hasAnyDuplicate = true;
+                        break;
+                    }
+                }
+                $isMatchYellow = ($totalParticipants === 3) || $hasAnyDuplicate;
+                $itemBgClass = $isMatchYellow ? 'ctg-duplicate' : 'ctg-unique';
+            @endphp
 
             {{-- CHAMPIONS BANNER --}}
             @if($champions->isNotEmpty())
@@ -367,9 +392,9 @@
                         </button>
                     </div>
                     <div class="champion-list">
-                        @foreach($champions->take(4) as $champ)
+                        @foreach($champions->take(3) as $champ)
                             @php
-                                $rankIcon = match($champ->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', 4 => '🥉', default => '#'.$champ->rank };
+                                $rankIcon = match($champ->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => '#'.$champ->rank };
                                 $athletes = collect();
                                 if ($champ->drawing_id) {
                                     $athleteIds = $champ->drawing->metadata['athlete_ids'] ?? [];
@@ -380,6 +405,7 @@
                                 if ($athletes->isEmpty()) {
                                     $athletes = $champ->matchNumber?->athletes?->filter(fn($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
                                 }
+                                $pts = match($champ->rank) { 1 => 5, 2 => 3, 3 => 1, default => 0 };
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank">{{ $rankIcon }}</div>
@@ -389,16 +415,21 @@
                                     </div>
                                     <div class="champion-ctg">{{ $champ->registration?->contingent?->name }}</div>
                                 </div>
-                                <div>
+                                <div style="display:flex; flex-direction:column; align-items:flex-end;">
                                     <div class="champion-score">{{ number_format($champ->accumulated_score, 1) }}</div>
-                                    <div style="font-size:10px; font-weight:700; opacity:0.8; text-transform:uppercase;">Akumulasi</div>
+                                    <div style="font-size:9px; font-weight:700; opacity:0.8; text-transform:uppercase;">Akumulasi</div>
+                                    @if($pts > 0)
+                                        <div style="font-size:9px; font-weight:800; color:#fff; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; margin-top:2px; display:inline-block;">
+                                            +{{ $pts }} Poin
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
                     </div>
-                    @if($champions->count() > 4)
+                    @if($champions->count() > 3)
                         <div style="font-size:12px; font-weight:700; text-align:center; opacity:0.8;">
-                            +{{ $champions->count() - 4 }} peserta lainnya
+                            +{{ $champions->count() - 3 }} peserta lainnya
                         </div>
                     @endif
                 </div>
@@ -419,14 +450,14 @@
                                 </button>
                             @endif
                             @if(!$finalExists)
-                                <button wire:click="openGenerateFinalModal" class="btn-gen warning">
+                                <button wire:click="openGenerateFinalModal" @if($champions->isNotEmpty()) disabled style="opacity:0.5; cursor:not-allowed;" @endif class="btn-gen warning">
                                     <i class="fas fa-arrow-right"></i> Generate Final
                                 </button>
                             @else
-                                <button wire:click="generateFinal" wire:loading.attr="disabled" class="btn-gen ghost">
+                                {{-- <button @if($champions->isEmpty()) wire:click="generateFinal" @endif wire:loading.attr="disabled" @if($champions->isNotEmpty()) disabled style="opacity:0.5; cursor:not-allowed;" @endif class="btn-gen ghost">
                                     <span wire:loading.remove wire:target="generateFinal"><i class="fas fa-sync"></i> Re-generate</span>
                                     <span wire:loading wire:target="generateFinal"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
-                                </button>
+                                </button> --}}
                             @endif
                         </div>
                     </div>
@@ -454,7 +485,7 @@
                                     elseif($idx === 1) $badgeClass = 'silver';
                                     elseif($idx === 2) $badgeClass = 'bronze';
                                 @endphp
-                                <div class="result-item {{ $isTied ? 'tied' : '' }}" style="{{ !$qualifies ? 'opacity:0.5;' : '' }}">
+                                <div class="result-item {{ $isTied ? 'tied' : '' }} {{ $itemBgClass }}" style="{{ !$qualifies ? 'opacity:0.5;' : '' }}">
                                     <div class="rank-badge {{ $badgeClass }}">{{ $idx + 1 }}</div>
                                     <div class="athlete-info">
                                         @foreach($reg['athletes'] as $ath)
@@ -463,10 +494,6 @@
                                         <div class="athlete-contingent">{{ $reg['contingent']?->name }}</div>
                                     </div>
                                     <div class="score-info" style="display:flex; align-items:center; gap:12px;">
-                                        @if($isTied)
-                                            <span style="font-size:10px; font-weight:800; background:var(--red); color:#fff; padding:2px 6px; border-radius:4px;">SERI</span>
-                                        @endif
-                                        
                                         @if($score)
                                             <div style="display: flex; flex-direction: column; align-items: flex-end;">
                                                 <div class="score-val">{{ number_format($reg['calculated_score'], 1) }}</div>
@@ -543,11 +570,11 @@
                             Final
                         </div>
                         <div style="display:flex; gap:8px;">
-                            @if(!empty($tiedFinalIds))
+                            {{-- @if(!empty($tiedFinalIds))
                                 <button wire:click="openTiebreakModal('Final', {{ json_encode($tiedFinalIds) }})" class="btn-gen danger">
                                     <i class="fas fa-equals"></i> Tanding Ulang
                                 </button>
-                            @endif
+                            @endif --}}
                             @if($finalExists)
                                 <button wire:click="$set('showChampionModal', true)" class="btn-gen warning">
                                     <i class="fas fa-crown"></i> Konfirmasi Juara
@@ -573,7 +600,7 @@
                                     elseif($idx === 1) $badgeClass = 'silver';
                                     elseif($idx === 2) $badgeClass = 'bronze';
                                 @endphp
-                                <div class="result-item {{ $isTiedFinal ? 'tied' : '' }}">
+                                <div class="result-item {{ $isTiedFinal ? 'tied' : '' }} {{ $itemBgClass }}">
                                     <div class="rank-badge {{ $badgeClass }}">{{ $idx + 1 }}</div>
                                     <div class="athlete-info">
                                         @foreach($reg['athletes'] as $ath)
@@ -582,9 +609,6 @@
                                         <div class="athlete-contingent">{{ $reg['contingent']?->name }}</div>
                                     </div>
                                     <div class="score-info">
-                                        @if($isTiedFinal)
-                                            <span style="display:inline-block; margin-bottom:4px; font-size:10px; font-weight:800; background:var(--red); color:#fff; padding:2px 6px; border-radius:4px;">SERI</span>
-                                        @endif
                                         <div style="font-size:11px; font-weight:700; color:var(--smoke); margin-bottom:2px;">
                                             P: {{ number_format($reg['penyisihan_score']?->nilai_akhir ?? 0, 1) }} + F: {{ $reg['final_score'] ? number_format($reg['final_score']->nilai_akhir, 1) : '–' }}
                                         </div>
@@ -738,29 +762,28 @@
                                 <div style="font-size:12px; color:#d68910;">Data juara sebelumnya (jika ada) akan diganti dengan hasil terbaru.</div>
                             </div>
 
-                            @if(!empty($tiedFinalIds))
-                                <div style="margin-bottom:16px; padding:12px 16px; background:rgba(192,57,43,0.1); border:1px solid rgba(192,57,43,0.2); border-radius:12px;">
-                                    <div style="font-size:12px; font-weight:800; color:var(--red); text-transform:uppercase; margin-bottom:4px;"><i class="fas fa-exclamation-triangle"></i> Masih ada nilai seri!</div>
-                                    <div style="font-size:12px; color:var(--red); opacity:0.9;">{{ count($tiedFinalIds) }} peserta memiliki nilai akumulasi sama. Selesaikan tanding ulang terlebih dahulu.</div>
-                                </div>
-                            @endif
+
 
                             <div style="max-height:250px; overflow-y:auto; border:1px solid var(--paper2); border-radius:12px; background:#faf9f6;">
-                                @foreach($finalRanking->take(4) as $idx => $reg)
+                                @foreach($finalRanking->take(3) as $idx => $reg)
                                     @php
                                         $displayRank = match($idx) { 
                                             0 => '🥇', 
                                             1 => '🥈', 
                                             2 => '🥉', 
-                                            3 => '🥉', 
                                             default => '' 
                                         };
                                         $label = match($idx) {
                                             0 => 'Juara 1',
                                             1 => 'Juara 2',
-                                            2 => 'Juara 3 Bersama',
-                                            3 => 'Juara 3 Bersama',
+                                            2 => 'Juara 3',
                                             default => ''
+                                        };
+                                        $pts = match($idx) {
+                                            0 => 5,
+                                            1 => 3,
+                                            2 => 1,
+                                            default => 0
                                         };
                                     @endphp
                                     <div style="padding:12px 16px; border-bottom:1px solid var(--paper2); display:flex; align-items:center; gap:12px;">
@@ -772,9 +795,17 @@
                                             @foreach($reg['athletes'] as $ath)
                                                 <div style="font-size:13px; font-weight:800; color:var(--ink); text-transform:uppercase;">{{ $ath->name }}</div>
                                             @endforeach
+                                            <div style="font-size:11px; font-weight:600; color:var(--smoke);">{{ $reg['contingent']?->name }}</div>
                                         </div>
-                                        <div style="font-family:'Outfit',sans-serif; font-size:16px; font-weight:800; color:#f39c12;">
-                                            {{ number_format($reg['accumulated'] ?? 0, 1) }}
+                                        <div style="text-align:right;">
+                                            <div style="font-family:'Outfit',sans-serif; font-size:16px; font-weight:800; color:#f39c12;">
+                                                {{ number_format($reg['accumulated'] ?? 0, 1) }}
+                                            </div>
+                                            @if($pts > 0)
+                                                <div style="font-size:9px; font-weight:800; color:#27ae60; background:rgba(39,174,96,0.1); padding:2px 6px; border-radius:4px; margin-top:2px; display:inline-block;">
+                                                    +{{ $pts }} Poin
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach

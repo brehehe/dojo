@@ -785,7 +785,8 @@ class NewScoringEmbuIndex extends Component
             return $a['sequence_number'] <=> $b['sequence_number'];
         })->values();
 
-        $firstDrawingQuery = $this->matchNumber->drawings->where('round', $this->currentRound);
+        $firstDrawingQuery = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
+            ->where('round', $this->currentRound);
         if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
             $firstDrawingQuery = $firstDrawingQuery->where('pool_id', $this->selectedPoolId);
         }
@@ -793,9 +794,11 @@ class NewScoringEmbuIndex extends Component
 
         $availablePools = collect();
         if ($this->currentRound === 'Penyisihan') {
-            $availablePools = $this->matchNumber->drawings
+            $availablePools = DrawingMatchNumber::with('pool')
+                ->whereIn('match_number_id', $this->matchNumberIds)
                 ->where('round', 'Penyisihan')
                 ->whereNotNull('pool_id')
+                ->get()
                 ->pluck('pool')
                 ->unique('id')
                 ->values();
@@ -870,7 +873,16 @@ class NewScoringEmbuIndex extends Component
 
     public function getCourtId()
     {
-        $drawings = $this->matchNumber->drawings->where('round', $this->currentRound); // Note: drawings relation should be re-loaded or queried manually if it spans multiple matches
+        // First check if any court is actively running any match in this merge group
+        $activeCourt = Court::whereIn('active_match_id', $this->matchNumberIds)
+            ->whereNotNull('active_drawing_id')
+            ->first();
+        if ($activeCourt) {
+            return $activeCourt->id;
+        }
+
+        $drawings = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
+            ->where('round', $this->currentRound);
 
         if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
             $drawings = $drawings->where('pool_id', $this->selectedPoolId);

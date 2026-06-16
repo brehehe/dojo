@@ -2103,6 +2103,7 @@
         let currentAudio = null;
 
         window.addEventListener('play-announcer', event => {
+            return; // Disabled without deleting to run offline
             console.log('Announcer event received:', event.detail);
             const data = Array.isArray(event.detail) ? event.detail[0] : event.detail;
             const text = formatAnnouncerText(data.text);

@@ -432,9 +432,6 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         $matchId = $this->finalMatchId;
         $match = MatchNumber::findOrFail($matchId);
 
-        // Ensure no previous final exists
-        DrawingMatchNumber::where('match_number_id', $matchId)->where('round', 'Final')->delete();
-
         $drawingData = $match->drawing_data;
         if (! $drawingData) {
             return;
@@ -485,9 +482,9 @@ class AdminTechnicalMeetingEmbuIndex extends Component
         $sortedFinalists = $qualifiedRegistrations->sortBy('nilai_akhir')->values();
 
         // Specific metadata
-        $metadata = [];
+        $baseMetadata = [];
         if (str_contains(strtolower($match->name), 'beregu')) {
-            $metadata['composition_rule'] = 'Tandoku (start) - Paired (middle) - Tandoku (end)';
+            $baseMetadata['composition_rule'] = 'Tandoku (start) - Paired (middle) - Tandoku (end)';
         }
 
         $sessionDate = null;
@@ -498,21 +495,122 @@ class AdminTechnicalMeetingEmbuIndex extends Component
             }
         }
 
-        foreach ($sortedFinalists as $index => $finalist) {
-            $order = $index + 1;
-            DrawingMatchNumber::create([
+        $existingFinalDrawings = DrawingMatchNumber::where('match_number_id', $matchId)
+            ->where('round', 'Final')
+            ->orderBy('sequence_number')
+            ->get();
+
+        $schedules = [];
+        foreach ($existingFinalDrawings as $drawing) {
+            $schedules[$drawing->sequence_number] = [
+                'court_id' => $drawing->court_id,
+                'pool_id' => $drawing->pool_id,
+                'session_time_id' => $drawing->session_time_id,
+                'rundown_id' => $drawing->rundown_id,
+                'schedule_date' => $drawing->schedule_date,
+                'metadata' => $drawing->metadata,
+            ];
+        }
+
+        $existingPenyisihan = DrawingMatchNumber::where('match_number_id', $matchId)
+            ->where('round', 'Penyisihan')
+            ->first();
+
+        $firstFinal = $existingFinalDrawings->first();
+        $courtId = $this->finalCourtId ?? $firstFinal?->court_id ?? $existingPenyisihan?->court_id;
+        $poolId = null; // Final usually has no pool grouping (or all in one)
+        $sessionTimeId = $this->finalSessionTimeId ?? $firstFinal?->session_time_id ?? $existingPenyisihan?->session_time_id;
+        $rundownId = $this->finalRundownId ?? $firstFinal?->rundown_id ?? $existingPenyisihan?->rundown_id;
+        $scheduleDate = $sessionDate ?? $firstFinal?->schedule_date ?? $existingPenyisihan?->schedule_date;
+
+        // Delete existing drawings for Final round, but DO NOT delete existing scores
+        DrawingMatchNumber::where('match_number_id', $matchId)
+            ->where('round', 'Final')
+            ->delete();
+
+        // Clear active court drawing if it matches the current match to avoid stale references
+        if ($courtId) {
+            $court = Court::find($courtId);
+            if ($court && $court->active_match_id == $matchId) {
+                $court->update([
+                    'active_match_id' => null,
+                    'active_drawing_id' => null,
+                    'active_registration_id' => null,
+                    'active_bracket_node' => null,
+                ]);
+            }
+        }
+
+        $session = SessionTime::find($sessionTimeId);
+        $sessionStart = $session ? Carbon::parse($session->start_time) : null;
+        $duration = 10;
+
+        foreach ($sortedFinalists as $seq => $finalist) {
+            $order = $seq + 1;
+
+            $cId = $this->finalCourtId ?? $courtId;
+            $pId = null; // Final has no pool grouping
+            $sTimeId = $this->finalSessionTimeId ?? $sessionTimeId;
+            $rId = $this->finalRundownId ?? $rundownId;
+            $sDate = $sessionDate ?? $scheduleDate;
+
+            // Get drawing to retrieve athletes metadata
+            $origDrawing = DrawingMatchNumber::find($finalist->drawing_id);
+            if (! $origDrawing) {
+                $origDrawing = DrawingMatchNumber::where('match_number_id', $matchId)
+                    ->where('registration_id', $finalist->registration_id)
+                    ->where('round', 'Penyisihan')
+                    ->first();
+            }
+
+            $athleteIds = is_array($origDrawing?->metadata) && isset($origDrawing->metadata['athlete_ids']) ? $origDrawing->metadata['athlete_ids'] : [];
+            $athleteName = is_array($origDrawing?->metadata) && isset($origDrawing->metadata['athlete_name']) ? $origDrawing->metadata['athlete_name'] : 'TBD';
+            $contingentName = is_array($origDrawing?->metadata) && isset($origDrawing->metadata['contingent']) ? $origDrawing->metadata['contingent'] : 'TBD';
+
+            // Always calculate new sequential time slots starting from session start time
+            if ($sessionStart) {
+                $matchStart = $sessionStart->copy()->addMinutes($seq * $duration);
+                $matchEnd = $matchStart->copy()->addMinutes($duration);
+                $timeMeta = [
+                    'start_time' => $matchStart->format('H:i'),
+                    'end_time' => $matchEnd->format('H:i'),
+                    'duration' => $duration,
+                ];
+            } else {
+                $timeMeta = [];
+            }
+
+            // Get match number code prefix
+            $matchIdCode = $match ? $match->name_code.'-F-'.str_pad($order, 2, '0', STR_PAD_LEFT) : 'F-'.str_pad($order, 2, '0', STR_PAD_LEFT);
+
+            $meta = array_merge([
+                'contingent' => $contingentName,
+                'athlete_name' => $athleteName,
+                'athlete_ids' => $athleteIds,
+                'pool_label' => 'FINAL',
+                'officials' => [],
+                'match_id_code' => $matchIdCode,
+            ], $baseMetadata, $timeMeta);
+
+            $newDrawing = DrawingMatchNumber::create([
                 'match_number_id' => $matchId,
                 'registration_id' => $finalist->registration_id,
-                'pool_id' => null, // Final usually has no pool grouping (or all in one)
-                'court_id' => $this->finalCourtId,
-                'schedule_date' => $sessionDate,
-                'session_time_id' => $this->finalSessionTimeId,
-                'rundown_id' => $this->finalRundownId,
                 'round' => 'Final',
-                'sequence_number' => $order,
                 'draft_type' => 'embu',
-                'metadata' => $metadata,
+                'sequence_number' => $order,
+                'court_id' => $cId,
+                'pool_id' => $pId,
+                'session_time_id' => $sTimeId,
+                'rundown_id' => $rId,
+                'schedule_date' => $sDate,
+                'metadata' => $meta,
             ]);
+
+            // Update any existing scores for this registration and match to point to the new drawing ID
+            EmbuScore::where('match_number_id', $matchId)
+                ->where('registration_id', $finalist->registration_id)
+                ->where('round_label', 'Final')
+                ->update(['drawing_id' => $newDrawing->id]);
         }
 
         $this->isGeneratingFinal = false;

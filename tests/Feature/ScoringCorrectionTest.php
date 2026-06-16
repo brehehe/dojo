@@ -2,6 +2,7 @@
 
 use App\Models\Contingent;
 use App\Models\DrawingMatchNumber;
+use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Registration;
@@ -166,5 +167,133 @@ test('saves corrected randori match node scores', function () {
         'score_red' => 5,
         'score_blue' => 2,
         'winner_color' => 'athlete1',
+    ]);
+});
+
+test('saves corrected embu scores by score_id', function () {
+    $admin = User::factory()->create();
+    $ageGroup = AgeGroup::create(['name' => 'Dewasa', 'order' => 1, 'price' => 0]);
+    $match = MatchNumber::create([
+        'name' => 'Embu Beregu',
+        'draft_type' => 'embu',
+        'max_athletes' => 4,
+        'order' => 1,
+        'age_group_id' => $ageGroup->id,
+    ]);
+
+    $contingent = Contingent::create([
+        'name' => 'Surabaya A',
+        'leader_name' => 'Leader A',
+        'leader_phone' => '0812345678',
+        'leader_nik' => '1234567890123456',
+    ]);
+    $reg = Registration::create([
+        'contingent_id' => $contingent->id,
+    ]);
+
+    $drawing = DrawingMatchNumber::create([
+        'match_number_id' => $match->id,
+        'registration_id' => $reg->id,
+        'draft_type' => 'embu',
+        'round' => 'Penyisihan',
+        'sequence_number' => 1,
+    ]);
+
+    // Pre-create score
+    $score = EmbuScore::create([
+        'match_number_id' => $match->id,
+        'registration_id' => $reg->id,
+        'round_label' => 'Penyisihan',
+        'drawing_id' => $drawing->id,
+        'denda' => 0,
+        'waktu' => '01:30',
+        'judge_1' => 8.0,
+        'judge_2' => 8.0,
+        'judge_3' => 8.0,
+        'judge_4' => 8.0,
+        'judge_5' => 8.0,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->postJson('/admin/api/scoring/correction/embu/save', [
+            'score_id' => $score->id,
+            'match_id' => $match->id,
+            'registration_id' => $reg->id,
+            'drawing_id' => $drawing->id,
+            'round' => 'Penyisihan',
+            'waktu' => '01:45',
+            'denda' => 10,
+            'scores' => [
+                'judge_1' => 9.0,
+                'judge_2' => 9.0,
+                'judge_3' => 9.0,
+                'judge_4' => 9.0,
+                'judge_5' => 9.0,
+            ],
+        ]);
+
+    $response->assertSuccessful();
+
+    $this->assertDatabaseHas('embu_scores', [
+        'id' => $score->id,
+        'denda' => 10,
+        'waktu' => '01:45',
+        'judge_1' => 9.0,
+    ]);
+});
+
+test('deletes embu score successfully', function () {
+    $admin = User::factory()->create();
+    $ageGroup = AgeGroup::create(['name' => 'Dewasa', 'order' => 1, 'price' => 0]);
+    $match = MatchNumber::create([
+        'name' => 'Embu Beregu',
+        'draft_type' => 'embu',
+        'max_athletes' => 4,
+        'order' => 1,
+        'age_group_id' => $ageGroup->id,
+    ]);
+
+    $contingent = Contingent::create([
+        'name' => 'Surabaya A',
+        'leader_name' => 'Leader A',
+        'leader_phone' => '0812345678',
+        'leader_nik' => '1234567890123456',
+    ]);
+    $reg = Registration::create([
+        'contingent_id' => $contingent->id,
+    ]);
+
+    $drawing = DrawingMatchNumber::create([
+        'match_number_id' => $match->id,
+        'registration_id' => $reg->id,
+        'draft_type' => 'embu',
+        'round' => 'Penyisihan',
+        'sequence_number' => 1,
+    ]);
+
+    // Pre-create score
+    $score = EmbuScore::create([
+        'match_number_id' => $match->id,
+        'registration_id' => $reg->id,
+        'round_label' => 'Penyisihan',
+        'drawing_id' => $drawing->id,
+        'denda' => 0,
+        'waktu' => '01:30',
+        'judge_1' => 8.0,
+        'judge_2' => 8.0,
+        'judge_3' => 8.0,
+        'judge_4' => 8.0,
+        'judge_5' => 8.0,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->postJson('/admin/api/scoring/correction/embu/delete', [
+            'score_id' => $score->id,
+        ]);
+
+    $response->assertSuccessful();
+
+    $this->assertDatabaseMissing('embu_scores', [
+        'id' => $score->id,
     ]);
 });

@@ -127,7 +127,16 @@ class RandoriScoringController extends Controller
 
         $juaraMap = [];
         foreach ($savedResults as $res) {
-            $juaraMap[$res->rank] = [
+            $rank = (int) $res->rank;
+            if ($rank === 3) {
+                $key = '3';
+            } elseif ($rank === 4) {
+                $key = isset($juaraMap['3']) ? '3.1' : '3';
+            } else {
+                $key = $rank;
+            }
+
+            $juaraMap[$key] = [
                 'name' => $res->athlete_names,
                 'contingent' => $res->contingent_name,
                 'registration_id' => $res->registration_id,
@@ -651,10 +660,6 @@ class RandoriScoringController extends Controller
 
         $signatures = $request->input('signatures');
 
-        if (empty($signatures['arbitrase']['name']) || empty($signatures['arbitrase']['signature'])) {
-            return response()->json(['success' => false, 'message' => 'Nama dan Tanda tangan Arbitrase wajib diisi.'], 400)
-                ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
-        }
         if (empty($signatures['koordinator']['name']) || empty($signatures['koordinator']['signature'])) {
             return response()->json(['success' => false, 'message' => 'Nama dan Tanda tangan Koordinator wajib diisi.'], 400)
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -833,18 +838,106 @@ class RandoriScoringController extends Controller
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
         }
 
-        $data['juara'] = $juara;
-        $matchNumber->update(['drawing_data' => $data]);
+        // Collect all real athletes (non-BYE) scanning ALL bracket rounds to catch everyone
+        $allAthletes = [];
+        $bracketSources = [
+            $data['upper_bracket']['rounds'] ?? [],
+            $data['lower_bracket']['rounds'] ?? [],
+        ];
+        foreach ($bracketSources as $rounds) {
+            foreach ($rounds as $round) {
+                foreach ($round as $match) {
+                    foreach (['athlete1', 'athlete2'] as $slot) {
+                        $a = $match[$slot] ?? null;
+                        if ($a && isset($a['id']) && $a['id'] !== 'BYE') {
+                            $allAthletes[(string) $a['id']] = $a;
+                        }
+                    }
+                }
+            }
+        }
+        // Also check grand final
+        foreach (['athlete1', 'athlete2'] as $slot) {
+            $a = $data['grand_final'][$slot] ?? null;
+            if ($a && isset($a['id']) && $a['id'] !== 'BYE') {
+                $allAthletes[(string) $a['id']] = $a;
+            }
+        }
+
+        $bracketType = $data['bracket_type'] ?? $data['type'] ?? 'single_elimination';
+        $participantCount = count($allAthletes);
+
+        if ($bracketType === 'double_elimination') {
+            // Always recalculate Juara 3 / Juara 3 Bersama — remove stale rank-3 entries first
+            foreach (array_keys($juara) as $rank) {
+                if ((float) $rank >= 3.0 && (float) $rank < 4.0) {
+                    unset($juara[$rank]);
+                }
+            }
+
+            $lbFinalLoser = null;
+            $lbSemiLoser = null;
+
+            $lbRounds = $data['lower_bracket']['rounds'] ?? [];
+            $lbRoundCount = count($lbRounds);
+
+            // 1. Lower Bracket Final Loser (Juara 3 if >= 4 participants, else Juara 3 Bersama)
+            if ($lbRoundCount >= 1) {
+                $lastRoundMatches = $lbRounds[$lbRoundCount - 1];
+                $match = $lastRoundMatches[0] ?? null;
+                if ($match && ($match['winner'] ?? null)) {
+                    $loserSlot = $match['winner'] === 'athlete1' ? 'athlete2' : 'athlete1';
+                    $lbFinalLoser = $match[$loserSlot] ?? null;
+                    if ($lbFinalLoser && ($lbFinalLoser['id'] ?? '') === 'BYE') {
+                        $lbFinalLoser = null;
+                    }
+                }
+            }
+
+            // 2. Lower Bracket Semifinal Loser (Juara 3 Bersama if >= 4 participants)
+            if ($lbRoundCount >= 2) {
+                $semiRoundMatches = $lbRounds[$lbRoundCount - 2];
+                $match = $semiRoundMatches[0] ?? null;
+                if ($match && ($match['winner'] ?? null)) {
+                    $loserSlot = $match['winner'] === 'athlete1' ? 'athlete2' : 'athlete1';
+                    $lbSemiLoser = $match[$loserSlot] ?? null;
+                    if ($lbSemiLoser && ($lbSemiLoser['id'] ?? '') === 'BYE') {
+                        $lbSemiLoser = null;
+                    }
+                }
+            }
+
+            if ($lbFinalLoser) {
+                $juara['3'] = $lbFinalLoser;
+            }
+            if ($lbSemiLoser && $participantCount >= 4) {
+                $juara['3.1'] = $lbSemiLoser;
+            }
+
+            $data['juara'] = $juara;
+            $matchNumber->update(['drawing_data' => $data]);
+        }
 
         TournamentResult::whereIn('match_number_id', $matchNumberIds)->delete();
 
         foreach ($juara as $rank => $athlete) {
-            if ($rank > 4) {
+            // Allow rank 1, 2, 3, 4; skip rank >= 5
+            if ((float) $rank >= 5.0) {
                 continue;
             }
 
             if (! $athlete || ! isset($athlete['id']) || $athlete['id'] === 'BYE') {
                 continue;
+            }
+
+            // Save rank 3 for Juara 3, rank 4 for Juara 3 Bersama
+            $savedRank = (int) $rank;
+            if ((float) $rank >= 3.0 && (float) $rank < 5.0) {
+                if ($rank == 3) {
+                    $savedRank = ($participantCount === 3) ? 4 : 3;
+                } else {
+                    $savedRank = 4;
+                }
             }
 
             TournamentResult::updateOrCreate(
@@ -854,7 +947,7 @@ class RandoriScoringController extends Controller
                 ],
                 [
                     'draft_type' => $matchNumber->draft_type,
-                    'rank' => (int) $rank,
+                    'rank' => $savedRank,
                     'athlete_names' => $athlete['name'] ?? '',
                     'contingent_name' => $athlete['contingent'] ?? '',
                     'category_id' => $matchNumber->age_group_id,

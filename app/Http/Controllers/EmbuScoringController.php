@@ -52,11 +52,11 @@ class EmbuScoringController extends Controller
         if ($urlRound) {
             $currentRound = $urlRound;
         } else {
-            $hasFinalists = DB::table('embu_scores')
+            $hasFinalDrawings = DB::table('drawing_match_numbers')
                 ->whereIn('match_number_id', $matchNumberIds)
-                ->where('round_label', 'Final')
+                ->where('round', 'Final')
                 ->exists();
-            $currentRound = $hasFinalists ? 'Final' : 'Penyisihan';
+            $currentRound = $hasFinalDrawings ? 'Final' : 'Penyisihan';
         }
 
         $selectedPoolId = null;
@@ -67,6 +67,8 @@ class EmbuScoringController extends Controller
                 ->whereIn('match_number_id', $matchNumberIds)
                 ->where('round', $currentRound)
                 ->whereNotNull('pool_id')
+                ->orderBy('sequence_number')
+                ->orderBy('id')
                 ->first();
             if ($firstDrawing) {
                 $selectedPoolId = $firstDrawing->pool_id;
@@ -75,11 +77,21 @@ class EmbuScoringController extends Controller
 
         $firstDrawingQuery = DB::table('drawing_match_numbers')
             ->whereIn('match_number_id', $matchNumberIds)
-            ->where('round', $currentRound);
+            ->where('round', $currentRound)
+            ->orderBy('sequence_number')
+            ->orderBy('id');
         if ($currentRound === 'Penyisihan' && $selectedPoolId) {
             $firstDrawingQuery->where('pool_id', $selectedPoolId);
         }
         $courtId = $firstDrawingQuery->value('court_id');
+        if (! $courtId) {
+            $courtId = DB::table('drawing_match_numbers')
+                ->whereIn('match_number_id', $matchNumberIds)
+                ->whereNotNull('court_id')
+                ->orderBy('sequence_number')
+                ->orderBy('id')
+                ->value('court_id');
+        }
 
         $versions = [
             'match' => $this->stateCache->version('match', $matchNumber->id),
@@ -108,10 +120,10 @@ class EmbuScoringController extends Controller
         if ($urlRound) {
             $currentRound = $urlRound;
         } else {
-            $hasFinalists = $matchNumber->embuScores
-                ->where('round_label', 'Final')
-                ->count() > 0;
-            $currentRound = $hasFinalists ? 'Final' : 'Penyisihan';
+            $hasFinalDrawings = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+                ->where('round', 'Final')
+                ->exists();
+            $currentRound = $hasFinalDrawings ? 'Final' : 'Penyisihan';
         }
 
         $selectedPoolId = null;
@@ -121,6 +133,8 @@ class EmbuScoringController extends Controller
             $firstDrawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
                 ->where('round', $currentRound)
                 ->whereNotNull('pool_id')
+                ->orderBy('sequence_number')
+                ->orderBy('id')
                 ->first();
             if ($firstDrawing) {
                 $selectedPoolId = $firstDrawing->pool_id;
@@ -165,7 +179,13 @@ class EmbuScoringController extends Controller
                 ->groupBy('registration_id')
             : collect();
 
-        $registrations = $drawingsList->map(function ($drawing) use ($allScores, $currentRound, $pivotAthletes, $penyisihanScores) {
+        $penyisihanDrawings = $currentRound === 'Final'
+            ? DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+                ->where('round', 'Penyisihan')
+                ->get()
+            : collect();
+
+        $registrations = $drawingsList->map(function ($drawing) use ($allScores, $currentRound, $pivotAthletes, $penyisihanScores, $penyisihanDrawings, $matchNumberIds) {
             $regId = $drawing->registration_id;
             $matchId = $drawing->match_number_id;
             $registration = $drawing->registration;
@@ -184,33 +204,63 @@ class EmbuScoringController extends Controller
                 ->sortByDesc('tiebreak_round')
                 ->first();
 
-            if (! $score) {
-                $score = $allScores->where('registration_id', $regId)
-                    ->where('match_number_id', $matchId)
-                    ->whereNull('drawing_id')
-                    ->sortByDesc('tiebreak_round')
-                    ->first();
-            }
-
             $scoreHistory = $allScores->where('registration_id', $regId)
                 ->where('match_number_id', $matchId)
                 ->where('drawing_id', $drawing->id)
                 ->sortBy('tiebreak_round')
                 ->values();
 
-            if ($scoreHistory->isEmpty()) {
-                $scoreHistory = $allScores->where('registration_id', $regId)
+            if (! $score) {
+                $siblingDrawings = $drawingsList->where('registration_id', $regId)
+                    ->where('match_number_id', $matchId)
+                    ->values();
+
+                $drawingIndex = $siblingDrawings->search(fn ($d) => $d->id === $drawing->id);
+
+                $nullDrawingScores = $allScores->where('registration_id', $regId)
                     ->where('match_number_id', $matchId)
                     ->whereNull('drawing_id')
-                    ->sortBy('tiebreak_round')
                     ->values();
+
+                $nullScoresByRound = $nullDrawingScores->groupBy('tiebreak_round');
+                $mappedScores = collect();
+
+                foreach ($nullScoresByRound as $tbRound => $tbScores) {
+                    $sortedTbScores = $tbScores->sortBy('id')->values();
+                    if ($drawingIndex !== false && $drawingIndex < $sortedTbScores->count()) {
+                        $mappedScores->push($sortedTbScores->get($drawingIndex));
+                    }
+                }
+
+                if ($mappedScores->isNotEmpty()) {
+                    $score = $mappedScores->sortByDesc('tiebreak_round')->first();
+                    $scoreHistory = $mappedScores->sortBy('tiebreak_round')->values();
+                }
             }
 
             $accumulatedScore = 0;
             $penyisihanScore = null;
 
             if ($currentRound === 'Final') {
-                $penyisihanScore = $penyisihanScores->get($regId, collect())->first();
+                $drawingAthleteIds = collect($drawing->metadata['athlete_ids'] ?? [])->sort()->values()->toArray();
+
+                $pDrawing = $penyisihanDrawings->where('registration_id', $regId)
+                    ->whereIn('match_number_id', $matchNumberIds)
+                    ->first(function ($pd) use ($drawingAthleteIds) {
+                        $pdAthleteIds = collect($pd->metadata['athlete_ids'] ?? [])->sort()->values()->toArray();
+
+                        return $pdAthleteIds === $drawingAthleteIds;
+                    });
+
+                if ($pDrawing) {
+                    $penyisihanScore = $penyisihanScores->get($regId, collect())
+                        ->where('drawing_id', $pDrawing->id)
+                        ->first();
+                }
+
+                if (! $penyisihanScore) {
+                    $penyisihanScore = $penyisihanScores->get($regId, collect())->first();
+                }
 
                 if ($penyisihanScore) {
                     $accumulatedScore += $penyisihanScore->nilai_akhir;
@@ -250,7 +300,9 @@ class EmbuScoringController extends Controller
 
         $firstDrawingQuery = DrawingMatchNumber::with(['court', 'pool', 'sessionTime'])
             ->whereIn('match_number_id', $matchNumberIds)
-            ->where('round', $currentRound);
+            ->where('round', $currentRound)
+            ->orderBy('sequence_number')
+            ->orderBy('id');
         if ($currentRound === 'Penyisihan' && $selectedPoolId) {
             $firstDrawingQuery = $firstDrawingQuery->where('pool_id', $selectedPoolId);
         }
@@ -277,9 +329,26 @@ class EmbuScoringController extends Controller
             $displayName = $matchNumber->name;
         }
 
-        $courtId = $firstDrawing?->court_id;
+        // First check if any court is actively running any match in this merge group
+        $activeCourt = Court::whereIn('active_match_id', $matchNumberIds)
+            ->whereNotNull('active_drawing_id')
+            ->first();
+
+        if ($activeCourt) {
+            $courtId = $activeCourt->id;
+            $activeDrawingId = $activeCourt->active_drawing_id;
+        } else {
+            $courtId = $firstDrawing?->court_id;
+            if (! $courtId) {
+                $courtId = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+                    ->whereNotNull('court_id')
+                    ->orderBy('sequence_number')
+                    ->orderBy('id')
+                    ->value('court_id');
+            }
+            $activeDrawingId = null;
+        }
         $court = $courtId ? Court::find($courtId) : null;
-        $activeDrawingId = $court?->active_drawing_id;
 
         $assignedArbitrase = null;
         $assignedReferees = collect();
@@ -1006,26 +1075,52 @@ class EmbuScoringController extends Controller
                 ->first();
         }
 
-        $score = EmbuScore::updateOrCreate(
-            [
-                'match_number_id' => $drawing ? $drawing->match_number_id : $matchNumber->id,
-                'registration_id' => $registrationId,
-                'round_label' => $round,
-                'drawing_id' => $drawing ? $drawing->id : null,
-                'tiebreak_round' => $tiebreakRound,
-            ],
-            [
-                'judge_1' => (float) ($scoresInput['judge_1'] ?? 0),
-                'judge_2' => (float) ($scoresInput['judge_2'] ?? 0),
-                'judge_3' => (float) ($scoresInput['judge_3'] ?? 0),
-                'judge_4' => (float) ($scoresInput['judge_4'] ?? 0),
-                'judge_5' => (float) ($scoresInput['judge_5'] ?? 0),
-                'total_score' => $total,
-                'denda' => $denda,
-                'nilai_akhir' => $nilaiAkhir,
-                'waktu' => $waktu,
-            ]
-        );
+        $scoreId = $request->input('score_id');
+        if ($scoreId) {
+            $score = EmbuScore::find($scoreId);
+            if ($score) {
+                $score->update([
+                    'judge_1' => (float) ($scoresInput['judge_1'] ?? 0),
+                    'judge_2' => (float) ($scoresInput['judge_2'] ?? 0),
+                    'judge_3' => (float) ($scoresInput['judge_3'] ?? 0),
+                    'judge_4' => (float) ($scoresInput['judge_4'] ?? 0),
+                    'judge_5' => (float) ($scoresInput['judge_5'] ?? 0),
+                    'total_score' => $total,
+                    'denda' => $denda,
+                    'nilai_akhir' => $nilaiAkhir,
+                    'waktu' => $waktu,
+                    'round_label' => $round,
+                    'tiebreak_round' => $tiebreakRound,
+                    'drawing_id' => $drawing ? $drawing->id : null,
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data nilai tidak ditemukan.',
+                ], 404);
+            }
+        } else {
+            $score = EmbuScore::updateOrCreate(
+                [
+                    'match_number_id' => $drawing ? $drawing->match_number_id : $matchNumber->id,
+                    'registration_id' => $registrationId,
+                    'round_label' => $round,
+                    'drawing_id' => $drawing ? $drawing->id : null,
+                    'tiebreak_round' => $tiebreakRound,
+                ],
+                [
+                    'judge_1' => (float) ($scoresInput['judge_1'] ?? 0),
+                    'judge_2' => (float) ($scoresInput['judge_2'] ?? 0),
+                    'judge_3' => (float) ($scoresInput['judge_3'] ?? 0),
+                    'judge_4' => (float) ($scoresInput['judge_4'] ?? 0),
+                    'judge_5' => (float) ($scoresInput['judge_5'] ?? 0),
+                    'total_score' => $total,
+                    'denda' => $denda,
+                    'nilai_akhir' => $nilaiAkhir,
+                    'waktu' => $waktu,
+                ]
+            );
+        }
 
         $this->bracketService->recalculateRanks($matchNumberIds, $round);
 
@@ -1041,6 +1136,59 @@ class EmbuScoringController extends Controller
         return response()->json([
             'success' => true,
             'text' => 'Koreksi nilai Embu berhasil disimpan.',
+        ]);
+    }
+
+    public function scoringEmbuCorrectionDelete(Request $request): JsonResponse
+    {
+        $scoreId = $request->input('score_id');
+        $score = EmbuScore::find($scoreId);
+
+        if (! $score) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data nilai tidak ditemukan.',
+            ], 404);
+        }
+
+        $matchId = $score->match_number_id;
+        $round = $score->round_label;
+        $drawingId = $score->drawing_id;
+        $drawing = $drawingId ? DrawingMatchNumber::find($drawingId) : null;
+
+        $score->delete();
+
+        // Recalculate ranks
+        $matchNumber = MatchNumber::find($matchId);
+        if ($matchNumber) {
+            $mergeDetails = DB::table('match_number_merge_details')
+                ->where('match_number_id', $matchNumber->id)
+                ->first();
+
+            if ($mergeDetails) {
+                $matchNumberIds = DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mergeDetails->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+            } else {
+                $matchNumberIds = [$matchNumber->id];
+            }
+
+            $this->bracketService->recalculateRanks($matchNumberIds, $round);
+
+            if ($drawing && $drawing->court_id) {
+                $this->stateCache->bumpCourt($drawing->court_id);
+                event(new CourtUpdated($drawing->court_id, null, 'court'));
+            }
+            foreach ($matchNumberIds as $id) {
+                $this->stateCache->bumpMatch($id);
+                event(new MatchUpdated($id, 'score_saved'));
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'text' => 'Koreksi nilai Embu berhasil dihapus.',
         ]);
     }
 }

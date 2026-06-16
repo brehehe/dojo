@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActiveCourtReferee;
+use App\Models\Athlete;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
@@ -81,11 +82,12 @@ class MonitorController extends Controller
     {
         $versions = ['court' => $this->stateCache->version('court', $court->id)];
         if ($this->stateCache->hasValidEtag($request, $versions)) {
-            return $this->stateCache->respond304($request, $versions);
+            return $this->stateCache->respond304($request, $versions, 1);
         }
 
-        $cacheKey = "monitor_court_state_{$court->id}";
-        $data = Cache::remember($cacheKey, 3, function () use ($court) {
+        $courtVersion = $versions['court'];
+        $cacheKey = "monitor_court_state_{$court->id}_{$courtVersion}";
+        $data = Cache::remember($cacheKey, 1, function () use ($court) {
             $court->load([
                 'activeMatch.athletes.registrations.contingent',
                 'activeMatch.drawings',
@@ -114,7 +116,7 @@ class MonitorController extends Controller
             ];
         });
 
-        return $this->stateCache->conditionalJson($request, $data, $versions);
+        return $this->stateCache->conditionalJson($request, $data, $versions, 1);
     }
 
     public function monitorHasilCourtState(Request $request, Court $court): JsonResponse
@@ -124,7 +126,8 @@ class MonitorController extends Controller
             return $this->stateCache->respond304($request, $versions);
         }
 
-        $cacheKey = "monitor_hasil_court_state_{$court->id}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
+        $courtVersion = $versions['court'];
+        $cacheKey = "monitor_hasil_court_state_{$court->id}_{$courtVersion}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
         $data = Cache::remember($cacheKey, 3, function () use ($court, $request) {
             $court->load(['activeMatch', 'activeDrawing']);
             $match = $court->activeMatch
@@ -144,7 +147,8 @@ class MonitorController extends Controller
             return $this->stateCache->respond304($request, $versions);
         }
 
-        $cacheKey = "monitor_hasil_match_state_{$match->id}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
+        $matchVersion = $versions['match'];
+        $cacheKey = "monitor_hasil_match_state_{$match->id}_{$matchVersion}_{$request->query('round', '')}_{$request->query('pool_id', '')}";
         $data = Cache::remember($cacheKey, 3, function () use ($match, $request) {
             $match->load(['athletes', 'embuScores']);
 
@@ -192,8 +196,9 @@ class MonitorController extends Controller
 
         $rundownId = $request->query('rundown_id');
         $sessionId = $request->query('session_time_id');
+        $courtVersion = $versions['court'];
 
-        $cacheKey = "monitor_referee_state_{$court->id}_{$rundownId}_{$sessionId}";
+        $cacheKey = "monitor_referee_state_{$court->id}_{$courtVersion}_{$rundownId}_{$sessionId}";
         $data = Cache::remember($cacheKey, 3, function () use ($court, $rundownId, $sessionId) {
             if ($rundownId && $sessionId) {
                 $referees = ScheduleReferee::with('referee.user')
@@ -241,7 +246,8 @@ class MonitorController extends Controller
             return $this->stateCache->respond304($request, $versions);
         }
 
-        $cacheKey = "monitor_rekap_hasil_state_{$court->id}";
+        $courtVersion = $versions['court'];
+        $cacheKey = "monitor_rekap_hasil_state_{$court->id}_{$courtVersion}";
         $data = Cache::remember($cacheKey, 3, function () use ($court) {
             $court->load(['activeMatch', 'activeDrawing']);
             $match = $court->activeMatch ? MatchNumber::find($court->active_match_id) : null;
@@ -366,11 +372,12 @@ class MonitorController extends Controller
     {
         $versions = ['court' => $this->stateCache->version('court', $court->id)];
         if ($this->stateCache->hasValidEtag($request, $versions)) {
-            return $this->stateCache->respond304($request, $versions);
+            return $this->stateCache->respond304($request, $versions, 1);
         }
 
-        $cacheKey = "monitor_timer_state_{$court->id}";
-        $data = Cache::remember($cacheKey, 3, function () use ($court) {
+        $courtVersion = $versions['court'];
+        $cacheKey = "monitor_timer_state_{$court->id}_{$courtVersion}";
+        $data = Cache::remember($cacheKey, 1, function () use ($court) {
             $court->load(['activeMatch.ageGroup', 'activeDrawing.registration.contingent']);
             $state = Cache::get("court_{$court->id}_timer", [
                 'status' => 'stopped',
@@ -386,7 +393,7 @@ class MonitorController extends Controller
             ];
         });
 
-        return $this->stateCache->conditionalJson($request, $data, $versions);
+        return $this->stateCache->conditionalJson($request, $data, $versions, 1);
     }
 
     // --- Helper methods ---
@@ -477,7 +484,14 @@ class MonitorController extends Controller
                 ->get();
         }
 
-        return $drawings->map(function ($drawing) use ($currentRound, $registrations, $allScores, $penyisihanScores, $matchRecords) {
+        $penyisihanDrawings = collect();
+        if ($currentRound === 'Final') {
+            $penyisihanDrawings = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+                ->where('round', 'Penyisihan')
+                ->get();
+        }
+
+        return $drawings->map(function ($drawing) use ($currentRound, $registrations, $allScores, $penyisihanScores, $matchRecords, $penyisihanDrawings, $matchIds) {
             $regId = $drawing->registration_id;
             $reg = $registrations->get($regId);
             $specificMatchId = $drawing->match_number_id;
@@ -525,11 +539,24 @@ class MonitorController extends Controller
 
             $penyisihanScore = null;
             if ($currentRound === 'Final') {
-                $pScore = $penyisihanScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->where('drawing_id', $drawing->id)
-                    ->filter(fn ($s) => (int) $s->tiebreak_round === 0 || is_null($s->tiebreak_round))
-                    ->first();
+                $drawingAthleteIds = collect($drawing->metadata['athlete_ids'] ?? [])->sort()->values()->toArray();
+
+                $pDrawing = $penyisihanDrawings->where('registration_id', $regId)
+                    ->whereIn('match_number_id', $matchIds)
+                    ->first(function ($pd) use ($drawingAthleteIds) {
+                        $pdAthleteIds = collect($pd->metadata['athlete_ids'] ?? [])->sort()->values()->toArray();
+
+                        return $pdAthleteIds === $drawingAthleteIds;
+                    });
+
+                $pScore = null;
+                if ($pDrawing) {
+                    $pScore = $penyisihanScores->where('registration_id', $regId)
+                        ->where('match_number_id', $specificMatchId)
+                        ->where('drawing_id', $pDrawing->id)
+                        ->filter(fn ($s) => (int) $s->tiebreak_round === 0 || is_null($s->tiebreak_round))
+                        ->first();
+                }
 
                 if (! $pScore) {
                     $pScore = $penyisihanScores->where('registration_id', $regId)
@@ -539,12 +566,15 @@ class MonitorController extends Controller
                         ->first();
                 }
 
-                $pTiebreak = $penyisihanScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->where('drawing_id', $drawing->id)
-                    ->where('tiebreak_round', '>', 0)
-                    ->sortByDesc('tiebreak_round')
-                    ->first();
+                $pTiebreak = null;
+                if ($pDrawing) {
+                    $pTiebreak = $penyisihanScores->where('registration_id', $regId)
+                        ->where('match_number_id', $specificMatchId)
+                        ->where('drawing_id', $pDrawing->id)
+                        ->where('tiebreak_round', '>', 0)
+                        ->sortByDesc('tiebreak_round')
+                        ->first();
+                }
 
                 if (! $pTiebreak) {
                     $pTiebreak = $penyisihanScores->where('registration_id', $regId)
@@ -583,5 +613,70 @@ class MonitorController extends Controller
             ];
         })
             ->values();
+    }
+
+    public function cekRekapNilaiOnline(): Response
+    {
+        return Inertia::render('CekRekapNilaiOnline');
+    }
+
+    public function cekRekapNilaiOnlineState(Request $request): JsonResponse
+    {
+        $courts = Court::orderBy('order')->get();
+        $matchNumbers = MatchNumber::with('ageGroup')->orderBy('name')->get();
+
+        $drawings = DrawingMatchNumber::with([
+            'registration.contingent',
+            'registration.athletes',
+            'matchNumber.ageGroup',
+            'pool',
+            'court',
+        ])
+            ->orderBy('court_id')
+            ->orderBy('match_number_id')
+            ->orderBy('sequence_number')
+            ->get();
+
+        $matchNumberIds = $matchNumbers->pluck('id')->toArray();
+        $pivotAthletes = Athlete::whereHas('matchNumbers', function ($query) use ($matchNumberIds) {
+            $query->whereIn('match_numbers.id', $matchNumberIds);
+        })
+            ->with(['matchNumbers' => fn ($query) => $query->whereIn('match_numbers.id', $matchNumberIds)])
+            ->get()
+            ->flatMap(function ($athlete) {
+                return $athlete->matchNumbers->map(function ($matchNumber) use ($athlete) {
+                    return [
+                        'key' => $matchNumber->id.':'.$matchNumber->pivot->registration_id,
+                        'athlete' => $athlete,
+                    ];
+                });
+            })
+            ->groupBy('key')
+            ->map(fn ($items) => $items->pluck('athlete')->unique('id')->values());
+
+        foreach ($drawings as $drawing) {
+            $regId = $drawing->registration_id;
+            $matchId = $drawing->match_number_id;
+
+            $metaAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            if (! empty($metaAthleteIds)) {
+                $drawingAthletes = $drawing->registration?->athletes->whereIn('id', $metaAthleteIds)->values() ?? collect();
+            } else {
+                $drawingAthletes = $pivotAthletes->get($matchId.':'.$regId, collect());
+            }
+
+            $drawing->setRelation('athletes', $drawingAthletes);
+        }
+
+        $embuScores = EmbuScore::with(['registration.contingent'])->get();
+        $randoriResults = RandoriMatchResult::get();
+
+        return response()->json([
+            'courts' => $courts,
+            'matchNumbers' => $matchNumbers,
+            'drawings' => $drawings,
+            'embuScores' => $embuScores,
+            'randoriResults' => $randoriResults,
+        ]);
     }
 }

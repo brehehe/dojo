@@ -13,6 +13,7 @@ use App\Models\Registration;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
 use App\Models\TournamentResult;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -130,7 +131,7 @@ class NewEmbuResultIndex extends Component
             ->where('round_label', 'Penyisihan')
             ->get();
 
-        $participants = $drawings->map(function ($drawing) use ($scores, $registrations) {
+        $participants = $drawings->map(function ($drawing) use ($scores, $registrations, $drawings) {
             $regId = $drawing->registration_id;
             $reg = $registrations->get($regId);
             if (! $reg) {
@@ -154,12 +155,21 @@ class NewEmbuResultIndex extends Component
                 ->where('tiebreak_round', 0)
                 ->first();
 
+            $siblingDrawings = $drawings->where('registration_id', $regId)
+                ->where('match_number_id', $specificMatchId)
+                ->values();
+            $drawingIndex = $siblingDrawings->search(fn ($d) => $d->id === $drawing->id);
+
             if (! $score) {
-                $score = $scores->where('registration_id', $regId)
+                $nullDrawingScores = $scores->where('registration_id', $regId)
                     ->where('match_number_id', $specificMatchId)
                     ->whereNull('drawing_id')
                     ->where('tiebreak_round', 0)
-                    ->first();
+                    ->sortBy('id')
+                    ->values();
+                if ($drawingIndex !== false && $drawingIndex < $nullDrawingScores->count()) {
+                    $score = $nullDrawingScores->get($drawingIndex);
+                }
             }
 
             $tiebreakScore = $scores->where('registration_id', $regId)
@@ -170,12 +180,23 @@ class NewEmbuResultIndex extends Component
                 ->first();
 
             if (! $tiebreakScore) {
-                $tiebreakScore = $scores->where('registration_id', $regId)
+                $nullDrawingTbScores = $scores->where('registration_id', $regId)
                     ->where('match_number_id', $specificMatchId)
                     ->whereNull('drawing_id')
                     ->where('tiebreak_round', '>', 0)
-                    ->sortByDesc('tiebreak_round')
-                    ->first();
+                    ->groupBy('tiebreak_round');
+
+                $mappedTbScores = collect();
+                foreach ($nullDrawingTbScores as $tbRound => $tbScores) {
+                    $sortedTbScores = $tbScores->sortBy('id')->values();
+                    if ($drawingIndex !== false && $drawingIndex < $sortedTbScores->count()) {
+                        $mappedTbScores->push($sortedTbScores->get($drawingIndex));
+                    }
+                }
+
+                if ($mappedTbScores->isNotEmpty()) {
+                    $tiebreakScore = $mappedTbScores->sortByDesc('tiebreak_round')->first();
+                }
             }
             $activeScoreObj = $tiebreakScore ?? $score;
             $calculatedTotal = 0;
@@ -254,7 +275,7 @@ class NewEmbuResultIndex extends Component
         $regIds = $finalDrawings->pluck('registration_id')->unique()->filter()->toArray();
         $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $regIds)->get()->keyBy('id');
 
-        return $finalDrawings->map(function ($drawing) use ($allScores, $registrations, $penyisihanDrawings) {
+        return $finalDrawings->map(function ($drawing) use ($allScores, $registrations, $penyisihanDrawings, $finalDrawings) {
             $regId = $drawing->registration_id;
             $reg = $registrations->get($regId);
             $specificMatchId = $drawing->match_number_id;
@@ -270,6 +291,7 @@ class NewEmbuResultIndex extends Component
                 });
 
             $penyisihanScore = null;
+            $drawingIndex = false;
             if ($matchingPenyisihanDrawing) {
                 $penyisihanScore = $allScores->where('registration_id', $regId)
                     ->where('match_number_id', $specificMatchId)
@@ -277,32 +299,60 @@ class NewEmbuResultIndex extends Component
                     ->where('round_label', 'Penyisihan')
                     ->where('tiebreak_round', 0)
                     ->first();
+
+                if (! $penyisihanScore) {
+                    $siblingPenyisihanDrawings = $penyisihanDrawings->where('registration_id', $regId)
+                        ->where('match_number_id', $specificMatchId)
+                        ->values();
+                    $drawingIndex = $siblingPenyisihanDrawings->search(fn ($d) => $d->id === $matchingPenyisihanDrawing->id);
+                    $nullDrawingScores = $allScores->where('registration_id', $regId)
+                        ->where('match_number_id', $specificMatchId)
+                        ->where('round_label', 'Penyisihan')
+                        ->whereNull('drawing_id')
+                        ->where('tiebreak_round', 0)
+                        ->sortBy('id')
+                        ->values();
+                    if ($drawingIndex !== false && $drawingIndex < $nullDrawingScores->count()) {
+                        $penyisihanScore = $nullDrawingScores->get($drawingIndex);
+                    }
+                }
             }
 
-            if (! $penyisihanScore) {
-                $penyisihanScore = $allScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->where('round_label', 'Penyisihan')
-                    ->where('tiebreak_round', 0)
-                    ->first();
-            }
-
-            $penyisihanTbScore = $allScores->where('registration_id', $regId)
-                ->where('match_number_id', $specificMatchId)
-                ->where('drawing_id', $drawing->id)
-                ->where('round_label', 'Penyisihan')
-                ->where('tiebreak_round', '>', 0)
-                ->sortByDesc('tiebreak_round')
-                ->first();
-
-            if (! $penyisihanTbScore) {
+            $penyisihanTbScore = null;
+            if ($matchingPenyisihanDrawing) {
                 $penyisihanTbScore = $allScores->where('registration_id', $regId)
                     ->where('match_number_id', $specificMatchId)
-                    ->whereNull('drawing_id')
+                    ->where('drawing_id', $matchingPenyisihanDrawing->id)
                     ->where('round_label', 'Penyisihan')
                     ->where('tiebreak_round', '>', 0)
                     ->sortByDesc('tiebreak_round')
                     ->first();
+
+                if (! $penyisihanTbScore) {
+                    if ($drawingIndex === false) {
+                        $siblingPenyisihanDrawings = $penyisihanDrawings->where('registration_id', $regId)
+                            ->where('match_number_id', $specificMatchId)
+                            ->values();
+                        $drawingIndex = $siblingPenyisihanDrawings->search(fn ($d) => $d->id === $matchingPenyisihanDrawing->id);
+                    }
+                    $nullDrawingTbScores = $allScores->where('registration_id', $regId)
+                        ->where('match_number_id', $specificMatchId)
+                        ->where('round_label', 'Penyisihan')
+                        ->whereNull('drawing_id')
+                        ->where('tiebreak_round', '>', 0)
+                        ->groupBy('tiebreak_round');
+
+                    $mappedTbScores = collect();
+                    foreach ($nullDrawingTbScores as $tbRound => $tbScores) {
+                        $sortedTbScores = $tbScores->sortBy('id')->values();
+                        if ($drawingIndex !== false && $drawingIndex < $sortedTbScores->count()) {
+                            $mappedTbScores->push($sortedTbScores->get($drawingIndex));
+                        }
+                    }
+                    if ($mappedTbScores->isNotEmpty()) {
+                        $penyisihanTbScore = $mappedTbScores->sortByDesc('tiebreak_round')->first();
+                    }
+                }
             }
 
             $finalScore = $allScores->where('registration_id', $regId)
@@ -313,12 +363,20 @@ class NewEmbuResultIndex extends Component
                 ->first();
 
             if (! $finalScore) {
-                $finalScore = $allScores->where('registration_id', $regId)
+                $siblingFinalDrawings = $finalDrawings->where('registration_id', $regId)
+                    ->where('match_number_id', $specificMatchId)
+                    ->values();
+                $finalDrawingIndex = $siblingFinalDrawings->search(fn ($d) => $d->id === $drawing->id);
+                $nullDrawingFinalScores = $allScores->where('registration_id', $regId)
                     ->where('match_number_id', $specificMatchId)
                     ->whereNull('drawing_id')
                     ->where('round_label', 'Final')
                     ->where('tiebreak_round', 0)
-                    ->first();
+                    ->sortBy('id')
+                    ->values();
+                if ($finalDrawingIndex !== false && $finalDrawingIndex < $nullDrawingFinalScores->count()) {
+                    $finalScore = $nullDrawingFinalScores->get($finalDrawingIndex);
+                }
             }
 
             $finalTbScore = $allScores->where('registration_id', $regId)
@@ -328,6 +386,30 @@ class NewEmbuResultIndex extends Component
                 ->where('tiebreak_round', '>', 0)
                 ->sortByDesc('tiebreak_round')
                 ->first();
+
+            if (! $finalTbScore) {
+                $siblingFinalDrawings = $finalDrawings->where('registration_id', $regId)
+                    ->where('match_number_id', $specificMatchId)
+                    ->values();
+                $finalDrawingIndex = $siblingFinalDrawings->search(fn ($d) => $d->id === $drawing->id);
+                $nullDrawingFinalTbScores = $allScores->where('registration_id', $regId)
+                    ->where('match_number_id', $specificMatchId)
+                    ->whereNull('drawing_id')
+                    ->where('round_label', 'Final')
+                    ->where('tiebreak_round', '>', 0)
+                    ->groupBy('tiebreak_round');
+
+                $mappedFinalTbScores = collect();
+                foreach ($nullDrawingFinalTbScores as $tbRound => $tbScores) {
+                    $sortedTbScores = $tbScores->sortBy('id')->values();
+                    if ($finalDrawingIndex !== false && $finalDrawingIndex < $sortedTbScores->count()) {
+                        $mappedFinalTbScores->push($sortedTbScores->get($finalDrawingIndex));
+                    }
+                }
+                if ($mappedFinalTbScores->isNotEmpty()) {
+                    $finalTbScore = $mappedFinalTbScores->sortByDesc('tiebreak_round')->first();
+                }
+            }
 
             $activePenyisihanObj = $penyisihanTbScore ?? $penyisihanScore;
             $calculatedPenyisihan = 0;
@@ -566,42 +648,113 @@ class NewEmbuResultIndex extends Component
         $matchIds = $this->getMatchNumberIds();
 
         // Resolve court/session/rundown/pool from form or from any existing final drawing
-        $existingFinal = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+        $existingFinalDrawings = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', 'Final')
+            ->orderBy('sequence_number')
+            ->get();
+
+        $schedules = [];
+        foreach ($existingFinalDrawings as $drawing) {
+            $schedules[$drawing->sequence_number] = [
+                'court_id' => $drawing->court_id,
+                'pool_id' => $drawing->pool_id,
+                'session_time_id' => $drawing->session_time_id,
+                'rundown_id' => $drawing->rundown_id,
+                'schedule_date' => $drawing->schedule_date,
+                'metadata' => $drawing->metadata,
+            ];
+        }
+
+        $existingPenyisihan = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+            ->where('round', 'Penyisihan')
             ->first();
 
-        $courtId = $this->finalCourtId ?? $existingFinal?->court_id;
-        $poolId = $this->finalPoolId ?? $existingFinal?->pool_id;
-        $sessionTimeId = $this->finalSessionTimeId ?? $existingFinal?->session_time_id;
-        $rundownId = $this->finalRundownId ?? $existingFinal?->rundown_id;
-        $scheduleDate = $this->finalScheduleDate ?? $existingFinal?->schedule_date;
+        $firstFinal = $existingFinalDrawings->first();
+        $courtId = $this->finalCourtId ?? $firstFinal?->court_id ?? $existingPenyisihan?->court_id;
+        $poolId = $this->finalPoolId ?? $firstFinal?->pool_id ?? $existingPenyisihan?->pool_id;
+        $sessionTimeId = $this->finalSessionTimeId ?? $firstFinal?->session_time_id ?? $existingPenyisihan?->session_time_id;
+        $rundownId = $this->finalRundownId ?? $firstFinal?->rundown_id ?? $existingPenyisihan?->rundown_id;
+        $scheduleDate = $this->finalScheduleDate ?? $firstFinal?->schedule_date ?? $existingPenyisihan?->schedule_date;
 
-        // Delete ALL existing Final drawings for this match to avoid duplicates
+        // Delete existing Final drawings to start fresh, but DO NOT delete existing scores
         DrawingMatchNumber::whereIn('match_number_id', $matchIds)
             ->where('round', 'Final')
             ->delete();
 
-        // Create fresh Final drawings for each qualifier
-        foreach ($qualifiers->values() as $seq => $reg) {
+        // Clear active court drawing if it matches the current match to avoid stale references
+        if ($courtId) {
+            $court = Court::find($courtId);
+            if ($court && in_array($court->active_match_id, $matchIds)) {
+                $court->update([
+                    'active_match_id' => null,
+                    'active_drawing_id' => null,
+                    'active_registration_id' => null,
+                    'active_bracket_node' => null,
+                ]);
+            }
+        }
+
+        $session = SessionTime::find($sessionTimeId);
+        $sessionStart = $session ? Carbon::parse($session->start_time) : null;
+        $duration = 10;
+
+        $qualifiersValues = $qualifiers->values();
+        foreach ($qualifiersValues as $seq => $reg) {
+            $order = $seq + 1;
+
+            $cId = $this->finalCourtId ?? $courtId;
+            $pId = $this->finalPoolId ?? $poolId;
+            $sTimeId = $this->finalSessionTimeId ?? $sessionTimeId;
+            $rId = $this->finalRundownId ?? $rundownId;
+            $sDate = $this->finalScheduleDate ?? $scheduleDate;
+
+            // Always calculate new sequential time slots starting from session start time
+            if ($sessionStart) {
+                $matchStart = $sessionStart->copy()->addMinutes($seq * $duration);
+                $matchEnd = $matchStart->copy()->addMinutes($duration);
+                $timeMeta = [
+                    'start_time' => $matchStart->format('H:i'),
+                    'end_time' => $matchEnd->format('H:i'),
+                    'duration' => $duration,
+                ];
+            } else {
+                $timeMeta = [];
+            }
+
+            // Get match number code prefix
+            $matchObj = MatchNumber::find($this->selectedMatchId);
+            $matchIdCode = $matchObj ? $matchObj->name_code.'-F-'.str_pad($order, 2, '0', STR_PAD_LEFT) : 'F-'.str_pad($order, 2, '0', STR_PAD_LEFT);
+
             $meta = [
                 'contingent' => $reg['contingent']?->name ?? 'Unknown',
                 'athlete_name' => $reg['athletes']->pluck('name')->implode(', '),
                 'athlete_ids' => $reg['athlete_ids'] ?? [],
+                'pool_label' => 'FINAL',
+                'officials' => [],
+                'match_id_code' => $matchIdCode,
             ];
+            // Merge metadata with new sequential times
+            $meta = array_merge($meta, $timeMeta);
 
-            DrawingMatchNumber::create([
-                'match_number_id' => $reg['match_number_id'],
+            $newDrawing = DrawingMatchNumber::create([
+                'match_number_id' => $this->selectedMatchId, // Force the main match_number_id to avoid jumping!
                 'registration_id' => $reg['id'],
                 'round' => 'Final',
                 'draft_type' => 'embu',
-                'sequence_number' => $seq + 1,
-                'court_id' => $courtId,
-                'pool_id' => $poolId,
-                'session_time_id' => $sessionTimeId,
-                'rundown_id' => $rundownId,
-                'schedule_date' => $scheduleDate,
+                'sequence_number' => $order,
+                'court_id' => $cId,
+                'pool_id' => $pId,
+                'session_time_id' => $sTimeId,
+                'rundown_id' => $rId,
+                'schedule_date' => $sDate,
                 'metadata' => $meta,
             ]);
+
+            // Update any existing scores for this registration and match to point to the new drawing ID
+            EmbuScore::whereIn('match_number_id', $matchIds)
+                ->where('registration_id', $reg['id'])
+                ->where('round_label', 'Final')
+                ->update(['drawing_id' => $newDrawing->id]);
         }
 
         $this->showGenerateFinalModal = false;
@@ -687,17 +840,6 @@ class NewEmbuResultIndex extends Component
 
     public function confirmChampion(): void
     {
-        $tiedIds = $this->detectFinalTies();
-        if (! empty($tiedIds)) {
-            $this->dispatch('swal', [
-                'icon' => 'warning',
-                'title' => 'Masih Ada Nilai Seri!',
-                'text' => count($tiedIds).' peserta memiliki nilai akumulasi yang sama. Selesaikan tanding ulang terlebih dahulu.',
-            ]);
-
-            return;
-        }
-
         $rankings = $this->getFinalRanking()->values();
 
         if ($rankings->isEmpty()) {
@@ -715,7 +857,7 @@ class NewEmbuResultIndex extends Component
         foreach ($rankings as $idx => $reg) {
             $rank = $idx + 1;
 
-            if ($rank > 4) {
+            if ($rank > 3) {
                 break;
             }
 
@@ -823,6 +965,10 @@ class NewEmbuResultIndex extends Component
                 ->whereHas('drawings');
         })->orderBy('name')->get();
 
+        $allPenyisihan = $penyisihanRanking->flatten(1);
+        $totalParticipants = $allPenyisihan->count();
+        $contingentCounts = $allPenyisihan->groupBy(fn ($item) => $item['contingent']->id ?? 0)->map->count()->toArray();
+
         return view('livewire.admin.new-embu-result-index', [
             'embuMatches' => $embuMatches,
             'penyisihanRanking' => $penyisihanRanking,
@@ -836,6 +982,8 @@ class NewEmbuResultIndex extends Component
             'sessionTimes' => $sessionTimes,
             'rundowns' => $rundowns,
             'ageGroups' => $ageGroups,
+            'totalParticipants' => $totalParticipants,
+            'contingentCounts' => $contingentCounts,
         ]);
     }
 }

@@ -1177,7 +1177,16 @@ class NewScoringRandoriIndex extends Component
 
         $juaraMap = [];
         foreach ($savedResults as $res) {
-            $juaraMap[$res->rank] = [
+            $rank = (int) $res->rank;
+            if ($rank === 3) {
+                $key = '3';
+            } elseif ($rank === 4) {
+                $key = isset($juaraMap['3']) ? '3.1' : '3';
+            } else {
+                $key = $rank;
+            }
+
+            $juaraMap[$key] = [
                 'name' => $res->athlete_names,
                 'contingent' => $res->contingent_name,
                 'registration_id' => $res->registration_id,

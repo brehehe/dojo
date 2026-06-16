@@ -55,41 +55,78 @@
             </div>
         </div>
 
-        <div class="tm-table-card">
-            @if($tab === 'embu')
-                <table class="tm-table">
-                    <thead>
-                        <tr>
-                            <th>Nomor Pertandingan</th>
-                            <th>Babak</th>
-                            <th>Atlet</th>
-                            <th style="text-align:center">Teknik</th>
-                            <th style="text-align:center">Ekspresi</th>
-                            <th style="text-align:center">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($scores as $s)
-                            <tr>
-                                <td>
-                                    <div style="font-weight:700">{{ $s->matchNumber->name }}</div>
-                                    <div style="font-size:10px; color:var(--smoke)">{{ $s->matchNumber->ageGroup->name ?? '-' }}</div>
-                                </td>
-                                <td><span style="font-size:10px; font-weight:800; text-transform:uppercase">{{ $s->round_label }}</span></td>
-                                <td style="font-weight:600">
-                                    {{ $s->matchNumber->athletes->where('pivot.registration_id', $s->registration_id)->pluck('name')->join(' & ') ?: ($s->registration->athletes->pluck('name')->join(' & ') ?? '-') }}
-                                </td>
-                                <td align="center" style="color:#3498db; font-weight:700">{{ number_format($s->nilai_teknik, 2) }}</td>
-                                <td align="center" style="color:#e67e22; font-weight:700">{{ number_format($s->nilai_ekspresi, 2) }}</td>
-                                <td align="center" style="font-weight:900; font-size:14px">{{ number_format($s->nilai_akhir, 2) }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" align="center" style="padding:40px; color:var(--smoke)">Belum ada data nilai Embu.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-                <div style="padding:16px;">{{ $scores->links() }}</div>
-            @else
+        @if($tab === 'embu')
+            @php
+                $scoresByMatch = $scores->getCollection()->groupBy('match_number_id');
+            @endphp
+            @forelse($scoresByMatch as $matchNumberId => $matchScores)
+                @php
+                    $firstScore = $matchScores->first();
+                    $matchNumber = $firstScore->matchNumber;
+                    // Group scores per team (by athlete_label), preserving order
+                    $teamGroups = $matchScores->groupBy('athlete_label');
+                    $hasMultipleTeams = $teamGroups->count() > 1;
+                @endphp
+                <div class="tm-table-card" style="margin-bottom: 24px; overflow: hidden;">
+                    <div style="padding: 16px 20px; background: #fdfbf7; border-bottom: 1px solid var(--paper2, #e8e3da);">
+                        <h3 style="font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: #c0392b; margin: 0 0 6px;">
+                            {{ $matchNumber->name }}
+                        </h3>
+                        <div style="font-size: 11px; color: var(--smoke, #7f8c8d); display: flex; flex-wrap: wrap; gap: 16px;">
+                            <span><strong>Kelompok Umur:</strong> {{ $matchNumber->ageGroup->name ?? '-' }}</span>
+                            <span><strong>Gender:</strong> {{ $matchNumber->gender_indo }}</span>
+                        </div>
+                    </div>
+                    @foreach($teamGroups as $athleteLabel => $teamScores)
+                        @php
+                            $teamIndex = $loop->iteration;
+                        @endphp
+                        @if($hasMultipleTeams)
+                            <div style="padding: 8px 20px; background: #f0eee9; border-bottom: 1px solid var(--paper2,#e8e3da);">
+                                <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #c0392b; letter-spacing: 0.05em;">
+                                    Tim {{ $teamIndex }}
+                                </span>
+                                <span style="font-size: 12px; font-weight: 600; color: var(--ink); margin-left: 8px;">{{ $athleteLabel }}</span>
+                            </div>
+                        @endif
+                        <table class="tm-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Babak</th>
+                                    <th style="width: 35%;">Atlet</th>
+                                    <th style="width: 15%; text-align:center;">Total</th>
+                                    <th style="width: 35%;">Catatan Wasit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($teamScores as $s)
+                                    <tr>
+                                        <td>
+                                            <span style="font-size: 10px; font-weight: 800; text-transform: uppercase;">
+                                                {{ $s->round_label }}
+                                            </span>
+                                        </td>
+                                        <td style="font-weight: 600;">
+                                            {{ $s->athlete_label ?: '-' }}
+                                        </td>
+                                        <td align="center" style="font-weight: 900; font-size: 14px; color: #27ae60;">
+                                            {{ number_format($s->nilai_akhir, 2) }}
+                                        </td>
+                                        <td style="font-size: 11px; color: #555; white-space: pre-line; line-height: 1.4;">{!! nl2br(e($s->referee_notes)) !!}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endforeach
+                </div>
+            @empty
+                <div class="tm-table-card" style="padding:40px; text-align:center; color:var(--smoke)">
+                    Belum ada data nilai Embu.
+                </div>
+            @endforelse
+            <div style="padding:16px 0;">{{ $scores->links() }}</div>
+        @else
+            <div class="tm-table-card">
                 <table class="tm-table">
                     <thead>
                         <tr>
@@ -149,7 +186,7 @@
                     </tbody>
                 </table>
                 <div style="padding:16px;">{{ $results->links() }}</div>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 </div>

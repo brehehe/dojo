@@ -812,13 +812,22 @@
                     $activeDrawing = $activeDrawingQuery->first();
                 }
 
-                $activeRegItem = $registrations->first(
-                    fn($r) => $r['id'] == $matchNumber->active_registration_id &&
-                        $r['match_number_id'] == ($activeDrawing->match_number_id ?? 0),
-                );
+                $activeRegItem = null;
+                if ($activeDrawing) {
+                    $activeRegItem = $registrations->first(
+                        fn($r) => $r['drawing_id'] == $activeDrawing->id
+                    );
+                }
+
+                if (!$activeRegItem && $activeDrawing) {
+                    $activeRegItem = $registrations->first(
+                        fn($r) => $r['id'] == $matchNumber->active_registration_id &&
+                            $r['match_number_id'] == $activeDrawing->match_number_id,
+                    );
+                }
 
                 // Fallback if not found precisely
-                if (!$activeRegItem) {
+                if (!$activeRegItem && $activeDrawing) {
                     $activeRegItem = $registrations->firstWhere('id', $matchNumber->active_registration_id);
                 }
             @endphp
@@ -1197,6 +1206,7 @@
             let currentAudio = null;
 
             window.addEventListener('play-announcer', event => {
+                return; // Disabled because it requires network/internet, keeping the code
                 console.log('Announcer event received:', event.detail);
                 const data = Array.isArray(event.detail) ? event.detail[0] : event.detail;
                 const text = formatAnnouncerText(data.text);

@@ -103,4 +103,27 @@ class EmbuScore extends Model
     {
         return $this->belongsTo(Registration::class);
     }
+
+    public function getRefereeNotesAttribute(): string
+    {
+        $details = RefereeScoreDetail::where('match_number_id', $this->match_number_id)
+            ->where(function ($q) {
+                if ($this->drawing_id) {
+                    $q->where('scorable_id', $this->drawing_id)
+                        ->where('scorable_type', DrawingMatchNumber::class);
+                } else {
+                    $q->where('scorable_id', $this->registration_id)
+                        ->where('scorable_type', Registration::class);
+                }
+            })
+            ->whereNotNull('notes')
+            ->where('notes', '!=', '')
+            ->pluck('notes', 'judge_index');
+
+        if ($details->isEmpty()) {
+            return '-';
+        }
+
+        return $details->map(fn ($note, $juri) => "Juri {$juri}: {$note}")->join("\n");
+    }
 }

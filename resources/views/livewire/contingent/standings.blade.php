@@ -73,6 +73,21 @@
     .std-score-val { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--ink); }
     .std-score-lbl { font-size: 9px; color: var(--smoke); text-transform: uppercase; font-weight: 700; }
 
+    /* ── SUB FILTERS ── */
+    .std-sub-filters {
+        display: flex; gap: 8px; padding: 0 16px 12px; background: #fff; border-bottom: 1px solid var(--paper2);
+    }
+    .std-sub-filter-btn {
+        flex: 1; padding: 8px 4px; border-radius: 8px; border: 1px solid var(--paper2);
+        background: var(--paper); color: var(--smoke); font-size: 10px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .05em; transition: all .2s;
+        cursor: pointer; font-family: 'DM Sans', sans-serif;
+    }
+    .std-sub-filter-btn.active {
+        background: var(--ink); color: #fff; border-color: var(--ink);
+        box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    }
+
     /* ── EMPTY ── */
     .std-empty { padding: 60px 24px; text-align: center; }
     .std-empty i { font-size: 40px; color: var(--paper2); margin-bottom: 16px; display: block; }
@@ -88,10 +103,17 @@
     </div>
 
     {{-- ── FILTERS ── --}}
-    <div class="std-filters">
-        <button wire:click=\"$set('filterType', 'embu')\" class="std-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
-        <button wire:click=\"$set('filterType', 'randori')\" class="std-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
+    <div class="std-filters" style="{{ $filterType === 'embu' ? 'border-bottom: none; padding-bottom: 8px;' : '' }}">
+        <button wire:click="$set('filterType', 'embu')" class="std-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
+        <button wire:click="$set('filterType', 'randori')" class="std-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
     </div>
+
+    @if($filterType === 'embu')
+        <div class="std-sub-filters">
+            <button wire:click="$set('roundFilter', 'Penyisihan')" class="std-sub-filter-btn {{ $roundFilter === 'Penyisihan' ? 'active' : '' }}">Penyisihan</button>
+            <button wire:click="$set('roundFilter', 'Final')" class="std-sub-filter-btn {{ $roundFilter === 'Final' ? 'active' : '' }}">Final</button>
+        </div>
+    @endif
 
     <div class="std-container">
         @if($filterType === 'embu')
