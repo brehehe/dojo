@@ -103,17 +103,10 @@
     </div>
 
     {{-- ── FILTERS ── --}}
-    <div class="std-filters" style="{{ $filterType === 'embu' ? 'border-bottom: none; padding-bottom: 8px;' : '' }}">
+    <div class="std-filters">
         <button wire:click="$set('filterType', 'embu')" class="std-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
         <button wire:click="$set('filterType', 'randori')" class="std-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
     </div>
-
-    @if($filterType === 'embu')
-        <div class="std-sub-filters">
-            <button wire:click="$set('roundFilter', 'Penyisihan')" class="std-sub-filter-btn {{ $roundFilter === 'Penyisihan' ? 'active' : '' }}">Penyisihan</button>
-            <button wire:click="$set('roundFilter', 'Final')" class="std-sub-filter-btn {{ $roundFilter === 'Final' ? 'active' : '' }}">Final</button>
-        </div>
-    @endif
 
     <div class="std-container">
         @if($filterType === 'embu')
@@ -134,13 +127,40 @@
                                 <div class="std-ctg-info">
                                     <p class="std-ctg-name {{ $isMine ? 'mine' : '' }}">
                                         {{ $score->registration->contingent->name ?? '-' }}
+                                        @if(! empty($score->team_label))
+                                            <span style="font-size: 11px; font-weight: 500; color: var(--smoke);">({{ $score->team_label }})</span>
+                                        @endif
                                         @if($isMine) <span style="font-size:8px; background:var(--red); color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">ANDA</span> @endif
                                     </p>
-                                    <p class="std-ctg-sub">{{ $score->round_label ?? 'Penyisihan' }}</p>
+                                    <p class="std-ctg-sub">
+                                        @if($score->drawing && is_array($score->drawing->metadata) && ! empty($score->drawing->metadata['athlete_name']))
+                                            {{ $score->drawing->metadata['athlete_name'] }}
+                                        @elseif($score->registration && $score->registration->athletes)
+                                            {{ $score->registration->athletes->pluck('name')->join(' & ') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </p>
                                 </div>
-                                <div class="std-score">
-                                    <div class="std-score-val">{{ number_format($score->nilai_akhir ?? $score->total_score ?? 0, 2) }}</div>
-                                    <div class="std-score-lbl">Skor</div>
+                                <div style="display: flex; gap: 14px; text-align: right; flex-shrink: 0; align-items: center;">
+                                    <div class="std-score" style="min-width: 45px;">
+                                        <div class="std-score-val" style="font-size: 11px; color: var(--smoke);">
+                                            {{ $score->penyisihan_score !== null ? number_format($score->penyisihan_score, 2) : '-' }}
+                                        </div>
+                                        <div class="std-score-lbl" style="font-size: 7px; color: var(--smoke); letter-spacing: 0.05em;">Penyisihan</div>
+                                    </div>
+                                    <div class="std-score" style="min-width: 45px;">
+                                        <div class="std-score-val" style="font-size: 11px; color: var(--smoke);">
+                                            {{ $score->final_score !== null ? number_format($score->final_score, 2) : '-' }}
+                                        </div>
+                                        <div class="std-score-lbl" style="font-size: 7px; color: var(--smoke); letter-spacing: 0.05em;">Final</div>
+                                    </div>
+                                    <div class="std-score" style="min-width: 50px; border-left: 1px solid var(--paper2); padding-left: 10px;">
+                                        <div class="std-score-val" style="color: var(--red); font-size: 13px; font-weight: 800;">
+                                            {{ number_format($score->nilai_akhir, 2) }}
+                                        </div>
+                                        <div class="std-score-lbl" style="color: var(--red);">Akhir</div>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach

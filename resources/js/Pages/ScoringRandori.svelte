@@ -178,7 +178,7 @@
                     (Date.now() + offset - timerState.started_at_ms),
             );
         }
-        return Math.max(time, timerState.elapsed_ms || 0);
+        return timerState.elapsed_ms || 0;
     }
 
     function snapshotTimerUiState() {
@@ -728,7 +728,7 @@
 
     // Format time helpers
     function formatTime(t) {
-        let maxT = Math.max(0, t);
+        let maxT = Math.max(0, 120000 - t);
         let m = Math.floor(maxT / 60000);
         let s = Math.floor((maxT % 60000) / 1000);
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -753,7 +753,7 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(() => {});
+            // audio.play().catch(() => {});
         } catch (e) {
             // Silent fail for audio
         }
@@ -864,8 +864,8 @@
         interpolInterval = setInterval(() => {
             if (running && timerState.started_at_ms) {
                 let expected = (timerState.elapsed_ms || 0) + (Date.now() + offset - timerState.started_at_ms);
-                time = Math.max(time, Math.min(expected, 120000));
-                let s = Math.floor(time / 1000);
+                time = expected;
+                let s = Math.floor(expected / 1000);
                 if (s >= 120 && !playedIntervals.has(120)) {
                     time = 120000;
                     running = false;
@@ -879,15 +879,17 @@
             } else if (timerState.status === 'countdown' && timerState.countdown_end_ms) {
                 let remaining = timerState.countdown_end_ms - (Date.now() + offset);
                 countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
-                time = Math.min(timerState.elapsed_ms || 0, 120000);
+                let rawTime = timerState.elapsed_ms || 0;
+                time = rawTime;
                 if (remaining <= 0) {
                     startTimer();
                 }
-                lastTickSecond = Math.floor(time / 1000);
+                lastTickSecond = Math.floor(rawTime / 1000);
             } else {
                 countdown = 0;
-                time = Math.min(timerState.elapsed_ms || 0, 120000);
-                lastTickSecond = Math.floor(time / 1000);
+                let rawTime = timerState.elapsed_ms || 0;
+                time = rawTime;
+                lastTickSecond = Math.floor(rawTime / 1000);
             }
         }, 30);
 
@@ -1533,6 +1535,9 @@
                                     {@const bracketLabel = row.bracket === 'ub' ? 'UB' : row.bracket === 'lb' ? 'LB' : 'GF'}
                                     {@const scoreRed = row.res?.score_red ?? '—'}
                                     {@const scoreBlue = row.res?.score_blue ?? '—'}
+                                    {@const meta = row.res ? (typeof row.res.metadata === 'string' ? JSON.parse(row.res.metadata) : row.res.metadata) : null}
+                                    {@const aka = meta?.scoringAka || null}
+                                    {@const shiro = meta?.scoringShiro || null}
                                     <tr style="border-bottom:1px solid #f1f3f5;">
                                         <td style="padding:10px 14px; white-space:nowrap;">
                                             <span style="font-size:10px; font-weight:900; background:{row.bracket==='ub'?'#2980b9':row.bracket==='lb'?'#d35400':'#f39c12'}; color:#fff; padding:2px 7px; border-radius:6px; text-transform:uppercase;">
@@ -1546,6 +1551,40 @@
                                             <div style="font-size:13px; font-weight:{redWon?'900':'600'}; color:{redWon?'#c0392b':'#495057'};">{row.match.athlete1?.name || '—'}</div>
                                             {#if row.match.athlete1?.contingent}
                                                 <div style="font-size:11px; color:#adb5bd;">{row.match.athlete1.contingent}</div>
+                                            {/if}
+                                            {#if aka && (aka.mujoken_kachi > 0 || aka.ippon > 0 || aka.waza_ari > 0 || aka.yusei_kachi > 0 || aka.hasil_batsu_5 > 0 || aka.hasil_batsu_10 > 0)}
+                                                <div style="display:flex; flex-direction:column; align-items:flex-start; gap:3px; margin-top:6px; font-size:10px;">
+                                                    {#if aka.mujoken_kachi > 0}
+                                                        <span style="background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fde68a;">
+                                                            Mujoken Kachi: {aka.mujoken_kachi} (+{aka.mujoken_kachi * 15})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.ippon > 0}
+                                                        <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #a7f3d0;">
+                                                            Ippon: {aka.ippon} (+{aka.ippon * 10})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.waza_ari > 0}
+                                                        <span style="background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #bfdbfe;">
+                                                            Waza Ari: {aka.waza_ari} (+{aka.waza_ari * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.yusei_kachi > 0}
+                                                        <span style="background:#faf5ff; color:#7c3aed; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #e9d5ff;">
+                                                            Yusei Kachi: {aka.yusei_kachi} (+{aka.yusei_kachi * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.hasil_batsu_5 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 5: {aka.hasil_batsu_5} (-{aka.hasil_batsu_5 * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.hasil_batsu_10 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 10: {aka.hasil_batsu_10} (-{aka.hasil_batsu_10 * 10})
+                                                        </span>
+                                                    {/if}
+                                                </div>
                                             {/if}
                                         </td>
                                         <td style="padding:10px 14px; text-align:center;">
@@ -1568,6 +1607,40 @@
                                             {#if row.match.athlete2?.contingent}
                                                 <div style="font-size:11px; color:#adb5bd; text-align:right;">{row.match.athlete2.contingent}</div>
                                             {/if}
+                                            {#if shiro && (shiro.mujoken_kachi > 0 || shiro.ippon > 0 || shiro.waza_ari > 0 || shiro.yusei_kachi > 0 || shiro.hasil_batsu_5 > 0 || shiro.hasil_batsu_10 > 0)}
+                                                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; margin-top:6px; font-size:10px;">
+                                                    {#if shiro.mujoken_kachi > 0}
+                                                        <span style="background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fde68a;">
+                                                            Mujoken Kachi: {shiro.mujoken_kachi} (+{shiro.mujoken_kachi * 15})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.ippon > 0}
+                                                        <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #a7f3d0;">
+                                                            Ippon: {shiro.ippon} (+{shiro.ippon * 10})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.waza_ari > 0}
+                                                        <span style="background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #bfdbfe;">
+                                                            Waza Ari: {shiro.waza_ari} (+{shiro.waza_ari * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.yusei_kachi > 0}
+                                                        <span style="background:#faf5ff; color:#7c3aed; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #e9d5ff;">
+                                                            Yusei Kachi: {shiro.yusei_kachi} (+{shiro.yusei_kachi * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.hasil_batsu_5 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 5: {shiro.hasil_batsu_5} (-{shiro.hasil_batsu_5 * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.hasil_batsu_10 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 10: {shiro.hasil_batsu_10} (-{shiro.hasil_batsu_10 * 10})
+                                                        </span>
+                                                    {/if}
+                                                </div>
+                                            {/if}
                                         </td>
                                     </tr>
                                 {/each}
@@ -1581,7 +1654,7 @@
 
         <!-- FINAL CHAMPIONS LEADERBOARD -->
         {#if Object.keys(juaraMap).length > 0}
-            {@const thirdPlaceAthletes = Object.entries(juaraMap).filter(([k]) => parseFloat(k) >= 3 && parseFloat(k) < 4).map(([, v]) => v).filter(Boolean)}
+            {@const thirdPlaceAthletes = Object.entries(juaraMap).filter(([k]) => parseFloat(k) >= 3 && parseFloat(k) < 5).map(([, v]) => v).filter(Boolean)}
             <div class="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden mt-12 mb-8">
                 <div class="px-6 py-4 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
@@ -1632,7 +1705,7 @@
                         <!-- Juara 3 & Juara 3 Bersama -->
                         {#if thirdPlaceAthletes.length > 0}
                             {#each thirdPlaceAthletes as a, idx}
-                                {@const cardLabel = (idx === 0 && thirdPlaceAthletes.length === 1) || idx > 0 ? 'Juara 3 Bersama' : 'Juara 3'}
+                                {@const cardLabel = thirdPlaceAthletes.length === 1 ? 'Juara 3 Bersama' : `Juara 3 Bersama ${idx + 1}`}
                                 <div class="relative group">
                                     <div class="h-full px-5 py-8 rounded-2xl border border-orange-200 bg-orange-50 flex flex-col items-center text-center transition-all duration-300 shadow-md shadow-orange-500/5">
                                         <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥉</div>

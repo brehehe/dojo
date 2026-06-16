@@ -100,10 +100,22 @@ class NewScoringRandoriIndex extends Component
             $drawingData = $matchNumber->drawing_data ?? [];
 
             // Migrate legacy single-elimination to double_elimination if needed
-            if (! isset($drawingData['bracket_type']) || $drawingData['bracket_type'] !== 'double_elimination') {
-                $drawingData = $this->migrateLegacyBracket($drawingData);
-                if ($drawingData) {
+            $isSingleElimination = ($drawingData['bracket_type'] ?? null) === 'single_elimination' ||
+                                   ($drawingData['type'] ?? null) === 'single_elimination' ||
+                                   (isset($drawingData['upper_bracket']) && (empty($drawingData['lower_bracket']['rounds']) || ! isset($drawingData['lower_bracket']['rounds'])));
+
+            if ($isSingleElimination) {
+                if (($drawingData['bracket_type'] ?? null) === 'double_elimination') {
+                    $drawingData['type'] = 'single_elimination';
+                    unset($drawingData['bracket_type']);
                     $this->matchNumber->update(['drawing_data' => $drawingData]);
+                }
+            } else {
+                if (! isset($drawingData['bracket_type']) || $drawingData['bracket_type'] !== 'double_elimination') {
+                    $drawingData = $this->migrateLegacyBracket($drawingData);
+                    if ($drawingData) {
+                        $this->matchNumber->update(['drawing_data' => $drawingData]);
+                    }
                 }
             }
 
@@ -965,11 +977,70 @@ class NewScoringRandoriIndex extends Component
         $data = $this->drawingData;
         $juara = $data['juara'] ?? [];
 
+        $bracketType = $data['bracket_type'] ?? $data['type'] ?? 'single_elimination';
+        if ($bracketType === 'double_elimination' && (empty($data['lower_bracket']['rounds']) || ! isset($data['lower_bracket']['rounds']))) {
+            $bracketType = 'single_elimination';
+        }
+
+        if ($bracketType === 'single_elimination') {
+            $ubRounds = $data['upper_bracket']['rounds'] ?? [];
+            $ubRoundCount = count($ubRounds);
+
+            if ($ubRoundCount >= 2) {
+                $semiRound = $ubRounds[$ubRoundCount - 2];
+
+                // Match 0 loser -> Juara 3 (key '3')
+                if (isset($semiRound[0])) {
+                    $match0 = $semiRound[0];
+                    if ($match0 && ($match0['winner'] ?? null)) {
+                        $loserSlot = $match0['winner'] === 'athlete1' ? 'athlete2' : 'athlete1';
+                        $loser0 = $match0[$loserSlot] ?? null;
+                        if ($loser0 && ($loser0['id'] ?? '') !== 'BYE') {
+                            $juara['3'] = $loser0;
+                        } else {
+                            unset($juara['3']);
+                        }
+                    }
+                }
+
+                // Match 1 loser -> Juara 3 Bersama / Juara 3 Bersama 2 (key '4')
+                if (isset($semiRound[1])) {
+                    $match1 = $semiRound[1];
+                    if ($match1 && ($match1['winner'] ?? null)) {
+                        $loserSlot = $match1['winner'] === 'athlete1' ? 'athlete2' : 'athlete1';
+                        $loser1 = $match1[$loserSlot] ?? null;
+                        if ($loser1 && ($loser1['id'] ?? '') !== 'BYE') {
+                            $juara['4'] = $loser1;
+                        } else {
+                            unset($juara['4']);
+                        }
+                    }
+                }
+            }
+        }
+
         if (empty($juara)) {
-            $gf = $data['grand_final'] ?? null;
-            if ($gf && ($gf['winner'] ?? null)) {
-                $juara[1] = $gf['winner_data'];
-                $juara[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
+            $bracketType = $data['bracket_type'] ?? $data['type'] ?? 'single_elimination';
+            if ($bracketType === 'double_elimination' && (empty($data['lower_bracket']['rounds']) || ! isset($data['lower_bracket']['rounds']))) {
+                $bracketType = 'single_elimination';
+            }
+
+            if ($bracketType === 'single_elimination') {
+                $ubRounds = $data['upper_bracket']['rounds'] ?? [];
+                $ubRoundCount = count($ubRounds);
+                if ($ubRoundCount >= 1) {
+                    $finalMatch = $ubRounds[$ubRoundCount - 1][0] ?? null;
+                    if ($finalMatch && ($finalMatch['winner'] ?? null)) {
+                        $juara[1] = $finalMatch['winner_data'];
+                        $juara[2] = ($finalMatch['winner'] === 'athlete1') ? $finalMatch['athlete2'] : $finalMatch['athlete1'];
+                    }
+                }
+            } else {
+                $gf = $data['grand_final'] ?? null;
+                if ($gf && ($gf['winner'] ?? null)) {
+                    $juara[1] = $gf['winner_data'];
+                    $juara[2] = ($gf['winner'] === 'athlete1') ? $gf['athlete2'] : $gf['athlete1'];
+                }
             }
         }
 
@@ -1196,8 +1267,25 @@ class NewScoringRandoriIndex extends Component
         // Merge/Fallback to drawingData juara for ranks not present in savedResults (like 3 and 4)
         $drawingJuara = $this->drawingData['juara'] ?? [];
         foreach ($drawingJuara as $rank => $athlete) {
-            if (! isset($juaraMap[$rank])) {
-                $juaraMap[$rank] = $athlete;
+            $key = $rank;
+            if ((int) $rank === 3) {
+                $key = '3';
+            } elseif ((int) $rank === 4) {
+                $key = isset($juaraMap['3']) ? '3.1' : '3';
+            }
+
+            if (! isset($juaraMap[$key])) {
+                // Check if this athlete already exists in juaraMap by registration_id
+                $exists = false;
+                foreach ($juaraMap as $existing) {
+                    if (isset($existing['registration_id']) && isset($athlete['registration_id']) && $existing['registration_id'] == $athlete['registration_id']) {
+                        $exists = true;
+                        break;
+                    }
+                }
+                if (! $exists) {
+                    $juaraMap[$key] = $athlete;
+                }
             }
         }
 

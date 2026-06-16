@@ -131,7 +131,17 @@ class NewEmbuResultIndex extends Component
             ->where('round_label', 'Penyisihan')
             ->get();
 
-        $participants = $drawings->map(function ($drawing) use ($scores, $registrations, $drawings) {
+        $drawingsByReg = $drawings->sortBy(fn ($d) => $d->sequence_number ?? $d->id)->groupBy('registration_id');
+        $teamLabels = [];
+        foreach ($drawingsByReg as $regId => $regDrawings) {
+            if ($regDrawings->count() > 1) {
+                foreach ($regDrawings as $index => $d) {
+                    $teamLabels[$d->id] = 'Tim '.($index + 1);
+                }
+            }
+        }
+
+        $participants = $drawings->map(function ($drawing) use ($scores, $registrations, $drawings, $teamLabels) {
             $regId = $drawing->registration_id;
             $reg = $registrations->get($regId);
             if (! $reg) {
@@ -219,6 +229,7 @@ class NewEmbuResultIndex extends Component
             return [
                 'id' => $regId,
                 'drawing_id' => $drawing->id,
+                'team_label' => $teamLabels[$drawing->id] ?? null,
                 'match_number_id' => $specificMatchId,
                 'athlete_ids' => $athleteIds,
                 'pool_id' => $drawing->pool_id ?? 0,
@@ -275,12 +286,29 @@ class NewEmbuResultIndex extends Component
         $regIds = $finalDrawings->pluck('registration_id')->unique()->filter()->toArray();
         $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $regIds)->get()->keyBy('id');
 
-        return $finalDrawings->map(function ($drawing) use ($allScores, $registrations, $penyisihanDrawings, $finalDrawings) {
+        $pDrawingsByReg = $penyisihanDrawings->sortBy(fn ($d) => $d->sequence_number ?? $d->id)->groupBy('registration_id');
+        $teamLabels = [];
+        foreach ($pDrawingsByReg as $regId => $regDrawings) {
+            if ($regDrawings->count() > 1) {
+                foreach ($regDrawings as $index => $d) {
+                    $dIds = $d->metadata['athlete_ids'] ?? [];
+                    sort($dIds);
+                    $key = $regId.'_'.implode(',', $dIds);
+                    $teamLabels[$key] = 'Tim '.($index + 1);
+                }
+            }
+        }
+
+        return $finalDrawings->map(function ($drawing) use ($allScores, $registrations, $penyisihanDrawings, $finalDrawings, $teamLabels) {
             $regId = $drawing->registration_id;
             $reg = $registrations->get($regId);
             $specificMatchId = $drawing->match_number_id;
 
             $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
+            $sortedAthleteIds = $athleteIds;
+            sort($sortedAthleteIds);
+            $key = $regId.'_'.implode(',', $sortedAthleteIds);
+            $teamLabel = $teamLabels[$key] ?? null;
 
             // Find the matching Penyisihan drawing by athlete IDs
             $matchingPenyisihanDrawing = $penyisihanDrawings->where('registration_id', $regId)
@@ -464,6 +492,7 @@ class NewEmbuResultIndex extends Component
             return [
                 'id' => $regId,
                 'drawing_id' => $drawing->id,
+                'team_label' => $teamLabel,
                 'match_number_id' => $specificMatchId,
                 'athletes' => $athletes,
                 'contingent' => $reg?->contingent,
@@ -857,10 +886,6 @@ class NewEmbuResultIndex extends Component
         foreach ($rankings as $idx => $reg) {
             $rank = $idx + 1;
 
-            if ($rank > 3) {
-                break;
-            }
-
             // USE THE SPECIFIC MATCH ID from the drawing, not just the master ID
             $targetMatchId = $reg['match_number_id'] ?? $this->selectedMatchId;
 
@@ -875,6 +900,9 @@ class NewEmbuResultIndex extends Component
             ]);
 
             $athleteNames = $reg['athletes']->unique('id')->pluck('name')->implode(', ');
+            if (! empty($reg['team_label'])) {
+                $athleteNames .= ' ('.$reg['team_label'].')';
+            }
             $contingentName = $reg['contingent']?->name ?? '-';
 
             TournamentResult::updateOrCreate(

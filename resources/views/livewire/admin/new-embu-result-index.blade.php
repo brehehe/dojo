@@ -413,7 +413,12 @@
                                     <div class="champion-name" title="{{ $athletes->pluck('name')->implode(' & ') }}">
                                         {{ $athletes->pluck('name')->implode(' & ') ?: '-' }}
                                     </div>
-                                    <div class="champion-ctg">{{ $champ->registration?->contingent?->name }}</div>
+                                     <div class="champion-ctg">
+                                         {{ $champ->registration?->contingent?->name }}
+                                         @if($champ->drawing && ! empty($champ->drawing->metadata['team_label']))
+                                             ({{ $champ->drawing->metadata['team_label'] }})
+                                         @endif
+                                     </div>
                                 </div>
                                 <div style="display:flex; flex-direction:column; align-items:flex-end;">
                                     <div class="champion-score">{{ number_format($champ->accumulated_score, 1) }}</div>
@@ -491,7 +496,12 @@
                                         @foreach($reg['athletes'] as $ath)
                                             <div class="athlete-name">{{ $ath->name }}</div>
                                         @endforeach
-                                        <div class="athlete-contingent">{{ $reg['contingent']?->name }}</div>
+                                        <div class="athlete-contingent">
+                                            {{ $reg['contingent']?->name }}
+                                            @if(! empty($reg['team_label']))
+                                                ({{ $reg['team_label'] }})
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="score-info" style="display:flex; align-items:center; gap:12px;">
                                         @if($score)
@@ -606,7 +616,12 @@
                                         @foreach($reg['athletes'] as $ath)
                                             <div class="athlete-name">{{ $ath->name }}</div>
                                         @endforeach
-                                        <div class="athlete-contingent">{{ $reg['contingent']?->name }}</div>
+                                        <div class="athlete-contingent">
+                                            {{ $reg['contingent']?->name }}
+                                            @if(! empty($reg['team_label']))
+                                                ({{ $reg['team_label'] }})
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="score-info">
                                         <div style="font-size:11px; font-weight:700; color:var(--smoke); margin-bottom:2px;">
@@ -795,7 +810,12 @@
                                             @foreach($reg['athletes'] as $ath)
                                                 <div style="font-size:13px; font-weight:800; color:var(--ink); text-transform:uppercase;">{{ $ath->name }}</div>
                                             @endforeach
-                                            <div style="font-size:11px; font-weight:600; color:var(--smoke);">{{ $reg['contingent']?->name }}</div>
+                                            <div style="font-size:11px; font-weight:600; color:var(--smoke);">
+                                                {{ $reg['contingent']?->name }}
+                                                @if(! empty($reg['team_label']))
+                                                    ({{ $reg['team_label'] }})
+                                                @endif
+                                            </div>
                                         </div>
                                         <div style="text-align:right;">
                                             <div style="font-family:'Outfit',sans-serif; font-size:16px; font-weight:800; color:#f39c12;">

@@ -104,6 +104,11 @@ class EmbuScore extends Model
         return $this->belongsTo(Registration::class);
     }
 
+    public function drawing()
+    {
+        return $this->belongsTo(DrawingMatchNumber::class, 'drawing_id');
+    }
+
     public function getRefereeNotesAttribute(): string
     {
         $details = RefereeScoreDetail::where('match_number_id', $this->match_number_id)

@@ -125,6 +125,7 @@ use App\Livewire\Contingent\Setup;
 use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
 use App\Livewire\PublicSchedule;
+use App\Models\Court\Court;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -423,7 +424,6 @@ Route::middleware('auth')->group(function () {
  * - /api/court/{courtId}/timer-state → Timer state for clock displays
  */
 
-// Timer state API — public for venue timer displays (see security note above)
 Route::get('/api/court/{courtId}/timer-state', function ($courtId) {
     $state = Cache::get("court_{$courtId}_timer", [
         'status' => 'stopped',
@@ -431,6 +431,13 @@ Route::get('/api/court/{courtId}/timer-state', function ($courtId) {
         'started_at_ms' => null,
     ]);
     $state['server_time_ms'] = floor(microtime(true) * 1000);
+
+    $court = Court::with('activeMatch')->find($courtId);
+    $isRandori = true;
+    if ($court && $court->activeMatch) {
+        $isRandori = ! ($court->activeMatch->draft_type === 'embu' || str_contains(strtolower($court->activeMatch->name), 'embu'));
+    }
+    $state['is_randori'] = $isRandori;
 
     return response()->json($state);
 })->middleware('throttle:monitor')->name('api.court.timer-state');

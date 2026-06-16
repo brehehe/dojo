@@ -18,6 +18,13 @@
 
     let localTickInterval;
 
+    let isRandori = $derived(
+        !(court && court.active_match && (
+            court.active_match.draft_type === 'embu' ||
+            court.active_match.name.toLowerCase().includes('embu')
+        ))
+    );
+
     let destroyed = false;
     let syncInFlight = false;
     let syncQueued = false;
@@ -96,12 +103,18 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(() => {});
+            // audio.play().catch(() => {});
         } catch(e) {}
     }
 
     function formatTime() {
         let t = Math.max(0, time);
+        if (isRandori) {
+            let maxT = Math.max(0, 120000 - t);
+            let m = Math.floor(maxT / 60000);
+            let s = Math.floor((maxT % 60000) / 1000);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
         let m = Math.floor(t / 60000);
         let s = Math.floor((t % 60000) / 1000);
         let ms = Math.floor((t % 1000) / 10);
@@ -176,19 +189,17 @@
 
         // High-speed local interpolation (30ms) for smooth layout
         localTickInterval = setInterval(() => {
-            let isRandori = court && court.active_match && (court.active_match.draft_type === 'randori' || court.active_match.name.toLowerCase().includes('randori'));
-
             if (running && stateObj.started_at_ms) {
                 let expected = (stateObj.elapsed_ms || 0) + (Date.now() + offset - stateObj.started_at_ms);
-                time = isRandori ? Math.min(expected, 120000) : expected;
+                time = expected;
 
-                let currentSecond = Math.floor(time / 1000);
+                let currentSecond = Math.floor(expected / 1000);
                 let isPemula = court && court.active_match && (court.active_match.age_group_id === 1 || (court.active_match.age_group && court.active_match.age_group.name.toLowerCase() === 'pemula'));
                 let isTandoku = court && court.active_match && (court.active_match.name.toLowerCase().includes('tandoku') || court.active_match.max_athletes == 1);
                 let isShortDuration = isPemula || isTandoku;
 
                 if (isRandori) {
-                    if (time >= 120000 && !playedIntervals.has(120)) {
+                    if (expected >= 120000 && !playedIntervals.has(120)) {
                         time = 120000;
                         running = false;
                         playedIntervals.add(120);
@@ -218,11 +229,11 @@
                     countdown = 0;
                 }
                 let rawTime = stateObj.elapsed_ms || 0;
-                time = isRandori ? Math.min(rawTime, 120000) : rawTime;
+                time = rawTime;
             } else {
                 countdown = 0;
                 let rawTime = stateObj.elapsed_ms || 0;
-                time = isRandori ? Math.min(rawTime, 120000) : rawTime;
+                time = rawTime;
             }
         }, 30);
     });

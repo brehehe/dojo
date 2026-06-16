@@ -670,3 +670,112 @@ test('randori confirm champion with single elimination preserves and maps juara 
     expect($stateData['juara']['3']['name'])->toBe('Athlete Three');
     expect($stateData['juara']['3.1']['name'])->toBe('Athlete Four');
 });
+
+test('randori confirm champion with single elimination rounds recalculates losers and avoids duplicates', function () {
+    $admin = User::factory()->create();
+    $ageGroup = AgeGroup::create(['name' => 'Dewasa', 'order' => 1, 'price' => 0]);
+
+    $contingent1 = Contingent::create(['name' => 'Surabaya A', 'leader_name' => 'L1', 'leader_phone' => '1', 'leader_nik' => '1111111111111111']);
+    $registration1 = Registration::create(['contingent_id' => $contingent1->id]);
+
+    $contingent2 = Contingent::create(['name' => 'Jombang', 'leader_name' => 'L2', 'leader_phone' => '2', 'leader_nik' => '2222222222222222']);
+    $registration2 = Registration::create(['contingent_id' => $contingent2->id]);
+
+    $contingent3 = Contingent::create(['name' => 'Tuban', 'leader_name' => 'L3', 'leader_phone' => '3', 'leader_nik' => '3333333333333333']);
+    $registration3 = Registration::create(['contingent_id' => $contingent3->id]);
+
+    $contingent4 = Contingent::create(['name' => 'Banyuwangi', 'leader_name' => 'L4', 'leader_phone' => '4', 'leader_nik' => '4444444444444444']);
+    $registration4 = Registration::create(['contingent_id' => $contingent4->id]);
+
+    $athlete1 = ['id' => 10, 'name' => 'Mokhamad Ilyas Rosyid', 'contingent' => 'Jombang', 'registration_id' => $registration2->id];
+    $athlete2 = ['id' => 11, 'name' => 'Rendi Setyawan', 'contingent' => 'Banyuwangi', 'registration_id' => $registration4->id];
+    $athlete3 = ['id' => 12, 'name' => 'Ega Pramudya', 'contingent' => 'Tuban', 'registration_id' => $registration3->id];
+    $athlete4 = ['id' => 13, 'name' => 'Ramadhani Arta Pradipta', 'contingent' => 'Surabaya A', 'registration_id' => $registration1->id];
+
+    // Build drawing data simulating a single-elimination tournament that was incorrectly migrated to double_elimination with empty lower_bracket
+    $drawingData = [
+        'bracket_type' => 'double_elimination', // corrupt type
+        'bracket_size' => 4,
+        'upper_bracket' => [
+            'rounds' => [
+                [ // Semifinal round (round 0)
+                    [
+                        'athlete1' => $athlete1,
+                        'athlete2' => $athlete2,
+                        'winner' => 'athlete1',
+                        'winner_data' => $athlete1,
+                    ],
+                    [
+                        'athlete1' => $athlete3,
+                        'athlete2' => $athlete4,
+                        'winner' => 'athlete2',
+                        'winner_data' => $athlete4,
+                    ],
+                ],
+                [ // Final round (round 1)
+                    [
+                        'athlete1' => $athlete1,
+                        'athlete2' => $athlete4,
+                        'winner' => 'athlete2',
+                        'winner_data' => $athlete4,
+                    ],
+                ],
+            ],
+        ],
+        'lower_bracket' => [
+            'rounds' => [], // empty lower bracket rounds proves it's single elimination
+        ],
+        'juara' => [],
+    ];
+
+    $matchNumber = MatchNumber::create([
+        'name' => 'Randori Dewasa',
+        'draft_type' => 'randori',
+        'max_athletes' => 1,
+        'order' => 1,
+        'age_group_id' => $ageGroup->id,
+        'drawing_data' => $drawingData,
+    ]);
+
+    // 1. Calling state first should auto-heal type to single_elimination
+    $stateResponse = $this->actingAs($admin)
+        ->getJson("/admin/api/scoring/randori/{$matchNumber->id}/state");
+
+    $stateResponse->assertSuccessful();
+    $matchNumber->refresh();
+    expect($matchNumber->drawing_data)->toHaveKey('type', 'single_elimination')
+        ->not->toHaveKey('bracket_type');
+
+    // 2. Confirming champion should recalculate Rendi Setyawan (rank 3) and Ega Pramudya (rank 4)
+    $response = $this->actingAs($admin)
+        ->postJson('/admin/api/scoring/randori/confirm-champion', [
+            'match_id' => $matchNumber->id,
+        ]);
+
+    $response->assertSuccessful();
+
+    // Verify both athletes are saved to tournament_results
+    $results = TournamentResult::where('match_number_id', $matchNumber->id)
+        ->orderBy('rank')
+        ->get();
+
+    expect($results)->toHaveCount(4);
+    expect($results->get(0)->athlete_names)->toBe('Ramadhani Arta Pradipta'); // rank 1
+    expect($results->get(1)->athlete_names)->toBe('Mokhamad Ilyas Rosyid');   // rank 2
+    expect($results->get(2)->athlete_names)->toBe('Rendi Setyawan');          // rank 3
+    expect($results->get(3)->athlete_names)->toBe('Ega Pramudya');             // rank 4
+
+    // 3. Getting state again should return Rendi Setyawan as '3' and Ega Pramudya as '3.1' without duplicates
+    $stateResponse2 = $this->actingAs($admin)
+        ->getJson("/admin/api/scoring/randori/{$matchNumber->id}/state");
+
+    $stateResponse2->assertSuccessful();
+    $stateData = $stateResponse2->json();
+
+    expect($stateData['juara'])->toHaveKey('3')
+        ->toHaveKey('3.1')
+        ->not->toHaveKey('4'); // rank 4 should be mapped to 3.1, and fallback duplicates should be prevented
+
+    expect($stateData['juara']['3']['name'])->toBe('Rendi Setyawan');
+    expect($stateData['juara']['3.1']['name'])->toBe('Ega Pramudya');
+});

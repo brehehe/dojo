@@ -107,18 +107,19 @@ test('confirmChampion limits to top 3 and saves points', function () {
         ->test(NewEmbuResultIndex::class, ['selectedMatchId' => $matchNumber->id])
         ->call('confirmChampion');
 
-    // Assert that only 3 champions were created
+    // Assert that all 4 champions were created
     $champions = EmbuChampion::where('match_number_id', $matchNumber->id)->get();
-    expect($champions->count())->toEqual(3);
+    expect($champions->count())->toEqual(4);
 
     // Verify ranks
     expect($champions->where('rank', 1)->first()->registration_id)->toEqual($reg1->id);
     expect($champions->where('rank', 2)->first()->registration_id)->toEqual($reg2->id);
     expect($champions->where('rank', 3)->first()->registration_id)->toEqual($reg3->id);
+    expect($champions->where('rank', 4)->first()->registration_id)->toEqual($reg4->id);
 
-    // Assert TournamentResult count is also 3
+    // Assert TournamentResult count is also 4
     $results = TournamentResult::where('match_number_id', $matchNumber->id)->get();
-    expect($results->count())->toEqual(3);
+    expect($results->count())->toEqual(4);
 });
 
 test('render calculates total participants and contingent counts correctly', function () {

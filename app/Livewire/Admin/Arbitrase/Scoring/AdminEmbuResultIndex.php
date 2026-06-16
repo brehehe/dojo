@@ -12,6 +12,7 @@ use App\Models\Pool\Pool;
 use App\Models\Registration;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
+use App\Models\TournamentResult;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -621,15 +622,34 @@ class AdminEmbuResultIndex extends Component
 
         // Clear previous champions for this match
         EmbuChampion::where('match_number_id', $this->selectedMatchId)->delete();
+        TournamentResult::where('match_number_id', $this->selectedMatchId)->delete();
 
         foreach ($rankings as $idx => $reg) {
+            $rank = $idx + 1;
             EmbuChampion::create([
                 'match_number_id' => $this->selectedMatchId,
                 'registration_id' => $reg['id'],
-                'rank' => $idx + 1,
+                'rank' => $rank,
                 'penyisihan_score' => $reg['penyisihan_score']?->nilai_akhir ?? 0,
                 'final_score' => $reg['final_score']?->nilai_akhir ?? 0,
                 'accumulated_score' => $reg['accumulated'] ?? 0,
+            ]);
+
+            $athleteNames = $reg['athletes']->unique('id')->pluck('name')->implode(', ');
+            $contingentName = $reg['contingent']?->name ?? '-';
+
+            TournamentResult::create([
+                'match_number_id' => $this->selectedMatchId,
+                'draft_type' => 'embu',
+                'rank' => $rank,
+                'registration_id' => $reg['id'],
+                'athlete_names' => $athleteNames,
+                'contingent_name' => $contingentName,
+                'penyisihan_score' => $reg['penyisihan_score']?->nilai_akhir ?? 0,
+                'final_score' => $reg['final_score']?->nilai_akhir ?? 0,
+                'accumulated_score' => $reg['accumulated'] ?? 0,
+                'generated_by' => auth()->user()?->name ?? 'System',
+                'confirmed_at' => now(),
             ]);
         }
 

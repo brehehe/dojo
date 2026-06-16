@@ -724,7 +724,12 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                         @foreach($champions->take(4) as $champ)
                             @php
                                 $rankMedal = match($champ->rank) { 1 => 'gold', 2 => 'silver', 3 => 'bronze', default => '' };
-                                $rankLabel = match($champ->rank) { 1 => '🥇 JUARA 1', 2 => '🥈 JUARA 2', 3 => '🥉 JUARA 3', 4 => '🥉 JUARA 3 BERSAMA', default => 'PERINGKAT '.$champ->rank };
+                                $rankLabel = match($champ->rank) {
+                                    1 => '🥇 JUARA 1',
+                                    2 => '🥈 JUARA 2',
+                                    3, 4 => '🥉 ' . strtoupper($champ->rank_label),
+                                    default => strtoupper($champ->rank_label)
+                                };
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank {{ $rankMedal }}">{{ $rankLabel }}</div>
@@ -801,7 +806,12 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                         @foreach($champions->take(4) as $champ)
                             @php
                                 $rankMedal = match($champ->rank) { 1 => 'gold', 2 => 'silver', 3 => 'bronze', default => '' };
-                                $rankLabel = match($champ->rank) { 1 => '🥇 JUARA 1', 2 => '🥈 JUARA 2', 3 => '🥉 JUARA 3', 4 => '🥉 JUARA 3 BERSAMA', default => 'PERINGKAT '.$champ->rank };
+                                $rankLabel = match($champ->rank) {
+                                    1 => '🥇 JUARA 1',
+                                    2 => '🥈 JUARA 2',
+                                    3, 4 => '🥉 ' . strtoupper($champ->rank_label),
+                                    default => strtoupper($champ->rank_label)
+                                };
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank {{ $rankMedal }}">{{ $rankLabel }}</div>

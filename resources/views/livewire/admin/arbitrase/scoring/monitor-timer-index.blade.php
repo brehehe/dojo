@@ -86,9 +86,8 @@
                       if (this.running && this.state.started_at_ms) {
                           let expected = (this.state.elapsed_ms || 0) + (Date.now() + this.offset - this.state.started_at_ms);
                           this.time = expected;
-                          
                           let currentSecond = Math.floor(this.time / 1000);
-                          let isRandori = {{ ($court->activeMatch && ($court->activeMatch->draft_type === 'randori' || str_contains(strtolower($court->activeMatch->name), 'randori'))) ? 'true' : 'false' }};
+                          let isRandori = this.state.is_randori !== false;
                           let isTandoku = {{ ($court->activeMatch && (str_contains(strtolower($court->activeMatch->name), 'tandoku') || $court->activeMatch->max_athletes == 1)) ? 'true' : 'false' }};
                           let buzzerSound = '/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3';
 
@@ -140,6 +139,13 @@
              },
              formatTime() {
                   let t = Math.max(0, this.time);
+                  let isRandori = this.state.is_randori !== false;
+                  if (isRandori) {
+                      let maxT = Math.max(0, 120000 - t);
+                      let m = Math.floor(maxT / 60000);
+                      let s = Math.floor((maxT % 60000) / 1000);
+                      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                  }
                   let m = Math.floor(t / 60000);
                   let s = Math.floor((t % 60000) / 1000);
                   let ms = Math.floor((t % 1000) / 10);

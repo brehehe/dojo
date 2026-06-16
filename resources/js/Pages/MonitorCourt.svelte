@@ -86,7 +86,7 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(() => {});
+            // audio.play().catch(() => {});
         } catch(e) {}
     }
 

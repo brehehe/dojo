@@ -151,8 +151,29 @@
                 {{-- Juara Grid --}}
                 @if($hasResult)
                     <div class="p-4 grid grid-cols-1 gap-3">
-                        @foreach([1=>'🥇 Juara 1',2=>'🥈 Juara 2',3=>'🥉 Juara 3',4=>'🥉 Juara 3B'] as $rank => $label)
-                            @php $data = $computedJuara[$rank] ?? null; @endphp
+                        @php
+                            $validJuaraCount = collect($computedJuara)->filter(fn($j) => !empty($j['athlete_names']))->count();
+                        @endphp
+                        @foreach([1, 2, 3, 4] as $rank)
+                            @php
+                                $data = $computedJuara[$rank] ?? null;
+                                if ($validJuaraCount === 3) {
+                                    if ($rank === 3 && empty($data)) continue;
+                                    if ($rank === 4 && empty($data)) continue;
+                                    $label = match($rank) {
+                                        1 => '🥇 Juara 1',
+                                        2 => '🥈 Juara 2',
+                                        3, 4 => '🥉 Juara 3 Bersama',
+                                    };
+                                } else {
+                                    $label = match($rank) {
+                                        1 => '🥇 Juara 1',
+                                        2 => '🥈 Juara 2',
+                                        3 => '🥉 Juara 3 Bersama 1',
+                                        4 => '🥉 Juara 3 Bersama 2',
+                                    };
+                                }
+                            @endphp
                             <div class="rounded-xl border {{ $data ? 'bg-amber-50/40 border-amber-200' : 'bg-slate-50 border-slate-100' }} p-3">
                                 <p class="text-[10px] font-black uppercase tracking-widest {{ $data ? 'text-amber-600' : 'text-slate-400' }} mb-1.5">{{ $label }}</p>
                                 @if($data)
