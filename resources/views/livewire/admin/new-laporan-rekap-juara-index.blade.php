@@ -227,16 +227,21 @@
         }
 
         .premium-table tr.row-yellow {
-            border-left: 5px solid #f39c12;
-            background: rgba(243, 156, 18, 0.02);
+            border-left: 5px solid #f1c40f;
+            background-color: #fffdeb !important;
+        }
+
+        .premium-table tr.row-yellow:hover {
+            background-color: #fffbeb !important;
         }
 
         .premium-table tr.row-green {
-            border-left: 5px solid #27ae60;
+            border-left: 5px solid #2ecc71;
+            background-color: #f0fdf4 !important;
         }
 
-        .premium-table tr:hover {
-            background: rgba(248, 245, 240, 0.5);
+        .premium-table tr.row-green:hover {
+            background-color: #dcfce7 !important;
         }
 
         /* ── BADGES & LABELS ── */

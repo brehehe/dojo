@@ -35,18 +35,19 @@ beforeEach(function () {
 
     $regA = Registration::create(['contingent_id' => $contingentA->id]);
     $regB = Registration::create(['contingent_id' => $contingentB->id]);
+    $regC = Registration::create(['contingent_id' => $contingentB->id]);
 
     $athlete1 = Athlete::factory()->create(['name' => 'Kenshi 1']);
     $athlete1->contingents()->attach($contingentA->id, ['is_primary' => true]);
     $athlete1->matchNumbers()->attach($this->matchYellow->id, ['registration_id' => $regA->id]);
 
     $athlete2 = Athlete::factory()->create(['name' => 'Kenshi 2']);
-    $athlete2->contingents()->attach($contingentA->id, ['is_primary' => true]);
-    $athlete2->matchNumbers()->attach($this->matchYellow->id, ['registration_id' => $regA->id]);
+    $athlete2->contingents()->attach($contingentB->id, ['is_primary' => true]);
+    $athlete2->matchNumbers()->attach($this->matchYellow->id, ['registration_id' => $regB->id]);
 
     $athlete3 = Athlete::factory()->create(['name' => 'Kenshi 3']);
     $athlete3->contingents()->attach($contingentB->id, ['is_primary' => true]);
-    $athlete3->matchNumbers()->attach($this->matchYellow->id, ['registration_id' => $regB->id]);
+    $athlete3->matchNumbers()->attach($this->matchYellow->id, ['registration_id' => $regC->id]);
 
     // Create a match with 3 participants from 1 contingent (Should be Green)
     $this->matchGreen = MatchNumber::create([

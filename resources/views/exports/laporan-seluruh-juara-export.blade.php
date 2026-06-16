@@ -31,7 +31,9 @@
             @php
                 $rowStyle = '';
                 if ($m['color'] === 'yellow') {
-                    $rowStyle = 'background-color: #fcf8e3;'; // Light yellow row bg for Excel
+                    $rowStyle = 'background-color: #fffdeb;'; // Light yellow row bg for Excel
+                } else {
+                    $rowStyle = 'background-color: #f0fdf4;'; // Light green row bg for Excel
                 }
             @endphp
             <tr>

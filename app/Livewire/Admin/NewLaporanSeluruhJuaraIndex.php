@@ -123,33 +123,58 @@ class NewLaporanSeluruhJuaraIndex extends Component
             // Calculate participant & contingent counts across all match numbers in this group
             $allAthletes = collect();
             $matchIds = [];
+            $registrationIdsForCount = [];
             foreach ($group['match_numbers'] as $mn) {
                 $allAthletes = $allAthletes->merge($mn->athletes);
                 $matchIds[] = $mn->id;
-            }
-            $allAthletes = $allAthletes->unique('id');
-            $participantCount = $allAthletes->count();
-
-            $contingentIds = [];
-            foreach ($allAthletes as $athlete) {
-                $regId = $athlete->pivot->registration_id;
-                if ($regId && isset($registrations[$regId])) {
-                    $contingentIds[] = $registrations[$regId];
-                } else {
-                    $primary = $athlete->contingents->first(fn ($c) => $c->pivot->is_primary);
-                    if ($primary) {
-                        $contingentIds[] = $primary->id;
+                foreach ($mn->athletes as $athlete) {
+                    if ($athlete->pivot->registration_id) {
+                        $registrationIdsForCount[] = $athlete->pivot->registration_id;
                     }
                 }
             }
+            $allAthletes = $allAthletes->unique('id');
+            $uniqueRegs = array_unique($registrationIdsForCount);
+            $participantCount = count($uniqueRegs);
+
+            $contingentIds = [];
+            $contingentCounts = [];
+            foreach ($uniqueRegs as $regId) {
+                if (isset($registrations[$regId])) {
+                    $cId = $registrations[$regId];
+                    $contingentIds[] = $cId;
+                    $contingentCounts[$cId] = ($contingentCounts[$cId] ?? 0) + 1;
+                }
+            }
+
+            // Fallback for athletes who don't have registration_id (though they should)
+            if ($participantCount === 0) {
+                foreach ($allAthletes as $athlete) {
+                    $primary = $athlete->contingents->first(fn ($c) => $c->pivot->is_primary);
+                    if ($primary) {
+                        $contingentIds[] = $primary->id;
+                        $contingentCounts[$primary->id] = ($contingentCounts[$primary->id] ?? 0) + 1;
+                    }
+                }
+                $participantCount = $allAthletes->count();
+            }
+
             $contingentCount = count(array_unique($contingentIds));
 
-            // Determine highlight color
-            $color = 'green';
-            if ($participantCount === 3) {
-                if ($contingentCount >= 2) {
-                    $color = 'yellow';
+            // Determine highlight color matching NewEmbuResultIndex logic:
+            // - Exactly 3 participants (registrations)
+            // - OR any contingent having 2 or more registrations in this match number
+            $hasAnyDuplicate = false;
+            foreach ($contingentCounts as $cId => $count) {
+                if ($count >= 2) {
+                    $hasAnyDuplicate = true;
+                    break;
                 }
+            }
+
+            $color = 'green';
+            if ($participantCount === 3 || $hasAnyDuplicate) {
+                $color = 'yellow';
             }
 
             // Filter by highlight color
