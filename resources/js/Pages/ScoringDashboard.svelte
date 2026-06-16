@@ -3,6 +3,7 @@
     import { router } from "@inertiajs/svelte";
     import { createAdaptivePolling } from "../lib/adaptivePolling";
     import { conditionalJsonFetch } from "../lib/conditionalFetch";
+    import { postJson } from "../lib/api";
 
     // States
     let drawings = $state({
@@ -51,6 +52,9 @@
     let dashboardRefreshTimeout = null;
     let dashboardFetchInFlight = false;
     let dashboardRefreshQueued = false;
+    let dashboardPolling = null;
+    const dashboardPollDelay = 5000;
+    const subscribedCourtIds = new Set();
 
     // Filter changes trigger refresh
     $effect(() => {
@@ -845,7 +849,7 @@
                                 {@const rundown = drawing.rundown}
                                 {@const isRandori =
                                     drawing.draft_type === "randori"}
-                                {@const detailRoute = `/admin/new-scoring/${drawing.draft_type}/${mn?.id ?? ""}?round=${drawing.round ?? ""}&pool_id=${pool?.id ?? ""}`}
+                                {@const detailRoute = `/admin/new-scoring/${drawing.draft_type}/${mn?.id ?? ""}?round=${drawing.round ?? ""}&pool_id=${pool?.id ?? ""}&court_id=${court?.id ?? ""}&session_time_id=${session?.id ?? ""}&rundown_id=${rundown?.id ?? ""}`}
                                 <tr>
                                     <td style="font-weight:700;"
                                         >{drawing.sequence_number ?? "-"}</td

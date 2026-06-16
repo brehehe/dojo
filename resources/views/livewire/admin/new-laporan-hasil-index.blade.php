@@ -366,22 +366,37 @@
                                 <span class="type-badge saved"><i class="fas fa-check-circle"></i> Tersimpan</span>
                             @endif
                             @if($hasResult)
-                                <button wire:click="openGenerateModal({{ $match->id }}, '{{ addslashes($match->display_name ?? $match->name) }}')"
-                                    class="btn-gen warning" style="padding: 6px 12px; font-size: 10px;">
-                                    <i class="fas fa-save"></i> {{ $isSaved ? 'Update' : 'Simpan' }}
-                                </button>
+                                @if($isEmbu)
+                                    <button wire:click="openGenerateModal({{ $match->id }}, '{{ addslashes($match->display_name ?? $match->name) }}')"
+                                        class="btn-gen warning" style="padding: 6px 12px; font-size: 10px;">
+                                        <i class="fas fa-save"></i> {{ $isSaved ? 'Update' : 'Simpan' }}
+                                    </button>
+                                @else
+                                    <button wire:click="openRandoriModal({{ $match->id }}, '{{ addslashes($match->display_name ?? $match->name) }}')"
+                                        class="btn-gen warning" style="padding: 6px 12px; font-size: 10px;">
+                                        <i class="fas fa-save"></i> {{ $isSaved ? 'Update' : 'Simpan' }}
+                                    </button>
+                                @endif
                             @endif
                         </div>
                     </div>
 
                     {{-- Juara Rows --}}
                     @if($hasResult)
-                        @foreach([1=>'🥇', 2=>'🥈', 3=>'🥉', 4=>'🥉'] as $rank => $icon)
+                        @php
+                            $isRandori = strtolower($match->draft_type) === 'randori';
+                            $athleteCount = $match->athletes->count();
+                            $ranksToDisplay = [1=>'🥇', 2=>'🥈', 3=>'🥉', 4=>'🥉'];
+                            if ($isRandori && $athleteCount === 3) {
+                                $ranksToDisplay = [1=>'🥇', 2=>'🥈', 3=>'🥉'];
+                            }
+                        @endphp
+                        @foreach($ranksToDisplay as $rank => $icon)
                             @php $data = $computedJuara[$rank] ?? null; @endphp
                             <div class="rank-row">
                                 <div class="rank-icon">{{ $icon }}</div>
                                 <div class="rank-info">
-                                    <div class="rank-label">Juara {{ $rank === 4 ? '3 Bersama' : $rank }}</div>
+                                    <div class="rank-label">Juara {{ (strtolower($match->draft_type) === 'randori' && ($rank === 3 || $rank === 4)) ? '3 Bersama' : ($rank === 4 ? '3 Bersama' : $rank) }}</div>
                                     @if($data)
                                         <div class="rank-name">{{ $data['athlete_names'] }}</div>
                                         <div class="rank-contingent">{{ $data['contingent_name'] }}</div>
@@ -464,6 +479,241 @@
                             <span wire:loading wire:target="generateSingleResult">
                                 <i class="fas fa-spinner fa-spin"></i> Menyimpan...
                             </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- RANDORI CHAMPIONS MODAL --}}
+        @if($showRandoriModal)
+            <div class="modal-overlay" wire:click.self="$set('showRandoriModal', false)">
+                <div class="modal-content animate-in zoom-in-95 duration-200" style="max-width: 900px; display: flex; flex-direction: column; max-height: 90vh;">
+                    <div class="modal-hdr">
+                        <h3><i class="fas fa-medal" style="color:#f39c12; margin-right:8px;"></i>Penentuan Juara Randori</h3>
+                        <button wire:click="$set('showRandoriModal', false)"
+                            style="background:none; border:none; cursor:pointer; font-size:18px; color:var(--smoke);">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; gap: 20px; padding: 20px; text-align: left;">
+                        <!-- LEFT: BRACKET DIAGRAM -->
+                        <div style="flex: 2; overflow: auto; border: 1px solid var(--paper2); border-radius: 12px; padding: 15px; background: #faf8f5;">
+                            <h4 style="font-family:'Cinzel', serif; font-size:12px; font-weight:700; margin:0 0 10px; color:var(--ink); text-transform:uppercase;">
+                                Bagan Bracket
+                            </h4>
+                            @if(empty($randoriDrawingData['upper_bracket']['rounds'] ?? []))
+                                <div style="text-align:center; padding:40px; color:var(--smoke); font-size: 12px;">Bagan tidak ditemukan atau belum digenerate.</div>
+                            @else
+                                <!-- UPPER BRACKET -->
+                                <div style="margin-bottom: 20px;">
+                                    <div style="font-size:10px; padding: 4px 10px; background: #ebf5fb; color: #2980b9; font-weight: 700; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-arrow-up"></i> UPPER BRACKET
+                                    </div>
+                                    <div style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px;">
+                                        @foreach ($randoriDrawingData['upper_bracket']['rounds'] ?? [] as $roundIdx => $matches)
+                                            <div style="flex-shrink: 0; width: 170px;">
+                                                <div style="font-size: 8px; font-weight: 700; color: var(--smoke); text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid var(--paper2); padding-bottom: 2px;">
+                                                    Round {{ $roundIdx + 1 }}
+                                                </div>
+                                                @foreach ($matches as $matchIdx => $m)
+                                                    @php
+                                                        $isDone = ($m['winner'] ?? null) !== null;
+                                                    @endphp
+                                                    <div style="background: #fff; border: 1px solid var(--paper2); border-radius: 6px; padding: 6px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                                        <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0;">
+                                                            <div style="width: 3px; height: 10px; background: var(--red); border-radius: 2px; flex-shrink: 0;"></div>
+                                                            <div style="flex: 1; min-width: 0; font-size: 10px; font-weight: 800; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" class="{{ $isDone && $m['winner'] === 'athlete1' ? 'text-green-600' : '' }}">
+                                                                @if ($m['athlete1'] ?? null)
+                                                                    {{ $m['athlete1']['name'] }}
+                                                                @else
+                                                                    <span style="color: var(--smoke); font-style: italic;">TBD</span>
+                                                                @endif
+                                                            </div>
+                                                            @if ($isDone && $m['winner'] === 'athlete1')
+                                                                <i class="fas fa-check-circle" style="color: #27ae60; font-size: 10px;"></i>
+                                                            @endif
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0; border-top: 1px solid #f5f5f0; margin-top: 4px; padding-top: 4px;">
+                                                            <div style="width: 3px; height: 10px; background: #2980b9; border-radius: 2px; flex-shrink: 0;"></div>
+                                                            <div style="flex: 1; min-width: 0; font-size: 10px; font-weight: 800; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" class="{{ $isDone && $m['winner'] === 'athlete2' ? 'text-green-600' : '' }}">
+                                                                @if ($m['athlete2'] ?? null)
+                                                                    {{ $m['athlete2']['name'] }}
+                                                                @else
+                                                                    <span style="color: var(--smoke); font-style: italic;">TBD</span>
+                                                                @endif
+                                                            </div>
+                                                            @if ($isDone && $m['winner'] === 'athlete2')
+                                                                <i class="fas fa-check-circle" style="color: #27ae60; font-size: 10px;"></i>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <!-- LOWER BRACKET -->
+                                @if(!empty($randoriDrawingData['lower_bracket']['rounds'] ?? []))
+                                    <div style="margin-bottom: 20px;">
+                                        <div style="font-size:10px; padding: 4px 10px; background: #fdf2e9; color: #d35400; font-weight: 700; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                            <i class="fas fa-arrow-down"></i> LOWER BRACKET
+                                        </div>
+                                        <div style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px;">
+                                            @foreach ($randoriDrawingData['lower_bracket']['rounds'] ?? [] as $roundIdx => $matches)
+                                                <div style="flex-shrink: 0; width: 170px;">
+                                                    <div style="font-size: 8px; font-weight: 700; color: var(--smoke); text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid var(--paper2); padding-bottom: 2px;">
+                                                        Round {{ $roundIdx + 1 }}
+                                                    </div>
+                                                    @foreach ($matches as $matchIdx => $m)
+                                                        @php
+                                                            $isDone = ($m['winner'] ?? null) !== null;
+                                                        @endphp
+                                                        <div style="background: #fff; border: 1px solid var(--paper2); border-radius: 6px; padding: 6px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                                            <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0;">
+                                                                <div style="width: 3px; height: 10px; background: var(--red); border-radius: 2px; flex-shrink: 0;"></div>
+                                                                <div style="flex: 1; min-width: 0; font-size: 10px; font-weight: 800; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" class="{{ $isDone && $m['winner'] === 'athlete1' ? 'text-green-600' : '' }}">
+                                                                    @if ($m['athlete1'] ?? null)
+                                                                        {{ $m['athlete1']['name'] }}
+                                                                    @else
+                                                                        <span style="color: var(--smoke); font-style: italic;">TBD</span>
+                                                                    @endif
+                                                                </div>
+                                                                @if ($isDone && $m['winner'] === 'athlete1')
+                                                                    <i class="fas fa-check-circle" style="color: #27ae60; font-size: 10px;"></i>
+                                                                @endif
+                                                            </div>
+                                                            <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0; border-top: 1px solid #f5f5f0; margin-top: 4px; padding-top: 4px;">
+                                                                <div style="width: 3px; height: 10px; background: #2980b9; border-radius: 2px; flex-shrink: 0;"></div>
+                                                                <div style="flex: 1; min-width: 0; font-size: 10px; font-weight: 800; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" class="{{ $isDone && $m['winner'] === 'athlete2' ? 'text-green-600' : '' }}">
+                                                                    @if ($m['athlete2'] ?? null)
+                                                                        {{ $m['athlete2']['name'] }}
+                                                                    @else
+                                                                        <span style="color: var(--smoke); font-style: italic;">TBD</span>
+                                                                    @endif
+                                                                </div>
+                                                                @if ($isDone && $m['winner'] === 'athlete2')
+                                                                    <i class="fas fa-check-circle" style="color: #27ae60; font-size: 10px;"></i>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- GRAND FINAL -->
+                                @if(!empty($randoriDrawingData['grand_final'] ?? []))
+                                    @php
+                                        $gf = $randoriDrawingData['grand_final'];
+                                        $isDone = ($gf['winner'] ?? null) !== null;
+                                    @endphp
+                                    <div>
+                                        <div style="font-size:10px; padding: 4px 10px; background: #fdf9e7; color: #f1c40f; font-weight: 700; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; max-width: 170px;">
+                                            <i class="fas fa-trophy"></i> GRAND FINAL
+                                        </div>
+                                        <div style="max-width: 170px; background: #fff; border: 1px solid var(--paper2); border-radius: 6px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                            <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0;">
+                                                <div style="width: 3px; height: 10px; background: var(--red); border-radius: 2px; flex-shrink: 0;"></div>
+                                                <div style="flex: 1; min-width: 0; font-size: 10px; font-weight: 800; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" class="{{ $isDone && $gf['winner'] === 'athlete1' ? 'text-green-600' : '' }}">
+                                                    @if ($gf['athlete1'] ?? null)
+                                                        {{ $gf['athlete1']['name'] }}
+                                                    @else
+                                                        <span style="color: var(--smoke); font-style: italic;">TBD</span>
+                                                    @endif
+                                                </div>
+                                                @if ($isDone && $gf['winner'] === 'athlete1')
+                                                    <i class="fas fa-check-circle" style="color: #27ae60; font-size: 10px;"></i>
+                                                @endif
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0; border-top: 1px solid #f5f5f0; margin-top: 4px; padding-top: 4px;">
+                                                <div style="width: 3px; height: 10px; background: #2980b9; border-radius: 2px; flex-shrink: 0;"></div>
+                                                <div style="flex: 1; min-width: 0; font-size: 10px; font-weight: 800; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" class="{{ $isDone && $gf['winner'] === 'athlete2' ? 'text-green-600' : '' }}">
+                                                    @if ($gf['athlete2'] ?? null)
+                                                        {{ $gf['athlete2']['name'] }}
+                                                    @else
+                                                        <span style="color: var(--smoke); font-style: italic;">TBD</span>
+                                                    @endif
+                                                </div>
+                                                @if ($isDone && $gf['winner'] === 'athlete2')
+                                                    <i class="fas fa-check-circle" style="color: #27ae60; font-size: 10px;"></i>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+
+                        <!-- RIGHT: SELECTORS -->
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 15px; border: 1px solid var(--paper2); border-radius: 12px; padding: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="font-family:'Cinzel', serif; font-size:12px; font-weight:700; margin:0; color:var(--ink); text-transform:uppercase;">
+                                    Penentuan Pemenang
+                                </h4>
+                                <button wire:click="autoGenerateRandoriWinners" class="btn-gen warning" style="padding: 4px 10px; font-size: 9px;">
+                                    <i class="fas fa-magic"></i> Auto-Fill
+                                </button>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1;">
+                                <div>
+                                    <label class="tm-filter-label" style="font-size: 9px; margin-bottom: 2px;">Juara 1 🥇</label>
+                                    <select wire:model="juara1_id" class="tm-filter-sel" style="padding: 6px 10px; font-size: 11px;">
+                                        <option value="">-- Pilih Juara 1 --</option>
+                                        @foreach($randoriAthletes as $ath)
+                                            <option value="{{ $ath['id'] }}">{{ $ath['name'] }} ({{ $ath['contingent'] }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="tm-filter-label" style="font-size: 9px; margin-bottom: 2px;">Juara 2 🥈</label>
+                                    <select wire:model="juara2_id" class="tm-filter-sel" style="padding: 6px 10px; font-size: 11px;">
+                                        <option value="">-- Pilih Juara 2 --</option>
+                                        @foreach($randoriAthletes as $ath)
+                                            <option value="{{ $ath['id'] }}">{{ $ath['name'] }} ({{ $ath['contingent'] }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="tm-filter-label" style="font-size: 9px; margin-bottom: 2px;">Juara 3 Bersama 🥉</label>
+                                    <select wire:model="juara3_id" class="tm-filter-sel" style="padding: 6px 10px; font-size: 11px;">
+                                        <option value="">-- Pilih Juara 3 --</option>
+                                        @foreach($randoriAthletes as $ath)
+                                            <option value="{{ $ath['id'] }}">{{ $ath['name'] }} ({{ $ath['contingent'] }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if(count($randoriAthletes) >= 4)
+                                    <div>
+                                        <label class="tm-filter-label" style="font-size: 9px; margin-bottom: 2px;">Juara 3 Bersama 🥉</label>
+                                        <select wire:model="juara3_bersama_id" class="tm-filter-sel" style="padding: 6px 10px; font-size: 11px;">
+                                            <option value="">-- Pilih Juara 3 --</option>
+                                            @foreach($randoriAthletes as $ath)
+                                                <option value="{{ $ath['id'] }}">{{ $ath['name'] }} ({{ $ath['contingent'] }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div style="font-size: 10px; color: var(--smoke); font-style: italic;">
+                                <i class="fas fa-info-circle"></i> {{ count($randoriAthletes) }} peserta terdata.
+                                @if(count($randoriAthletes) === 3)
+                                    Sesuai aturan 3 peserta: hanya 1 Juara 3 Bersama.
+                                @else
+                                    Sesuai aturan 4+ peserta: ada 2 Juara 3 Bersama.
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="padding: 12px 20px;">
+                        <button wire:click="$set('showRandoriModal', false)" class="btn-gen ghost">Batal</button>
+                        <button wire:click="saveRandoriResult" class="btn-gen success">
+                            <i class="fas fa-save"></i> Simpan Hasil
                         </button>
                     </div>
                 </div>

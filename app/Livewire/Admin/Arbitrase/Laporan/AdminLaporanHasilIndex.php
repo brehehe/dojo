@@ -258,7 +258,7 @@ class AdminLaporanHasilIndex extends Component
 
     // ─── RANDORI JUARA FROM DRAWING DATA ─────────────────────────
 
-    private function computeRandoriJuara(MatchNumber $matchNumber): array
+    protected function computeRandoriJuara(MatchNumber $matchNumber): array
     {
         $data = $matchNumber->drawing_data ?? [];
         $juaraRaw = $data['juara'] ?? [];

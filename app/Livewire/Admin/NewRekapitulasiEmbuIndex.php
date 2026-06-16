@@ -197,7 +197,10 @@ class NewRekapitulasiEmbuIndex extends Component
             });
         }
 
-        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderByRaw('MIN(sequence_number)');
+        $query->orderBy('rundown_id')
+            ->orderBy('session_time_id')
+            ->orderByRaw('MIN(drawing_match_numbers.sequence_number)')
+            ->orderByRaw('MIN(drawing_match_numbers.id)');
 
         return view('livewire.admin.new-rekapitulasi-embu-index', [
             'drawings' => $query->paginate(10),

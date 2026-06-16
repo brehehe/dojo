@@ -421,12 +421,12 @@ class NewScoringIndex extends Component
             ->leftJoin('match_number_merge_details', 'match_numbers.id', '=', 'match_number_merge_details.match_number_id')
             ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
             ->select(
-                'drawing_match_numbers.court_id',
-                'drawing_match_numbers.pool_id',
-                'drawing_match_numbers.session_time_id',
-                'drawing_match_numbers.rundown_id',
                 'drawing_match_numbers.draft_type'
             )
+            ->selectRaw('MIN(drawing_match_numbers.court_id) as court_id')
+            ->selectRaw('CASE WHEN drawing_match_numbers.draft_type = \'randori\' THEN NULL ELSE MIN(drawing_match_numbers.pool_id) END as pool_id')
+            ->selectRaw('MIN(drawing_match_numbers.session_time_id) as session_time_id')
+            ->selectRaw('MIN(drawing_match_numbers.rundown_id) as rundown_id')
             ->selectRaw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END as round")
             ->selectRaw('COALESCE(MAX(match_number_merges.name), \'\') as merge_name')
             ->selectRaw('STRING_AGG(DISTINCT match_numbers.name, \', \') as aggregated_match_names')
@@ -435,13 +435,10 @@ class NewScoringIndex extends Component
             ->selectRaw('COUNT(drawing_match_numbers.registration_id) as total_athletes')
             ->selectRaw('MIN(drawing_match_numbers.sequence_number) as sequence_number')
             ->groupBy(
-                'drawing_match_numbers.court_id',
-                'drawing_match_numbers.pool_id',
-                'drawing_match_numbers.session_time_id',
-                'drawing_match_numbers.rundown_id',
                 DB::raw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END"),
                 'drawing_match_numbers.draft_type',
-                DB::raw('COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)')
+                DB::raw('COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)'),
+                DB::raw('CASE WHEN drawing_match_numbers.draft_type = \'randori\' THEN NULL ELSE drawing_match_numbers.pool_id END')
             )
             ->with([
                 'matchNumber.ageGroup',
@@ -504,7 +501,10 @@ class NewScoringIndex extends Component
             });
         }
 
-        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderByRaw('MIN(sequence_number)');
+        $query->orderBy('rundown_id')
+            ->orderBy('session_time_id')
+            ->orderByRaw('MIN(drawing_match_numbers.sequence_number)')
+            ->orderByRaw('MIN(drawing_match_numbers.id)');
 
         $routePrefix = request()->is('*panitera*') ? 'admin.panitera.scoring' : 'admin.arbitrase.scoring';
 

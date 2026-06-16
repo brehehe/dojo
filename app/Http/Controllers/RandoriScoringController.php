@@ -44,9 +44,15 @@ class RandoriScoringController extends Controller
             $matchNumberIds = [$matchNumber->id];
         }
 
-        $courtId = DB::table('drawing_match_numbers')
-            ->whereIn('match_number_id', $matchNumberIds)
-            ->value('court_id');
+        $courtId = $request->query('court_id');
+        $sessionTimeId = $request->query('session_time_id');
+        $rundownId = $request->query('rundown_id');
+
+        if (! $courtId) {
+            $courtId = DB::table('drawing_match_numbers')
+                ->whereIn('match_number_id', $matchNumberIds)
+                ->value('court_id');
+        }
 
         $versions = [
             'match' => $this->stateCache->version('match', $matchNumber->id),
@@ -91,7 +97,17 @@ class RandoriScoringController extends Controller
             $displayName = $matchNumber->name;
         }
 
-        $firstDrawing = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->first();
+        $firstDrawingQuery = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds);
+        if ($courtId) {
+            $firstDrawingQuery->where('court_id', $courtId);
+        }
+        if ($sessionTimeId) {
+            $firstDrawingQuery->where('session_time_id', $sessionTimeId);
+        }
+        if ($rundownId) {
+            $firstDrawingQuery->where('rundown_id', $rundownId);
+        }
+        $firstDrawing = $firstDrawingQuery->first() ?? DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)->first();
         $officials = $firstDrawing?->metadata['officials'] ?? null;
 
         $assignedArbitrase = null;
@@ -1020,12 +1036,11 @@ class RandoriScoringController extends Controller
 
             // Save rank 3 for Juara 3, rank 4 for Juara 3 Bersama
             $savedRank = (int) $rank;
-            if ((float) $rank >= 3.0 && (float) $rank < 5.0) {
-                if ($rank == 3) {
-                    $savedRank = ($participantCount === 3) ? 4 : 3;
-                } else {
-                    $savedRank = 4;
-                }
+            if ((float) $rank == 3.1 || (float) $rank == 4.0) {
+                $savedRank = 4;
+            }
+            if ($participantCount === 3 && ((float) $rank == 3.0 || (float) $rank == 3.1 || (float) $rank == 4.0)) {
+                $savedRank = 4;
             }
 
             TournamentResult::updateOrCreate(

@@ -418,22 +418,19 @@ class AdminArbitraseScoringIndex extends Component
         ])->whereNotNull('match_number_id')
             ->select(
                 'match_number_id',
-                'court_id',
-                'pool_id',
-                'session_time_id',
-                'rundown_id',
                 'round',
                 'draft_type'
             )
+            ->selectRaw('MIN(court_id) as court_id')
+            ->selectRaw('CASE WHEN draft_type = \'randori\' THEN NULL ELSE MIN(pool_id) END as pool_id')
+            ->selectRaw('MIN(session_time_id) as session_time_id')
+            ->selectRaw('MIN(rundown_id) as rundown_id')
             ->selectRaw('MIN(id) as id, COUNT(registration_id) as total_athletes, MIN(sequence_number) as sequence_number')
             ->groupBy(
                 'match_number_id',
-                'court_id',
-                'pool_id',
-                'session_time_id',
-                'rundown_id',
                 'round',
-                'draft_type'
+                'draft_type',
+                DB::raw('CASE WHEN draft_type = \'randori\' THEN NULL ELSE pool_id END')
             );
 
         // ── Filters ────────────────────────────────────────────────────────────
@@ -485,7 +482,10 @@ class AdminArbitraseScoringIndex extends Component
             });
         }
 
-        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderByRaw('MIN(sequence_number)');
+        $query->orderBy('rundown_id')
+            ->orderBy('session_time_id')
+            ->orderByRaw('MIN(sequence_number)')
+            ->orderByRaw('MIN(id)');
 
         $routePrefix = request()->is('*panitera*') ? 'admin.panitera.scoring' : 'admin.arbitrase.scoring';
 

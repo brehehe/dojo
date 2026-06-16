@@ -223,6 +223,8 @@
             <div x-show="open" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 class="collapsible-content">
+                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-seluruh-juara') ? 'active' : '' }}"
+                    href="{{ route('admin.arbitrase.new-laporan-seluruh-juara') }}"><i class="fa-solid fa-trophy"></i> Rekap Seluruh Juara</a>
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-hasil') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-laporan-hasil') }}"><i class="fa-solid fa-medal"></i> Hasil
                     Juara</a>

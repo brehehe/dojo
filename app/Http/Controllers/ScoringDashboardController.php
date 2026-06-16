@@ -43,6 +43,9 @@ class ScoringDashboardController extends Controller
             'matchId' => $matchNumber->id,
             'urlRound' => $request->query('round'),
             'urlPoolId' => $request->query('pool_id') ? (int) $request->query('pool_id') : null,
+            'urlCourtId' => $request->query('court_id') ? (int) $request->query('court_id') : null,
+            'urlSessionTimeId' => $request->query('session_time_id') ? (int) $request->query('session_time_id') : null,
+            'urlRundownId' => $request->query('rundown_id') ? (int) $request->query('rundown_id') : null,
             'urlFrom' => $request->query('from'),
         ]);
     }
@@ -53,6 +56,9 @@ class ScoringDashboardController extends Controller
             'matchId' => $matchNumber->id,
             'urlRound' => $request->query('round'),
             'urlPoolId' => $request->query('pool_id') ? (int) $request->query('pool_id') : null,
+            'urlCourtId' => $request->query('court_id') ? (int) $request->query('court_id') : null,
+            'urlSessionTimeId' => $request->query('session_time_id') ? (int) $request->query('session_time_id') : null,
+            'urlRundownId' => $request->query('rundown_id') ? (int) $request->query('rundown_id') : null,
             'urlFrom' => $request->query('from'),
         ]);
     }
@@ -85,9 +91,7 @@ class ScoringDashboardController extends Controller
             'activeDrawing.registration.contingent',
         ])->orderBy('order');
 
-        if (auth()->user()->court_id) {
-            $query->where('id', auth()->user()->court_id);
-        }
+        // Show all courts regardless of user assigned court
 
         $courts = $query->get();
 
@@ -132,11 +136,11 @@ class ScoringDashboardController extends Controller
             ->leftJoin('match_number_merges', 'match_number_merge_details.match_number_merge_id', '=', 'match_number_merges.id')
             ->select(
                 'drawing_match_numbers.court_id',
-                'drawing_match_numbers.pool_id',
-                'drawing_match_numbers.session_time_id',
-                'drawing_match_numbers.rundown_id',
                 'drawing_match_numbers.draft_type'
             )
+            ->selectRaw('CASE WHEN drawing_match_numbers.draft_type = \'randori\' THEN NULL ELSE MIN(drawing_match_numbers.pool_id) END as pool_id')
+            ->selectRaw('MIN(drawing_match_numbers.session_time_id) as session_time_id')
+            ->selectRaw('MIN(drawing_match_numbers.rundown_id) as rundown_id')
             ->selectRaw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END as round")
             ->selectRaw('COALESCE(MAX(match_number_merges.name), \'\') as merge_name')
             ->selectRaw(DB::connection()->getDriverName() === 'sqlite'
@@ -148,12 +152,10 @@ class ScoringDashboardController extends Controller
             ->selectRaw('MIN(drawing_match_numbers.sequence_number) as sequence_number')
             ->groupBy(
                 'drawing_match_numbers.court_id',
-                'drawing_match_numbers.pool_id',
-                'drawing_match_numbers.session_time_id',
-                'drawing_match_numbers.rundown_id',
                 DB::raw("CASE WHEN drawing_match_numbers.draft_type = 'randori' THEN 'Full Bracket' ELSE drawing_match_numbers.round END"),
                 'drawing_match_numbers.draft_type',
-                DB::raw('COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)')
+                DB::raw('COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)'),
+                DB::raw('CASE WHEN drawing_match_numbers.draft_type = \'randori\' THEN NULL ELSE drawing_match_numbers.pool_id END')
             )
             ->with([
                 'matchNumber.ageGroup',
@@ -196,9 +198,7 @@ class ScoringDashboardController extends Controller
             });
         }
 
-        if (auth()->user()->court_id) {
-            $drawingsQuery->where('court_id', auth()->user()->court_id);
-        }
+        // Show all drawings/schedules regardless of user assigned court
 
         if (! empty($filterContingent)) {
             $drawingsQuery->whereHas('registration.contingent', function ($q) use ($filterContingent) {
@@ -213,7 +213,10 @@ class ScoringDashboardController extends Controller
             });
         }
 
-        $drawingsQuery->orderBy('rundown_id')->orderBy('session_time_id')->orderByRaw('MIN(sequence_number)');
+        $drawingsQuery->orderBy('rundown_id')
+            ->orderBy('session_time_id')
+            ->orderByRaw('MIN(drawing_match_numbers.sequence_number)')
+            ->orderByRaw('MIN(drawing_match_numbers.id)');
 
         $drawings = $drawingsQuery->paginate(10);
 
@@ -432,9 +435,7 @@ class ScoringDashboardController extends Controller
                 $q->where('id', $filterContingent);
             });
         }
-        if (auth()->user()->court_id) {
-            $query->where('drawing_match_numbers.court_id', auth()->user()->court_id);
-        }
+        // Show all drawings/schedules regardless of user assigned court
         if (! empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('matchNumber', fn ($mq) => $mq->where('name', 'ilike', '%'.$search.'%'))
@@ -481,9 +482,7 @@ class ScoringDashboardController extends Controller
             'activeDrawing.registration.contingent',
         ])->orderBy('order');
 
-        if (auth()->user()->court_id) {
-            $courtQuery->where('id', auth()->user()->court_id);
-        }
+        // Show all courts regardless of user assigned court
 
         $courts = $courtQuery->get();
 

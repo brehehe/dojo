@@ -101,8 +101,8 @@ class NewScoringRandoriIndex extends Component
 
             // Migrate legacy single-elimination to double_elimination if needed
             $isSingleElimination = ($drawingData['bracket_type'] ?? null) === 'single_elimination' ||
-                                   ($drawingData['type'] ?? null) === 'single_elimination' ||
-                                   (isset($drawingData['upper_bracket']) && (empty($drawingData['lower_bracket']['rounds']) || ! isset($drawingData['lower_bracket']['rounds'])));
+                ($drawingData['type'] ?? null) === 'single_elimination' ||
+                (isset($drawingData['upper_bracket']) && (empty($drawingData['lower_bracket']['rounds']) || ! isset($drawingData['lower_bracket']['rounds'])));
 
             if ($isSingleElimination) {
                 if (($drawingData['bracket_type'] ?? null) === 'double_elimination') {
@@ -1062,13 +1062,49 @@ class NewScoringRandoriIndex extends Component
         // Delete old results for this match to avoid unique constraint violations on (match_id, rank)
         TournamentResult::whereIn('match_number_id', $this->matchNumberIds)->delete();
 
+        // Collect all real athletes in the bracket to determine total participants
+        $allAthletes = [];
+        $bracketSources = [
+            $data['upper_bracket']['rounds'] ?? [],
+            $data['lower_bracket']['rounds'] ?? [],
+        ];
+        foreach ($bracketSources as $rounds) {
+            foreach ($rounds as $round) {
+                foreach ($round as $m) {
+                    foreach (['athlete1', 'athlete2'] as $slot) {
+                        $a = $m[$slot] ?? null;
+                        if ($a && isset($a['id']) && $a['id'] !== 'BYE') {
+                            $allAthletes[(string) $a['id']] = $a;
+                        }
+                    }
+                }
+            }
+        }
+        if (isset($data['grand_final'])) {
+            foreach (['athlete1', 'athlete2'] as $slot) {
+                $a = $data['grand_final'][$slot] ?? null;
+                if ($a && isset($a['id']) && $a['id'] !== 'BYE') {
+                    $allAthletes[(string) $a['id']] = $a;
+                }
+            }
+        }
+        $participantCount = count($allAthletes);
+
         foreach ($juara as $rank => $athlete) {
-            if ($rank > 4) {
+            if ((float) $rank >= 5.0) {
                 continue; // Support Juara 3 Bersama (up to rank 4) for Randori
             }
 
             if (! $athlete || ! isset($athlete['id']) || $athlete['id'] === 'BYE') {
                 continue;
+            }
+
+            $savedRank = (int) $rank;
+            if ((float) $rank == 3.1 || (float) $rank == 4.0) {
+                $savedRank = 4;
+            }
+            if ($participantCount === 3 && ((float) $rank == 3.0 || (float) $rank == 3.1 || (float) $rank == 4.0)) {
+                $savedRank = 4;
             }
 
             TournamentResult::updateOrCreate(
@@ -1078,7 +1114,7 @@ class NewScoringRandoriIndex extends Component
                 ],
                 [
                     'draft_type' => $this->matchNumber->draft_type,
-                    'rank' => (int) $rank,
+                    'rank' => $savedRank,
                     'athlete_names' => $athlete['name'] ?? '',
                     'contingent_name' => $athlete['contingent'] ?? '',
                     'category_id' => $this->matchNumber->age_group_id,

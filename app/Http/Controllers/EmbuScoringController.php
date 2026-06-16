@@ -75,15 +75,28 @@ class EmbuScoringController extends Controller
             }
         }
 
+        $urlCourtId = $request->query('court_id');
+        $urlSessionTimeId = $request->query('session_time_id');
+        $urlRundownId = $request->query('rundown_id');
+
         $firstDrawingQuery = DB::table('drawing_match_numbers')
             ->whereIn('match_number_id', $matchNumberIds)
-            ->where('round', $currentRound)
-            ->orderBy('sequence_number')
-            ->orderBy('id');
+            ->where('round', $currentRound);
+
+        if ($urlCourtId) {
+            $firstDrawingQuery->where('court_id', $urlCourtId);
+        }
+        if ($urlSessionTimeId) {
+            $firstDrawingQuery->where('session_time_id', $urlSessionTimeId);
+        }
+        if ($urlRundownId) {
+            $firstDrawingQuery->where('rundown_id', $urlRundownId);
+        }
         if ($currentRound === 'Penyisihan' && $selectedPoolId) {
             $firstDrawingQuery->where('pool_id', $selectedPoolId);
         }
-        $courtId = $firstDrawingQuery->value('court_id');
+
+        $courtId = $firstDrawingQuery->orderBy('sequence_number')->orderBy('id')->value('court_id');
         if (! $courtId) {
             $courtId = DB::table('drawing_match_numbers')
                 ->whereIn('match_number_id', $matchNumberIds)
@@ -300,13 +313,28 @@ class EmbuScoringController extends Controller
 
         $firstDrawingQuery = DrawingMatchNumber::with(['court', 'pool', 'sessionTime'])
             ->whereIn('match_number_id', $matchNumberIds)
-            ->where('round', $currentRound)
-            ->orderBy('sequence_number')
-            ->orderBy('id');
-        if ($currentRound === 'Penyisihan' && $selectedPoolId) {
-            $firstDrawingQuery = $firstDrawingQuery->where('pool_id', $selectedPoolId);
+            ->where('round', $currentRound);
+
+        if ($urlCourtId) {
+            $firstDrawingQuery->where('court_id', $urlCourtId);
         }
-        $firstDrawing = $firstDrawingQuery->first();
+        if ($urlSessionTimeId) {
+            $firstDrawingQuery->where('session_time_id', $urlSessionTimeId);
+        }
+        if ($urlRundownId) {
+            $firstDrawingQuery->where('rundown_id', $urlRundownId);
+        }
+        if ($currentRound === 'Penyisihan' && $selectedPoolId) {
+            $firstDrawingQuery->where('pool_id', $selectedPoolId);
+        }
+
+        $firstDrawing = $firstDrawingQuery->orderBy('sequence_number')->orderBy('id')->first()
+            ?? DrawingMatchNumber::with(['court', 'pool', 'sessionTime'])
+                ->whereIn('match_number_id', $matchNumberIds)
+                ->where('round', $currentRound)
+                ->orderBy('sequence_number')
+                ->orderBy('id')
+                ->first();
 
         $availablePools = collect();
         if ($currentRound === 'Penyisihan') {

@@ -70,6 +70,7 @@ use App\Livewire\Admin\NewLaporanRekapitulasiEmbu;
 use App\Livewire\Admin\NewLaporanRekapitulasiRandori;
 use App\Livewire\Admin\NewLaporanRekapPenilaianDetail;
 use App\Livewire\Admin\NewLaporanRekapPenilaianIndex;
+use App\Livewire\Admin\NewLaporanSeluruhJuaraIndex;
 use App\Livewire\Admin\NewLaporanSkorIndex;
 use App\Livewire\Admin\NewLaporanWasitIndex;
 use App\Livewire\Admin\NewLaporanWasitJuriIndex;
@@ -351,6 +352,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/rekapitulasi-embu', AdminLaporanRekapitulasiEmbu::class)->name('rekapitulasi-embu');
 
             // New Premium Laporan Views
+            Route::get('/new-laporan-seluruh-juara', NewLaporanSeluruhJuaraIndex::class)->name('new-laporan-seluruh-juara');
             Route::get('/new-laporan-hasil', NewLaporanHasilIndex::class)->name('new-laporan-hasil');
             Route::get('/new-laporan-skor', NewLaporanSkorIndex::class)->name('new-laporan-skor');
             Route::get('/new-rekapitulasi-randori', NewLaporanRekapitulasiRandori::class)->name('new-rekapitulasi-randori');
