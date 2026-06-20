@@ -124,6 +124,29 @@
             .match-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.08); }
             .match-card.saved { border-color: #27ae60; }
 
+            .match-card.card-green {
+                background-color: #f0fdf4 !important;
+                border-color: #dcfce7;
+            }
+            .match-card.card-yellow {
+                background-color: #fffdeb !important;
+                border-color: #fef9c3;
+            }
+            .match-card.card-green .rank-row:hover {
+                background-color: #dcfce7 !important;
+            }
+            .match-card.card-yellow .rank-row:hover {
+                background-color: #fef9c3 !important;
+            }
+            .match-card.card-green .saved-footer {
+                background: rgba(39, 174, 96, 0.08) !important;
+            }
+            .match-card.card-yellow .saved-footer {
+                background: rgba(243, 156, 18, 0.08) !important;
+                color: #d35400 !important;
+                border-top: 1px solid rgba(243, 156, 18, 0.15) !important;
+            }
+
             .match-card-head {
                 background: var(--ink, #2c3e50);
                 padding: 14px 18px;
@@ -349,7 +372,7 @@
                     $isEmbu = strtolower($match->draft_type) === 'embu';
                 @endphp
 
-                <div class="match-card {{ $isSaved ? 'saved' : '' }}">
+                <div class="match-card {{ $isSaved ? 'saved' : '' }} card-{{ $match->color ?? 'green' }}">
                     {{-- Card Head --}}
                     <div class="match-card-head">
                         <div style="flex:1; min-width:0;">
@@ -385,7 +408,7 @@
                     @if($hasResult)
                         @php
                             $isRandori = strtolower($match->draft_type) === 'randori';
-                            $athleteCount = $match->athletes->count();
+                            $athleteCount = $match->participant_count ?? $match->athletes->count();
                             $ranksToDisplay = [1=>'🥇', 2=>'🥈', 3=>'🥉', 4=>'🥉'];
                             if ($isRandori && $athleteCount === 3) {
                                 $ranksToDisplay = [1=>'🥇', 2=>'🥈', 3=>'🥉'];

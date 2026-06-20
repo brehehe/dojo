@@ -52,7 +52,7 @@
         {{-- ====== INFO BAR ====== --}}
         @php
             $drawing = $firstDrawing;
-            $sessionDate = $drawing?->sessionTime?->date ?? now();
+            $sessionDate = $drawing?->schedule_date ?? $drawing?->rundown?->date ?? $drawing?->sessionTime?->date ?? now();
             $courtOrder = $drawing?->court?->order ?? '-';
             $poolName = $drawing?->pool?->name ?? $drawing?->metadata['pool'] ?? '-';
             $round = $drawing?->round ?? '-';
@@ -491,7 +491,7 @@
 
                         <div class="flex items-center gap-1.5 flex-shrink-0">
                             @if($isActive)
-                                <button wire:click="callParticipant({{ $item['id'] }})"
+                                <button wire:click="callParticipant({{ $item['drawing_id'] }})"
                                     class="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="Panggil Ulang">
                                     <i class="fas fa-redo text-sm"></i>
                                 </button>

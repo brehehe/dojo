@@ -70,7 +70,19 @@ class NewLaporanHasilIndex extends AdminLaporanHasilIndex
 
         // Map rank 4 to rank 3 if there are exactly 3 participants for Randori
         if (strtolower($matchNumber->draft_type) === 'randori') {
-            $participantCount = $matchNumber->athletes()->count();
+            $participantCount = DB::table('athlete_match_number')
+                ->whereIn('match_number_id', $matchIds)
+                ->whereNotNull('registration_id')
+                ->distinct('registration_id')
+                ->count('registration_id');
+
+            if ($participantCount === 0) {
+                $participantCount = DB::table('athlete_match_number')
+                    ->whereIn('match_number_id', $matchIds)
+                    ->distinct('athlete_id')
+                    ->count('athlete_id');
+            }
+
             if ($participantCount === 3) {
                 if (isset($juara[4]) && ! isset($juara[3])) {
                     $juara[3] = $juara[4];
@@ -503,6 +515,73 @@ class NewLaporanHasilIndex extends AdminLaporanHasilIndex
     {
         $parentView = parent::render();
         $data = $parentView->getData();
+
+        $matchNumbers = $data['matchNumbers'];
+
+        // Pre-fetch registrations to avoid N+1 queries
+        $allMatchIds = [];
+        foreach ($matchNumbers as $mn) {
+            if ($mn->match_number_merge_id) {
+                $mIds = DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mn->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+                $allMatchIds = array_merge($allMatchIds, $mIds);
+            } else {
+                $allMatchIds[] = $mn->id;
+            }
+        }
+        $allMatchIds = array_unique($allMatchIds);
+
+        $athletesData = DB::table('athlete_match_number')
+            ->whereIn('match_number_id', $allMatchIds)
+            ->get();
+
+        $registrationIds = $athletesData->pluck('registration_id')->filter()->unique()->toArray();
+        $registrations = DB::table('registrations')
+            ->whereIn('id', $registrationIds)
+            ->pluck('contingent_id', 'id')
+            ->toArray();
+
+        $matchNumbers->getCollection()->transform(function ($mn) use ($athletesData, $registrations) {
+            if ($mn->match_number_merge_id) {
+                $matchIds = DB::table('match_number_merge_details')
+                    ->where('match_number_merge_id', $mn->match_number_merge_id)
+                    ->pluck('match_number_id')
+                    ->toArray();
+            } else {
+                $matchIds = [$mn->id];
+            }
+
+            $mAthletes = $athletesData->whereIn('match_number_id', $matchIds);
+            $regIds = $mAthletes->pluck('registration_id')->filter()->unique()->toArray();
+            $participantCount = count($regIds);
+
+            $contingentCounts = [];
+            foreach ($regIds as $regId) {
+                if (isset($registrations[$regId])) {
+                    $cId = $registrations[$regId];
+                    $contingentCounts[$cId] = ($contingentCounts[$cId] ?? 0) + 1;
+                }
+            }
+
+            $hasAnyDuplicate = false;
+            foreach ($contingentCounts as $cId => $count) {
+                if ($count >= 2) {
+                    $hasAnyDuplicate = true;
+                    break;
+                }
+            }
+
+            $color = 'green';
+            if ($participantCount === 3 || $hasAnyDuplicate) {
+                $color = 'yellow';
+            }
+            $mn->color = $color;
+            $mn->participant_count = $participantCount;
+
+            return $mn;
+        });
 
         return view('livewire.admin.new-laporan-hasil-index', $data);
     }

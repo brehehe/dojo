@@ -593,7 +593,7 @@
 
         @php
             $drawing = $firstDrawing;
-            $sessionDate = $drawing?->sessionTime?->date ?? now();
+            $sessionDate = $drawing?->schedule_date ?? $drawing?->rundown?->date ?? $drawing?->sessionTime?->date ?? now();
             $courtOrder = $drawing?->court?->order ?? '-';
             $poolName = $drawing?->pool?->name ?? ($drawing?->metadata['pool'] ?? '-');
         @endphp
