@@ -84,8 +84,10 @@ class AdminLaporanSkorIndex extends Component
 
         // Fetch all drawings for these match numbers (both Penyisihan and Final)
         $drawings = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
-            ->with(['registration.contingent'])
+            ->with(['registration.contingent', 'pool'])
             ->get();
+
+        $hasFinalDrawingsExist = $drawings->contains(fn ($d) => $d->round === 'Final');
 
         // Group drawings by a unique key: registration_id + sorted athlete_ids
         $teams = [];
@@ -145,8 +147,17 @@ class AdminLaporanSkorIndex extends Component
             // Find scores for Penyisihan and Final
             $pScoreVal = 0;
             $fScoreVal = 0;
+            $hasFinalDrawing = false;
+            $poolName = '-';
 
             foreach ($team['drawings'] as $drawing) {
+                if ($drawing->round === 'Penyisihan' && $drawing->pool) {
+                    $poolName = $drawing->pool->name;
+                }
+                if ($drawing->round === 'Final') {
+                    $hasFinalDrawing = true;
+                }
+
                 $score = $scores->first(fn ($s) => $s->drawing_id == $drawing->id);
                 if (! $score) {
                     // Fallback to registration and round matching if drawing_id is null
@@ -174,6 +185,8 @@ class AdminLaporanSkorIndex extends Component
                     'penyisihan_score' => $pScoreVal,
                     'final_score' => $fScoreVal,
                     'accumulated_score' => $pScoreVal + $fScoreVal,
+                    'pool_name' => $poolName,
+                    'qualified_final' => $hasFinalDrawing || ! $hasFinalDrawingsExist,
                 ]);
             }
         }

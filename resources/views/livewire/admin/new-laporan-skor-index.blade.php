@@ -35,6 +35,20 @@
             .vs-divider { text-align: center; font-style: italic; color: var(--paper2); font-weight: 800; font-size: 13px; }
             .athlete-winner { color: #27ae60 !important; }
             .athlete-loser { color: var(--smoke) !important; }
+
+            .eliminated-row td {
+                background-color: #f8fafc !important;
+                color: #94a3b8 !important;
+                opacity: 0.75;
+            }
+            .eliminated-row td div,
+            .eliminated-row td span {
+                color: #94a3b8 !important;
+            }
+            .eliminated-row .score-pill {
+                background: rgba(148, 163, 184, 0.1) !important;
+                color: #94a3b8 !important;
+            }
         </style>
     @endpush
 
@@ -100,39 +114,93 @@
 
                 <div style="overflow-x: auto;">
                     @if($isEmbu)
-                        <table class="draw-table">
-                            <thead>
-                                <tr>
-                                    <th>Peserta / Kontingen</th>
-                                    <th class="center">Penyisihan</th>
-                                    <th class="center">Final</th>
-                                    <th class="center">Akumulasi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($mn->all_scores as $score)
+                        @php
+                            $groupedScores = $mn->all_scores->groupBy('pool_name');
+                            $hasPools = $groupedScores->keys()->filter(fn($k) => $k && $k !== '-')->isNotEmpty();
+                        @endphp
+
+                        @if($hasPools)
+                            @foreach($groupedScores as $poolName => $scores)
+                                <div style="margin-bottom: 20px;">
+                                    <div style="background: #f1f5f9; padding: 10px 20px; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-layer-group" style="color: #64748b;"></i> Pool: {{ $poolName ?: 'Utama' }}
+                                    </div>
+                                    <table class="draw-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Peserta / Kontingen</th>
+                                                <th class="center">Penyisihan</th>
+                                                <th class="center">Final</th>
+                                                <th class="center">Akumulasi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($scores as $score)
+                                                <tr class="{{ !$score->qualified_final ? 'eliminated-row' : '' }}">
+                                                    <td>
+                                                        <div style="font-size:13px; font-weight:800; color:var(--ink); text-transform:uppercase;">
+                                                            {{ $score->athlete_names }}
+                                                            @if(!$score->qualified_final)
+                                                                <span style="font-size: 9px; background: #e2e8f0; color: #64748b; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 6px; text-transform: uppercase;">Tidak Lolos Final</span>
+                                                            @endif
+                                                        </div>
+                                                        <div style="font-size:10px; font-weight:700; color:var(--smoke); text-transform:uppercase; margin-top:2px;">{{ $score->contingent_name }}</div>
+                                                    </td>
+                                                    <td style="text-align:center; font-weight:700; color:var(--ink);">
+                                                        {{ $score->penyisihan_score > 0 ? number_format($score->penyisihan_score, 2) : '-' }}
+                                                    </td>
+                                                    <td style="text-align:center; font-weight:700; color:var(--ink);">
+                                                        {{ $score->final_score > 0 ? number_format($score->final_score, 2) : '-' }}
+                                                    </td>
+                                                    <td style="text-align:center;">
+                                                        <span class="score-pill">{{ number_format($score->accumulated_score, 2) }}</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endforeach
+                        @else
+                            <table class="draw-table">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <div style="font-size:13px; font-weight:800; color:var(--ink); text-transform:uppercase;">{{ $score->athlete_names }}</div>
-                                            <div style="font-size:10px; font-weight:700; color:var(--smoke); text-transform:uppercase; margin-top:2px;">{{ $score->contingent_name }}</div>
-                                        </td>
-                                        <td style="text-align:center; font-weight:700; color:var(--ink);">
-                                            {{ $score->penyisihan_score > 0 ? number_format($score->penyisihan_score, 2) : '-' }}
-                                        </td>
-                                        <td style="text-align:center; font-weight:700; color:var(--ink);">
-                                            {{ $score->final_score > 0 ? number_format($score->final_score, 2) : '-' }}
-                                        </td>
-                                        <td style="text-align:center;">
-                                            <span class="score-pill">{{ number_format($score->accumulated_score, 2) }}</span>
-                                        </td>
+                                        <th>Peserta / Kontingen</th>
+                                        <th class="center">Penyisihan</th>
+                                        <th class="center">Final</th>
+                                        <th class="center">Akumulasi</th>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" style="padding:30px; text-align:center; color:var(--smoke); font-style:italic; font-size:12px;">Belum ada data penilaian untuk nomor ini.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @forelse($mn->all_scores as $score)
+                                        <tr class="{{ !$score->qualified_final ? 'eliminated-row' : '' }}">
+                                            <td>
+                                                <div style="font-size:13px; font-weight:800; color:var(--ink); text-transform:uppercase;">
+                                                    {{ $score->athlete_names }}
+                                                    @if(!$score->qualified_final)
+                                                        <span style="font-size: 9px; background: #e2e8f0; color: #64748b; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 6px; text-transform: uppercase;">Tidak Lolos Final</span>
+                                                    @endif
+                                                </div>
+                                                <div style="font-size:10px; font-weight:700; color:var(--smoke); text-transform:uppercase; margin-top:2px;">{{ $score->contingent_name }}</div>
+                                            </td>
+                                            <td style="text-align:center; font-weight:700; color:var(--ink);">
+                                                {{ $score->penyisihan_score > 0 ? number_format($score->penyisihan_score, 2) : '-' }}
+                                            </td>
+                                            <td style="text-align:center; font-weight:700; color:var(--ink);">
+                                                {{ $score->final_score > 0 ? number_format($score->final_score, 2) : '-' }}
+                                            </td>
+                                            <td style="text-align:center;">
+                                                <span class="score-pill">{{ number_format($score->accumulated_score, 2) }}</span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" style="padding:30px; text-align:center; color:var(--smoke); font-style:italic; font-size:12px;">Belum ada data penilaian untuk nomor ini.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        @endif
                     @else
                         {{-- Randori --}}
                         <table class="draw-table">
