@@ -7,6 +7,7 @@ use App\Models\Athlete;
 use App\Models\Contingent;
 use App\Models\Court\Court;
 use App\Models\DrawingMatchNumber;
+use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Referee;
@@ -846,4 +847,160 @@ test('autoGenerateAll generates a panel meeting the city and role constraints', 
     // Verify role constraints
     expect($orderedAssignments[0]->referee->certification_level)->not->toBe('WASIT PEMBANTU');
     expect($orderedAssignments[1]->referee->certification_level)->not->toBe('WASIT PEMBANTU');
+});
+
+test('allows user to trigger export and downloads referee assignment excel file', function () {
+    $role = Role::findOrCreate('Admin', 'web');
+    $admin = User::factory()->create();
+    $admin->assignRole($role);
+
+    Livewire::actingAs($admin)
+        ->test(NewGenerateRefereeIndex::class)
+        ->call('export')
+        ->assertFileDownloaded('penugasan_wasit_'.now()->format('Ymd_His').'.xlsx');
+});
+
+test('autoGenerateAllReferees includes at least one female referee in each court panel when available', function () {
+    $roleArbitrase = Role::firstOrCreate(['name' => 'Arbitrase']);
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    // Create 1 Arbitrator
+    $uArb = User::factory()->create();
+    $uArb->assignRole($roleArbitrase);
+    Referee::create(['user_id' => $uArb->id, 'certification_level' => 'Nasional']);
+
+    // Create 5 male referees and 1 female referee
+    // Constraints: same city for at least 2 refs (e.g. Jakarta)
+    $ref1 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT UTAMA', 'city' => 'Jakarta', 'gender' => 'L']);
+    $ref2 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT', 'city' => 'Jakarta', 'gender' => 'L']);
+    $ref3 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT', 'city' => 'Surabaya', 'gender' => 'L']);
+    $ref4 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT', 'city' => 'Surabaya', 'gender' => 'L']);
+    $ref5 = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Bandung', 'gender' => 'L']);
+    $refFemale = Referee::create(['user_id' => User::factory()->create()->id, 'certification_level' => 'WASIT PEMBANTU', 'city' => 'Bandung', 'gender' => 'P']); // female
+
+    // Assign roles to referee users
+    $ref1->user->assignRole($rolePerwasitan);
+    $ref2->user->assignRole($rolePerwasitan);
+    $ref3->user->assignRole($rolePerwasitan);
+    $ref4->user->assignRole($rolePerwasitan);
+    $ref5->user->assignRole($rolePerwasitan);
+    $refFemale->user->assignRole($rolePerwasitan);
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create(['name' => 'Embu', 'gender' => 'Putra', 'draft_type' => 'embu', 'age_group_id' => $ageGroup->id]);
+    $contingent = Contingent::create(['name' => 'Sby', 'leader_name' => 'L', 'leader_phone' => '081', 'leader_nik' => '1234567890123456']);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $court = Court::create(['name' => 'Court 1', 'order' => 1]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    DrawingMatchNumber::create([
+        'match_number_id' => $matchNumber->id,
+        'registration_id' => $registration->id,
+        'draft_type' => 'embu',
+        'court_id' => $court->id,
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'sequence_number' => 1,
+        'round' => 'Penyisihan',
+    ]);
+
+    Livewire::test(NewGenerateRefereeIndex::class)
+        ->call('autoGenerateAllReferees');
+
+    $panelReferees = ScheduleReferee::where('court_id', $court->id)
+        ->where('judge_index', '>', 0)
+        ->get();
+
+    expect($panelReferees->count())->toBe(5);
+
+    $hasFemale = $panelReferees->contains(fn ($sr) => $sr->referee->gender === 'P');
+    expect($hasFemale)->toBeTrue();
+});
+
+test('referee scoring dashboard correctly saves scores with correct round_label and tiebreak_round', function () {
+    $rolePerwasitan = Role::firstOrCreate(['name' => 'Perwasitan']);
+
+    $user = User::factory()->create(['judge_index' => 1, 'court_id' => 1]);
+    $user->assignRole($rolePerwasitan);
+
+    $referee = Referee::create([
+        'user_id' => $user->id,
+        'name' => 'Ref Test',
+        'gender' => 'L',
+    ]);
+
+    $ageGroup = AgeGroup::create(['name' => 'Pemula', 'order' => 1]);
+    $matchNumber = MatchNumber::create([
+        'name' => 'Embu',
+        'gender' => 'Putra',
+        'draft_type' => 'embu',
+        'age_group_id' => $ageGroup->id,
+    ]);
+
+    $contingent = Contingent::create([
+        'name' => 'Sby',
+        'leader_name' => 'L',
+        'leader_phone' => '081',
+        'leader_nik' => '1234567890123456',
+    ]);
+    $registration = Registration::create(['contingent_id' => $contingent->id]);
+
+    $court = Court::create([
+        'id' => 1,
+        'name' => 'Court 1',
+        'order' => 1,
+    ]);
+    $rundown = Rundown::create(['name' => 'Hari 1', 'date' => now()->toDateString()]);
+    $session = SessionTime::create(['name' => 'Sesi 1', 'start_time' => '08:00', 'end_time' => '10:00']);
+
+    $drawing = DrawingMatchNumber::create([
+        'match_number_id' => $matchNumber->id,
+        'registration_id' => $registration->id,
+        'draft_type' => 'embu',
+        'court_id' => $court->id,
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'sequence_number' => 1,
+        'round' => 'Final',
+    ]);
+
+    $court->update([
+        'active_match_id' => $matchNumber->id,
+        'active_drawing_id' => $drawing->id,
+    ]);
+
+    // Create schedule referee
+    ScheduleReferee::create([
+        'court_id' => $court->id,
+        'rundown_id' => $rundown->id,
+        'session_time_id' => $session->id,
+        'referee_id' => $referee->id,
+        'judge_index' => 1,
+    ]);
+
+    $this->actingAs($user);
+
+    $component = Livewire::test(RefereeScoringDashboard::class);
+
+    // Call participant (simulate what Panitera does by setting active_registration_id)
+    $matchNumber->update(['active_registration_id' => $registration->id]);
+
+    // Triggers mount/reload
+    $component->call('loadActiveMatch');
+
+    // Fill scores
+    $component->set('embuItems.goho_1', 9.5);
+    $component->set('signature', 'data:image/png;base64,abc');
+    $component->call('submitScore');
+
+    $embuScore = EmbuScore::where('match_number_id', $matchNumber->id)
+        ->where('registration_id', $registration->id)
+        ->first();
+
+    expect($embuScore)->not->toBeNull();
+    expect($embuScore->round_label)->toBe('Final');
+    expect($embuScore->tiebreak_round)->toBe(0);
+    expect($embuScore->judge_1)->toBe(9.5);
 });

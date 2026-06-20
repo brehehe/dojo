@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class TournamentDummySeeder extends Seeder
 {
@@ -40,7 +41,7 @@ class TournamentDummySeeder extends Seeder
             $user = User::create([
                 'name' => 'Petugas '.$court->name,
                 'email' => 'court'.$i.'@gmail.com',
-                'password' => bcrypt('password'),
+                'password' => bcrypt(Str::random(12)),
                 'court_id' => $court->id,
                 'email_verified_at' => now(),
             ]);
@@ -87,7 +88,7 @@ class TournamentDummySeeder extends Seeder
                 ['email' => $email],
                 [
                     'name' => $cName,
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make(Str::random(12)),
                 ]
             );
 

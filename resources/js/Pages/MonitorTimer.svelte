@@ -1,5 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
 
     // Props passed from Inertia
     let { courtId } = $props();
@@ -14,13 +16,44 @@
     let playedIntervals = $state(new Set());
     let buzzerPool = [];
 
-    let pollInterval;
     let localTickInterval;
 
+    let isRandori = $derived(
+        !(court && court.active_match && (
+            court.active_match.draft_type === 'embu' ||
+            court.active_match.name.toLowerCase().includes('embu')
+        ))
+    );
+
+    let destroyed = false;
+    let syncInFlight = false;
+    let syncQueued = false;
+    let queuedTimeout = null;
+    let polling = null;
+    const pollDelay = 1000;
+
+    function scheduleQueuedSync() {
+        if (destroyed) return;
+        if (queuedTimeout) clearTimeout(queuedTimeout);
+        queuedTimeout = setTimeout(() => {
+            queuedTimeout = null;
+            if (!destroyed) sync();
+        }, pollDelay);
+    }
+
     async function sync() {
+        if (destroyed) return;
+        if (syncInFlight) {
+            syncQueued = true;
+            return;
+        }
+
+        syncInFlight = true;
         try {
-            let res = await fetch(`/api/svelte-monitor/timer/court/${courtId}/state`);
-            let data = await res.json();
+            let { data, notModified } = await conditionalJsonFetch(`/api/svelte-monitor/timer/court/${courtId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (!data) return;
 
             court = data.court;
@@ -50,6 +83,14 @@
             }
         } catch (e) {
             console.error('Error syncing timer state:', e);
+        } finally {
+            syncInFlight = false;
+            if (syncQueued && !destroyed) {
+                syncQueued = false;
+                scheduleQueuedSync();
+            } else if (destroyed) {
+                syncQueued = false;
+            }
         }
     }
 
@@ -62,12 +103,18 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(e => console.warn(e));
+            // audio.play().catch(() => {});
         } catch(e) {}
     }
 
     function formatTime() {
         let t = Math.max(0, time);
+        if (isRandori) {
+            let maxT = Math.max(0, 120000 - t);
+            let m = Math.floor(maxT / 60000);
+            let s = Math.floor((maxT % 60000) / 1000);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
         let m = Math.floor(t / 60000);
         let s = Math.floor((t % 60000) / 1000);
         let ms = Math.floor((t % 1000) / 10);
@@ -84,6 +131,7 @@
     }
 
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -93,35 +141,72 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn('Failed to preload buzzer audio:', e);
+            // Silent fail for audio preload
         }
 
         // Initial sync
         sync();
 
-        // Server sync every 300ms
-        pollInterval = setInterval(sync, 300);
+        if (window.Echo) {
+            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                if (e.timer_state) {
+                    offset = e.timer_state.server_time_ms - Date.now();
+                    stateObj = e.timer_state;
+
+                    let wasRunning = running;
+                    running = (e.timer_state.status === 'running');
+
+                    // Play buzzer when timer newly starts
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer();
+                        }
+                    }
+
+                    if (e.timer_state.status !== 'countdown') {
+                        countdown = 0;
+                    }
+                }
+
+                // If it is not a pure timer update, fetch the full layout details
+                if (e.event_type !== 'timer') {
+                    sync();
+                }
+            });
+        }
+
+        polling = createAdaptivePolling({
+            fetchNow: sync,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // High-speed local interpolation (30ms) for smooth layout
         localTickInterval = setInterval(() => {
-            let isRandori = court && court.active_match && (court.active_match.draft_type === 'randori' || court.active_match.name.toLowerCase().includes('randori'));
-
             if (running && stateObj.started_at_ms) {
                 let expected = (stateObj.elapsed_ms || 0) + (Date.now() + offset - stateObj.started_at_ms);
-                time = isRandori ? Math.min(expected, 120000) : expected;
+                time = expected;
 
-                let currentSecond = Math.floor(time / 1000);
+                let currentSecond = Math.floor(expected / 1000);
+                let isPemula = court && court.active_match && (court.active_match.age_group_id === 1 || (court.active_match.age_group && court.active_match.age_group.name.toLowerCase() === 'pemula'));
                 let isTandoku = court && court.active_match && (court.active_match.name.toLowerCase().includes('tandoku') || court.active_match.max_athletes == 1);
+                let isShortDuration = isPemula || isTandoku;
 
                 if (isRandori) {
-                    if (time >= 120000 && !playedIntervals.has(120)) {
+                    if (expected >= 120000 && !playedIntervals.has(120)) {
                         time = 120000;
                         running = false;
                         playedIntervals.add(120);
                         playBuzzer();
                     }
                 } else {
-                    if (isTandoku) {
+                    if (isShortDuration) {
                         if ((currentSecond === 60 && !playedIntervals.has(60)) ||
                             (currentSecond === 90 && !playedIntervals.has(90)) ||
                             (currentSecond === 120 && !playedIntervals.has(120))) {
@@ -144,18 +229,24 @@
                     countdown = 0;
                 }
                 let rawTime = stateObj.elapsed_ms || 0;
-                time = isRandori ? Math.min(rawTime, 120000) : rawTime;
+                time = rawTime;
             } else {
                 countdown = 0;
                 let rawTime = stateObj.elapsed_ms || 0;
-                time = isRandori ? Math.min(rawTime, 120000) : rawTime;
+                time = rawTime;
             }
         }, 30);
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        syncQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`court.${courtId}`);
+        }
+        polling?.stop();
         clearInterval(localTickInterval);
+        if (queuedTimeout) clearTimeout(queuedTimeout);
     });
 </script>
 

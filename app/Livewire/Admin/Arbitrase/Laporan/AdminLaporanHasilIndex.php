@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Arbitrase\Laporan;
 
+use App\Models\DrawingMatchNumber;
 use App\Models\EmbuChampion;
 use App\Models\EmbuScore;
 use App\Models\Group\AgeGroup;
@@ -82,8 +83,7 @@ class AdminLaporanHasilIndex extends Component
     {
         // First: use confirmed EmbuChampion records (already validated by admin)
         $confirmed = EmbuChampion::where('match_number_id', $matchNumber->id)
-            ->with(['registration' => fn ($q) => $q->with(['athletes', 'contingent'])])
-            ->whereIn('rank', [1, 2, 3, 4])
+            ->with(['registration' => fn ($q) => $q->with(['athletes', 'contingent']), 'drawing'])
             ->orderBy('rank')
             ->get();
 
@@ -91,13 +91,48 @@ class AdminLaporanHasilIndex extends Component
             // Load MatchNumber athletes with pivot (registration_id) to filter specific competing athletes
             $matchNumber->loadMissing('athletes');
 
+            // Pre-calculate team labels for all drawings in this match
+            $allDrawings = DrawingMatchNumber::where('match_number_id', $matchNumber->id)
+                ->where('round', 'Penyisihan')
+                ->get();
+            $drawingsByReg = $allDrawings->sortBy(fn ($d) => $d->sequence_number ?? $d->id)->groupBy('registration_id');
+            $teamLabels = [];
+            foreach ($drawingsByReg as $regId => $regDrawings) {
+                if ($regDrawings->count() > 1) {
+                    foreach ($regDrawings as $index => $d) {
+                        $dIds = $d->metadata['athlete_ids'] ?? [];
+                        sort($dIds);
+                        $key = $regId.'_'.implode(',', $dIds);
+                        $teamLabels[$key] = 'Tim '.($index + 1);
+                    }
+                }
+            }
+
             $juara = [];
             foreach ($confirmed as $champ) {
-                // Filter only the specific athletes who competed in this match under this registration
-                $competingAthletes = $matchNumber->athletes
-                    ->filter(fn ($a) => $a->pivot->registration_id == $champ->registration_id)
-                    ->pluck('name')
-                    ->join(' & ');
+                $teamLabel = null;
+                if ($champ->drawing) {
+                    $cIds = $champ->drawing->metadata['athlete_ids'] ?? [];
+                    sort($cIds);
+                    $key = $champ->registration_id.'_'.implode(',', $cIds);
+                    $teamLabel = $teamLabels[$key] ?? null;
+                }
+
+                $competingAthletes = null;
+                if ($champ->drawing && is_array($champ->drawing->metadata) && ! empty($champ->drawing->metadata['athlete_name'])) {
+                    $competingAthletes = $champ->drawing->metadata['athlete_name'];
+                }
+
+                if (empty($competingAthletes)) {
+                    $competingAthletes = $matchNumber->athletes
+                        ->filter(fn ($a) => $a->pivot->registration_id == $champ->registration_id)
+                        ->pluck('name')
+                        ->join(' & ');
+                }
+
+                if (! empty($teamLabel)) {
+                    $competingAthletes .= ' ('.$teamLabel.')';
+                }
 
                 $contingent = $champ->registration?->contingent?->name ?? '-';
 
@@ -119,13 +154,30 @@ class AdminLaporanHasilIndex extends Component
         $round = $hasFinal ? 'Final' : 'Penyisihan';
 
         $scores = $matchNumber->embuScores()
-            ->with(['registration.athletes', 'registration.contingent'])
+            ->with(['registration.athletes', 'registration.contingent', 'drawing'])
             ->where('round_label', $round)
             ->where('tiebreak_round', 0)
             ->get();
 
         if ($scores->isEmpty()) {
             return [];
+        }
+
+        // Pre-calculate team labels for all drawings in this match
+        $allDrawings = DrawingMatchNumber::where('match_number_id', $matchNumber->id)
+            ->where('round', 'Penyisihan')
+            ->get();
+        $drawingsByReg = $allDrawings->sortBy(fn ($d) => $d->sequence_number ?? $d->id)->groupBy('registration_id');
+        $teamLabels = [];
+        foreach ($drawingsByReg as $regId => $regDrawings) {
+            if ($regDrawings->count() > 1) {
+                foreach ($regDrawings as $index => $d) {
+                    $dIds = $d->metadata['athlete_ids'] ?? [];
+                    sort($dIds);
+                    $key = $regId.'_'.implode(',', $dIds);
+                    $teamLabels[$key] = 'Tim '.($index + 1);
+                }
+            }
         }
 
         if ($round === 'Final') {
@@ -162,14 +214,38 @@ class AdminLaporanHasilIndex extends Component
             }
 
             $reg = $score->registration;
-            $competingAthletes = $matchNumber->athletes
-                ->filter(fn ($a) => $a->pivot->registration_id == $score->registration_id)
-                ->pluck('name')
-                ->join(' & ');
+            $teamLabel = null;
+            if ($score->drawing) {
+                $cIds = $score->drawing->metadata['athlete_ids'] ?? [];
+                sort($cIds);
+                $key = $score->registration_id.'_'.implode(',', $cIds);
+                $teamLabel = $teamLabels[$key] ?? null;
+            }
+
+            // Try to resolve specific athlete names from the drawing metadata
+            $competingAthletes = null;
+            if ($score->drawing && is_array($score->drawing->metadata) && ! empty($score->drawing->metadata['athlete_name'])) {
+                $competingAthletes = $score->drawing->metadata['athlete_name'];
+            }
+
+            if (empty($competingAthletes)) {
+                $competingAthletes = $matchNumber->athletes
+                    ->filter(fn ($a) => $a->pivot->registration_id == $score->registration_id)
+                    ->pluck('name')
+                    ->join(' & ');
+            }
+
+            if (empty($competingAthletes)) {
+                $competingAthletes = $reg?->athletes->pluck('name')->join(' & ');
+            }
+
+            if (! empty($teamLabel)) {
+                $competingAthletes .= ' ('.$teamLabel.')';
+            }
 
             $juara[$rankNum] = [
                 'registration_id' => $score->registration_id,
-                'athlete_names' => $competingAthletes ?: ($reg?->athletes->pluck('name')->join(' & ') ?? '-'),
+                'athlete_names' => $competingAthletes ?: '-',
                 'contingent_name' => $reg?->contingent?->name ?? '-',
                 'penyisihan_score' => $score->penyisihan_val,
                 'final_score' => $score->final_val,
@@ -182,7 +258,7 @@ class AdminLaporanHasilIndex extends Component
 
     // ─── RANDORI JUARA FROM DRAWING DATA ─────────────────────────
 
-    private function computeRandoriJuara(MatchNumber $matchNumber): array
+    protected function computeRandoriJuara(MatchNumber $matchNumber): array
     {
         $data = $matchNumber->drawing_data ?? [];
         $juaraRaw = $data['juara'] ?? [];
@@ -226,21 +302,56 @@ class AdminLaporanHasilIndex extends Component
 
         // 1. Check for confirmed champions in these matches
         $confirmed = EmbuChampion::whereIn('match_number_id', $matchIds)
-            ->with(['registration.athletes', 'registration.contingent', 'matchNumber.athletes'])
-            ->whereIn('rank', [1, 2, 3, 4])
+            ->with(['registration.athletes', 'registration.contingent', 'matchNumber.athletes', 'drawing'])
             ->orderBy('rank')
             ->get();
 
         if ($confirmed->isNotEmpty()) {
+            $allDrawings = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
+                ->where('round', 'Penyisihan')
+                ->get();
+            $drawingsByReg = $allDrawings->sortBy(fn ($d) => $d->sequence_number ?? $d->id)->groupBy('registration_id');
+            $teamLabels = [];
+            foreach ($drawingsByReg as $regId => $regDrawings) {
+                if ($regDrawings->count() > 1) {
+                    foreach ($regDrawings as $index => $d) {
+                        $dIds = $d->metadata['athlete_ids'] ?? [];
+                        sort($dIds);
+                        $key = $regId.'_'.implode(',', $dIds);
+                        $teamLabels[$key] = 'Tim '.($index + 1);
+                    }
+                }
+            }
+
             $juara = [];
             foreach ($confirmed as $champ) {
-                // Try to get specific athletes for this match+reg
-                $athletes = $champ->matchNumber?->athletes?->filter(fn ($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
-                $athleteNames = $athletes->pluck('name')->join(' & ');
+                $teamLabel = null;
+                if ($champ->drawing) {
+                    $cIds = $champ->drawing->metadata['athlete_ids'] ?? [];
+                    sort($cIds);
+                    $key = $champ->registration_id.'_'.implode(',', $cIds);
+                    $teamLabel = $teamLabels[$key] ?? null;
+                }
+
+                // Try to get specific athletes from drawing first
+                $athleteNames = null;
+                if ($champ->drawing && is_array($champ->drawing->metadata) && ! empty($champ->drawing->metadata['athlete_name'])) {
+                    $athleteNames = $champ->drawing->metadata['athlete_name'];
+                }
+
+                if (empty($athleteNames)) {
+                    // Try to get specific athletes for this match+reg
+                    $athletes = $champ->matchNumber?->athletes?->filter(fn ($a) => $a->pivot->registration_id == $champ->registration_id)->unique('id') ?? collect();
+                    $athleteNames = $athletes->pluck('name')->join(' & ');
+                }
 
                 // Fallback to all registration athletes if not specific
                 if (empty($athleteNames)) {
                     $athleteNames = $champ->registration?->athletes?->unique('id')->pluck('name')->join(' & ') ?? '-';
+                }
+
+                if (! empty($teamLabel)) {
+                    $athleteNames .= ' ('.$teamLabel.')';
                 }
 
                 $juara[$champ->rank] = [
@@ -269,7 +380,7 @@ class AdminLaporanHasilIndex extends Component
         $hasFinal = EmbuScore::whereIn('match_number_id', $matchNumberIds)->where('round_label', 'Final')->exists();
         $round = $hasFinal ? 'Final' : 'Penyisihan';
 
-        $scores = EmbuScore::with(['registration.athletes', 'registration.contingent'])
+        $scores = EmbuScore::with(['registration.athletes', 'registration.contingent', 'drawing'])
             ->whereIn('match_number_id', $matchNumberIds)
             ->where('round_label', $round)
             ->where('tiebreak_round', 0)
@@ -277,6 +388,23 @@ class AdminLaporanHasilIndex extends Component
 
         if ($scores->isEmpty()) {
             return [];
+        }
+
+        // Pre-calculate team labels for all drawings in these matches
+        $allDrawings = DrawingMatchNumber::whereIn('match_number_id', $matchNumberIds)
+            ->where('round', 'Penyisihan')
+            ->get();
+        $drawingsByReg = $allDrawings->sortBy(fn ($d) => $d->sequence_number ?? $d->id)->groupBy('registration_id');
+        $teamLabels = [];
+        foreach ($drawingsByReg as $regId => $regDrawings) {
+            if ($regDrawings->count() > 1) {
+                foreach ($regDrawings as $index => $d) {
+                    $dIds = $d->metadata['athlete_ids'] ?? [];
+                    sort($dIds);
+                    $key = $regId.'_'.implode(',', $dIds);
+                    $teamLabels[$key] = 'Tim '.($index + 1);
+                }
+            }
         }
 
         if ($round === 'Final') {
@@ -323,14 +451,34 @@ class AdminLaporanHasilIndex extends Component
         $juara = [];
         foreach ($ranked as $idx => $score) {
             $rankNum = $idx + 1;
-            if ($rankNum > 4) {
-                break;
-            }
 
             $reg = $score->registration;
+            $teamLabel = null;
+            if ($score->drawing) {
+                $cIds = $score->drawing->metadata['athlete_ids'] ?? [];
+                sort($cIds);
+                $key = $score->registration_id.'_'.implode(',', $cIds);
+                $teamLabel = $teamLabels[$key] ?? null;
+            }
+
+            // Try to resolve specific athlete names from the drawing metadata
+            $athleteNames = null;
+            if ($score->drawing && is_array($score->drawing->metadata) && ! empty($score->drawing->metadata['athlete_name'])) {
+                $athleteNames = $score->drawing->metadata['athlete_name'];
+            }
+
+            // Fallback to all registration athletes
+            if (empty($athleteNames)) {
+                $athleteNames = $reg?->athletes->unique('id')->pluck('name')->join(' & ') ?? '-';
+            }
+
+            if (! empty($teamLabel)) {
+                $athleteNames .= ' ('.$teamLabel.')';
+            }
+
             $juara[$rankNum] = [
                 'registration_id' => $score->registration_id,
-                'athlete_names' => $reg?->athletes->unique('id')->pluck('name')->join(' & ') ?? '-',
+                'athlete_names' => $athleteNames,
                 'contingent_name' => $reg?->contingent?->name ?? '-',
                 'penyisihan_score' => $score->penyisihan_val,
                 'final_score' => $score->final_val,

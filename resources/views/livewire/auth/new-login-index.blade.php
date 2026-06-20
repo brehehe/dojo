@@ -125,9 +125,6 @@
             <input wire:model="remember" type="checkbox" class="w-3.5 h-3.5 rounded">
             <span class="label-text dark:text-smoke text-xs">Ingat saya</span>
           </label>
-          <a href="#" class="text-xs font-medium transition-colors hover:opacity-80" style="color:#d4a843;">
-            Lupa kata sandi?
-          </a>
         </div>
 
         <!-- gold divider -->

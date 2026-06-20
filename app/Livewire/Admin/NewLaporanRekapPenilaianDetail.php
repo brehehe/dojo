@@ -29,7 +29,7 @@ class NewLaporanRekapPenilaianDetail extends Component
 
     public string $displayName = '';
 
-    public string $printMode = 'rekap'; // 'rekap', 'juri', 'atlet' for Embu; 'rekap', 'per-match' for Randori
+    public string $printMode = 'rekap'; // 'rekap', 'juri', 'atlet', 'catatan', 'scorecard' for Embu; 'rekap', 'per-match' for Randori
 
     public string $selectedJuri = '1'; // '1', '2', '3', '4', '5', or 'all'
 
@@ -134,11 +134,36 @@ class NewLaporanRekapPenilaianDetail extends Component
                 // Penyisihan score for final round
                 $penyisihanScore = null;
                 if ($round === 'Final') {
-                    $penyisihanScore = EmbuScore::whereIn('match_number_id', $this->matchNumberIds)
+                    $finalAthleteIds = $drawing->metadata['athlete_ids'] ?? [];
+                    sort($finalAthleteIds);
+
+                    $penyisihanDrawing = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
                         ->where('registration_id', $regId)
-                        ->where('round_label', 'Penyisihan')
-                        ->orderByDesc('tiebreak_round')
-                        ->first();
+                        ->where('round', 'Penyisihan')
+                        ->get()
+                        ->first(function ($pDrawing) use ($finalAthleteIds) {
+                            $pAthleteIds = $pDrawing->metadata['athlete_ids'] ?? [];
+                            sort($pAthleteIds);
+
+                            return $pAthleteIds === $finalAthleteIds;
+                        });
+
+                    if ($penyisihanDrawing) {
+                        $penyisihanScore = EmbuScore::whereIn('match_number_id', $this->matchNumberIds)
+                            ->where('registration_id', $regId)
+                            ->where('round_label', 'Penyisihan')
+                            ->where('drawing_id', $penyisihanDrawing->id)
+                            ->orderByDesc('tiebreak_round')
+                            ->first();
+                    }
+
+                    if (! $penyisihanScore) {
+                        $penyisihanScore = EmbuScore::whereIn('match_number_id', $this->matchNumberIds)
+                            ->where('registration_id', $regId)
+                            ->where('round_label', 'Penyisihan')
+                            ->orderByDesc('tiebreak_round')
+                            ->first();
+                    }
                 }
 
                 return [
@@ -146,6 +171,7 @@ class NewLaporanRekapPenilaianDetail extends Component
                     'registration_id' => $regId,
                     'athletes' => $athletes->unique('id'),
                     'contingent' => $drawing->registration?->contingent,
+                    'pool_name' => $drawing->pool?->name,
                     'score' => $score,
                     'nilai_awal' => $nilaiAwal,
                     'nilai_akhir' => $nilaiAkhir,
@@ -241,7 +267,7 @@ class NewLaporanRekapPenilaianDetail extends Component
                 ->get();
         }
 
-        $sessionDate = $drawing?->sessionTime?->date ?? now();
+        $sessionDate = $drawing?->schedule_date ?? $drawing?->rundown?->date ?? $drawing?->sessionTime?->date ?? now();
         $courtOrder = $drawing?->court?->order ?? '-';
 
         return [

@@ -44,7 +44,7 @@ class RoleSeeder extends Seeder
                 ['email' => Str::slug($roleName).'@smart-perkemi.id'],
                 [
                     'name' => $roleName,
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make(Str::random(12)),
                 ]
             );
 
@@ -59,7 +59,7 @@ class RoleSeeder extends Seeder
                         ['email' => "panitera{$i}@smart-perkemi.id"],
                         [
                             'name' => "Panitera Dummy {$i}",
-                            'password' => Hash::make('password'),
+                            'password' => Hash::make(Str::random(12)),
                         ]
                     );
                     $panitera->assignRole($roleName);
@@ -72,7 +72,7 @@ class RoleSeeder extends Seeder
                         ['email' => "koordinator{$i}@smart-perkemi.id"],
                         [
                             'name' => "Koor Lapangan Dummy {$i}",
-                            'password' => Hash::make('password'),
+                            'password' => Hash::make(Str::random(12)),
                         ]
                     );
                     $koor->assignRole($roleName);
@@ -84,7 +84,7 @@ class RoleSeeder extends Seeder
         $user = User::where('email', 'admin@smart-perkemi.id')->first() ?: User::factory()->create([
             'name' => 'Admin Perkemi',
             'email' => 'admin@smart-perkemi.id',
-            'password' => Hash::make('password'),
+            'password' => Hash::make(Str::random(12)),
         ]);
 
         // Ensure user has super admin role (clear roles first)

@@ -1,7 +1,10 @@
 <script>
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount, onDestroy, untrack } from 'svelte';
     import { router } from '@inertiajs/svelte';
     import SignaturePad from '../Components/SignaturePad.svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
+    import { postJson } from '../lib/api';
 
     // Props
     let { matchId, urlRound = null, urlPoolId = null, urlFrom = null } = $props();
@@ -27,11 +30,13 @@
     let timerState = $state({
         status: 'stopped',
         elapsed_ms: 0,
-        started_at_ms: null
+        started_at_ms: null,
+        countdown_end_ms: null
     });
     let courtId = $state(null);
     let randoriResults = $state({});
     let activeBracketNode = $state(null);
+    let lastLoadedMatchKey = '';
 
     // Active Match scoring form
     let activeMatch = $state(null); // { bracket, round, match, data }
@@ -54,9 +59,7 @@
         yusei_kachi: 0
     });
 
-    // Signatures
-    let sigArbitraseName = $state('');
-    let sigArbitraseData = $state(null);
+    // Signatures (Arbitrase removed — only 5 TTD)
     let sigKoordinatorName = $state('');
     let sigKoordinatorData = $state(null);
     let sigWasitName = $state('');
@@ -73,6 +76,48 @@
     let buzzerPool = [];
     let actionInFlight = $state(false);
 
+    $effect(() => {
+        const currentMatch = activeMatch;
+        const currentResults = randoriResults;
+        
+        untrack(() => {
+            if (currentMatch) {
+                const nodeKey = `${currentMatch.bracket}_${currentMatch.round}_${currentMatch.match}`;
+                const matchIdKey = `${matchId}_${nodeKey}`;
+                
+                if (lastLoadedMatchKey !== matchIdKey) {
+                    lastLoadedMatchKey = matchIdKey;
+                    
+                    const result = currentResults[nodeKey];
+                    if (result) {
+                        const meta = (typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata) || {};
+                        scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                        scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
+                        
+                        const sigs = meta.signatures || {};
+                        sigKoordinatorName = sigs.koordinator?.name || '';
+                        sigKoordinatorData = sigs.koordinator?.signature || null;
+                        sigWasitName = sigs.wasit?.name || '';
+                        sigWasitData = sigs.wasit?.signature || null;
+                        sigPanitera = sigs.panitera || [{ name: '', signature: null }];
+                        sigManagerRedName = sigs.manager_red?.name || '';
+                        sigManagerRedData = sigs.manager_red?.signature || null;
+                        sigManagerWhiteName = sigs.manager_white?.name || '';
+                        sigManagerWhiteData = sigs.manager_white?.signature || null;
+                    } else {
+                        resetDetailedScoring();
+                    }
+                }
+            } else {
+                if (lastLoadedMatchKey !== '') {
+                    lastLoadedMatchKey = '';
+                    resetDetailedScoring();
+                }
+            }
+            recalculateScores();
+        });
+    });
+
     // Toast Notification State
     let toast = $state({ show: false, message: '', type: 'success' });
     let toastTimeout;
@@ -84,8 +129,34 @@
         }, 3000);
     }
 
-    // Polling interval
-    let pollInterval;
+    // Echo channels
+    let currentCourtChannelId = null;
+
+    function subscribeToCourt(newCourtId) {
+        if (!newCourtId || currentCourtChannelId === newCourtId) return;
+        if (currentCourtChannelId && window.Echo) {
+            window.Echo.leave(`court.${currentCourtChannelId}`);
+        }
+        currentCourtChannelId = newCourtId;
+        if (window.Echo) {
+            window.Echo.channel(`court.${newCourtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                if (e.timer_state) {
+                    let wasRunning = running;
+                    if (!syncTimerFromServer(e.timer_state)) return;
+                    if (running && !wasRunning && (!e.timer_state.elapsed_ms || e.timer_state.elapsed_ms < 1000)) {
+                        if (!playedIntervals.has('start')) {
+                            playedIntervals.add('start');
+                            playBuzzer('/music/eritnhut1992-buzzer-or-wrong-answer-20582.mp3');
+                        }
+                    }
+                } else {
+                    fetchState();
+                }
+            });
+        }
+    }
 
     // Timer local tick states
     let time = $state(0);
@@ -96,10 +167,127 @@
     let playedIntervals = new Set();
     let interpolInterval;
 
+    let lastTimerServerTimeMs = 0;
+    const timerSyncToleranceMs = 250;
+
+    function currentElapsedMs() {
+        if (running && timerState.started_at_ms) {
+            return Math.max(
+                0,
+                (timerState.elapsed_ms || 0) +
+                    (Date.now() + offset - timerState.started_at_ms),
+            );
+        }
+        return timerState.elapsed_ms || 0;
+    }
+
+    function snapshotTimerUiState() {
+        return {
+            timerState: { ...timerState },
+            time,
+            running,
+            countdown,
+            offset,
+            lastTickSecond,
+            playedIntervals: new Set(playedIntervals),
+        };
+    }
+
+    function restoreTimerUiState(snapshot) {
+        timerState = { ...snapshot.timerState };
+        time = snapshot.time;
+        running = snapshot.running;
+        countdown = snapshot.countdown;
+        offset = snapshot.offset;
+        lastTickSecond = snapshot.lastTickSecond;
+        playedIntervals = new Set(snapshot.playedIntervals);
+    }
+
+    function elapsedFromTimerState(serverTimerState) {
+        const elapsed = serverTimerState?.elapsed_ms || 0;
+        if (serverTimerState?.status === "running" && serverTimerState.started_at_ms) {
+            const serverNow = serverTimerState.server_time_ms ?? Date.now() + offset;
+            return Math.max(0, elapsed + (serverNow - serverTimerState.started_at_ms));
+        }
+        return Math.max(0, elapsed);
+    }
+
+    function syncTimerFromServer(serverTimerState) {
+        if (!serverTimerState) return;
+        const serverTimeMs = Number(serverTimerState.server_time_ms || 0);
+
+        if (serverTimeMs && serverTimeMs < lastTimerServerTimeMs) {
+            return false;
+        }
+
+        const serverElapsed = elapsedFromTimerState(serverTimerState);
+        const sameRunningTimer =
+            timerState.status === "running" &&
+            serverTimerState.status === "running" &&
+            timerState.started_at_ms === serverTimerState.started_at_ms;
+
+        if (sameRunningTimer && serverElapsed + timerSyncToleranceMs < time) {
+            return false;
+        }
+
+        if (serverTimeMs) {
+            lastTimerServerTimeMs = serverTimeMs;
+            offset = serverTimerState.server_time_ms - Date.now();
+        }
+
+        timerState = serverTimerState;
+        running = serverTimerState.status === "running";
+
+        if (running) {
+            time = sameRunningTimer ? Math.max(time, serverElapsed) : serverElapsed;
+        } else {
+            time = serverElapsed;
+        }
+
+        if (serverTimerState.status !== "countdown") {
+            countdown = 0;
+        }
+
+        if (!running && time < 500) {
+            playedIntervals.clear();
+        }
+
+        return true;
+    }
+
+    function applyServerTimerState(serverTimerState) {
+        syncTimerFromServer(serverTimerState);
+    }
+
+    let destroyed = false;
+    let fetchInFlight = false;
+    let fetchQueued = false;
+    let queuedFetchTimeout;
+    let polling;
+    const pollDelay = 2000;
+
+    function scheduleQueuedFetch() {
+        if (destroyed) return;
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
+        queuedFetchTimeout = setTimeout(() => {
+            queuedFetchTimeout = null;
+            if (!destroyed) fetchState();
+        }, pollDelay);
+    }
+
     async function fetchState() {
+        if (destroyed) return;
+        if (fetchInFlight) {
+            fetchQueued = true;
+            return;
+        }
+
+        fetchInFlight = true;
         try {
-            const res = await fetch(`/admin/api/scoring/randori/${matchId}/state`);
-            const data = await res.json();
+            const { data, notModified } = await conditionalJsonFetch(`/admin/api/scoring/randori/${matchId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (data) {
                 matchNumber = data.matchNumber;
                 merge = data.merge;
@@ -111,25 +299,26 @@
                 assignedKoordinators = data.assignedKoordinators;
                 assignedPaniteras = data.assignedPaniteras;
                 juaraMap = data.juara || {};
-                timerState = data.timerState;
                 courtId = data.courtId;
+                subscribeToCourt(courtId);
                 randoriResults = data.randoriResults || {};
                 if (!actionInFlight) {
                     activeBracketNode = data.activeBracketNode;
                 }
 
                 // Sync Timer local state with server state
-                offset = (timerState.server_time_ms || Date.now()) - Date.now();
-                running = (timerState.status === 'running');
-                if (timerState.status !== 'countdown') {
-                    countdown = 0;
-                }
-                if (!running && time < 500) {
-                    playedIntervals.clear();
-                }
+                syncTimerFromServer(data.timerState);
             }
         } catch (e) {
             console.error('Error fetching Randori scoring state:', e);
+        } finally {
+            fetchInFlight = false;
+            if (fetchQueued && !destroyed) {
+                fetchQueued = false;
+                scheduleQueuedFetch();
+            } else if (destroyed) {
+                fetchQueued = false;
+            }
         }
     }
 
@@ -137,7 +326,17 @@
     async function startTimer() {
         if (!courtId) return;
         // Optimistic UI updates
+        const timerSnapshot = snapshotTimerUiState();
+        const elapsed = currentElapsedMs();
+        timerState = {
+            status: 'running',
+            elapsed_ms: elapsed,
+            started_at_ms: Date.now() + offset,
+            countdown_end_ms: null
+        };
+        time = elapsed;
         running = true;
+        countdown = 0;
         if (!timerState.elapsed_ms || timerState.elapsed_ms < 1000) {
             if (!playedIntervals.has('start')) {
                 playedIntervals.add('start');
@@ -145,75 +344,71 @@
             }
         }
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'start' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'start' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = true;
             } else {
-                running = false;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = false;
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function pauseTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        const pausedAt = currentElapsedMs();
+        timerState = {
+            status: 'paused',
+            elapsed_ms: pausedAt,
+            started_at_ms: null,
+            countdown_end_ms: null
+        };
+        time = pausedAt;
         running = false;
+        countdown = 0;
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'pause' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'pause' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 running = false;
             } else {
-                running = true;
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            running = true;
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
     async function stopTimer() {
         if (!courtId) return;
+        const timerSnapshot = snapshotTimerUiState();
+        timerState = {
+            status: 'stopped',
+            elapsed_ms: 0,
+            started_at_ms: null,
+            countdown_end_ms: null
+        };
         running = false;
         time = 0;
         countdown = 0;
         try {
-            const res = await fetch('/admin/api/scoring/timer-control', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ court_id: courtId, action: 'stop' })
-            });
+            const res = await postJson('/admin/api/scoring/timer-control', { court_id: courtId, action: 'stop' });
             const data = await res.json();
             if (data.success) {
-                timerState = data.timer_state;
+                applyServerTimerState(data.timer_state);
                 time = 0;
                 running = false;
                 countdown = 0;
+            } else {
+                restoreTimerUiState(timerSnapshot);
             }
         } catch (e) {
-            console.error(e);
+            restoreTimerUiState(timerSnapshot);
         }
     }
 
@@ -225,6 +420,7 @@
 
     // Call Match / Grand Final / Dismiss
     async function callMatch(nodeKey, roundIdx, matchIdx, bracket) {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = nodeKey; // Optimistic update
@@ -246,26 +442,19 @@
         };
 
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-match', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-match', {
                     match_id: matchId,
                     node_key: nodeKey,
                     round_idx: roundIdx,
                     match_idx: matchIdx,
                     bracket: bracket
-                })
             });
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
                 activeBracketNode = nodeKey;
                 actionInFlight = false;
                 await fetchState();
@@ -279,32 +468,25 @@
             activeBracketNode = originalActiveNode;
             activeMatch = null;
             actionInFlight = false;
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     async function callGrandFinal() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = 'gf_0_0'; // Optimistic update
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-grand-final', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-grand-final', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
                 activeBracketNode = 'gf_0_0';
                 actionInFlight = false;
                 await fetchState();
@@ -316,24 +498,17 @@
         } catch (e) {
             activeBracketNode = originalActiveNode;
             actionInFlight = false;
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     async function dismissMatch() {
+        if (actionInFlight) return;
         actionInFlight = true;
         const originalActiveNode = activeBracketNode;
         activeBracketNode = null; // Optimistic update
         try {
-            const res = await fetch('/admin/api/scoring/randori/dismiss-match', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({ match_id: matchId })
-            });
+            const res = await postJson('/admin/api/scoring/randori/dismiss-match', { match_id: matchId });
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
@@ -349,7 +524,6 @@
         } catch (e) {
             activeBracketNode = originalActiveNode;
             actionInFlight = false;
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -358,15 +532,8 @@
     async function confirmChampion() {
         if (!confirm('Sistem akan men-generate Juara 1 & 2 dari hasil Grand Final. Lanjutkan?')) return;
         try {
-            const res = await fetch('/admin/api/scoring/randori/confirm-champion', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/confirm-champion', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -376,7 +543,6 @@
                 showToast(data.message || 'Gagal menyimpan juara', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -384,27 +550,19 @@
     // Call officials & TTS announcement
     async function callOfficials() {
         try {
-            const res = await fetch('/admin/api/scoring/randori/call-officials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/call-officials', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
-                if (data.announcement_text) {
-                    playAnnouncer(data.announcement_text);
-                }
+                // if (data.announcement_text) {
+                //     playAnnouncer(data.announcement_text);
+                // }
             } else {
                 showToast(data.message || 'Gagal memanggil wasit', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -412,15 +570,8 @@
     // Repair bracket
     async function repairBracket() {
         try {
-            const res = await fetch('/admin/api/scoring/randori/repair-bracket', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/repair-bracket', {
                     match_id: matchId
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -430,15 +581,14 @@
                 showToast(data.message || 'Gagal memperbaiki bracket', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     // Score Calculations
     function recalculateScores() {
-        scoreRed = (scoringAka.mujoken_kachi * 15) + (scoringAka.ippon * 10) + (scoringAka.waza_ari * 5) + (scoringAka.yusei_kachi * 5) - (scoringAka.hasil_batsu_5 * 5) - (scoringAka.hasil_batsu_10 * 10);
-        scoreBlue = (scoringShiro.mujoken_kachi * 15) + (scoringShiro.ippon * 10) + (scoringShiro.waza_ari * 5) + (scoringShiro.yusei_kachi * 5) - (scoringShiro.hasil_batsu_5 * 5) - (scoringShiro.hasil_batsu_10 * 10);
+        scoreRed = Math.max(0, (scoringAka.mujoken_kachi * 15) + (scoringAka.ippon * 10) + (scoringAka.waza_ari * 5) + (scoringAka.yusei_kachi * 5) - (scoringAka.hasil_batsu_5 * 5) - (scoringAka.hasil_batsu_10 * 10));
+        scoreBlue = Math.max(0, (scoringShiro.mujoken_kachi * 15) + (scoringShiro.ippon * 10) + (scoringShiro.waza_ari * 5) + (scoringShiro.yusei_kachi * 5) - (scoringShiro.hasil_batsu_5 * 5) - (scoringShiro.hasil_batsu_10 * 10));
     }
 
     function updateScore(side, key, delta) {
@@ -454,8 +604,6 @@
     function resetDetailedScoring() {
         scoringAka = { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
         scoringShiro = { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-        sigArbitraseName = '';
-        sigArbitraseData = null;
         sigKoordinatorName = '';
         sigKoordinatorData = null;
         sigWasitName = '';
@@ -470,7 +618,6 @@
 
     // Open Match modal / scoring form
     function openMatchModal(bracket, roundIdx, matchIdx) {
-        const nodeKey = `${bracket}_${roundIdx}_${matchIdx}`;
         let matchData = null;
         if (bracket === 'ub') {
             matchData = drawingData.upper_bracket?.rounds[roundIdx]?.[matchIdx];
@@ -487,29 +634,6 @@
             data: matchData
         };
 
-        const result = randoriResults[nodeKey];
-        if (result) {
-            const meta = typeof result.metadata === 'string' ? JSON.parse(result.metadata) : result.metadata;
-            scoringAka = meta.scoringAka || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-            scoringShiro = meta.scoringShiro || { mujoken_kachi: 0, ippon: 0, waza_ari: 0, hasil_batsu_5: 0, hasil_batsu_10: 0, yusei_kachi: 0 };
-            
-            const sigs = meta.signatures || {};
-            sigArbitraseName = sigs.arbitrase?.name || '';
-            sigArbitraseData = sigs.arbitrase?.signature || null;
-            sigKoordinatorName = sigs.koordinator?.name || '';
-            sigKoordinatorData = sigs.koordinator?.signature || null;
-            sigWasitName = sigs.wasit?.name || '';
-            sigWasitData = sigs.wasit?.signature || null;
-            sigPanitera = sigs.panitera || [{ name: '', signature: null }];
-            sigManagerRedName = sigs.manager_red?.name || '';
-            sigManagerRedData = sigs.manager_red?.signature || null;
-            sigManagerWhiteName = sigs.manager_white?.name || '';
-            sigManagerWhiteData = sigs.manager_white?.signature || null;
-        } else {
-            resetDetailedScoring();
-        }
-        recalculateScores();
-
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -519,10 +643,6 @@
 
     // Submit scoring result
     async function submitScoring() {
-        if (!sigArbitraseName || !sigArbitraseData) {
-            alert('Nama dan Tanda tangan Arbitrase wajib diisi.');
-            return;
-        }
         if (!sigKoordinatorName || !sigKoordinatorData) {
             alert('Nama dan Tanda tangan Koordinator wajib diisi.');
             return;
@@ -550,13 +670,7 @@
         }
 
         try {
-            const res = await fetch('/admin/api/scoring/randori/submit-scoring', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                },
-                body: JSON.stringify({
+            const res = await postJson('/admin/api/scoring/randori/submit-scoring', {
                     match_id: matchId,
                     bracket: activeMatch.bracket,
                     round: activeMatch.round,
@@ -566,14 +680,12 @@
                     scoring_aka: scoringAka,
                     scoring_shiro: scoringShiro,
                     signatures: {
-                        arbitrase: { name: sigArbitraseName, signature: sigArbitraseData },
                         koordinator: { name: sigKoordinatorName, signature: sigKoordinatorData },
                         wasit: { name: sigWasitName, signature: sigWasitData },
                         panitera: sigPanitera,
                         manager_red: { name: sigManagerRedName, signature: sigManagerRedData },
                         manager_white: { name: sigManagerWhiteName, signature: sigManagerWhiteData }
                     }
-                })
             });
             const data = await res.json();
             if (data.success) {
@@ -584,7 +696,6 @@
                 showToast(data.message || 'Gagal menyimpan hasil penilaian.', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
@@ -602,13 +713,7 @@
     async function clearAllCourts() {
         if (!confirm('PERINGATAN: Ini akan mereset status SEMUA lapangan & match yang sedang berjalan menjadi KOSONG. Lanjutkan?')) return;
         try {
-            const res = await fetch('/admin/api/scoring/clear-all-courts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            });
+            const res = await postJson('/admin/api/scoring/clear-all-courts');
             const data = await res.json();
             if (data.success) {
                 showToast(data.text, 'success');
@@ -617,14 +722,13 @@
                 showToast(data.message || 'Gagal mereset lapangan', 'error');
             }
         } catch (e) {
-            console.error(e);
             showToast('Terjadi kesalahan koneksi', 'error');
         }
     }
 
     // Format time helpers
     function formatTime(t) {
-        let maxT = Math.max(0, t);
+        let maxT = Math.max(0, 120000 - t);
         let m = Math.floor(maxT / 60000);
         let s = Math.floor((maxT % 60000) / 1000);
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -649,9 +753,9 @@
                 buzzerPool.push(audio);
             }
             audio.currentTime = 0;
-            audio.play().catch(e => console.warn('Buzzer error:', e));
+            // audio.play().catch(() => {});
         } catch (e) {
-            console.warn('Audio error:', e);
+            // Silent fail for audio
         }
     }
 
@@ -661,7 +765,7 @@
     }
 
     function playAnnouncer(text) {
-        console.log('Announcer requested:', text);
+        return; // Disabled without deleting to run offline
         stopAnnouncer();
         isPlayingAnnouncer = true;
 
@@ -725,6 +829,7 @@
 
     // Lifecycle
     onMount(() => {
+        destroyed = false;
         // Preload buzzer audio to eliminate latency
         try {
             for (let i = 0; i < 3; i++) {
@@ -734,19 +839,33 @@
                 buzzerPool.push(audio);
             }
         } catch (e) {
-            console.warn('Failed to preload buzzer audio:', e);
+            // Silent fail for audio preload
         }
 
         fetchState();
+        if (window.Echo) {
+            window.Echo.channel(`match.${matchId}`).listen('MatchUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                fetchState();
+            });
+        }
 
-        pollInterval = setInterval(fetchState, 300);
+        polling = createAdaptivePolling({
+            fetchNow: fetchState,
+            normalInterval: pollDelay,
+            healthyInterval: 15000,
+            staleAfter: 15000,
+            immediate: false,
+        });
+        polling.start();
 
         // 30ms Interpolation for local timer
         interpolInterval = setInterval(() => {
             if (running && timerState.started_at_ms) {
                 let expected = (timerState.elapsed_ms || 0) + (Date.now() + offset - timerState.started_at_ms);
-                time = Math.min(expected, 120000);
-                let s = Math.floor(time / 1000);
+                time = expected;
+                let s = Math.floor(expected / 1000);
                 if (s >= 120 && !playedIntervals.has(120)) {
                     time = 120000;
                     running = false;
@@ -760,15 +879,17 @@
             } else if (timerState.status === 'countdown' && timerState.countdown_end_ms) {
                 let remaining = timerState.countdown_end_ms - (Date.now() + offset);
                 countdown = remaining > 0 ? Math.ceil(remaining / 1000) : 0;
-                time = Math.min(timerState.elapsed_ms || 0, 120000);
+                let rawTime = timerState.elapsed_ms || 0;
+                time = rawTime;
                 if (remaining <= 0) {
                     startTimer();
                 }
-                lastTickSecond = Math.floor(time / 1000);
+                lastTickSecond = Math.floor(rawTime / 1000);
             } else {
                 countdown = 0;
-                time = Math.min(timerState.elapsed_ms || 0, 120000);
-                lastTickSecond = Math.floor(time / 1000);
+                let rawTime = timerState.elapsed_ms || 0;
+                time = rawTime;
+                lastTickSecond = Math.floor(rawTime / 1000);
             }
         }, 30);
 
@@ -780,8 +901,17 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        fetchQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`match.${matchId}`);
+            if (currentCourtChannelId) {
+                window.Echo.leave(`court.${currentCourtChannelId}`);
+            }
+        }
+        polling?.stop();
         clearInterval(interpolInterval);
+        if (queuedFetchTimeout) clearTimeout(queuedFetchTimeout);
         stopAnnouncer();
     });
 
@@ -810,6 +940,16 @@
 </script>
 
 <div class="tm-page">
+    {#if actionInFlight}
+        <div style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+            <div style="background-color: white; border-radius: 16px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 320px; text-align: center; border: 1px solid #f1f5f9;">
+                <div style="font-size: 32px; color: #4f46e5;"><i class="fas fa-spinner fa-spin"></i></div>
+                <div style="font-weight: 700; color: #1e293b;">Memproses Panggilan...</div>
+                <div style="font-size: 12px; color: #64748b;">Mohon tunggu, sistem sedang memproses panggilan monitor.</div>
+            </div>
+        </div>
+    {/if}
+
     <div style="position: fixed; top: 20px; right: 30px; z-index: 90;">
         <button onclick={clearAllCourts}
             class="btn-gen danger"
@@ -842,10 +982,13 @@
                 style="background:var(--red); box-shadow:0 4px 12px rgba(192,57,43,0.2);">
                 <i class="fas fa-bullhorn"></i> Panggil Official
             </button>
-            <button onclick={stopAnnouncer} class="btn-gen ghost"
+            <!-- <button onclick={stopAnnouncer} class="btn-gen ghost"
                 style="color:var(--red); border-color:var(--red);">
                 <i class="fas fa-volume-xmark"></i> Stop Suara
-            </button>
+            </button> -->
+            <a href={`/admin/new-scoring/correction?match_id=${matchId}`} class="btn-gen primary" style="text-decoration:none;">
+                <i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai
+            </a>
             <a href={backRoute} class="btn-gen ghost" style="text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Kembali
             </a>
@@ -1065,17 +1208,10 @@
                 <!-- SIGNATURE PAD FOR OFFICIALS -->
                 <div class="mt-6 border-t border-slate-200 pt-6 mb-6">
                     <div class="text-[13px] font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <i class="fas fa-signature text-rose-500"></i> Pengesahan & Tanda Tangan Hasil Pertandingan
+                        <i class="fas fa-signature text-rose-500"></i> Pengesahan &amp; Tanda Tangan Hasil Pertandingan
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- ARBITRASE -->
-                        <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Arbitrase</label>
-                            <input type="text" bind:value={sigArbitraseName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Arbitrase...">
-                            <SignaturePad bind:value={sigArbitraseData} name="Tanda Tangan Arbitrase" />
-                        </div>
-
                         <!-- KOORDINATOR -->
                         <div class="flex flex-col gap-2">
                             <label class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Koordinator</label>
@@ -1099,16 +1235,16 @@
 
                         <!-- MANAGER AKA (RED) -->
                         <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-black text-rose-500 uppercase tracking-widest">Manajer Pita Merah (AKA)</label>
-                            <input type="text" bind:value={sigManagerRedName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manajer Aka...">
-                            <SignaturePad bind:value={sigManagerRedData} name="Tanda Tangan Manajer Merah" />
+                            <label class="text-[11px] font-black text-rose-500 uppercase tracking-widest">Manager Merah (AKA)</label>
+                            <input type="text" bind:value={sigManagerRedName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manager Merah...">
+                            <SignaturePad bind:value={sigManagerRedData} name="Tanda Tangan Manager Merah" />
                         </div>
 
                         <!-- MANAGER SHIRO (WHITE) -->
-                        <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-black text-blue-500 uppercase tracking-widest">Manajer Pita Putih (SHIRO)</label>
-                            <input type="text" bind:value={sigManagerWhiteName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manajer Shiro...">
-                            <SignaturePad bind:value={sigManagerWhiteData} name="Tanda Tangan Manajer Putih" />
+                        <div class="flex flex-col gap-2 md:col-span-2 md:max-w-[calc(50%-12px)]">
+                            <label class="text-[11px] font-black text-blue-500 uppercase tracking-widest">Manager Putih (SHIRO)</label>
+                            <input type="text" bind:value={sigManagerWhiteName} class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold bg-white text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500" placeholder="Ketik nama Manager Putih...">
+                            <SignaturePad bind:value={sigManagerWhiteData} name="Tanda Tangan Manager Putih" />
                         </div>
                     </div>
                 </div>
@@ -1341,8 +1477,184 @@
             </div>
         {/if}
 
+
+        <!-- REKAP PENILAIAN -->
+        {#if Object.keys(randoriResults).length > 0}
+            {@const buildRekap = () => {
+                const rows = [];
+                // Upper bracket
+                (drawingData.upper_bracket?.rounds || []).forEach((round, rIdx) => {
+                    round.forEach((match, mIdx) => {
+                        if (match.winner) {
+                            const key = `ub_${rIdx}_${mIdx}`;
+                            const res = randoriResults[key];
+                            rows.push({ key, bracket: 'ub', rIdx, mIdx, match, res });
+                        }
+                    });
+                });
+                // Lower bracket
+                (drawingData.lower_bracket?.rounds || []).forEach((round, rIdx) => {
+                    round.forEach((match, mIdx) => {
+                        if (match.winner) {
+                            const key = `lb_${rIdx}_${mIdx}`;
+                            const res = randoriResults[key];
+                            rows.push({ key, bracket: 'lb', rIdx, mIdx, match, res });
+                        }
+                    });
+                });
+                // Grand final
+                if (drawingData.grand_final?.winner) {
+                    const res = randoriResults['gf_0_0'];
+                    rows.push({ key: 'gf_0_0', bracket: 'gf', rIdx: 0, mIdx: 0, match: drawingData.grand_final, res });
+                }
+                return rows;
+            }}
+            {@const rekapRows = buildRekap()}
+            {#if rekapRows.length > 0}
+                <div class="bracket-wrapper" style="overflow:visible;">
+                    <div class="bracket-hdr" style="background:linear-gradient(135deg,#1a1a2e,#16213e); color:#fff;">
+                        <i class="fas fa-list-ol" style="color:#f39c12;"></i> REKAP PENILAIAN — Hasil Pertandingan
+                        <span style="margin-left:auto; font-size:11px; opacity:0.7;">{rekapRows.length} pertandingan selesai</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:600px;">
+                            <thead>
+                                <tr style="background:#f8f9fa; border-bottom:2px solid #e9ecef;">
+                                    <th style="padding:10px 14px; text-align:left; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d; white-space:nowrap;">Babak</th>
+                                    <th style="padding:10px 14px; text-align:left; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#e74c3c;">Pita Merah</th>
+                                    <th style="padding:10px 14px; text-align:center; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d;">Nilai</th>
+                                    <th style="padding:10px 14px; text-align:center; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d;">Hasil</th>
+                                    <th style="padding:10px 14px; text-align:center; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#6c757d;">Nilai</th>
+                                    <th style="padding:10px 14px; text-align:right; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#2980b9;">Pita Putih</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {#each rekapRows as row}
+                                    {@const redWon = row.match.winner === 'athlete1'}
+                                    {@const blueWon = row.match.winner === 'athlete2'}
+                                    {@const bracketLabel = row.bracket === 'ub' ? 'UB' : row.bracket === 'lb' ? 'LB' : 'GF'}
+                                    {@const scoreRed = row.res?.score_red ?? '—'}
+                                    {@const scoreBlue = row.res?.score_blue ?? '—'}
+                                    {@const meta = row.res ? (typeof row.res.metadata === 'string' ? JSON.parse(row.res.metadata) : row.res.metadata) : null}
+                                    {@const aka = meta?.scoringAka || null}
+                                    {@const shiro = meta?.scoringShiro || null}
+                                    <tr style="border-bottom:1px solid #f1f3f5;">
+                                        <td style="padding:10px 14px; white-space:nowrap;">
+                                            <span style="font-size:10px; font-weight:900; background:{row.bracket==='ub'?'#2980b9':row.bracket==='lb'?'#d35400':'#f39c12'}; color:#fff; padding:2px 7px; border-radius:6px; text-transform:uppercase;">
+                                                {bracketLabel} {row.bracket !== 'gf' ? `R${row.rIdx + 1}` : ''}
+                                            </span>
+                                            {#if row.bracket !== 'gf'}
+                                                <span style="font-size:11px; color:#adb5bd; margin-left:6px;">M{row.mIdx + 1}</span>
+                                            {/if}
+                                        </td>
+                                        <td style="padding:10px 14px;">
+                                            <div style="font-size:13px; font-weight:{redWon?'900':'600'}; color:{redWon?'#c0392b':'#495057'};">{row.match.athlete1?.name || '—'}</div>
+                                            {#if row.match.athlete1?.contingent}
+                                                <div style="font-size:11px; color:#adb5bd;">{row.match.athlete1.contingent}</div>
+                                            {/if}
+                                            {#if aka && (aka.mujoken_kachi > 0 || aka.ippon > 0 || aka.waza_ari > 0 || aka.yusei_kachi > 0 || aka.hasil_batsu_5 > 0 || aka.hasil_batsu_10 > 0)}
+                                                <div style="display:flex; flex-direction:column; align-items:flex-start; gap:3px; margin-top:6px; font-size:10px;">
+                                                    {#if aka.mujoken_kachi > 0}
+                                                        <span style="background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fde68a;">
+                                                            Mujoken Kachi: {aka.mujoken_kachi} (+{aka.mujoken_kachi * 15})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.ippon > 0}
+                                                        <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #a7f3d0;">
+                                                            Ippon: {aka.ippon} (+{aka.ippon * 10})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.waza_ari > 0}
+                                                        <span style="background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #bfdbfe;">
+                                                            Waza Ari: {aka.waza_ari} (+{aka.waza_ari * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.yusei_kachi > 0}
+                                                        <span style="background:#faf5ff; color:#7c3aed; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #e9d5ff;">
+                                                            Yusei Kachi: {aka.yusei_kachi} (+{aka.yusei_kachi * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.hasil_batsu_5 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 5: {aka.hasil_batsu_5} (-{aka.hasil_batsu_5 * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if aka.hasil_batsu_10 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 10: {aka.hasil_batsu_10} (-{aka.hasil_batsu_10 * 10})
+                                                        </span>
+                                                    {/if}
+                                                </div>
+                                            {/if}
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:center;">
+                                            <span style="font-size:18px; font-weight:900; color:{redWon?'#e74c3c':'#adb5bd'};">{scoreRed}</span>
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:center;">
+                                            {#if redWon}
+                                                <span style="font-size:10px; font-weight:900; background:#27ae60; color:#fff; padding:3px 10px; border-radius:20px;">← MENANG</span>
+                                            {:else if blueWon}
+                                                <span style="font-size:10px; font-weight:900; background:#27ae60; color:#fff; padding:3px 10px; border-radius:20px;">MENANG →</span>
+                                            {:else}
+                                                <span style="font-size:10px; color:#adb5bd;">—</span>
+                                            {/if}
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:center;">
+                                            <span style="font-size:18px; font-weight:900; color:{blueWon?'#2980b9':'#adb5bd'};">{scoreBlue}</span>
+                                        </td>
+                                        <td style="padding:10px 14px; text-align:right;">
+                                            <div style="font-size:13px; font-weight:{blueWon?'900':'600'}; color:{blueWon?'#1a5276':'#495057'};">{row.match.athlete2?.name || '—'}</div>
+                                            {#if row.match.athlete2?.contingent}
+                                                <div style="font-size:11px; color:#adb5bd; text-align:right;">{row.match.athlete2.contingent}</div>
+                                            {/if}
+                                            {#if shiro && (shiro.mujoken_kachi > 0 || shiro.ippon > 0 || shiro.waza_ari > 0 || shiro.yusei_kachi > 0 || shiro.hasil_batsu_5 > 0 || shiro.hasil_batsu_10 > 0)}
+                                                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; margin-top:6px; font-size:10px;">
+                                                    {#if shiro.mujoken_kachi > 0}
+                                                        <span style="background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fde68a;">
+                                                            Mujoken Kachi: {shiro.mujoken_kachi} (+{shiro.mujoken_kachi * 15})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.ippon > 0}
+                                                        <span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #a7f3d0;">
+                                                            Ippon: {shiro.ippon} (+{shiro.ippon * 10})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.waza_ari > 0}
+                                                        <span style="background:#eff6ff; color:#2563eb; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #bfdbfe;">
+                                                            Waza Ari: {shiro.waza_ari} (+{shiro.waza_ari * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.yusei_kachi > 0}
+                                                        <span style="background:#faf5ff; color:#7c3aed; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #e9d5ff;">
+                                                            Yusei Kachi: {shiro.yusei_kachi} (+{shiro.yusei_kachi * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.hasil_batsu_5 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 5: {shiro.hasil_batsu_5} (-{shiro.hasil_batsu_5 * 5})
+                                                        </span>
+                                                    {/if}
+                                                    {#if shiro.hasil_batsu_10 > 0}
+                                                        <span style="background:#fef2f2; color:#dc2626; padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid #fecaca;">
+                                                            Batsu 10: {shiro.hasil_batsu_10} (-{shiro.hasil_batsu_10 * 10})
+                                                        </span>
+                                                    {/if}
+                                                </div>
+                                            {/if}
+                                        </td>
+                                    </tr>
+                                {/each}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {/if}
+        {/if}
+
+
         <!-- FINAL CHAMPIONS LEADERBOARD -->
         {#if Object.keys(juaraMap).length > 0}
+            {@const thirdPlaceAthletes = Object.entries(juaraMap).filter(([k]) => parseFloat(k) >= 3 && parseFloat(k) < 5).map(([, v]) => v).filter(Boolean)}
             <div class="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden mt-12 mb-8">
                 <div class="px-6 py-4 bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
@@ -1360,29 +1672,65 @@
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {#each [1, 2, 3, 4] as rank}
-                            {@const athlete = juaraMap[rank]}
-                            {@const conf = rank === 1 ? { label: 'Juara 1', icon: '🥇', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600' } :
-                                          rank === 2 ? { label: 'Juara 2', icon: '🥈', bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600' } :
-                                          { label: 'Juara 3 Bersama', icon: '🥉', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600' }}
+                        <!-- Juara 1 -->
+                        <div class="relative group">
+                            <div class="h-full px-5 py-8 rounded-2xl border {juaraMap[1] ? 'border-amber-200 bg-amber-50' : 'border-slate-100 bg-white'} flex flex-col items-center text-center transition-all duration-300 {juaraMap[1] ? 'shadow-md shadow-amber-500/5' : ''}">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥇</div>
+                                <div class="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-3">Juara 1</div>
+                                {#if juaraMap[1]}
+                                    <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{juaraMap[1].name}</div>
+                                    <div class="text-xs font-bold text-slate-500">{juaraMap[1].contingent || '—'}</div>
+                                {:else}
+                                    <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
+                                    <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
+                                {/if}
+                            </div>
+                        </div>
+
+                        <!-- Juara 2 -->
+                        <div class="relative group">
+                            <div class="h-full px-5 py-8 rounded-2xl border {juaraMap[2] ? 'border-slate-200 bg-slate-50' : 'border-slate-100 bg-white'} flex flex-col items-center text-center transition-all duration-300 {juaraMap[2] ? 'shadow-md' : ''}">
+                                <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥈</div>
+                                <div class="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-3">Juara 2</div>
+                                {#if juaraMap[2]}
+                                    <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{juaraMap[2].name}</div>
+                                    <div class="text-xs font-bold text-slate-500">{juaraMap[2].contingent || '—'}</div>
+                                {:else}
+                                    <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
+                                    <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
+                                {/if}
+                            </div>
+                        </div>
+
+                        <!-- Juara 3 & Juara 3 Bersama -->
+                        {#if thirdPlaceAthletes.length > 0}
+                            {#each thirdPlaceAthletes as a, idx}
+                                {@const cardLabel = thirdPlaceAthletes.length === 1 ? 'Juara 3 Bersama' : `Juara 3 Bersama ${idx + 1}`}
+                                <div class="relative group">
+                                    <div class="h-full px-5 py-8 rounded-2xl border border-orange-200 bg-orange-50 flex flex-col items-center text-center transition-all duration-300 shadow-md shadow-orange-500/5">
+                                        <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">🥉</div>
+                                        <div class="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] mb-3">{cardLabel}</div>
+                                        <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{a.name}</div>
+                                        <div class="text-xs font-bold text-slate-500">{a.contingent || '—'}</div>
+                                    </div>
+                                </div>
+                            {/each}
+                        {:else}
                             <div class="relative group">
-                                <div class="h-full px-5 py-8 rounded-2xl border {athlete ? `${conf.border} ${conf.bg}` : 'border-slate-100 bg-white'} flex flex-col items-center text-center transition-all duration-300 {athlete ? 'shadow-md shadow-amber-500/5' : ''}">
-                                    <div class="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{conf.icon}</div>
-                                    <div class="text-[10px] font-black {conf.text} uppercase tracking-[0.2em] mb-3">{conf.label}</div>
-                                    {#if athlete}
-                                        <div class="text-base font-black text-slate-800 uppercase leading-tight mb-1">{athlete.name}</div>
-                                        <div class="text-xs font-bold text-slate-500">{athlete.contingent || '—'}</div>
-                                    {:else}
-                                        <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
-                                        <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
-                                    {/if}
+                                <div class="h-full px-5 py-8 rounded-2xl border border-slate-100 bg-white flex flex-col items-center text-center">
+                                    <div class="text-4xl mb-4">🥉</div>
+                                    <div class="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] mb-3">Juara 3 / Juara 3 Bersama</div>
+                                    <div class="w-12 h-1 bg-slate-100 rounded-full mb-3 mt-1"></div>
+                                    <div class="text-[11px] font-bold text-slate-300 italic uppercase tracking-wider">Menunggu Hasil...</div>
                                 </div>
                             </div>
-                        {/each}
+                        {/if}
                     </div>
                 </div>
             </div>
         {/if}
+
+
     {/if}
 
     <!-- OFFICIALS BOTTOM LIST -->

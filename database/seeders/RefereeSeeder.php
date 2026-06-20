@@ -7,6 +7,7 @@ use App\Models\User;
 use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class RefereeSeeder extends Seeder
@@ -18,7 +19,7 @@ class RefereeSeeder extends Seeder
     {
         $faker = Faker::create('id_ID');
 
-        $password = Hash::make('password123');
+        $password = Hash::make(Str::random(12));
 
         for ($i = 0; $i < 100; $i++) {
             $genderLabel = $faker->randomElement(['Laki-laki', 'Perempuan']);

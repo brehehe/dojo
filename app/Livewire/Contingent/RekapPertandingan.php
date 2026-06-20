@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Contingent;
 
+use App\Models\DrawingMatchNumber;
 use App\Models\EmbuScore;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\RandoriMatchResult;
@@ -61,7 +62,7 @@ class RekapPertandingan extends Component
 
     protected function getEmbuData()
     {
-        $query = EmbuScore::with(['matchNumber.ageGroup', 'matchNumber.athletes', 'registration.contingent'])
+        $query = EmbuScore::with(['matchNumber.ageGroup', 'registration'])
             ->whereHas('registration', function ($q) {
                 $q->where('contingent_id', $this->contingent->id);
             });
@@ -76,10 +77,57 @@ class RekapPertandingan extends Component
             });
         }
 
-        $scores = $query->orderBy('match_number_id')
+        $allScores = $query
+            ->orderBy('match_number_id')
+            ->orderBy('drawing_id')
             ->orderBy('round_label', 'desc')
-            ->orderBy('nilai_akhir', 'desc')
-            ->paginate(20, ['*'], 'embuPage');
+            ->get();
+
+        // Load the drawing metadata for each score to get per-team athlete names.
+        $drawingIds = $allScores->pluck('drawing_id')->filter()->unique()->values();
+        $drawings = DrawingMatchNumber::whereIn('id', $drawingIds)
+            ->get(['id', 'metadata', 'sequence_number'])
+            ->keyBy('id');
+
+        // Attach athlete_label and drawing sequence; skip orphaned scores (drawing deleted).
+        $allScores->each(function (EmbuScore $s) use ($drawings) {
+            $drawing = $drawings->get($s->drawing_id);
+            $s->athlete_label = $drawing ? trim($drawing->metadata['athlete_name'] ?? '') : null;
+            $s->drawing_sequence = $drawing ? $drawing->sequence_number : 0;
+        });
+
+        // Remove scores whose drawing no longer exists in DB or has no athlete name.
+        $allScores = $allScores->filter(
+            fn (EmbuScore $s) => $s->athlete_label !== null && $s->athlete_label !== ''
+        );
+
+        // Group: match_number_id → unique athlete_label (= one row per team, all rounds).
+        // Within each team group, deduplicate by round_label keeping the best nilai_akhir.
+        $deduplicated = $allScores
+            ->groupBy(fn (EmbuScore $s) => $s->match_number_id.'__'.$s->athlete_label)
+            ->flatMap(function ($teamScores) {
+                // Keep one score per round_label for this team (best nilai_akhir).
+                return $teamScores
+                    ->groupBy('round_label')
+                    ->map(fn ($roundScores) => $roundScores->sortByDesc('nilai_akhir')->first())
+                    ->values();
+            })
+            ->sortBy([
+                ['match_number_id', 'asc'],
+                ['drawing_sequence', 'asc'],
+                ['round_label', 'asc'],
+            ])
+            ->values();
+
+        $page = request()->get('embuPage', 1);
+        $perPage = 40;
+        $scores = new LengthAwarePaginator(
+            $deduplicated->forPage($page, $perPage),
+            $deduplicated->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query(), 'pageName' => 'embuPage']
+        );
 
         return ['scores' => $scores];
     }

@@ -40,9 +40,17 @@ class TournamentResult extends Model
         return $this->belongsTo(Registration::class);
     }
 
-    /** Rank label helper */
     public function getRankLabelAttribute(): string
     {
+        if ($this->rank == 3 || $this->rank == 4) {
+            $count = static::where('match_number_id', $this->match_number_id)->count();
+            if ($count === 3) {
+                return 'Juara 3 Bersama';
+            } elseif ($count >= 4) {
+                return $this->rank == 3 ? 'Juara 3 Bersama 1' : 'Juara 3 Bersama 2';
+            }
+        }
+
         return match ($this->rank) {
             1 => 'Juara 1',
             2 => 'Juara 2',

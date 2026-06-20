@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ContingentSeeder extends Seeder
 {
@@ -27,21 +28,21 @@ class ContingentSeeder extends Seeder
 
         // 2. Define specific contingents from image list
         $contingentsToSeed = [
-            ['name' => 'Surabaya A', 'username' => 'surabayaa', 'password' => 'surabayaa'],
-            ['name' => 'Surabaya B', 'username' => 'surabayab', 'password' => 'surabayab'],
-            ['name' => 'Surabaya C', 'username' => 'surabayac', 'password' => 'surabayac'],
-            ['name' => 'Surabaya D', 'username' => 'surabayad', 'password' => 'surabayad'],
-            ['name' => 'Bangkalan A', 'username' => 'bangkalana', 'password' => 'bangkalana'],
-            ['name' => 'Bangkalan B', 'username' => 'bangkalanb', 'password' => 'bangkalanb'],
-            ['name' => 'Kota Malang 1', 'username' => 'malang1', 'password' => 'kotamalang1'],
-            ['name' => 'Kota Malang 3', 'username' => 'malang3', 'password' => 'kotamalang3'],
-            ['name' => 'Kota Kediri', 'username' => 'kediri', 'password' => 'kotakediri'],
-            ['name' => 'Jombang', 'username' => 'jombang', 'password' => 'jombang'],
-            ['name' => 'Banyuwangi', 'username' => 'banyuwangi', 'password' => 'banyuwangi'],
-            ['name' => 'Sidoarjo', 'username' => 'sidoarjo', 'password' => 'sidoarjo'],
-            ['name' => 'Jember', 'username' => 'jember', 'password' => 'jember'],
-            ['name' => 'Gresik', 'username' => 'gresik', 'password' => 'gresik'],
-            ['name' => 'Pasuruan', 'username' => 'pasuruan', 'password' => 'pasuruan'],
+            ['name' => 'Surabaya A', 'username' => 'surabayaa'],
+            ['name' => 'Surabaya B', 'username' => 'surabayab'],
+            ['name' => 'Surabaya C', 'username' => 'surabayac'],
+            ['name' => 'Surabaya D', 'username' => 'surabayad'],
+            ['name' => 'Bangkalan A', 'username' => 'bangkalana'],
+            ['name' => 'Bangkalan B', 'username' => 'bangkalanb'],
+            ['name' => 'Kota Malang 1', 'username' => 'malang1'],
+            ['name' => 'Kota Malang 3', 'username' => 'malang3'],
+            ['name' => 'Kota Kediri', 'username' => 'kediri'],
+            ['name' => 'Jombang', 'username' => 'jombang'],
+            ['name' => 'Banyuwangi', 'username' => 'banyuwangi'],
+            ['name' => 'Sidoarjo', 'username' => 'sidoarjo'],
+            ['name' => 'Jember', 'username' => 'jember'],
+            ['name' => 'Gresik', 'username' => 'gresik'],
+            ['name' => 'Pasuruan', 'username' => 'pasuruan'],
         ];
 
         foreach ($contingentsToSeed as $cData) {
@@ -52,7 +53,7 @@ class ContingentSeeder extends Seeder
             $user = User::create([
                 'name' => $cName,
                 'email' => $email,
-                'password' => Hash::make($cData['password']),
+                'password' => Hash::make(Str::random(12)),
             ]);
 
             $user->assignRole('Contingent');

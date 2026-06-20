@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exports\RefereeAssignmentExport;
 use App\Models\DrawingMatchNumber;
 use App\Models\Referee;
 use App\Models\ScheduleReferee;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.premium', ['title' => 'Penugasan Wasit (Referee Assignment)'])]
 class NewGenerateRefereeIndex extends Component
@@ -315,86 +317,127 @@ class NewGenerateRefereeIndex extends Component
                     if ($citiesWithMultiple->isNotEmpty()) {
                         $citiesWithMultiple = $citiesWithMultiple->shuffle();
                         foreach ($citiesWithMultiple as $city => $refsInCity) {
-                            $pair = $refsInCity->random(2);
-                            $restPool = $availableRefs->reject(fn ($r) => $pair->contains('id', $r->id));
+                            $refsInCityArray = $refsInCity->values();
+                            $pairs = [];
+                            for ($i = 0; $i < $refsInCityArray->count(); $i++) {
+                                for ($j = $i + 1; $j < $refsInCityArray->count(); $j++) {
+                                    $pairs[] = [$refsInCityArray[$i], $refsInCityArray[$j]];
+                                }
+                            }
+                            shuffle($pairs);
 
-                            $utamas = $restPool->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
-                            $wasits = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA' && $r->certification_level !== 'WASIT PEMBANTU');
+                            foreach ($pairs as $pairArray) {
+                                $pair = collect($pairArray);
+                                $restPool = $availableRefs->reject(fn ($r) => $pair->contains('id', $r->id));
 
-                            $totalNonPembantus = $pair->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count() + $utamas->count() + $wasits->count();
+                                // Try to ensure there is at least one female referee (gender = P)
+                                $pairHasFemale = $pair->contains(fn ($r) => $r->gender === 'P');
+                                $femaleNeeded = ! $pairHasFemale && $restPool->contains(fn ($r) => $r->gender === 'P');
 
-                            if ($totalNonPembantus >= 2 && $availableRefs->count() >= 5) {
                                 $chosenRefs = collect($pair);
-
-                                // Prefer to include exactly 1 WASIT UTAMA in the panel if one is available and not in the pair
-                                $hasUtama = $chosenRefs->contains(fn ($r) => $r->certification_level === 'WASIT UTAMA');
-                                if (! $hasUtama && $utamas->isNotEmpty()) {
-                                    $chosenUtama = $utamas->random();
-                                    $chosenRefs->push($chosenUtama);
-                                    $restPool = $restPool->reject(fn ($r) => $r->id === $chosenUtama->id);
+                                if ($femaleNeeded) {
+                                    $femaleRef = $restPool->filter(fn ($r) => $r->gender === 'P')->random();
+                                    $chosenRefs->push($femaleRef);
+                                    $restPool = $restPool->reject(fn ($r) => $r->id === $femaleRef->id);
                                 }
 
-                                // Ensure we have at least 2 non-pembantus
-                                $nonPembantuCount = $chosenRefs->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count();
-                                $neededNonPembantu = max(0, 2 - $nonPembantuCount);
-                                if ($neededNonPembantu > 0) {
-                                    $nonPembantuRest = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU' && $r->certification_level !== 'WASIT UTAMA');
-                                    if ($nonPembantuRest->count() >= $neededNonPembantu) {
-                                        $addedNonPembantus = $nonPembantuRest->random($neededNonPembantu);
-                                        $chosenRefs = $chosenRefs->concat($addedNonPembantus);
-                                        $restPool = $restPool->reject(fn ($r) => $addedNonPembantus->contains('id', $r->id));
-                                    } else {
-                                        $nonPembantuRestAll = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU');
-                                        $addedNonPembantus = $nonPembantuRestAll->random(min($neededNonPembantu, $nonPembantuRestAll->count()));
-                                        $chosenRefs = $chosenRefs->concat($addedNonPembantus);
-                                        $restPool = $restPool->reject(fn ($r) => $addedNonPembantus->contains('id', $r->id));
+                                $utamas = $restPool->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+                                $wasits = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA' && $r->certification_level !== 'WASIT PEMBANTU');
+
+                                $totalNonPembantus = $chosenRefs->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count() + $utamas->count() + $wasits->count();
+
+                                if ($totalNonPembantus >= 2 && ($chosenRefs->count() + $restPool->count() >= 5)) {
+                                    // Prefer to include exactly 1 WASIT UTAMA in the panel if one is available and not already in chosenRefs
+                                    $hasUtama = $chosenRefs->contains(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+                                    if (! $hasUtama && $utamas->isNotEmpty()) {
+                                        $chosenUtama = $utamas->random();
+                                        $chosenRefs->push($chosenUtama);
+                                        $restPool = $restPool->reject(fn ($r) => $r->id === $chosenUtama->id);
                                     }
-                                }
 
-                                // Fill the rest to 5, avoiding WASIT UTAMA
-                                $stillNeeded = 5 - $chosenRefs->count();
-                                if ($stillNeeded > 0) {
-                                    $otherRest = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA');
-                                    if ($otherRest->count() >= $stillNeeded) {
-                                        $addedOthers = $otherRest->random($stillNeeded);
-                                        $chosenRefs = $chosenRefs->concat($addedOthers);
-                                    } else {
-                                        $addedOthers = $restPool->random($stillNeeded);
-                                        $chosenRefs = $chosenRefs->concat($addedOthers);
+                                    // Ensure we have at least 2 non-pembantus
+                                    $nonPembantuCount = $chosenRefs->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count();
+                                    $neededNonPembantu = max(0, 2 - $nonPembantuCount);
+                                    if ($neededNonPembantu > 0) {
+                                        $nonPembantuRest = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU' && $r->certification_level !== 'WASIT UTAMA');
+                                        if ($nonPembantuRest->count() >= $neededNonPembantu) {
+                                            $addedNonPembantus = $nonPembantuRest->random($neededNonPembantu);
+                                            $chosenRefs = $chosenRefs->concat($addedNonPembantus);
+                                            $restPool = $restPool->reject(fn ($r) => $addedNonPembantus->contains('id', $r->id));
+                                        } else {
+                                            $nonPembantuRestAll = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU');
+                                            $addedNonPembantus = $nonPembantuRestAll->random(min($neededNonPembantu, $nonPembantuRestAll->count()));
+                                            $chosenRefs = $chosenRefs->concat($addedNonPembantus);
+                                            $restPool = $restPool->reject(fn ($r) => $addedNonPembantus->contains('id', $r->id));
+                                        }
                                     }
-                                }
 
-                                $selectedRefs = $chosenRefs;
-                                break;
+                                    // Fill the rest to 5, avoiding WASIT UTAMA
+                                    $stillNeeded = 5 - $chosenRefs->count();
+                                    if ($stillNeeded > 0) {
+                                        $otherRest = $restPool->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA');
+                                        if ($otherRest->count() >= $stillNeeded) {
+                                            $addedOthers = $otherRest->random($stillNeeded);
+                                            $chosenRefs = $chosenRefs->concat($addedOthers);
+                                        } else {
+                                            $addedOthers = $restPool->random($stillNeeded);
+                                            $chosenRefs = $chosenRefs->concat($addedOthers);
+                                        }
+                                    }
+
+                                    $selectedRefs = $chosenRefs;
+                                    break 2;
+                                }
                             }
                         }
                     }
 
-                    // Fallback 1: If same city constraint cannot be satisfied, ignore it but respect the non-pembantu rule
+                    // Fallback 1: If same city constraint cannot be satisfied, ignore it but respect the non-pembantu and female rules
                     if (! $selectedRefs) {
                         $utamas = $availableRefs->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
                         $wasits = $availableRefs->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA' && $r->certification_level !== 'WASIT PEMBANTU');
 
                         if ($utamas->count() + $wasits->count() >= 2 && $availableRefs->count() >= 5) {
                             $chosenRefs = collect();
-                            if ($utamas->isNotEmpty()) {
-                                $chosenRefs->push($utamas->random());
+
+                            // Try to get a female referee first
+                            $females = $availableRefs->filter(fn ($r) => $r->gender === 'P');
+                            if ($females->isNotEmpty()) {
+                                $femaleRef = $females->random();
+                                $chosenRefs->push($femaleRef);
+                                $availableRefsFiltered = $availableRefs->reject(fn ($r) => $r->id === $femaleRef->id);
+                            } else {
+                                $availableRefsFiltered = $availableRefs;
                             }
-                            $neededNonPembantu = max(0, 2 - $chosenRefs->count());
-                            if ($neededNonPembantu > 0) {
-                                $chosenRefs = $chosenRefs->concat($wasits->random($neededNonPembantu));
+
+                            $utamasFiltered = $availableRefsFiltered->filter(fn ($r) => $r->certification_level === 'WASIT UTAMA');
+                            $wasitsFiltered = $availableRefsFiltered->filter(fn ($r) => $r->certification_level !== 'WASIT UTAMA' && $r->certification_level !== 'WASIT PEMBANTU');
+
+                            if ($utamasFiltered->isNotEmpty()) {
+                                $chosenRefs->push($utamasFiltered->random());
                             }
-                            $restPool = $availableRefs->reject(fn ($r) => $chosenRefs->contains('id', $r->id));
+                            $neededNonPembantu = max(0, 2 - $chosenRefs->filter(fn ($r) => $r->certification_level !== 'WASIT PEMBANTU')->count());
+                            if ($neededNonPembantu > 0 && $wasitsFiltered->count() >= $neededNonPembantu) {
+                                $chosenRefs = $chosenRefs->concat($wasitsFiltered->random($neededNonPembantu));
+                            }
+                            $restPool = $availableRefsFiltered->reject(fn ($r) => $chosenRefs->contains('id', $r->id));
                             $restPoolSorted = $restPool->sortBy(fn ($r) => $r->certification_level === 'WASIT UTAMA' ? 1 : 0)->values();
                             $chosenRefs = $chosenRefs->concat($restPoolSorted->take(5 - $chosenRefs->count()));
                             $selectedRefs = $chosenRefs;
                         }
                     }
 
-                    // Fallback 2: Pick randomly
+                    // Fallback 2: Pick randomly (with female preference)
                     if (! $selectedRefs) {
                         if ($availableRefs->count() >= 5) {
-                            $selectedRefs = $availableRefs->random(5);
+                            $females = $availableRefs->filter(fn ($r) => $r->gender === 'P');
+                            if ($females->isNotEmpty()) {
+                                $femaleRef = $females->random();
+                                $rest = $availableRefs->reject(fn ($r) => $r->id === $femaleRef->id)->random(4);
+                                $selectedRefs = collect([$femaleRef])->concat($rest);
+                            } else {
+                                $selectedRefs = $availableRefs->random(5);
+                            }
                         } else {
                             $selectedRefs = $allReferees->random(min(5, $allReferees->count()));
                         }
@@ -481,6 +524,11 @@ class NewGenerateRefereeIndex extends Component
         }
 
         $this->autoGenerateAllReferees();
+    }
+
+    public function export()
+    {
+        return Excel::download(new RefereeAssignmentExport, 'penugasan_wasit_'.now()->format('Ymd_His').'.xlsx');
     }
 
     public function render()

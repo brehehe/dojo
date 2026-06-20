@@ -22,6 +22,10 @@ class RandoriMatchResult extends Model
         'metadata',
     ];
 
+    protected $casts = [
+        'metadata' => 'array',
+    ];
+
     public function matchNumber()
     {
         return $this->belongsTo(MatchNumber\MatchNumber::class);

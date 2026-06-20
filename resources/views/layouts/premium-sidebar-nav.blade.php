@@ -143,7 +143,7 @@
 
     {{-- Sistem Panitera --}}
     @hasanyrole('Super Admin|Admin|Panitera|Koordinator Lapangan|Court')
-        <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result') || request()->routeIs('admin.panitera.panggil-drawing')) }">
+        <div x-data="{ open: @json(request()->routeIs('admin.new-scoring-*') || request()->routeIs('admin.panitera.scoring.embu.result') || request()->routeIs('admin.panitera.scoring.randori.result') || request()->routeIs('admin.panitera.panggil-drawing')) }">
             <button @click="open = !open" :class="{ 'active': open }" class="nav-section-trigger">
                 <span class="label">Sistem Panitera</span>
                 <i class="fa-solid fa-chevron-right chevron"></i>
@@ -156,9 +156,14 @@
                     (Scoring)</a>
                 <a class="nav-item {{ request()->routeIs('admin.panitera.panggil-drawing') ? 'active' : '' }}"
                     href="{{ route('admin.panitera.panggil-drawing') }}"><i class="fa-solid fa-bullhorn"></i> Panggil Lapangan (Waktu)</a>
+                <a class="nav-item {{ request()->routeIs('admin.new-scoring.correction') ? 'active' : '' }}"
+                    href="{{ route('admin.new-scoring.correction') }}"><i class="fa-solid fa-pen-to-square"></i> Koreksi Nilai</a>
                 <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.embu.result') ? 'active' : '' }}"
                     href="{{ route('admin.panitera.scoring.embu.result') }}"><i class="fa-solid fa-trophy"></i> Hasil
                     Embu</a>
+                <a class="nav-item {{ request()->routeIs('admin.panitera.scoring.randori.result') ? 'active' : '' }}"
+                    href="{{ route('admin.panitera.scoring.randori.result') }}"><i class="fa-solid fa-trophy"></i> Hasil
+                    Randori</a>
             </div>
         </div>
     @endhasanyrole
@@ -218,6 +223,8 @@
             <div x-show="open" x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
                 class="collapsible-content">
+                <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-seluruh-juara') ? 'active' : '' }}"
+                    href="{{ route('admin.arbitrase.new-laporan-seluruh-juara') }}"><i class="fa-solid fa-trophy"></i> Rekap Seluruh Juara</a>
                 <a class="nav-item {{ request()->routeIs('admin.arbitrase.new-laporan-hasil') ? 'active' : '' }}"
                     href="{{ route('admin.arbitrase.new-laporan-hasil') }}"><i class="fa-solid fa-medal"></i> Hasil
                     Juara</a>

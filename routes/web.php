@@ -1,7 +1,12 @@
 <?php
 
+use App\Http\Controllers\EmbuScoringController;
+use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\RandoriScoringController;
+use App\Http\Controllers\RefereeAssignmentController;
 use App\Http\Controllers\RefereeScoringController;
-use App\Http\Controllers\SvelteMonitorController;
+use App\Http\Controllers\ScoringDashboardController;
+use App\Http\Controllers\TimerController;
 use App\Http\Controllers\WelcomeController;
 use App\Livewire\Admin\Announcer\AnnouncerIndex;
 use App\Livewire\Admin\Arbitrase\GenerateReferee\AdminArbitraseGenerateRefereeIndex;
@@ -65,6 +70,7 @@ use App\Livewire\Admin\NewLaporanRekapitulasiEmbu;
 use App\Livewire\Admin\NewLaporanRekapitulasiRandori;
 use App\Livewire\Admin\NewLaporanRekapPenilaianDetail;
 use App\Livewire\Admin\NewLaporanRekapPenilaianIndex;
+use App\Livewire\Admin\NewLaporanSeluruhJuaraIndex;
 use App\Livewire\Admin\NewLaporanSkorIndex;
 use App\Livewire\Admin\NewLaporanWasitIndex;
 use App\Livewire\Admin\NewLaporanWasitJuriIndex;
@@ -119,6 +125,8 @@ use App\Livewire\Contingent\Schedule;
 use App\Livewire\Contingent\Setup;
 use App\Livewire\Contingent\Standings;
 use App\Livewire\GeneralDashboard;
+use App\Livewire\PublicSchedule;
+use App\Models\Court\Court;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +139,8 @@ Route::get('/welcome/3', [WelcomeController::class, 'template3'])->name('welcome
 Route::get('/welcome/4', [WelcomeController::class, 'template4'])->name('welcome.4');
 Route::get('/welcome/4/{color}', [WelcomeController::class, 'template4Color'])->name('welcome.4.color');
 Route::get('/welcome/5', [WelcomeController::class, 'template5'])->name('welcome.5');
+
+Route::get('/jadwal-pertandingan', PublicSchedule::class)->name('public-schedule');
 
 Route::view('/piala_walikotasby2026', 'register')->name('register');
 
@@ -209,42 +219,50 @@ Route::middleware('auth')->group(function () {
         Route::get('laporan-rekap-penilaian', NewLaporanRekapPenilaianIndex::class)->name('laporan-rekap-penilaian');
         Route::get('laporan-rekap-penilaian/{matchNumber}/cetak', NewLaporanRekapPenilaianDetail::class)->name('laporan-rekap-penilaian.cetak');
 
-        Route::get('/new-scoring', [SvelteMonitorController::class, 'scoringIndex'])->name('new-scoring-index');
-        Route::get('/new-scoring/embu/{matchNumber}', [SvelteMonitorController::class, 'scoringEmbu'])->name('new-scoring-embu-index');
-        Route::get('/new-scoring/randori/{matchNumber}', [SvelteMonitorController::class, 'scoringRandori'])->name('new-scoring-randori-index');
-        Route::get('/panitera/panggil-drawing', [SvelteMonitorController::class, 'panggilDrawingIndex'])->name('panitera.panggil-drawing');
-        Route::get('/api/scoring/panggil-drawing-state', [SvelteMonitorController::class, 'panggilDrawingState'])->name('api.scoring.panggil-drawing-state');
+        Route::get('/new-scoring', [ScoringDashboardController::class, 'scoringIndex'])->name('new-scoring-index');
+        Route::get('/new-scoring/embu/{matchNumber}', [ScoringDashboardController::class, 'scoringEmbu'])->name('new-scoring-embu-index');
+        Route::get('/new-scoring/randori/{matchNumber}', [ScoringDashboardController::class, 'scoringRandori'])->name('new-scoring-randori-index');
+        Route::get('/panitera/panggil-drawing', [ScoringDashboardController::class, 'panggilDrawingIndex'])->name('panitera.panggil-drawing');
+        Route::get('/api/scoring/panggil-drawing-state', [ScoringDashboardController::class, 'panggilDrawingState'])->name('api.scoring.panggil-drawing-state');
+        Route::get('/new-scoring/correction', [ScoringDashboardController::class, 'scoringCorrectionIndex'])->name('new-scoring.correction');
 
-        Route::prefix('api/scoring')->name('api.scoring.')->group(function () {
-            Route::get('/dashboard-state', [SvelteMonitorController::class, 'scoringDashboardState'])->name('dashboard-state');
-            Route::post('/activate-match', [SvelteMonitorController::class, 'activateMatch'])->name('activate-match');
-            Route::post('/clear-court', [SvelteMonitorController::class, 'clearCourt'])->name('clear-court');
-            Route::post('/clear-all-courts', [SvelteMonitorController::class, 'clearAllCourts'])->name('clear-all-courts');
-            Route::post('/save-referee-assignment', [SvelteMonitorController::class, 'saveRefereeAssignment'])->name('save-referee-assignment');
-            Route::post('/reset-active-referees', [SvelteMonitorController::class, 'resetActiveReferees'])->name('reset-active-referees');
-            Route::post('/reset-court-referees', [SvelteMonitorController::class, 'resetCourtReferees'])->name('reset-court-referees');
-            Route::post('/timer-control', [SvelteMonitorController::class, 'timerControl'])->name('timer-control');
+        // Scoring API — authenticated via parent Route::middleware('auth') group.
+        // All POST endpoints modify tournament data; GET endpoints expose scoring state.
+        Route::prefix('api/scoring')->name('api.scoring.')->middleware('throttle:scoring')->group(function () {
+            Route::get('/dashboard-state', [ScoringDashboardController::class, 'scoringDashboardState'])->name('dashboard-state');
+            Route::get('/correction/matches', [ScoringDashboardController::class, 'scoringCorrectionMatches'])->name('correction.matches');
+            Route::get('/correction/match-state/{matchNumber}', [ScoringDashboardController::class, 'scoringCorrectionMatchState'])->name('correction.match-state');
+            Route::post('/correction/embu/save', [EmbuScoringController::class, 'scoringEmbuCorrectionSave'])->name('correction.embu.save');
+            Route::post('/correction/embu/delete', [EmbuScoringController::class, 'scoringEmbuCorrectionDelete'])->name('correction.embu.delete');
+            Route::post('/correction/randori/save', [RandoriScoringController::class, 'scoringRandoriCorrectionSave'])->name('correction.randori.save');
+            Route::post('/activate-match', [ScoringDashboardController::class, 'activateMatch'])->name('activate-match');
+            Route::post('/clear-court', [ScoringDashboardController::class, 'clearCourt'])->name('clear-court');
+            Route::post('/clear-all-courts', [ScoringDashboardController::class, 'clearAllCourts'])->name('clear-all-courts');
+            Route::post('/save-referee-assignment', [RefereeAssignmentController::class, 'saveRefereeAssignment'])->name('save-referee-assignment');
+            Route::post('/reset-active-referees', [RefereeAssignmentController::class, 'resetActiveReferees'])->name('reset-active-referees');
+            Route::post('/reset-court-referees', [RefereeAssignmentController::class, 'resetCourtReferees'])->name('reset-court-referees');
+            Route::post('/timer-control', [TimerController::class, 'timerControl'])->name('timer-control');
 
             Route::prefix('embu')->name('embu.')->group(function () {
-                Route::get('/{matchNumber}/state', [SvelteMonitorController::class, 'scoringEmbuState'])->name('state');
-                Route::post('/call-officials', [SvelteMonitorController::class, 'embuCallOfficials'])->name('call-officials');
-                Route::post('/call-participant', [SvelteMonitorController::class, 'embuCallParticipant'])->name('call-participant');
-                Route::post('/save-score', [SvelteMonitorController::class, 'embuSaveScore'])->name('save-score');
-                Route::post('/request-tiebreak', [SvelteMonitorController::class, 'embuRequestTiebreak'])->name('request-tiebreak');
-                Route::post('/advance-to-final', [SvelteMonitorController::class, 'embuAdvanceToFinal'])->name('advance-to-final');
-                Route::post('/dismiss-participant', [SvelteMonitorController::class, 'embuDismissParticipant'])->name('dismiss-participant');
-                Route::post('/finish-match', [SvelteMonitorController::class, 'embuFinishMatch'])->name('finish-match');
+                Route::get('/{matchNumber}/state', [EmbuScoringController::class, 'scoringEmbuState'])->name('state');
+                Route::post('/call-officials', [EmbuScoringController::class, 'embuCallOfficials'])->name('call-officials');
+                Route::post('/call-participant', [EmbuScoringController::class, 'embuCallParticipant'])->name('call-participant');
+                Route::post('/save-score', [EmbuScoringController::class, 'embuSaveScore'])->name('save-score');
+                Route::post('/request-tiebreak', [EmbuScoringController::class, 'embuRequestTiebreak'])->name('request-tiebreak');
+                Route::post('/advance-to-final', [EmbuScoringController::class, 'embuAdvanceToFinal'])->name('advance-to-final');
+                Route::post('/dismiss-participant', [EmbuScoringController::class, 'embuDismissParticipant'])->name('dismiss-participant');
+                Route::post('/finish-match', [EmbuScoringController::class, 'embuFinishMatch'])->name('finish-match');
             });
 
             Route::prefix('randori')->name('randori.')->group(function () {
-                Route::get('/{matchNumber}/state', [SvelteMonitorController::class, 'scoringRandoriState'])->name('state');
-                Route::post('/repair-bracket', [SvelteMonitorController::class, 'randoriRepairBracket'])->name('repair-bracket');
-                Route::post('/call-officials', [SvelteMonitorController::class, 'randoriCallOfficials'])->name('call-officials');
-                Route::post('/call-match', [SvelteMonitorController::class, 'randoriCallMatch'])->name('call-match');
-                Route::post('/call-grand-final', [SvelteMonitorController::class, 'randoriCallGrandFinal'])->name('call-grand-final');
-                Route::post('/dismiss-match', [SvelteMonitorController::class, 'randoriDismissMatch'])->name('dismiss-match');
-                Route::post('/submit-scoring', [SvelteMonitorController::class, 'randoriSubmitScoring'])->name('submit-scoring');
-                Route::post('/confirm-champion', [SvelteMonitorController::class, 'randoriConfirmChampion'])->name('confirm-champion');
+                Route::get('/{matchNumber}/state', [RandoriScoringController::class, 'scoringRandoriState'])->name('state');
+                Route::post('/repair-bracket', [RandoriScoringController::class, 'randoriRepairBracket'])->name('repair-bracket');
+                Route::post('/call-officials', [RandoriScoringController::class, 'randoriCallOfficials'])->name('call-officials');
+                Route::post('/call-match', [RandoriScoringController::class, 'randoriCallMatch'])->name('call-match');
+                Route::post('/call-grand-final', [RandoriScoringController::class, 'randoriCallGrandFinal'])->name('call-grand-final');
+                Route::post('/dismiss-match', [RandoriScoringController::class, 'randoriDismissMatch'])->name('dismiss-match');
+                Route::post('/submit-scoring', [RandoriScoringController::class, 'randoriSubmitScoring'])->name('submit-scoring');
+                Route::post('/confirm-champion', [RandoriScoringController::class, 'randoriConfirmChampion'])->name('confirm-champion');
             });
         });
 
@@ -306,13 +324,18 @@ Route::middleware('auth')->group(function () {
         // Verified Match Numbers report
         Route::get('/match-numbers/verified', AdminMatchNumberVerifiedIndex::class)->name('match-numbers.verified');
 
-        // Registration by Number Report (Excel)
+        // Registration by Number Report (redirects to verified match numbers page — dedicated pages not yet built)
+        Route::get('/reports/registration-by-number', AdminMatchNumberVerifiedIndex::class)->name('reports.registration-by-number');
 
-        // Registration by Name Report (Excel)
+        // Registration by Name Report
+        Route::get('/reports/registration-by-name', AdminMatchNumberVerifiedIndex::class)->name('reports.registration-by-name');
 
-        // Match Number & Class Report (Excel)
+        // Match Number & Class Report
+        Route::get('/reports/match-class', AdminMatchNumberVerifiedIndex::class)->name('reports.match-class');
 
-        // Athlete Biodata Report (Grid)
+        // Athlete Biodata Report
+        Route::get('/reports/athlete-biodata', AdminMatchNumberVerifiedIndex::class)->name('reports.athlete-biodata');
+
         Route::get('/reports/contingent-observations', AdminRefereeObservationsIndex::class)->name('reports.contingent-observations');
 
         Route::prefix('technical-meeting')->name('technical-meeting.')->group(function () {
@@ -329,6 +352,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/rekapitulasi-embu', AdminLaporanRekapitulasiEmbu::class)->name('rekapitulasi-embu');
 
             // New Premium Laporan Views
+            Route::get('/new-laporan-seluruh-juara', NewLaporanSeluruhJuaraIndex::class)->name('new-laporan-seluruh-juara');
             Route::get('/new-laporan-hasil', NewLaporanHasilIndex::class)->name('new-laporan-hasil');
             Route::get('/new-laporan-skor', NewLaporanSkorIndex::class)->name('new-laporan-skor');
             Route::get('/new-rekapitulasi-randori', NewLaporanRekapitulasiRandori::class)->name('new-rekapitulasi-randori');
@@ -369,11 +393,15 @@ Route::middleware('auth')->group(function () {
                 Route::get('/randori/{matchNumber}', AdminArbitraseScoringRandoriDetail::class)->name('randori.detail');
                 Route::get('/embu-testbench', AdminEmbuScoringTestbench::class)->name('embu.testbench');
                 Route::get('/embu-result', NewEmbuResultIndex::class)->name('embu.result');
+                Route::get('/randori-result', [ScoringDashboardController::class, 'scoringRandoriResult'])->name('randori.result');
+                Route::get('/randori-hasil-print', [ScoringDashboardController::class, 'randoriHasilPrint'])->name('randori.hasil-print');
             });
             Route::get('/announcer', AnnouncerIndex::class)->name('announcer');
         });
 
-        Route::prefix('referee')->name('referee.')->group(function () {
+        // Referee scoring — authenticated via parent Route::middleware('auth') group.
+        // POST endpoints save/submit referee scores; GET endpoints return page and state.
+        Route::prefix('referee')->name('referee.')->middleware('throttle:scoring')->group(function () {
             Route::get('/scoring', [RefereeScoringController::class, 'index'])->name('scoring');
             Route::get('/scoring/state', [RefereeScoringController::class, 'state'])->name('scoring.state');
             Route::post('/scoring/save', [RefereeScoringController::class, 'save'])->name('scoring.save');
@@ -382,19 +410,28 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::prefix('arbitrase')->name('arbitrase.')->group(function () {
-        Route::prefix('scoring')->name('scoring.')->group(function () {
-            Route::get('/monitor/{courtId}', MonitorCourtIndex::class)->name('monitor');
-            Route::get('/monitor-hasil/court/{courtId}', MonitorHasilIndex::class)->name('monitor-hasil.court');
-            Route::get('/monitor-hasil/match/{matchId}', MonitorHasilIndex::class)->name('monitor-hasil.match');
-            Route::get('/monitor-timer/court/{courtId}', MonitorTimerIndex::class)->name('monitor-timer.court');
-            Route::get('/monitor-referee/court/{courtId}', MonitorRefereeIndex::class)->name('monitor-referee.court');
-        });
-    });
-});
-
 // require __DIR__.'/auth.php'; // Disabling Breeze auth routes
+
+/*
+ * --------------------------------------------------------------------------
+ * Public Monitor & Timer Display Routes (Intentionally Unauthenticated)
+ * --------------------------------------------------------------------------
+ *
+ * The following route groups are intentionally public (no auth middleware)
+ * because they serve tournament display screens (monitors, timers) that
+ * must be accessible without login on dedicated displays around the venue.
+ *
+ * Security notes:
+ * - All routes below are GET-only (read-only data for display purposes).
+ * - Rate limiting is applied via the 'throttle:monitor' middleware to
+ *   prevent abuse from polling endpoints.
+ * - No write operations (POST/PATCH/PUT/DELETE) are exposed here.
+ *
+ * Routes:
+ * - /svelte-monitor/*           → Inertia page views for monitor displays
+ * - /api/svelte-monitor/*       → JSON polling API for monitor state updates
+ * - /api/court/{courtId}/timer-state → Timer state for clock displays
+ */
 
 Route::get('/api/court/{courtId}/timer-state', function ($courtId) {
     $state = Cache::get("court_{$courtId}_timer", [
@@ -404,26 +441,37 @@ Route::get('/api/court/{courtId}/timer-state', function ($courtId) {
     ]);
     $state['server_time_ms'] = floor(microtime(true) * 1000);
 
+    $court = Court::with('activeMatch')->find($courtId);
+    $isRandori = true;
+    if ($court && $court->activeMatch) {
+        $isRandori = ! ($court->activeMatch->draft_type === 'embu' || str_contains(strtolower($court->activeMatch->name), 'embu'));
+    }
+    $state['is_randori'] = $isRandori;
+
     return response()->json($state);
-})->name('api.court.timer-state');
+})->middleware('throttle:monitor')->name('api.court.timer-state');
 
-// Inertia Svelte Monitor Routes
+// Inertia Svelte Monitor Pages — public for venue display screens (see security note above)
 Route::prefix('svelte-monitor')->name('svelte-monitor.')->group(function () {
-    Route::get('/court/{court}', [SvelteMonitorController::class, 'monitorCourt'])->name('court');
-    Route::get('/hasil/court/{court}', [SvelteMonitorController::class, 'monitorHasilCourt'])->name('hasil.court');
-    Route::get('/hasil/match/{match}', [SvelteMonitorController::class, 'monitorHasilMatch'])->name('hasil.match');
-    Route::get('/referee/court/{court}', [SvelteMonitorController::class, 'monitorReferee'])->name('referee');
-    Route::get('/rekapitulasi-hasil/court/{court}', [SvelteMonitorController::class, 'monitorRekapitulasiHasil'])->name('rekapitulasi-hasil');
-    Route::get('/timer/court/{court}', [SvelteMonitorController::class, 'monitorTimer'])->name('timer');
-    Route::get('/timer-standalone', [SvelteMonitorController::class, 'monitorTimerStandalone'])->name('timer-standalone');
+    Route::get('/court/{court}', [MonitorController::class, 'monitorCourt'])->name('court');
+    Route::get('/hasil/court/{court}', [MonitorController::class, 'monitorHasilCourt'])->name('hasil.court');
+    Route::get('/hasil/match/{match}', [MonitorController::class, 'monitorHasilMatch'])->name('hasil.match');
+    Route::get('/referee/court/{court}', [MonitorController::class, 'monitorReferee'])->name('referee');
+    Route::get('/rekapitulasi-hasil/court/{court}', [MonitorController::class, 'monitorRekapitulasiHasil'])->name('rekapitulasi-hasil');
+    Route::get('/timer/court/{court}', [MonitorController::class, 'monitorTimer'])->name('timer');
+    Route::get('/timer-standalone', [MonitorController::class, 'monitorTimerStandalone'])->name('timer-standalone');
 });
 
-// JSON API Monitor Routes for Polling
-Route::prefix('api/svelte-monitor')->name('api.svelte-monitor.')->group(function () {
-    Route::get('/court/{court}/state', [SvelteMonitorController::class, 'monitorCourtState'])->name('court.state');
-    Route::get('/hasil/court/{court}/state', [SvelteMonitorController::class, 'monitorHasilCourtState'])->name('hasil.court.state');
-    Route::get('/hasil/match/{match}/state', [SvelteMonitorController::class, 'monitorHasilMatchState'])->name('hasil.match.state');
-    Route::get('/referee/court/{court}/state', [SvelteMonitorController::class, 'monitorRefereeState'])->name('referee.state');
-    Route::get('/rekapitulasi-hasil/court/{court}/state', [SvelteMonitorController::class, 'monitorRekapitulasiHasilState'])->name('rekapitulasi-hasil.state');
-    Route::get('/timer/court/{court}/state', [SvelteMonitorController::class, 'monitorTimerState'])->name('timer.state');
+// JSON API Monitor Polling — public for venue display screens (see security note above)
+Route::prefix('api/svelte-monitor')->name('api.svelte-monitor.')->middleware('throttle:monitor')->group(function () {
+    Route::get('/court/{court}/state', [MonitorController::class, 'monitorCourtState'])->name('court.state');
+    Route::get('/hasil/court/{court}/state', [MonitorController::class, 'monitorHasilCourtState'])->name('hasil.court.state');
+    Route::get('/hasil/match/{match}/state', [MonitorController::class, 'monitorHasilMatchState'])->name('hasil.match.state');
+    Route::get('/referee/court/{court}/state', [MonitorController::class, 'monitorRefereeState'])->name('referee.state');
+    Route::get('/rekapitulasi-hasil/court/{court}/state', [MonitorController::class, 'monitorRekapitulasiHasilState'])->name('rekapitulasi-hasil.state');
+    Route::get('/timer/court/{court}/state', [MonitorController::class, 'monitorTimerState'])->name('timer.state');
 });
+
+// Cek Rekap Nilai Online
+Route::get('/cek-rekap-nilai-online', [MonitorController::class, 'cekRekapNilaiOnline'])->name('cek-rekap-nilai-online');
+Route::get('/api/cek-rekap-nilai-online/state', [MonitorController::class, 'cekRekapNilaiOnlineState'])->name('api.cek-rekap-nilai-online.state');

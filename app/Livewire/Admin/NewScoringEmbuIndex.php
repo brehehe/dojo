@@ -273,24 +273,24 @@ class NewScoringEmbuIndex extends Component
 
         if ($isGroup) {
             // Beregu / Pasangan (Target 90s - 120s)
-            if ($seconds >= 50 && $seconds <= 89) {
+            if ($seconds >= 80 && $seconds <= 89) {
                 $denda = 5;
-            } elseif ($seconds < 50) {
+            } elseif ($seconds >= 121 && $seconds <= 130) {
+                $denda = 5;
+            } elseif ($seconds >= 0 && $seconds <= 79) {
                 $denda = 10;
-            } elseif ($seconds >= 121 && $seconds <= 135) {
-                $denda = 5;
-            } elseif ($seconds > 135) {
+            } elseif ($seconds >= 131) {
                 $denda = 10;
             }
         } else {
             // Single / Solo / Tandoku (Target 60s - 90s)
-            if ($seconds >= 46 && $seconds <= 59) {
+            if ($seconds >= 50 && $seconds <= 59) {
                 $denda = 5;
-            } elseif ($seconds <= 45) {
+            } elseif ($seconds >= 91 && $seconds <= 100) {
+                $denda = 5;
+            } elseif ($seconds >= 0 && $seconds <= 49) {
                 $denda = 10;
-            } elseif ($seconds >= 91 && $seconds <= 105) {
-                $denda = 5;
-            } elseif ($seconds >= 106) {
+            } elseif ($seconds >= 101) {
                 $denda = 10;
             }
         }
@@ -785,7 +785,8 @@ class NewScoringEmbuIndex extends Component
             return $a['sequence_number'] <=> $b['sequence_number'];
         })->values();
 
-        $firstDrawingQuery = $this->matchNumber->drawings->where('round', $this->currentRound);
+        $firstDrawingQuery = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
+            ->where('round', $this->currentRound);
         if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
             $firstDrawingQuery = $firstDrawingQuery->where('pool_id', $this->selectedPoolId);
         }
@@ -793,9 +794,11 @@ class NewScoringEmbuIndex extends Component
 
         $availablePools = collect();
         if ($this->currentRound === 'Penyisihan') {
-            $availablePools = $this->matchNumber->drawings
+            $availablePools = DrawingMatchNumber::with('pool')
+                ->whereIn('match_number_id', $this->matchNumberIds)
                 ->where('round', 'Penyisihan')
                 ->whereNotNull('pool_id')
+                ->get()
                 ->pluck('pool')
                 ->unique('id')
                 ->values();
@@ -870,7 +873,16 @@ class NewScoringEmbuIndex extends Component
 
     public function getCourtId()
     {
-        $drawings = $this->matchNumber->drawings->where('round', $this->currentRound); // Note: drawings relation should be re-loaded or queried manually if it spans multiple matches
+        // First check if any court is actively running any match in this merge group
+        $activeCourt = Court::whereIn('active_match_id', $this->matchNumberIds)
+            ->whereNotNull('active_drawing_id')
+            ->first();
+        if ($activeCourt) {
+            return $activeCourt->id;
+        }
+
+        $drawings = DrawingMatchNumber::whereIn('match_number_id', $this->matchNumberIds)
+            ->where('round', $this->currentRound);
 
         if ($this->currentRound === 'Penyisihan' && $this->selectedPoolId) {
             $drawings = $drawings->where('pool_id', $this->selectedPoolId);

@@ -1,6 +1,6 @@
 <div class="p-6 bg-slate-50 min-h-screen">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('/css/fonts.css');
         
         .biodata-container {
             font-family: 'Inter', sans-serif;

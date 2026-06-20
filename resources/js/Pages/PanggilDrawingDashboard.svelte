@@ -1,6 +1,7 @@
 <script>
     import { onMount } from "svelte";
     import { router } from "@inertiajs/svelte";
+    import { postJson } from "../lib/api";
 
     // States
     let drawings = $state({
@@ -107,16 +108,7 @@
     async function activateMatch(drawingId) {
         if (!confirm("Panggil pertandingan/kenshi ini ke lapangan?")) return;
         try {
-            const res = await fetch("/admin/api/scoring/activate-match", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ drawing_id: drawingId }),
-            });
+            const res = await postJson("/admin/api/scoring/activate-match", { drawing_id: drawingId });
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
@@ -125,7 +117,6 @@
                 alert(data.message || "Gagal mengaktifkan pertandingan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -193,41 +184,22 @@
     async function clearCourt(courtId) {
         if (!confirm("Kosongkan lapangan ini?")) return;
         try {
-            const res = await fetch("/admin/api/scoring/clear-court", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({ court_id: courtId }),
-            });
+            const res = await postJson("/admin/api/scoring/clear-court", { court_id: courtId });
             const data = await res.json();
             if (data.success) {
                 alert(data.text);
                 fetchState(drawings.current_page);
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
     async function resetActiveReferees(courtId) {
         if (!confirm("Kosongkan panel wasit aktif untuk lapangan ini?")) return;
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/reset-active-referees",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({ court_id: courtId }),
-                },
+                { court_id: courtId },
             );
             const data = await res.json();
             if (data.success) {
@@ -235,7 +207,6 @@
                 fetchState(drawings.current_page);
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -281,7 +252,6 @@
                     selectedReferees = [];
                 }
             } catch (e) {
-                console.error(e);
             }
         } else {
             selectedReferees = [];
@@ -328,7 +298,6 @@
                 alert("Jadwal wasit untuk sesi ini tidak ditemukan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
@@ -338,22 +307,13 @@
             return;
         }
         try {
-            const res = await fetch(
+            const res = await postJson(
                 "/admin/api/scoring/save-referee-assignment",
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content"),
-                    },
-                    body: JSON.stringify({
                         court_id: assigningCourtId,
                         rundown_id: assigningRundownId,
                         session_time_id: assigningSessionId,
                         referees: selectedReferees,
-                    }),
                 },
             );
             const data = await res.json();
@@ -365,26 +325,16 @@
                 alert(data.message || "Gagal menyimpan penugasan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 
     async function resetCourtReferees() {
         if (!confirm("Kosongkan penugasan wasit untuk sesi ini?")) return;
         try {
-            const res = await fetch("/admin/api/scoring/reset-court-referees", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document
-                        .querySelector('meta[name="csrf-token"]')
-                        ?.getAttribute("content"),
-                },
-                body: JSON.stringify({
+            const res = await postJson("/admin/api/scoring/reset-court-referees", {
                     court_id: assigningCourtId,
                     rundown_id: assigningRundownId,
                     session_time_id: assigningSessionId,
-                }),
             });
             const data = await res.json();
             if (data.success) {
@@ -395,7 +345,6 @@
                 alert(data.message || "Gagal mengosongkan penugasan.");
             }
         } catch (e) {
-            console.error(e);
         }
     }
 

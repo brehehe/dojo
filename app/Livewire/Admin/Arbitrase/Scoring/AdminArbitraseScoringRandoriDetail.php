@@ -50,10 +50,22 @@ class AdminArbitraseScoringRandoriDetail extends Component
             $drawingData = $matchNumber->drawing_data ?? [];
 
             // Migrate legacy single-elimination to double_elimination if needed
-            if (! isset($drawingData['bracket_type']) || $drawingData['bracket_type'] !== 'double_elimination') {
-                $drawingData = $this->migrateLegacyBracket($drawingData);
-                if ($drawingData) {
+            $isSingleElimination = ($drawingData['bracket_type'] ?? null) === 'single_elimination' ||
+                                   ($drawingData['type'] ?? null) === 'single_elimination' ||
+                                   (isset($drawingData['upper_bracket']) && (empty($drawingData['lower_bracket']['rounds']) || ! isset($drawingData['lower_bracket']['rounds'])));
+
+            if ($isSingleElimination) {
+                if (($drawingData['bracket_type'] ?? null) === 'double_elimination') {
+                    $drawingData['type'] = 'single_elimination';
+                    unset($drawingData['bracket_type']);
                     $this->matchNumber->update(['drawing_data' => $drawingData]);
+                }
+            } else {
+                if (! isset($drawingData['bracket_type']) || $drawingData['bracket_type'] !== 'double_elimination') {
+                    $drawingData = $this->migrateLegacyBracket($drawingData);
+                    if ($drawingData) {
+                        $this->matchNumber->update(['drawing_data' => $drawingData]);
+                    }
                 }
             }
 

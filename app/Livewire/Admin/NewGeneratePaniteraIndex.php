@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exports\PaniteraAssignmentExport;
 use App\Models\DrawingMatchNumber;
 use App\Models\SchedulePanitera;
 use App\Models\User;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.premium', ['title' => 'Penugasan Panitera & Koordinator'])]
 class NewGeneratePaniteraIndex extends Component
@@ -280,6 +282,11 @@ class NewGeneratePaniteraIndex extends Component
         }
 
         $this->autoGenerateAllOfficers();
+    }
+
+    public function export()
+    {
+        return Excel::download(new PaniteraAssignmentExport, 'penugasan_panitera_'.now()->format('Ymd_His').'.xlsx');
     }
 
     public function render()

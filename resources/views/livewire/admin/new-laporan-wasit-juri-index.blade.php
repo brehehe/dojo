@@ -43,6 +43,11 @@
             .badge-round { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; background: #f0ece4; color: #7f8c8d; }
             .btn-print { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; border: 1px solid #e8e3da; background: #fff; color: #7f8c8d; transition: all .2s; }
             .btn-print:hover { background: #f7f4ef; }
+
+            /* ---------- Tabs ---------- */
+            .tm-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e8e3da; padding-bottom: 8px; }
+            .tm-tab-btn { padding: 10px 20px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all .2s; border: 1px solid #e8e3da; background: #fff; color: var(--smoke); }
+            .tm-tab-btn.active { background: var(--ink, #2c3e50); color: #fff; border-color: var(--ink, #2c3e50); }
         </style>
     @endpush
 
@@ -145,6 +150,12 @@
             </div>
         @endif
 
+        {{-- TABS --}}
+        <div class="tm-tabs">
+            <button wire:click="$set('roundFilter', 'Penyisihan')" class="tm-tab-btn {{ $roundFilter === 'Penyisihan' ? 'active' : '' }}">Penyisihan</button>
+            <button wire:click="$set('roundFilter', 'Final')" class="tm-tab-btn {{ $roundFilter === 'Final' ? 'active' : '' }}">Final</button>
+        </div>
+
         {{-- TABLE --}}
         <div class="tbl-card">
             <table class="tbl">
@@ -184,7 +195,7 @@
                                 @endif
                             </td>
                             <td style="font-weight:700; text-transform:uppercase; font-size:12px;">
-                                {{ $row->contingent_name }}
+                                {{ $row->contingent_name ?: ($row->scorable_type === \App\Models\DrawingMatchNumber::class ? ($row->scorable?->registration?->contingent?->name ?? '—') : ($row->scorable?->contingent?->name ?? '—')) }}
                             </td>
                             <td>
                                 @if($drawing?->court)
@@ -237,7 +248,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="{{ asset('vendor/apexcharts/apexcharts.min.js') }}"></script>
     <script>
         let deviationChart = null;
 

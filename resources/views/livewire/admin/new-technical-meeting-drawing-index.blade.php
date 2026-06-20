@@ -742,14 +742,16 @@
                         style="background:#27ae60; box-shadow:0 4px 12px rgba(39, 174, 96, .25);">
                         <i class="fa-solid fa-file-excel"></i> Export Excel
                     </button>
-                @else
                     <button class="btn-gen primary" wire:click="generateAllDrawings" wire:loading.attr="disabled" wire:target="generateAllDrawings" @if($isGenerating) disabled @endif>
                         <i class="fa-solid fa-magic" wire:loading.remove wire:target="generateAllDrawings"></i>
                         <i class="fa-solid fa-spinner fa-spin" wire:loading wire:target="generateAllDrawings"></i>
                         Generate Semua {{ ucfirst($draftType) }}
                     </button>
+                    <button class="btn-gen ghost" onclick="confirmResetAllScoring()" wire:loading.attr="disabled" @if($isGenerating) disabled @endif style="border-color:#e67e22; color:#e67e22;">
+                        <i class="fa-solid fa-eraser"></i> Reset Semua Penilaian
+                    </button>
                     <button class="btn-gen ghost" onclick="confirmResetAll()" wire:loading.attr="disabled" @if($isGenerating) disabled @endif>
-                        <i class="fa-solid fa-rotate-left"></i> Reset Semua
+                        <i class="fa-solid fa-rotate-left"></i> Reset Semua Drawing
                     </button>
                 @endif
             </div>
@@ -1235,8 +1237,10 @@
                                 <h4>Hasil Drawing & Bagan</h4>
                                 <div class="tm-actions">
                                     @if ($isDrawn)
+                                        <button onclick="confirmResetScoring()" class="btn-gen ghost" style="border-color:#e67e22; color:#e67e22;"><i
+                                                class="fa-solid fa-eraser"></i> Reset Penilaian</button>
                                         <button onclick="confirmReset()" class="btn-gen ghost"><i
-                                                class="fa-solid fa-rotate-left"></i> Reset</button>
+                                                class="fa-solid fa-rotate-left"></i> Reset Drawing</button>
                                     @endif
                                     <button
                                         wire:click="{{ $draftType === 'randori' ? 'generateRandoriDrawing' : 'generateEmbuDrawing' }}"
@@ -1611,8 +1615,8 @@
         <script>
             function confirmReset() {
                 Swal.fire({
-                    title: 'Reset Drawing?',
-                    text: 'Data drawing akan dihapus dan bisa di-generate ulang.',
+                    title: 'Reset Drawing & Jadwal?',
+                    text: 'Data drawing dan jadwal akan dihapus secara total.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#c0392b',
@@ -1625,10 +1629,26 @@
                 });
             }
 
+            function confirmResetScoring() {
+                Swal.fire({
+                    title: 'Reset Penilaian & Juara?',
+                    text: 'Hanya data skor, hasil tanding, dan juara yang akan dihapus. Jadwal & bagan tetap dipertahankan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e67e22',
+                    cancelButtonColor: '#7f8c8d',
+                    confirmButtonText: 'Ya, Reset Penilaian!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                }).then((r) => {
+                    if (r.isConfirmed) @this.resetScoring();
+                });
+            }
+
             function confirmResetAll() {
                 Swal.fire({
-                    title: 'Reset Semua Drawing?',
-                    text: 'SEMUA data drawing akan dihapus dan harus di-generate ulang.',
+                    title: 'Reset Semua Drawing & Jadwal?',
+                    text: 'SEMUA data drawing dan jadwal akan dihapus secara total.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#c0392b',
@@ -1638,6 +1658,22 @@
                     reverseButtons: true,
                 }).then((r) => {
                     if (r.isConfirmed) @this.resetAllDrawings();
+                });
+            }
+
+            function confirmResetAllScoring() {
+                Swal.fire({
+                    title: 'Reset Semua Penilaian & Juara?',
+                    text: 'Hanya data skor, hasil tanding, dan juara dari SEMUA kelas yang akan dihapus. Jadwal & bagan tetap dipertahankan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e67e22',
+                    cancelButtonColor: '#7f8c8d',
+                    confirmButtonText: 'Ya, Reset Semua Penilaian!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                }).then((r) => {
+                    if (r.isConfirmed) @this.resetAllScoring();
                 });
             }
         </script>

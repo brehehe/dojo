@@ -1,12 +1,9 @@
 <div>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
-    </style>
-
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <link href="{{ asset('vendor/tom-select/tom-select.css') }}" rel="stylesheet">
+    <script src="{{ asset('vendor/tom-select/tom-select.complete.min.js') }}"></script>
 
     <style>
+        @import url('/css/fonts.css');
         /* Tom Select Premium Overrides */
         .ts-control {
             border: 2px solid #cbd5e1 !important;

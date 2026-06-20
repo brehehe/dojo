@@ -7,7 +7,7 @@
     <title>{{ $title ?? 'Laporan — Smart Perkemi' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        @import url('/css/fonts.css');
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
         @media print {

@@ -11,6 +11,7 @@ use App\Models\MatchNumber\MatchNumber;
 use App\Models\Pool\Pool;
 use App\Models\Rundown\Rundown;
 use App\Models\SessionTime;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -139,7 +140,7 @@ class NewRekapitulasiEmbuIndex extends Component
                 'drawing_match_numbers.rundown_id',
                 'drawing_match_numbers.round',
                 'drawing_match_numbers.draft_type',
-                'match_number_merges.id'
+                DB::raw('COALESCE(match_number_merges.id, -drawing_match_numbers.match_number_id)')
             )
             ->with([
                 'matchNumber.ageGroup',
@@ -196,7 +197,10 @@ class NewRekapitulasiEmbuIndex extends Component
             });
         }
 
-        $query->orderBy('rundown_id')->orderBy('session_time_id')->orderByRaw('MIN(sequence_number)');
+        $query->orderBy('rundown_id')
+            ->orderBy('session_time_id')
+            ->orderByRaw('MIN(drawing_match_numbers.sequence_number)')
+            ->orderByRaw('MIN(drawing_match_numbers.id)');
 
         return view('livewire.admin.new-rekapitulasi-embu-index', [
             'drawings' => $query->paginate(10),

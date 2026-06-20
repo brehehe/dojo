@@ -1,8 +1,10 @@
 <div>
 <style>
 /* ===========================
-   BASE STYLES
+   GOOGLE FONTS & BASE STYLES
 =========================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0f172a; }
 
@@ -32,6 +34,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     font-weight: 600;
 }
 .print-controls .ctrl-label strong { color: white; }
+
 .btn-print {
     display: inline-flex;
     align-items: center;
@@ -68,6 +71,84 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     transition: all 0.15s;
 }
 .btn-back:hover { background: rgba(255,255,255,0.18); color: white; }
+
+/* Print Mode styles */
+.print-controls-filters {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 14px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.tabs-scroll-container {
+    display: flex;
+    gap: 6px;
+    background: rgba(0,0,0,0.2);
+    padding: 4px;
+    border-radius: 8px;
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+.tabs-scroll-container::-webkit-scrollbar {
+    height: 4px;
+}
+.tabs-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.25);
+    border-radius: 2px;
+}
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.tab-btn:hover {
+    color: white;
+    background: rgba(255,255,255,0.05);
+}
+.tab-btn.active {
+    color: white;
+    background: linear-gradient(135deg, #b22234, #e63946);
+    box-shadow: 0 2px 8px rgba(178,34,52,0.3);
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.select-input {
+    background: #1e293b;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    max-width: 320px;
+    transition: border-color 0.2s;
+}
+.select-input:focus {
+    border-color: #e63946;
+}
+.select-input option {
+    background: #1e293b;
+    color: white;
+}
 
 /* ===========================
    DOCUMENT / PAPER
@@ -159,7 +240,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     background: #f1f5f9;
     border-left: 4px solid #b22234;
     padding: 6px 12px;
-    margin-bottom: 0;
+    margin-bottom: 8px;
 }
 .score-table {
     width: 100%;
@@ -168,7 +249,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     margin-bottom: 24px;
 }
 .score-table thead th {
-    background: #0f172a;
+    background: #1e293b;
     color: white;
     padding: 8px 10px;
     text-align: center;
@@ -176,11 +257,11 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    border: 1px solid #1e293b;
+    border: 1px solid #334155;
 }
-.score-table thead th:first-child,
 .score-table thead th:nth-child(2),
 .score-table thead th:nth-child(3) { text-align: left; }
+.score-table thead th:first-child { text-align: center; }
 .score-table tbody td {
     padding: 7px 10px;
     border: 1px solid #e2e8f0;
@@ -188,14 +269,14 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     color: #1e293b;
 }
 .score-table tbody td { text-align: center; }
-.score-table tbody td:first-child,
 .score-table tbody td:nth-child(2),
 .score-table tbody td:nth-child(3) { text-align: left; }
+.score-table tbody td:first-child { text-align: center; }
 .score-table tbody tr:nth-child(even) { background: #f8fafc; }
 .score-table tbody tr:hover { background: #f0f9ff; }
-.rank-gold { background: #fef3c7 !important; font-weight: 800; color: #92400e !important; }
-.rank-silver { background: #f1f5f9 !important; font-weight: 800; }
-.rank-bronze { background: #fef9eb !important; font-weight: 700; }
+.rank-gold { background: #fffdf5 !important; font-weight: 800; }
+.rank-silver { background: #fcfcfd !important; font-weight: 800; }
+.rank-bronze { background: #fffbf7 !important; font-weight: 700; }
 
 /* ===========================
    CHAMPION SECTION
@@ -255,7 +336,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
 }
 
 /* ===========================
-   RANDORI BRACKET TABLE
+   RANDORI BRACKET TABLE & COMPETITORS
 =========================== */
 .randori-section-title {
     font-size: 12px;
@@ -297,6 +378,14 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
 .score-cell { font-weight: 800; font-size: 14px; }
 .aka-score { color: #b22234; }
 .shiro-score { color: #1e40af; }
+
+.competitors-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 24px;
+}
 
 /* ===========================
    SIGNATURE SECTION
@@ -360,50 +449,6 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
     margin-top: 2px;
 }
 
-/* Print Mode styles */
-.tab-btn {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-}
-.tab-btn:hover {
-    color: white;
-    background: rgba(255,255,255,0.05);
-}
-.tab-btn.active {
-    color: white;
-    background: linear-gradient(135deg, #b22234, #e63946);
-    box-shadow: 0 2px 8px rgba(178,34,52,0.3);
-}
-.select-input {
-    background: #1e293b;
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-radius: 8px;
-    padding: 6px 10px;
-    color: white;
-    font-size: 12px;
-    font-weight: 600;
-    outline: none;
-    cursor: pointer;
-    max-width: 320px;
-    transition: border-color 0.2s;
-}
-.select-input:focus {
-    border-color: #e63946;
-}
-.select-input option {
-    background: #1e293b;
-    color: white;
-}
 .page-break {
     page-break-after: always;
     break-after: page;
@@ -435,6 +480,142 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
 }
 
 /* ===========================
+   TABLE RESPONSIVE CONTAINER
+=========================== */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 24px;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.table-responsive .score-table,
+.table-responsive .bracket-table,
+.table-responsive .score-detail-table {
+    margin-bottom: 0;
+}
+
+/* ===========================
+   RESPONSIVE DESIGN (SCREEN ONLY)
+=========================== */
+@media screen and (max-width: 768px) {
+    .document {
+        padding: 20px 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    
+    .meta-table {
+        display: block;
+    }
+    .meta-table tbody, .meta-table tr {
+        display: block;
+        width: 100%;
+    }
+    .meta-table tr {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 8px;
+    }
+    .meta-table tr:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .meta-table td {
+        display: block;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    .meta-table td:nth-child(2), .meta-table td:nth-child(5) {
+        display: none !important;
+    }
+    .meta-table td:first-child, .meta-table td:nth-child(4) {
+        font-weight: 700;
+        color: #64748b;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .meta-table td:nth-child(3), .meta-table td:nth-child(6) {
+        color: #0f172a;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .sig-grid-5, .sig-grid-4, .sig-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .print-controls {
+        padding: 16px;
+    }
+    .print-controls > div {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 12px;
+    }
+    .print-controls .btn-back,
+    .print-controls .btn-print {
+        width: 100%;
+        justify-content: center;
+    }
+    .print-controls-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .filter-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+    .filter-group span {
+        font-size: 12px;
+        color: #94a3b8;
+    }
+    .select-input {
+        max-width: 100%;
+        width: 100%;
+    }
+    .champion-list {
+        grid-template-columns: 1fr;
+    }
+    .champion-item {
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .champion-item:last-child {
+        border-bottom: none;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .sig-grid-5, .sig-grid-4, .sig-grid-3, .sig-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===========================
    PRINT STYLES
 =========================== */
 @media print {
@@ -445,6 +626,10 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
         box-shadow: none;
         border-radius: 0;
         padding: 16px 20px;
+    }
+    .table-responsive {
+        overflow-x: visible !important;
+        margin-bottom: 24px;
     }
     .score-table, .bracket-table { page-break-inside: auto; }
     .score-table tr, .bracket-table tr { page-break-inside: avoid; }
@@ -512,17 +697,23 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
         </div>
 
         <!-- Row 2: Mode Tabs & Dynamic Selectors -->
-        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-            <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px;">
+        <div class="print-controls-filters">
+            <div class="tabs-scroll-container">
                 @if($matchNumber->draft_type === 'embu')
                     <button wire:click="$set('printMode', 'rekap')" class="tab-btn {{ $printMode === 'rekap' ? 'active' : '' }}">
                         <i class="fas fa-file-alt"></i> Rekap Hasil
                     </button>
-                    <button wire:click="$set('printMode', 'juri')" class="tab-btn {{ $printMode === 'juri' ? 'active' : '' }}">
+                    <button wire:click="$set('printMode', 'juri'); $set('selectedJuri', '1');" class="tab-btn {{ $printMode === 'juri' ? 'active' : '' }}">
                         <i class="fas fa-user-shield"></i> Lembar Juri
                     </button>
-                    <button wire:click="$set('printMode', 'atlet')" class="tab-btn {{ $printMode === 'atlet' ? 'active' : '' }}">
+                    <button wire:click="$set('printMode', 'atlet'); $set('selectedAthleteReg', 'all');" class="tab-btn {{ $printMode === 'atlet' ? 'active' : '' }}">
                         <i class="fas fa-user-friends"></i> Lembar Per Atlet
+                    </button>
+                    <button wire:click="$set('printMode', 'catatan'); $set('selectedJuri', 'all');" class="tab-btn {{ $printMode === 'catatan' ? 'active' : '' }}">
+                        <i class="fas fa-comment-medical"></i> Catatan Juri
+                    </button>
+                    <button wire:click="$set('printMode', 'scorecard'); $set('selectedJuri', '1'); $set('selectedAthleteReg', 'all');" class="tab-btn {{ $printMode === 'scorecard' ? 'active' : '' }}">
+                        <i class="fas fa-clipboard-list"></i> Detail Scorecard
                     </button>
                 @else
                     <button wire:click="$set('printMode', 'rekap')" class="tab-btn {{ $printMode === 'rekap' ? 'active' : '' }}">
@@ -536,7 +727,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
 
             <!-- Contextual Filter Selectors -->
             @if($printMode === 'juri')
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="filter-group">
                     <span style="color: #94a3b8; font-size: 13px; font-weight: 600;">Pilih Juri:</span>
                     <select wire:model.live="selectedJuri" class="select-input">
                         <option value="1">Juri 1</option>
@@ -549,8 +740,52 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                 </div>
             @endif
 
+            @if($printMode === 'catatan')
+                <div class="filter-group">
+                    <span style="color: #94a3b8; font-size: 13px; font-weight: 600;">Pilih Juri:</span>
+                    <select wire:model.live="selectedJuri" class="select-input">
+                        <option value="all">Semua Juri (Tabel Gabungan)</option>
+                        <option value="1">Juri 1</option>
+                        <option value="2">Juri 2</option>
+                        <option value="3">Juri 3</option>
+                        <option value="4">Juri 4</option>
+                        <option value="5">Juri 5</option>
+                        <option value="each">Per Juri (Halaman Terpisah)</option>
+                    </select>
+                </div>
+            @endif
+
+            @if($printMode === 'scorecard')
+                <div class="filter-group">
+                    <span style="color: #94a3b8; font-size: 13px; font-weight: 600;">Pilih Juri:</span>
+                    <select wire:model.live="selectedJuri" class="select-input">
+                        <option value="1">Juri 1</option>
+                        <option value="2">Juri 2</option>
+                        <option value="3">Juri 3</option>
+                        <option value="4">Juri 4</option>
+                        <option value="5">Juri 5</option>
+                        <option value="all">Semua Juri (Halaman Terpisah)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span style="color: #94a3b8; font-size: 13px; font-weight: 600;">Pilih Atlet:</span>
+                    <select wire:model.live="selectedAthleteReg" class="select-input">
+                        <option value="all">Semua Atlet (Halaman Terpisah)</option>
+                        @foreach($allRegs as $rId => $regInfo)
+                            <option value="{{ $rId }}">
+                                {{ $regInfo['sequence'] ?? '' }}. 
+                                @foreach($regInfo['athletes'] as $a)
+                                    {{ $a->name }}{{ !$loop->last ? ' & ' : '' }}
+                                @endforeach
+                                ({{ $regInfo['contingent']?->name ?? '' }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
             @if($printMode === 'atlet')
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="filter-group">
                     <span style="color: #94a3b8; font-size: 13px; font-weight: 600;">Pilih Atlet:</span>
                     <select wire:model.live="selectedAthleteReg" class="select-input">
                         <option value="all">Semua Atlet (Halaman Terpisah)</option>
@@ -568,7 +803,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
             @endif
 
             @if($printMode === 'per-match')
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="filter-group">
                     <span style="color: #94a3b8; font-size: 13px; font-weight: 600;">Pilih Pertandingan:</span>
                     <select wire:model.live="selectedMatch" class="select-input">
                         <option value="all">Semua Match (Halaman Terpisah)</option>
@@ -652,67 +887,76 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                         Belum ada data penilaian untuk babak {{ $roundName }}.
                     </div>
                 @else
-                    <table class="score-table">
-                        <thead>
-                            <tr>
-                                <th style="width:36px;">No.</th>
-                                <th style="min-width:140px;">Nama Peserta</th>
-                                <th style="min-width:120px;">Kontingen</th>
-                                <th>J1</th>
-                                <th>J2</th>
-                                <th>J3</th>
-                                <th>J4</th>
-                                <th>J5</th>
-                                <th>Nilai Awal</th>
-                                <th>Denda</th>
-                                <th>Nilai Akhir</th>
-                                @if($roundName === 'Final')<th>P+F (Total)</th>@endif
-                                <th>Peringkat</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($regs as $seq => $reg)
-                                @php
-                                    $rank = is_numeric($reg['rank']) ? (int)$reg['rank'] : null;
-                                    $rowClass = match($rank) { 1 => 'rank-gold', 2 => 'rank-silver', 3 => 'rank-bronze', default => '' };
-                                @endphp
-                                <tr class="{{ $rowClass }}">
-                                    <td>{{ $reg['sequence'] ?? ($seq + 1) }}</td>
-                                    <td style="text-align:left;">
-                                        @foreach($reg['athletes'] as $ath)
-                                            <div style="font-weight:700; font-size:11.5px;">{{ $ath->name }}</div>
-                                        @endforeach
-                                    </td>
-                                    <td style="text-align:left; font-size:11px;">{{ $reg['contingent']?->name ?? '-' }}</td>
-                                    <td>{{ $reg['score']?->judge_1 > 0 ? number_format($reg['score']->judge_1, 2) : '-' }}</td>
-                                    <td>{{ $reg['score']?->judge_2 > 0 ? number_format($reg['score']->judge_2, 2) : '-' }}</td>
-                                    <td>{{ $reg['score']?->judge_3 > 0 ? number_format($reg['score']->judge_3, 2) : '-' }}</td>
-                                    <td>{{ $reg['score']?->judge_4 > 0 ? number_format($reg['score']->judge_4, 2) : '-' }}</td>
-                                    <td>{{ $reg['score']?->judge_5 > 0 ? number_format($reg['score']->judge_5, 2) : '-' }}</td>
-                                    <td style="font-weight:700;">{{ $reg['nilai_awal'] > 0 ? number_format($reg['nilai_awal'], 2) : '-' }}</td>
-                                    <td style="color:{{ ($reg['denda'] ?? 0) > 0 ? '#b22234' : '#94a3b8' }};">
-                                        {{ ($reg['denda'] ?? 0) > 0 ? '-'.number_format($reg['denda'], 2) : '0' }}
-                                    </td>
-                                    <td style="font-weight:800; color:#065f46;">
-                                        {{ $reg['nilai_akhir'] > 0 ? number_format($reg['nilai_akhir'], 2) : '-' }}
-                                    </td>
-                                    @if($roundName === 'Final')
-                                        <td style="font-weight:800; color:#1e40af;">
-                                            {{ $reg['accumulated'] > 0 ? number_format($reg['accumulated'], 2) : '-' }}
-                                        </td>
-                                    @endif
-                                    <td style="font-weight:800; font-size:13px;">
-                                        @if($rank === 1) 🥇 1
-                                        @elseif($rank === 2) 🥈 2
-                                        @elseif($rank === 3) 🥉 3
-                                        @elseif($rank) {{ $rank }}
-                                        @else -
-                                        @endif
-                                    </td>
+                    <div class="table-responsive">
+                        <table class="score-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:36px; text-align:center;">No.</th>
+                                    <th style="min-width:160px; text-align:left;">Nama Peserta</th>
+                                    <th style="min-width:110px; text-align:left;">Kontingen</th>
+                                    <th style="width:48px;">J1</th>
+                                    <th style="width:48px;">J2</th>
+                                    <th style="width:48px;">J3</th>
+                                    <th style="width:48px;">J4</th>
+                                    <th style="width:48px;">J5</th>
+                                    <th style="width:75px;">Nilai Awal</th>
+                                    <th style="width:60px;">Denda</th>
+                                    <th style="width:80px;">Nilai Akhir</th>
+                                    @if($roundName === 'Final')<th style="width:90px;">P+F (Total)</th>@endif
+                                    {{--<th style="width:80px;">Peringkat</th>--}}
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($regs as $seq => $reg)
+                                    @php
+                                        $rank = is_numeric($reg['rank']) ? (int)$reg['rank'] : null;
+                                        $rowClass = match($rank) { 1 => 'rank-gold', 2 => 'rank-silver', 3 => 'rank-bronze', default => '' };
+                                    @endphp
+                                    <tr class="{{ $rowClass }}">
+                                        <td style="text-align:center; vertical-align:middle;">{{ $reg['sequence'] ?? ($seq + 1) }}</td>
+                                        <td style="text-align:left; vertical-align:middle;">
+                                            <div style="display: flex; flex-direction: column; gap: 3px; padding: 2px 0;">
+                                                @foreach($reg['athletes'] as $index => $ath)
+                                                    <div style="font-weight:700; font-size:11px; color:#0f172a; line-height:1.25;">
+                                                        @if(count($reg['athletes']) > 1)
+                                                            <span style="color:#64748b; font-size:9.5px; font-weight:800; display:inline-block; width:15px; text-align:right; margin-right:4px;">{{ $index + 1 }}.</span>
+                                                        @endif
+                                                        <span>{{ $ath->name }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                        <td style="text-align:left; font-size:11px; font-weight:600; color:#475569; vertical-align:middle;">{{ $reg['contingent']?->name ?? '-' }}</td>
+                                        <td style="font-weight:500; color:#475569; vertical-align:middle;">{{ $reg['score']?->judge_1 > 0 ? number_format($reg['score']->judge_1, 2) : '-' }}</td>
+                                        <td style="font-weight:500; color:#475569; vertical-align:middle;">{{ $reg['score']?->judge_2 > 0 ? number_format($reg['score']->judge_2, 2) : '-' }}</td>
+                                        <td style="font-weight:500; color:#475569; vertical-align:middle;">{{ $reg['score']?->judge_3 > 0 ? number_format($reg['score']->judge_3, 2) : '-' }}</td>
+                                        <td style="font-weight:500; color:#475569; vertical-align:middle;">{{ $reg['score']?->judge_4 > 0 ? number_format($reg['score']->judge_4, 2) : '-' }}</td>
+                                        <td style="font-weight:500; color:#475569; vertical-align:middle;">{{ $reg['score']?->judge_5 > 0 ? number_format($reg['score']->judge_5, 2) : '-' }}</td>
+                                        <td style="font-weight:700; color:#1e293b; vertical-align:middle;">{{ $reg['nilai_awal'] > 0 ? number_format($reg['nilai_awal'], 2) : '-' }}</td>
+                                        <td style="color:{{ ($reg['denda'] ?? 0) > 0 ? '#dc2626' : '#94a3b8' }}; font-weight:{{ ($reg['denda'] ?? 0) > 0 ? '700' : '400' }}; vertical-align:middle;">
+                                            {{ ($reg['denda'] ?? 0) > 0 ? '-'.number_format($reg['denda'], 2) : '0' }}
+                                        </td>
+                                        <td style="font-weight:800; color:#0f766e; font-size:12px; vertical-align:middle;">
+                                            {{ $reg['nilai_akhir'] > 0 ? number_format($reg['nilai_akhir'], 2) : '-' }}
+                                        </td>
+                                        @if($roundName === 'Final')
+                                            <td style="font-weight:800; color:#1d4ed8; font-size:12px; vertical-align:middle;">
+                                                {{ $reg['accumulated'] > 0 ? number_format($reg['accumulated'], 2) : '-' }}
+                                            </td>
+                                        @endif
+                                        {{--<td style="font-weight:800; font-size:13px; vertical-align:middle; text-align:center;">
+                                            @if($rank === 1) 🥇 1
+                                            @elseif($rank === 2) 🥈 2
+                                            @elseif($rank === 3) 🥉 3
+                                            @elseif($rank) {{ $rank }}
+                                            @else -
+                                            @endif
+                                        </td>--}}
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 @endif
             @endforeach
 
@@ -724,7 +968,12 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                         @foreach($champions->take(4) as $champ)
                             @php
                                 $rankMedal = match($champ->rank) { 1 => 'gold', 2 => 'silver', 3 => 'bronze', default => '' };
-                                $rankLabel = match($champ->rank) { 1 => '🥇 JUARA 1', 2 => '🥈 JUARA 2', 3 => '🥉 JUARA 3', 4 => '🥉 JUARA 3 BERSAMA', default => 'PERINGKAT '.$champ->rank };
+                                $rankLabel = match($champ->rank) {
+                                    1 => '🥇 JUARA 1',
+                                    2 => '🥈 JUARA 2',
+                                    3, 4 => '🥉 ' . strtoupper($champ->rank_label),
+                                    default => strtoupper($champ->rank_label)
+                                };
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank {{ $rankMedal }}">{{ $rankLabel }}</div>
@@ -753,43 +1002,45 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
             @else
                 @foreach($sections as $sectionName => $sectionResults)
                     <div class="randori-section-title">Bagian: {{ $sectionName }}</div>
-                    <table class="bracket-table">
-                        <thead>
-                            <tr>
-                                <th style="width:40px;">No.</th>
-                                <th style="min-width:130px; text-align:left;">Merah (AKA)</th>
-                                <th style="width:90px;">Skor AKA</th>
-                                <th style="min-width:130px; text-align:left;">Biru (SHIRO)</th>
-                                <th style="width:90px;">Skor SHIRO</th>
-                                <th style="min-width:120px;">Pemenang</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($sectionResults as $idx => $result)
-                                @php
-                                    $meta = is_string($result->metadata) ? json_decode($result->metadata, true) : (array)($result->metadata ?? []);
-                                    $akaName = $meta['aka_name'] ?? $meta['red_name'] ?? ('Merah '.($idx+1));
-                                    $shiroName = $meta['shiro_name'] ?? $meta['blue_name'] ?? ('Biru '.($idx+1));
-                                    $winnerName = $result->winner?->name ?? ($result->winner_color === 'aka' ? $akaName : ($result->winner_color === 'shiro' ? $shiroName : '-'));
-                                @endphp
+                    <div class="table-responsive">
+                        <table class="bracket-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ $idx + 1 }}</td>
-                                    <td style="text-align:left; font-weight:{{ $result->winner_color === 'aka' ? '800' : '400' }}; color:{{ $result->winner_color === 'aka' ? '#065f46' : '#1e293b' }}">
-                                        {{ $akaName }}
-                                    </td>
-                                    <td class="score-cell aka-score">{{ $result->score_red }}</td>
-                                    <td style="text-align:left; font-weight:{{ $result->winner_color === 'shiro' ? '800' : '400' }}; color:{{ $result->winner_color === 'shiro' ? '#065f46' : '#1e293b' }}">
-                                        {{ $shiroName }}
-                                    </td>
-                                    <td class="score-cell shiro-score">{{ $result->score_blue }}</td>
-                                    <td class="winner-cell">
-                                        @if($result->winner_color === 'aka') 🔴 @elseif($result->winner_color === 'shiro') 🔵 @endif
-                                        {{ $winnerName }}
-                                    </td>
+                                    <th style="width:40px;">No.</th>
+                                    <th style="min-width:130px; text-align:left;">Merah (AKA)</th>
+                                    <th style="width:90px;">Skor AKA</th>
+                                    <th style="min-width:130px; text-align:left;">Biru (SHIRO)</th>
+                                    <th style="width:90px;">Skor SHIRO</th>
+                                    <th style="min-width:120px;">Pemenang</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($sectionResults as $idx => $result)
+                                    @php
+                                        $meta = is_string($result->metadata) ? json_decode($result->metadata, true) : (array)($result->metadata ?? []);
+                                        $akaName = $meta['aka_name'] ?? $meta['red_name'] ?? ('Merah '.($idx+1));
+                                        $shiroName = $meta['shiro_name'] ?? $meta['blue_name'] ?? ('Biru '.($idx+1));
+                                        $winnerName = $result->winner?->name ?? ($result->winner_color === 'aka' ? $akaName : ($result->winner_color === 'shiro' ? $shiroName : '-'));
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $idx + 1 }}</td>
+                                        <td style="text-align:left; font-weight:{{ $result->winner_color === 'aka' ? '800' : '400' }}; color:{{ $result->winner_color === 'aka' ? '#065f46' : '#1e293b' }}">
+                                            {{ $akaName }}
+                                        </td>
+                                        <td class="score-cell aka-score">{{ $result->score_red }}</td>
+                                        <td style="text-align:left; font-weight:{{ $result->winner_color === 'shiro' ? '800' : '400' }}; color:{{ $result->winner_color === 'shiro' ? '#065f46' : '#1e293b' }}">
+                                            {{ $shiroName }}
+                                        </td>
+                                        <td class="score-cell shiro-score">{{ $result->score_blue }}</td>
+                                        <td class="winner-cell">
+                                            @if($result->winner_color === 'aka') 🔴 @elseif($result->winner_color === 'shiro') 🔵 @endif
+                                            {{ $winnerName }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 @endforeach
             @endif
 
@@ -801,7 +1052,12 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                         @foreach($champions->take(4) as $champ)
                             @php
                                 $rankMedal = match($champ->rank) { 1 => 'gold', 2 => 'silver', 3 => 'bronze', default => '' };
-                                $rankLabel = match($champ->rank) { 1 => '🥇 JUARA 1', 2 => '🥈 JUARA 2', 3 => '🥉 JUARA 3', 4 => '🥉 JUARA 3 BERSAMA', default => 'PERINGKAT '.$champ->rank };
+                                $rankLabel = match($champ->rank) {
+                                    1 => '🥇 JUARA 1',
+                                    2 => '🥈 JUARA 2',
+                                    3, 4 => '🥉 ' . strtoupper($champ->rank_label),
+                                    default => strtoupper($champ->rank_label)
+                                };
                             @endphp
                             <div class="champion-item">
                                 <div class="champion-rank {{ $rankMedal }}">{{ $rankLabel }}</div>
@@ -814,119 +1070,6 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
             @endif
 
         @endif
-
-        {{-- ========================= --}}
-        {{-- TANDA TANGAN SECTION      --}}
-        {{-- ========================= --}}
-        <div class="sig-section">
-            <div class="sig-section-title">✍️ Tanda Tangan Pejabat Pertandingan</div>
-
-            @if($matchNumber->draft_type === 'embu')
-                {{-- EMBU: Koordinator + Panitera --}}
-                <div style="margin-bottom:16px;">
-                    <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:8px;">Koordinator &amp; Panitera</div>
-                    <div class="sig-grid sig-grid-3">
-                        <div class="sig-box">
-                            <div class="sig-role">Koordinator Lapangan</div>
-                            <div class="sig-name">{{ $koordinator ?: '...................................' }}</div>
-                            <div class="sig-line">{{ $koordinator ?: '' }}</div>
-                        </div>
-                        @foreach(array_values(array_filter(is_array($paniteras) ? $paniteras : [$paniteras])) as $pi => $pan)
-                            <div class="sig-box">
-                                <div class="sig-role">Panitera {{ $pi > 0 ? ($pi + 1) : '' }}</div>
-                                <div class="sig-name">{{ $pan }}</div>
-                                <div class="sig-line">{{ $pan }}</div>
-                            </div>
-                        @endforeach
-                        @if(empty($paniteras))
-                            <div class="sig-box">
-                                <div class="sig-role">Panitera</div>
-                                <div class="sig-name">...................................</div>
-                                <div class="sig-line"></div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                {{-- EMBU: Juri/Wasit --}}
-                @if($referees->isNotEmpty())
-                    <div>
-                        <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:8px;">Juri Penilai</div>
-                        <div class="sig-grid sig-grid-5">
-                            @foreach($referees as $ref)
-                                <div class="sig-box">
-                                    <div class="sig-role">Juri {{ $ref->judge_index }}</div>
-                                    <div class="sig-name">{{ $ref->referee?->name ?? '.....................' }}</div>
-                                    <div class="sig-line">{{ $ref->referee?->name ?? '' }}</div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @else
-                    <div>
-                        <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:8px;">Juri Penilai</div>
-                        <div class="sig-grid sig-grid-5">
-                            @for($ji = 1; $ji <= 5; $ji++)
-                                <div class="sig-box">
-                                    <div class="sig-role">Juri {{ $ji }}</div>
-                                    <div class="sig-name">...................................</div>
-                                    <div class="sig-line"></div>
-                                </div>
-                            @endfor
-                        </div>
-                    </div>
-                @endif
-
-            @else
-                {{-- RANDORI: Koordinator + Wasit Utama + Arbitrase + Panitera --}}
-                <div class="sig-grid sig-grid-4">
-                    <div class="sig-box">
-                        <div class="sig-role">Koordinator Lapangan</div>
-                        <div class="sig-name">{{ $koordinator ?: '...................................' }}</div>
-                        <div class="sig-line">{{ $koordinator ?: '' }}</div>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-role">Wasit Utama</div>
-                        @php $wasitUtama = $referees->where('judge_index', 0)->first() ?? $referees->first(); @endphp
-                        <div class="sig-name">{{ $wasitUtama?->referee?->name ?? '...................................' }}</div>
-                        <div class="sig-line">{{ $wasitUtama?->referee?->name ?? '' }}</div>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-role">Arbitrase</div>
-                        <div class="sig-name">{{ $arbitrase ?: '...................................' }}</div>
-                        <div class="sig-line">{{ $arbitrase ?: '' }}</div>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-role">Panitera</div>
-                        @php $pan1 = is_array($paniteras) ? ($paniteras[0] ?? '') : ($paniteras ?? ''); @endphp
-                        <div class="sig-name">{{ $pan1 ?: '...................................' }}</div>
-                        <div class="sig-line">{{ $pan1 ?: '' }}</div>
-                    </div>
-                </div>
-
-                {{-- Additional referee TTDs for randori --}}
-                @if($referees->count() > 1)
-                    <div style="margin-top:14px;">
-                        <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:8px;">Wasit / Juri Pinggir</div>
-                        <div class="sig-grid sig-grid-4">
-                            @foreach($referees->skip(1)->take(4) as $ref)
-                                <div class="sig-box">
-                                    <div class="sig-role">Wasit/Juri {{ $ref->judge_index }}</div>
-                                    <div class="sig-name">{{ $ref->referee?->name ?? '.....................' }}</div>
-                                    <div class="sig-line">{{ $ref->referee?->name ?? '' }}</div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-            @endif
-
-            {{-- FOOTER NOTE --}}
-            <div style="margin-top:20px; text-align:right; font-size:10px; color:#94a3b8;">
-                Dicetak: {{ now()->translatedFormat('d F Y, H:i') }} WIB &nbsp;|&nbsp; Smart Perkemi System
-            </div>
-        </div>
-
     </div>
     @elseif($printMode === 'juri')
         @php
@@ -984,62 +1127,71 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                             Belum ada data penilaian untuk babak {{ $roundName }}.
                         </div>
                     @else
-                        <table class="score-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:36px;">No.</th>
-                                    <th style="min-width:140px;">Nama Peserta</th>
-                                    <th style="min-width:120px;">Kontingen</th>
-                                    <th style="font-size: 9px; padding: 4px;">G1</th>
-                                    <th style="font-size: 9px; padding: 4px;">G2</th>
-                                    <th style="font-size: 9px; padding: 4px;">G3</th>
-                                    <th style="font-size: 9px; padding: 4px;">J1</th>
-                                    <th style="font-size: 9px; padding: 4px;">J2</th>
-                                    <th style="font-size: 9px; padding: 4px;">J3</th>
-                                    <th style="font-size: 9px; padding: 4px;">E1</th>
-                                    <th style="font-size: 9px; padding: 4px;">E2</th>
-                                    <th style="font-size: 9px; padding: 4px;">E3</th>
-                                    <th style="font-size: 9px; padding: 4px;">E4</th>
-                                    <th style="width:100px;">Nilai Juri {{ $juriNum }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($regs as $seq => $reg)
-                                    @php
-                                        $drawingId = $reg['score']?->drawing_id ?? null;
-                                        $regId = $reg['registration_id'];
-                                        $dKey = $drawingId 
-                                            ? 'App\\Models\\DrawingMatchNumber_' . $drawingId . '_' . $juriNum
-                                            : 'App\\Models\\Registration_' . $regId . '_' . $juriNum;
-                                        $sd = $scoresMap->get($dKey)?->first();
-                                        $details = $sd ? $sd->details : null;
-                                        $juriVal = $reg['score']?->{'judge_' . $juriNum} ?? ($sd ? $sd->total_calculated_score : null);
-                                    @endphp
+                        <div class="table-responsive">
+                            <table class="score-table">
+                                <thead>
                                     <tr>
-                                        <td>{{ $reg['sequence'] ?? ($seq + 1) }}</td>
-                                        <td style="text-align:left;">
-                                            @foreach($reg['athletes'] as $ath)
-                                                <div style="font-weight:700; font-size:11.5px;">{{ $ath->name }}</div>
-                                            @endforeach
-                                        </td>
-                                        <td style="text-align:left; font-size:11px;">{{ $reg['contingent']?->name ?? '-' }}</td>
-                                        <td>{{ $details['goho_1'] ?? '-' }}</td>
-                                        <td>{{ $details['goho_2'] ?? '-' }}</td>
-                                        <td>{{ $details['goho_3'] ?? '-' }}</td>
-                                        <td>{{ $details['juho_1'] ?? '-' }}</td>
-                                        <td>{{ $details['juho_2'] ?? '-' }}</td>
-                                        <td>{{ $details['juho_3'] ?? '-' }}</td>
-                                        <td>{{ $details['ekspresi_1'] ?? '-' }}</td>
-                                        <td>{{ $details['ekspresi_2'] ?? '-' }}</td>
-                                        <td>{{ $details['ekspresi_3'] ?? '-' }}</td>
-                                        <td>{{ $details['ekspresi_4'] ?? '-' }}</td>
-                                        <td style="font-weight:800; font-size:13px; color:#1e40af;">
-                                            {{ $juriVal > 0 ? number_format($juriVal, 2) : '-' }}
-                                        </td>
+                                        <th style="width:36px; text-align:center;">No.</th>
+                                        <th style="min-width:160px; text-align:left;">Nama Peserta</th>
+                                        <th style="min-width:110px; text-align:left;">Kontingen</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">G1</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">G2</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">G3</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">J1</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">J2</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">J3</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">E1</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">E2</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">E3</th>
+                                        <th style="width:32px; font-size:9.5px; padding:4px; text-align:center;">E4</th>
+                                        <th style="width:90px; text-align:center;">Nilai Juri {{ $juriNum }}</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach($regs as $seq => $reg)
+                                        @php
+                                            $drawingId = $reg['score']?->drawing_id ?? null;
+                                            $regId = $reg['registration_id'];
+                                            $dKey = $drawingId 
+                                                ? 'App\\Models\\DrawingMatchNumber_' . $drawingId . '_' . $juriNum
+                                                : 'App\\Models\\Registration_' . $regId . '_' . $juriNum;
+                                            $sd = $scoresMap->get($dKey)?->first();
+                                            $details = $sd ? $sd->details : null;
+                                            $juriVal = $reg['score']?->{'judge_' . $juriNum} ?? ($sd ? $sd->total_calculated_score : null);
+                                        @endphp
+                                        <tr>
+                                            <td style="text-align:center; vertical-align:middle;">{{ $reg['sequence'] ?? ($seq + 1) }}</td>
+                                            <td style="text-align:left; vertical-align:middle;">
+                                                <div style="display: flex; flex-direction: column; gap: 3px; padding: 2px 0;">
+                                                    @foreach($reg['athletes'] as $index => $ath)
+                                                        <div style="font-weight:700; font-size:11px; color:#0f172a; line-height:1.25;">
+                                                            @if(count($reg['athletes']) > 1)
+                                                                <span style="color:#64748b; font-size:9.5px; font-weight:800; display:inline-block; width:15px; text-align:right; margin-right:4px;">{{ $index + 1 }}.</span>
+                                                            @endif
+                                                            <span>{{ $ath->name }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                            <td style="text-align:left; font-size:11px; font-weight:600; color:#475569; vertical-align:middle;">{{ $reg['contingent']?->name ?? '-' }}</td>
+                                            <td>{{ $details['goho_1'] ?? '-' }}</td>
+                                            <td>{{ $details['goho_2'] ?? '-' }}</td>
+                                            <td>{{ $details['goho_3'] ?? '-' }}</td>
+                                            <td>{{ $details['juho_1'] ?? '-' }}</td>
+                                            <td>{{ $details['juho_2'] ?? '-' }}</td>
+                                            <td>{{ $details['juho_3'] ?? '-' }}</td>
+                                            <td>{{ $details['ekspresi_1'] ?? '-' }}</td>
+                                            <td>{{ $details['ekspresi_2'] ?? '-' }}</td>
+                                            <td>{{ $details['ekspresi_3'] ?? '-' }}</td>
+                                            <td>{{ $details['ekspresi_4'] ?? '-' }}</td>
+                                            <td style="font-weight:800; font-size:13px; color:#1e40af;">
+                                                {{ $juriVal > 0 ? number_format($juriVal, 2) : '-' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     @endif
                 @endforeach
 
@@ -1062,7 +1214,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                         }
                     @endphp
                     <div class="sig-grid sig-grid-3">
-                        <div class="sig-box">
+                        {{--<div class="sig-box">
                             <div class="sig-role">Koordinator Lapangan</div>
                             <div style="height: 60px; display: flex; align-items: center; justify-content: center;"></div>
                             <div class="sig-line">{{ $koordinator ?: '...................................' }}</div>
@@ -1072,7 +1224,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                             @php $pan1 = is_array($paniteras) ? ($paniteras[0] ?? '') : ($paniteras ?? ''); @endphp
                             <div style="height: 60px; display: flex; align-items: center; justify-content: center;"></div>
                             <div class="sig-line">{{ $pan1 ?: '...................................' }}</div>
-                        </div>
+                        </div>--}}
                         <div class="sig-box">
                             <div class="sig-role">Juri {{ $juriNum }}</div>
                             <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
@@ -1147,53 +1299,55 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                 </table>
 
                 <div class="section-label">📋 Rincian Nilai</div>
-                <table class="score-table">
-                    <thead>
-                        <tr>
-                            <th>Juri 1</th>
-                            <th>Juri 2</th>
-                            <th>Juri 3</th>
-                            <th>Juri 4</th>
-                            <th>Juri 5</th>
-                            <th>Nilai Awal</th>
-                            <th>Denda</th>
-                            <th>Nilai Akhir</th>
-                            @if(isset($reg['penyisihan_score']))
-                                <th>Nilai Penyisihan</th>
-                                <th>Total Akumulasi</th>
-                            @endif
-                            <th>Peringkat</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ $reg['score']?->judge_1 > 0 ? number_format($reg['score']->judge_1, 2) : '-' }}</td>
-                            <td>{{ $reg['score']?->judge_2 > 0 ? number_format($reg['score']->judge_2, 2) : '-' }}</td>
-                            <td>{{ $reg['score']?->judge_3 > 0 ? number_format($reg['score']->judge_3, 2) : '-' }}</td>
-                            <td>{{ $reg['score']?->judge_4 > 0 ? number_format($reg['score']->judge_4, 2) : '-' }}</td>
-                            <td>{{ $reg['score']?->judge_5 > 0 ? number_format($reg['score']->judge_5, 2) : '-' }}</td>
-                            <td style="font-weight:700;">{{ $reg['nilai_awal'] > 0 ? number_format($reg['nilai_awal'], 2) : '-' }}</td>
-                            <td style="color:{{ ($reg['denda'] ?? 0) > 0 ? '#b22234' : '#94a3b8' }};">
-                                {{ ($reg['denda'] ?? 0) > 0 ? '-'.number_format($reg['denda'], 2) : '0' }}
-                            </td>
-                            <td style="font-weight:800; color:#065f46; font-size:13px;">
-                                {{ $reg['nilai_akhir'] > 0 ? number_format($reg['nilai_akhir'], 2) : '-' }}
-                            </td>
-                            @if(isset($reg['penyisihan_score']))
-                                <td>{{ $reg['penyisihan_score']?->nilai_akhir > 0 ? number_format($reg['penyisihan_score']->nilai_akhir, 2) : '-' }}</td>
-                                <td style="font-weight:800; color:#1e40af;">{{ $reg['accumulated'] > 0 ? number_format($reg['accumulated'], 2) : '-' }}</td>
-                            @endif
-                            <td style="font-weight:800; font-size:13px;">
-                                {{ $reg['rank'] }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="score-table">
+                        <thead>
+                            <tr>
+                                <th>Juri 1</th>
+                                <th>Juri 2</th>
+                                <th>Juri 3</th>
+                                <th>Juri 4</th>
+                                <th>Juri 5</th>
+                                <th>Nilai Awal</th>
+                                <th>Denda</th>
+                                <th>Nilai Akhir</th>
+                                @if(isset($reg['penyisihan_score']))
+                                    <th>Nilai Penyisihan</th>
+                                    <th>Total Akumulasi</th>
+                                @endif
+                                <th>Peringkat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ $reg['score']?->judge_1 > 0 ? number_format($reg['score']->judge_1, 2) : '-' }}</td>
+                                <td>{{ $reg['score']?->judge_2 > 0 ? number_format($reg['score']->judge_2, 2) : '-' }}</td>
+                                <td>{{ $reg['score']?->judge_3 > 0 ? number_format($reg['score']->judge_3, 2) : '-' }}</td>
+                                <td>{{ $reg['score']?->judge_4 > 0 ? number_format($reg['score']->judge_4, 2) : '-' }}</td>
+                                <td>{{ $reg['score']?->judge_5 > 0 ? number_format($reg['score']->judge_5, 2) : '-' }}</td>
+                                <td style="font-weight:700;">{{ $reg['nilai_awal'] > 0 ? number_format($reg['nilai_awal'], 2) : '-' }}</td>
+                                <td style="color:{{ ($reg['denda'] ?? 0) > 0 ? '#b22234' : '#94a3b8' }};">
+                                    {{ ($reg['denda'] ?? 0) > 0 ? '-'.number_format($reg['denda'], 2) : '0' }}
+                                </td>
+                                <td style="font-weight:800; color:#065f46; font-size:13px;">
+                                    {{ $reg['nilai_akhir'] > 0 ? number_format($reg['nilai_akhir'], 2) : '-' }}
+                                </td>
+                                @if(isset($reg['penyisihan_score']))
+                                    <td>{{ $reg['penyisihan_score']?->nilai_akhir > 0 ? number_format($reg['penyisihan_score']->nilai_akhir, 2) : '-' }}</td>
+                                    <td style="font-weight:800; color:#1e40af;">{{ $reg['accumulated'] > 0 ? number_format($reg['accumulated'], 2) : '-' }}</td>
+                                @endif
+                                <td style="font-weight:800; font-size:13px;">
+                                    {{ $reg['rank'] }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 {{-- TANDA TANGAN --}}
                 <div class="sig-section">
                     <div class="sig-section-title">✍️ Tanda Tangan Pejabat Pertandingan</div>
-                    <div style="margin-bottom:16px;">
+                    {{--<div style="margin-bottom:16px;">
                         <div class="sig-grid sig-grid-3">
                             <div class="sig-box">
                                 <div class="sig-role">Koordinator Lapangan</div>
@@ -1207,7 +1361,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                                 <div class="sig-line">{{ $pan1 ?: '...................................' }}</div>
                             </div>
                         </div>
-                    </div>
+                    </div>--}}
 
                     <div>
                         <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:8px;">Juri Penilai</div>
@@ -1246,6 +1400,597 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                     </div>
                 </div>
             </div>
+        @endforeach
+    @elseif($printMode === 'catatan')
+        @php
+            $catatanJurisToPrint = [];
+            if ($selectedJuri === 'all') {
+                $catatanJurisToPrint = ['all'];
+            } elseif ($selectedJuri === 'each') {
+                $catatanJurisToPrint = [1, 2, 3, 4, 5];
+            } else {
+                $catatanJurisToPrint = [(int)$selectedJuri];
+            }
+        @endphp
+
+        @foreach($catatanJurisToPrint as $modeOrJuri)
+            @foreach($rounds as $roundName => $roundData)
+                @php $regs = $roundData['registrations']; @endphp
+                @if(!$regs->isEmpty())
+                    @if($modeOrJuri === 'all')
+                        <div class="document {{ !$loop->last ? 'page-break' : '' }}" style="margin-bottom: 24px;">
+                            {{-- KOP SURAT --}}
+                            <div class="doc-header">
+                                <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+                                <div class="event-name">Laporan Catatan Penilaian Wasit / Juri</div>
+                            </div>
+
+                            {{-- JUDUL --}}
+                            <div class="doc-title-box">
+                                <h1>Rekap Catatan & Nilai Juri</h1>
+                                <div class="match-title">{{ $displayName }} (Babak: {{ $roundName }})</div>
+                            </div>
+
+                            {{-- META INFO --}}
+                            <table class="meta-table">
+                                <tr>
+                                    <td>Nomor Pertandingan</td>
+                                    <td>:</td>
+                                    <td>{{ $displayName }}</td>
+                                    <td style="width:180px; font-weight:700; color:#0f172a;">Kelompok Usia</td>
+                                    <td style="width:10px; color:#6b7280;">:</td>
+                                    <td>{{ $matchNumber->ageGroup?->name ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Tipe Pertandingan</td>
+                                    <td>:</td>
+                                    <td>{{ strtoupper($matchNumber->draft_type) }}</td>
+                                    <td>Kelamin</td>
+                                    <td>:</td>
+                                    <td>{{ $matchNumber->gender_indo }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Lapangan / Court</td>
+                                    <td>:</td>
+                                    <td>{{ $court }}</td>
+                                    <td>Hari / Tanggal</td>
+                                    <td>:</td>
+                                    <td>{{ $day }}, {{ $date }}</td>
+                                </tr>
+                            </table>
+
+                            @foreach($regs as $seq => $reg)
+                                <div style="margin-top: 24px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; page-break-inside: avoid;">
+                                    <div style="background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                        <div>
+                                            <span style="font-weight: 800; font-size: 14px; color: #0f172a;">
+                                                {{ $reg['sequence'] }}.
+                                                @foreach($reg['athletes'] as $ath)
+                                                    {{ $ath->name }}{{ !$loop->last ? ' & ' : '' }}
+                                                @endforeach
+                                            </span>
+                                            <span style="margin-left: 8px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                                                ({{ $reg['contingent']?->name ?? '-' }})
+                                            </span>
+                                        </div>
+                                        <div style="font-weight: 800; font-size: 14px; color: #0f172a;">
+                                            Nilai Akhir: <span style="color: #065f46;">{{ number_format($reg['nilai_akhir'], 2) }}</span> &nbsp;•&nbsp; Rank: {{ $reg['rank'] }}
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive" style="margin: 0;">
+                                        <table class="score-table" style="margin: 0; border: none; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 100px; text-align: left; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Juri</th>
+                                                    <th style="min-width: 180px; text-align: left; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Nama Juri</th>
+                                                    <th style="width: 100px; text-align: center; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Nilai</th>
+                                                    <th style="text-align: left; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Catatan Juri</th>
+                                                    <th style="width: 120px; text-align: center; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Tanda Tangan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @for($ji = 1; $ji <= 5; $ji++)
+                                                    @php
+                                                        $drawingId = $reg['score']?->drawing_id ?? null;
+                                                        $regId = $reg['registration_id'];
+                                                        $dKey = $drawingId 
+                                                            ? 'App\\Models\\DrawingMatchNumber_' . $drawingId . '_' . $ji
+                                                            : 'App\\Models\\Registration_' . $regId . '_' . $ji;
+                                                        $sd = $scoresMap->get($dKey)?->first();
+                                                        $juriVal = $reg['score']?->{'judge_' . $ji} ?? ($sd ? $sd->total_calculated_score : null);
+                                                        
+                                                        $assignedJuri = $referees->where('judge_index', $ji)->first();
+                                                        $juriName = $sd?->referee?->name ?? $sd?->referee?->user?->name ?? $assignedJuri?->referee?->name ?? $assignedJuri?->referee?->user?->name ?? '—';
+                                                        $note = $sd?->notes ?: '—';
+                                                        $sig = $sd?->signature ?? null;
+                                                    @endphp
+                                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                        <td style="font-weight: 700; text-align: left; color: #0f172a; padding: 10px 12px;">Juri {{ $ji }}</td>
+                                                        <td style="text-align: left; color: #334155; font-weight: 600; padding: 10px 12px;">{{ $juriName }}</td>
+                                                        <td style="text-align: center; font-weight: 800; color: #1e40af; font-size: 13px; padding: 10px 12px;">
+                                                            {{ $juriVal > 0 ? number_format($juriVal, 2) : '—' }}
+                                                        </td>
+                                                        <td style="text-align: left; color: #475569; padding: 10px 12px; white-space: pre-line; line-height: 1.4;">{{ $note }}</td>
+                                                        <td style="text-align: center; padding: 4px 12px;">
+                                                            @if($sig)
+                                                                <img src="{{ $sig }}" style="max-height: 38px; max-width: 90px; display: inline-block;" />
+                                                            @else
+                                                                <span style="color:#cbd5e1; font-size:9px;">—</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endfor
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            {{-- TANDA TANGAN --}}
+                            <div class="sig-section" style="margin-top: 32px;">
+                                <div class="sig-section-title">✍️ Tanda Tangan Pejabat Pertandingan</div>
+                                {{--<div class="sig-grid sig-grid-3">
+                                    <div class="sig-box">
+                                        <div class="sig-role">Koordinator Lapangan</div>
+                                        <div style="height: 60px;"></div>
+                                        <div class="sig-line">{{ $koordinator ?: '...................................' }}</div>
+                                    </div>
+                                    <div class="sig-box">
+                                        <div class="sig-role">Panitera</div>
+                                        @php $pan1 = is_array($paniteras) ? ($paniteras[0] ?? '') : ($paniteras ?? ''); @endphp
+                                        <div style="height: 60px;"></div>
+                                        <div class="sig-line">{{ $pan1 ?: '...................................' }}</div>
+                                    </div>
+                                </div>--}}  
+                                <div style="margin-top:20px; text-align:right; font-size:10px; color:#94a3b8;">
+                                    Dicetak: {{ now()->translatedFormat('d F Y, H:i') }} WIB &nbsp;|&nbsp; Smart Perkemi System
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        {{-- Referee-specific scorecard --}}
+                        <div class="document {{ !($loop->last && $loop->parent->last) ? 'page-break' : '' }}" style="margin-bottom: 24px;">
+                            {{-- KOP SURAT --}}
+                            <div class="doc-header">
+                                <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+                                <div class="event-name">Laporan Catatan Penilaian Juri / Wasit</div>
+                            </div>
+
+                            {{-- JUDUL --}}
+                            <div class="doc-title-box">
+                                <h1>Laporan Catatan & Nilai Juri {{ $modeOrJuri }}</h1>
+                                <div class="match-title">{{ $displayName }} (Babak: {{ $roundName }})</div>
+                            </div>
+
+                            {{-- META INFO --}}
+                            <table class="meta-table">
+                                <tr>
+                                    <td>Nomor Pertandingan</td>
+                                    <td>:</td>
+                                    <td>{{ $displayName }}</td>
+                                    <td style="width:180px; font-weight:700; color:#0f172a;">Kelompok Usia</td>
+                                    <td style="width:10px; color:#6b7280;">:</td>
+                                    <td>{{ $matchNumber->ageGroup?->name ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Tipe Pertandingan</td>
+                                    <td>:</td>
+                                    <td>{{ strtoupper($matchNumber->draft_type) }}</td>
+                                    <td>Kelamin</td>
+                                    <td>:</td>
+                                    <td>{{ $matchNumber->gender_indo }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Lapangan / Court</td>
+                                    <td>:</td>
+                                    <td>{{ $court }}</td>
+                                    <td>Hari / Tanggal</td>
+                                    <td>:</td>
+                                    <td>{{ $day }}, {{ $date }}</td>
+                                </tr>
+                            </table>
+
+                            <div class="table-responsive">
+                                <table class="score-table" style="margin-top: 20px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 50px; text-align: center; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">No.</th>
+                                            <th style="min-width: 180px; text-align: left; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Nama Peserta</th>
+                                            <th style="width: 150px; text-align: left; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Kontingen</th>
+                                            <th style="width: 100px; text-align: center; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Nilai</th>
+                                            <th style="text-align: left; background: #fafaf9; border-bottom: 1px solid #cbd5e1;">Catatan Juri</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($regs as $seq => $reg)
+                                            @php
+                                                $drawingId = $reg['score']?->drawing_id ?? null;
+                                                $regId = $reg['registration_id'];
+                                                $dKey = $drawingId 
+                                                    ? 'App\\Models\\DrawingMatchNumber_' . $drawingId . '_' . $modeOrJuri
+                                                    : 'App\\Models\\Registration_' . $regId . '_' . $modeOrJuri;
+                                                $sd = $scoresMap->get($dKey)?->first();
+                                                $juriVal = $reg['score']?->{'judge_' . $modeOrJuri} ?? ($sd ? $sd->total_calculated_score : null);
+                                                $note = $sd?->notes ?: '—';
+                                            @endphp
+                                            <tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+                                                <td style="text-align: center; font-weight: 700; color: #0f172a; padding: 10px 12px;">{{ $reg['sequence'] }}</td>
+                                                <td style="text-align: left; color: #334155; font-weight: 600; padding: 10px 12px;">
+                                                    @foreach($reg['athletes'] as $ath)
+                                                        {{ $ath->name }}{{ !$loop->last ? ' & ' : '' }}
+                                                    @endforeach
+                                                </td>
+                                                <td style="text-align: left; color: #475569; padding: 10px 12px;">{{ $reg['contingent']?->name ?? '-' }}</td>
+                                                <td style="text-align: center; font-weight: 800; color: #1e40af; font-size: 13px; padding: 10px 12px;">
+                                                    {{ $juriVal > 0 ? number_format($juriVal, 2) : '—' }}
+                                                </td>
+                                                <td style="text-align: left; color: #475569; padding: 10px 12px; white-space: pre-line; line-height: 1.4;">{{ $note }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{-- TANDA TANGAN --}}
+                            <div class="sig-section" style="margin-top: 32px; page-break-inside: avoid;">
+                                <div class="sig-section-title">✍️ Tanda Tangan Pejabat Pertandingan</div>
+                                @php
+                                    $juriSig = null;
+                                    foreach($regs as $r) {
+                                        $dId = $r['score']?->drawing_id ?? null;
+                                        $rId = $r['registration_id'];
+                                        $dKey = $dId 
+                                            ? 'App\\Models\\DrawingMatchNumber_' . $dId . '_' . $modeOrJuri
+                                            : 'App\\Models\\Registration_' . $rId . '_' . $modeOrJuri;
+                                        $sd = $scoresMap->get($dKey)?->first();
+                                        if ($sd && !empty($sd->signature)) {
+                                            $juriSig = $sd->signature;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                <div class="sig-grid sig-grid-3">
+                                    {{--<div class="sig-box">
+                                        <div class="sig-role">Koordinator Lapangan</div>
+                                        <div style="height: 60px;"></div>
+                                        <div class="sig-line">{{ $koordinator ?: '...................................' }}</div>
+                                    </div>
+                                    <div class="sig-box">
+                                        <div class="sig-role">Panitera</div>
+                                        @php $pan1 = is_array($paniteras) ? ($paniteras[0] ?? '') : ($paniteras ?? ''); @endphp
+                                        <div style="height: 60px;"></div>
+                                        <div class="sig-line">{{ $pan1 ?: '...................................' }}</div>
+                                    </div>--}}
+                                    <div class="sig-box">
+                                        <div class="sig-role">Juri {{ $modeOrJuri }}</div>
+                                        <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                            @if($juriSig)
+                                                <img src="{{ $juriSig }}" style="max-height: 55px; max-width: 120px; display: block;" />
+                                            @else
+                                                <span style="color:#cbd5e1; font-size:10px;">(Belum TTD)</span>
+                                            @endif
+                                        </div>
+                                        @php
+                                            $assignedJuri = $referees->where('judge_index', $modeOrJuri)->first();
+                                            $juriName = $assignedJuri?->referee?->name ?? '...................................';
+                                        @endphp
+                                        <div class="sig-line">{{ $juriName }}</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top:20px; text-align:right; font-size:10px; color:#94a3b8;">
+                                    Dicetak: {{ now()->translatedFormat('d F Y, H:i') }} WIB &nbsp;|&nbsp; Smart Perkemi System
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endif
+            @endforeach
+        @endforeach
+    @elseif($printMode === 'scorecard')
+        @php
+            $scorecardJurisToPrint = $selectedJuri === 'all' ? [1, 2, 3, 4, 5] : [(int)$selectedJuri];
+        @endphp
+
+        @foreach($rounds as $roundName => $roundData)
+            @php
+                $regs = $roundData['registrations'];
+                if ($selectedAthleteReg !== 'all') {
+                    $regs = $regs->filter(fn($r) => (string)$r['registration_id'] === (string)$selectedAthleteReg);
+                }
+            @endphp
+
+            @if(!$regs->isEmpty())
+                @foreach($regs as $reg)
+                    @foreach($scorecardJurisToPrint as $ji)
+                        @php
+                            $drawingId = $reg['score']?->drawing_id ?? null;
+                            $regId = $reg['registration_id'];
+                            $dKey = $drawingId 
+                                ? 'App\\Models\\DrawingMatchNumber_' . $drawingId . '_' . $ji
+                                : 'App\\Models\\Registration_' . $regId . '_' . $ji;
+                            $sd = $scoresMap->get($dKey)?->first();
+                            $details = $sd ? $sd->details : null;
+                            $juriVal = $reg['score']?->{'judge_' . $ji} ?? ($sd ? $sd->total_calculated_score : null);
+                            
+                            $assignedJuri = $referees->where('judge_index', $ji)->first();
+                            $juriName = $sd?->referee?->name ?? $sd?->referee?->user?->name ?? $assignedJuri?->referee?->name ?? $assignedJuri?->referee?->user?->name ?? '—';
+                            $note = $sd?->notes ?: '—';
+                            $sig = $sd?->signature ?? null;
+
+                            // Parse details values
+                            $g1 = isset($details['goho_1']) ? (float)$details['goho_1'] : 0.0;
+                            $g2 = isset($details['goho_2']) ? (float)$details['goho_2'] : 0.0;
+                            $g3 = isset($details['goho_3']) ? (float)$details['goho_3'] : 0.0;
+                            $j1 = isset($details['juho_1']) ? (float)$details['juho_1'] : 0.0;
+                            $j2 = isset($details['juho_2']) ? (float)$details['juho_2'] : 0.0;
+                            $j3 = isset($details['juho_3']) ? (float)$details['juho_3'] : 0.0;
+
+                            $e1 = isset($details['ekspresi_1']) ? (float)$details['ekspresi_1'] : 0.0;
+                            $e2 = isset($details['ekspresi_2']) ? (float)$details['ekspresi_2'] : 0.0;
+                            $e3 = isset($details['ekspresi_3']) ? (float)$details['ekspresi_3'] : 0.0;
+                            $e4 = isset($details['ekspresi_4']) ? (float)$details['ekspresi_4'] : 0.0;
+
+                            $techSub = $g1 + $g2 + $g3 + $j1 + $j2 + $j3;
+                            $expSub = $e1 + $e2 + $e3 + $e4;
+                            $totalScore = $techSub + $expSub;
+                            $avgScore = $totalScore / 10;
+                            
+                            $hasDetails = $sd && !empty($sd->details);
+                        @endphp
+
+                        <div class="document {{ !($loop->last && $loop->parent->last && $loop->parent->parent->last) ? 'page-break' : '' }}" style="margin-bottom: 24px;">
+                            {{-- KOP SURAT --}}
+                            <div class="doc-header">
+                                <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+                                <div class="event-name">Lembar Penilaian Detail (Scorecard) Wasit / Juri</div>
+                            </div>
+
+                            {{-- JUDUL --}}
+                            <div class="doc-title-box">
+                                <h1>Lembar Penilaian Embu Detail</h1>
+                                <div class="match-title">{{ $displayName }} (Babak: {{ $roundName }})</div>
+                            </div>
+
+                            {{-- META INFO --}}
+                            <table class="meta-table">
+                                <tr>
+                                    <td>Nomor Pertandingan</td>
+                                    <td>:</td>
+                                    <td><strong>{{ $displayName }}</strong></td>
+                                    <td style="width:180px; font-weight:700; color:#0f172a;">Kelompok Usia</td>
+                                    <td style="width:10px; color:#6b7280;">:</td>
+                                    <td>{{ $matchNumber->ageGroup?->name ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Nama Atlet</td>
+                                    <td>:</td>
+                                    <td>
+                                        <strong>
+                                            @foreach($reg['athletes'] as $ath)
+                                                {{ $ath->name }}{{ !$loop->last ? ' & ' : '' }}
+                                            @endforeach
+                                        </strong>
+                                    </td>
+                                    <td>Kelamin / Gender</td>
+                                    <td>:</td>
+                                    <td>{{ $matchNumber->gender_indo }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Kontingen / Pool</td>
+                                    <td>:</td>
+                                    <td>{{ $reg['contingent']?->name ?? '-' }} @if(!empty($reg['pool_name'])) | Pool: {{ $reg['pool_name'] }} @endif</td>
+                                    <td>Court / Lapangan</td>
+                                    <td>:</td>
+                                    <td>{{ $court }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Nama Juri / Wasit</td>
+                                    <td>:</td>
+                                    <td><strong>Juri {{ $ji }} ({{ $juriName }})</strong></td>
+                                    <td>Hari / Tanggal</td>
+                                    <td>:</td>
+                                    <td>{{ $day }}, {{ $date }}</td>
+                                </tr>
+                            </table>
+
+                            <div class="table-responsive">
+                                <table class="score-table" style="margin-top: 16px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 180px; text-align: left; background: #fafaf9; border-bottom: 2px solid #cbd5e1;">Aspek</th>
+                                            <th style="text-align: left; background: #fafaf9; border-bottom: 2px solid #cbd5e1;">Deskripsi</th>
+                                            <th style="width: 80px; text-align: center; background: #fafaf9; border-bottom: 2px solid #cbd5e1;">Bobot</th>
+                                            <th style="width: 50px; text-align: center; background: #fafaf9; border-bottom: 2px solid #cbd5e1;">No</th>
+                                            <th style="width: 100px; text-align: center; background: #fafaf9; border-bottom: 2px solid #cbd5e1;">Nilai</th>
+                                            <th style="width: 80px; text-align: center; background: #fafaf9; border-bottom: 2px solid #cbd5e1;">Standar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- ASPECT: Penguasaan Teknik (60) -->
+                                        <tr>
+                                            <td style="font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; background: #fafafa;" rowspan="6">
+                                                Penguasaan Teknik (60)
+                                            </td>
+                                            <td style="color: #334155; line-height: 1.5; border-bottom: 1px solid #e2e8f0;" rowspan="3">
+                                                <strong style="color: #0f172a;">GOHO</strong>: Serangan, bertahan, serangan balasan, lima unsur serangan, dll.
+                                            </td>
+                                            <td style="text-align: center; font-weight: 600; border-bottom: 1px solid #e2e8f0;" rowspan="6">
+                                                60 <br><span style="font-size: 9px; color: #64748b; font-weight: normal;">(Masing-masing 10)</span>
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">1</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($g1, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">2</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($g2, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">3</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($g3, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: #334155; line-height: 1.5; border-bottom: 1px solid #e2e8f0;" rowspan="3">
+                                                <strong style="color: #0f172a;">JUHO</strong>: Shuha, nukiwaza, gyaku waza, nage waza, katame waza, dll.
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">4</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($j1, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">5</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($j2, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">6</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($j3, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr style="background: #f8fafc; font-weight: 700;">
+                                            <td style="padding: 10px 12px; border-bottom: 2px solid #cbd5e1;" colspan="4">Sub Total 1 (Teknik)</td>
+                                            <td style="text-align: center; color: #1e40af; padding: 10px 12px; border-bottom: 2px solid #cbd5e1;">
+                                                {{ $hasDetails ? number_format($techSub, 1) : '-' }}
+                                            </td>
+                                            <td style="border-bottom: 2px solid #cbd5e1;"></td>
+                                        </tr>
+
+                                        <!-- ASPECT: Ekspresi (40) -->
+                                        <tr>
+                                            <td style="font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; background: #fafafa;" rowspan="4">
+                                                Ekspresi (40)
+                                            </td>
+                                            <td style="color: #334155; line-height: 1.5; border-bottom: 1px solid #e2e8f0;">
+                                                1. Rangkaian, Irama, Harmoni
+                                            </td>
+                                            <td style="text-align: center; font-weight: 600; border-bottom: 1px solid #e2e8f0;" rowspan="4">
+                                                40 <br><span style="font-size: 9px; color: #64748b; font-weight: normal;">(Masing-masing 10)</span>
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">1</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($e1, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: #334155; line-height: 1.5; border-bottom: 1px solid #e2e8f0;">
+                                                2. Tai gamae, Kuda-kuda, Keindahan
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">2</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($e2, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: #334155; line-height: 1.5; border-bottom: 1px solid #e2e8f0;">
+                                                3. Semangat, Disiplin
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">3</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($e3, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="color: #334155; line-height: 1.5; border-bottom: 1px solid #e2e8f0;">
+                                                4. Nafas, Pandangan mata, Zanshin
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">4</td>
+                                            <td style="text-align: center; font-weight: 700; color: #1e40af; border-bottom: 1px solid #e2e8f0;">
+                                                {{ $hasDetails ? number_format($e4, 1) : '-' }}
+                                            </td>
+                                            <td style="text-align: center; border-bottom: 1px solid #e2e8f0;">8</td>
+                                        </tr>
+                                        <tr style="background: #f8fafc; font-weight: 700;">
+                                            <td style="padding: 10px 12px; border-bottom: 2px solid #cbd5e1;" colspan="4">Sub Total 2 (Ekspresi)</td>
+                                            <td style="text-align: center; color: #1e40af; padding: 10px 12px; border-bottom: 2px solid #cbd5e1;">
+                                                {{ $hasDetails ? number_format($expSub, 1) : '-' }}
+                                            </td>
+                                            <td style="border-bottom: 2px solid #cbd5e1;"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{-- TOTAL BANNER --}}
+                            <div style="margin-top: 16px; background: #e2e8f0; border-radius: 8px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 800; font-size: 15px; color: #0f172a;">TOTAL SKOR</div>
+                                    <div style="font-size: 11px; color: #475569; font-weight: 500;">Sub Total 1 + Sub Total 2 (10 Aspek)</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 900; font-size: 24px; color: #1e40af; line-height: 1;">
+                                        {{ $juriVal > 0 ? number_format($juriVal, 1) : '-' }}
+                                    </div>
+                                    @if($juriVal > 0)
+                                        <div style="font-size: 11px; color: #0f172a; font-weight: 700; margin-top: 2px;">
+                                            Rata-rata: {{ number_format($juriVal / 10, 2) }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- CATATAN WASIT --}}
+                            <div style="margin-top: 16px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px;">
+                                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">
+                                    📝 Catatan Wasit / Juri (Opsional)
+                                </div>
+                                <div style="font-size: 12px; color: #334155; min-height: 48px; line-height: 1.5; white-space: pre-line;">
+                                    {{ $note }}
+                                </div>
+                            </div>
+
+                            {{-- TANDA TANGAN PEJABAT --}}
+                            <div class="sig-section" style="margin-top: 28px; page-break-inside: avoid;">
+                                <div class="sig-section-title">✍️ Tanda Tangan Pejabat Pertandingan</div>
+                                <div class="sig-grid sig-grid-3">
+                                    {{--<div class="sig-box">
+                                        <div class="sig-role">Koordinator Lapangan</div>
+                                        <div style="height: 55px;"></div>
+                                        <div class="sig-line">{{ $koordinator ?: '...................................' }}</div>
+                                    </div>
+                                    <div class="sig-box">
+                                        <div class="sig-role">Panitera</div>
+                                        @php $pan1 = is_array($paniteras) ? ($paniteras[0] ?? '') : ($paniteras ?? ''); @endphp
+                                        <div style="height: 55px;"></div>
+                                        <div class="sig-line">{{ $pan1 ?: '...................................' }}</div>
+                                    </div>--}}
+                                    <div class="sig-box">
+                                        <div class="sig-role">Juri {{ $ji }}</div>
+                                        <div style="height: 55px; display: flex; align-items: center; justify-content: center;">
+                                            @if($sig)
+                                                <img src="{{ $sig }}" style="max-height: 48px; max-width: 100px; display: block;" />
+                                            @else
+                                                <span style="color:#cbd5e1; font-size:10px;">(Belum TTD)</span>
+                                            @endif
+                                        </div>
+                                        <div class="sig-line">{{ $juriName }}</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top:16px; text-align:right; font-size:10px; color:#94a3b8;">
+                                    Dicetak: {{ now()->translatedFormat('d F Y, H:i') }} WIB &nbsp;|&nbsp; Smart Perkemi System
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endforeach
+            @endif
         @endforeach
     @elseif($printMode === 'per-match')
         @php
@@ -1327,7 +2072,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
                 </table>
 
                 {{-- COMPETITORS BOX --}}
-                <div style="display:flex; justify-content:space-between; align-items:stretch; gap:16px; margin-bottom:24px;">
+                <div class="competitors-row">
                     <!-- AKA -->
                     <div style="flex:1; border:2px solid #b22234; border-radius:8px; padding:12px; background:rgba(178,34,52,0.03); display:flex; flex-direction:column; justify-content:space-between;">
                         <div>
@@ -1374,115 +2119,119 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
 
                 {{-- SCORING DETAILS TABLE --}}
                 <div class="section-label">📋 Rincian Perolehan Poin & Hukuman</div>
-                <table class="score-detail-table">
-                    <thead>
-                        <tr>
-                            <th>Indikator Penilaian / Pelanggaran</th>
-                            <th style="background:#b22234; color:white; width:180px;">AKA (Merah)</th>
-                            <th style="background:#1e40af; color:white; width:180px;">SHIRO (Biru)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                            $scoringAka = $meta['scoringAka'] ?? [];
-                            $scoringShiro = $meta['scoringShiro'] ?? [];
-                        @endphp
-                        <tr>
-                            <td>Ippon (10 Poin)</td>
-                            <td style="font-weight:700;">{{ $scoringAka['ippon'] ?? 0 }}</td>
-                            <td style="font-weight:700;">{{ $scoringShiro['ippon'] ?? 0 }}</td>
-                        </tr>
-                        <tr>
-                            <td>Waza-ari (5 Poin)</td>
-                            <td style="font-weight:700;">{{ $scoringAka['waza_ari'] ?? 0 }}</td>
-                            <td style="font-weight:700;">{{ $scoringShiro['waza_ari'] ?? 0 }}</td>
-                        </tr>
-                        <tr>
-                            <td>Hukuman Batsu 5 (-5 Poin)</td>
-                            <td style="color:#b22234; font-weight:700;">{{ $scoringAka['hasil_batsu_5'] ?? 0 }}</td>
-                            <td style="color:#b22234; font-weight:700;">{{ $scoringShiro['hasil_batsu_5'] ?? 0 }}</td>
-                        </tr>
-                        <tr>
-                            <td>Hukuman Batsu 10 (-10 Poin)</td>
-                            <td style="color:#b22234; font-weight:700;">{{ $scoringAka['hasil_batsu_10'] ?? 0 }}</td>
-                            <td style="color:#b22234; font-weight:700;">{{ $scoringShiro['hasil_batsu_10'] ?? 0 }}</td>
-                        </tr>
-                        <tr>
-                            <td>Mujoken Kachi (Menang Mutlak)</td>
-                            <td style="font-weight:700;">{{ ($scoringAka['mujoken_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
-                            <td style="font-weight:700;">{{ ($scoringShiro['mujoken_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td>Yusei Kachi (Menang Keunggulan)</td>
-                            <td style="font-weight:700;">{{ ($scoringAka['yusei_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
-                            <td style="font-weight:700;">{{ ($scoringShiro['yusei_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="score-detail-table">
+                        <thead>
+                            <tr>
+                                <th>Indikator Penilaian / Pelanggaran</th>
+                                <th style="background:#b22234; color:white; width:180px;">AKA (Merah)</th>
+                                <th style="background:#1e40af; color:white; width:180px;">SHIRO (Biru)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php
+                                $scoringAka = $meta['scoringAka'] ?? [];
+                                $scoringShiro = $meta['scoringShiro'] ?? [];
+                            @endphp
+                            <tr>
+                                <td>Ippon (10 Poin)</td>
+                                <td style="font-weight:700;">{{ $scoringAka['ippon'] ?? 0 }}</td>
+                                <td style="font-weight:700;">{{ $scoringShiro['ippon'] ?? 0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Waza-ari (5 Poin)</td>
+                                <td style="font-weight:700;">{{ $scoringAka['waza_ari'] ?? 0 }}</td>
+                                <td style="font-weight:700;">{{ $scoringShiro['ippon'] ?? 0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Hukuman Batsu 5 (-5 Poin)</td>
+                                <td style="color:#b22234; font-weight:700;">{{ $scoringAka['hasil_batsu_5'] ?? 0 }}</td>
+                                <td style="color:#b22234; font-weight:700;">{{ $scoringShiro['hasil_batsu_5'] ?? 0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Hukuman Batsu 10 (-10 Poin)</td>
+                                <td style="color:#b22234; font-weight:700;">{{ $scoringAka['hasil_batsu_10'] ?? 0 }}</td>
+                                <td style="color:#b22234; font-weight:700;">{{ $scoringShiro['hasil_batsu_10'] ?? 0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Mujoken Kachi (Menang Mutlak)</td>
+                                <td style="font-weight:700;">{{ ($scoringAka['mujoken_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
+                                <td style="font-weight:700;">{{ ($scoringShiro['mujoken_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
+                            </tr>
+                            <tr>
+                                <td>Yusei Kachi (Menang Keunggulan)</td>
+                                <td style="font-weight:700;">{{ ($scoringAka['yusei_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
+                                <td style="font-weight:700;">{{ ($scoringShiro['yusei_kachi'] ?? 0) ? 'Ya' : '-' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 {{-- PENILAIAN JURI LAPANGAN (CORNER JUDGES) --}}
                 <div class="section-label">⚖️ Penilaian Juri Lapangan (Corner Judges)</div>
-                <table class="score-detail-table" style="margin-bottom: 24px;">
-                    <thead>
-                        <tr>
-                            <th style="width: 140px;">Juri</th>
-                            <th>Nama Juri</th>
-                            <th style="background: #b22234; color: white; width: 200px;">AKA (Merah)</th>
-                            <th style="background: #1e40af; color: white; width: 200px;">SHIRO (Biru)</th>
-                            <th style="width: 150px;">Tanda Tangan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                            $refereeScores = $randoriScoresMap->get($res->id) ?? collect();
-                        @endphp
-                        @for($ji = 1; $ji <= 4; $ji++)
-                            @php
-                                $juriScore = $refereeScores->where('judge_index', $ji)->first();
-                                $assignedJuri = $referees->where('judge_index', $ji)->first();
-                                $juriName = $juriScore?->referee?->name ?? $juriScore?->referee?->user?->name ?? $assignedJuri?->referee?->name ?? $assignedJuri?->referee?->user?->name ?? '-';
-                                $juriSig = $juriScore?->signature ?? null;
-                                $details = $juriScore?->details ?? null;
-                                
-                                $akaDetails = [];
-                                $shiroDetails = [];
-                                if ($details) {
-                                    if (isset($details['aka'])) {
-                                        if (($details['aka']['ippon'] ?? 0) > 0) $akaDetails[] = 'Ippon: ' . $details['aka']['ippon'];
-                                        if (($details['aka']['wazaari'] ?? 0) > 0) $akaDetails[] = 'Waza-ari: ' . $details['aka']['wazaari'];
-                                        if (($details['aka']['batsu5'] ?? 0) > 0) $akaDetails[] = 'Batsu 5: ' . $details['aka']['batsu5'];
-                                        if (($details['aka']['batsu10'] ?? 0) > 0) $akaDetails[] = 'Batsu 10: ' . $details['aka']['batsu10'];
-                                        if (($details['aka']['mujoken'] ?? 0) > 0) $akaDetails[] = 'Mujoken: ' . $details['aka']['mujoken'];
-                                        if (($details['aka']['yusei'] ?? 0) > 0) $akaDetails[] = 'Yusei: ' . $details['aka']['yusei'];
-                                    }
-                                    if (isset($details['shiro'])) {
-                                        if (($details['shiro']['ippon'] ?? 0) > 0) $shiroDetails[] = 'Ippon: ' . $details['shiro']['ippon'];
-                                        if (($details['shiro']['wazaari'] ?? 0) > 0) $shiroDetails[] = 'Waza-ari: ' . $details['shiro']['wazaari'];
-                                        if (($details['shiro']['batsu5'] ?? 0) > 0) $shiroDetails[] = 'Batsu 5: ' . $details['shiro']['batsu5'];
-                                        if (($details['shiro']['batsu10'] ?? 0) > 0) $shiroDetails[] = 'Batsu 10: ' . $details['shiro']['batsu10'];
-                                        if (($details['shiro']['mujoken'] ?? 0) > 0) $shiroDetails[] = 'Mujoken: ' . $details['shiro']['mujoken'];
-                                        if (($details['shiro']['yusei'] ?? 0) > 0) $shiroDetails[] = 'Yusei: ' . $details['shiro']['yusei'];
-                                    }
-                                }
-                                $akaStr = count($akaDetails) > 0 ? implode(', ', $akaDetails) : '-';
-                                $shiroStr = count($shiroDetails) > 0 ? implode(', ', $shiroDetails) : '-';
-                            @endphp
+                <div class="table-responsive">
+                    <table class="score-detail-table" style="margin-bottom: 0;">
+                        <thead>
                             <tr>
-                                <td style="font-weight: 700;">Juri Lapangan {{ $ji }}</td>
-                                <td style="text-align: left;">{{ $juriName }}</td>
-                                <td style="color: #b22234; font-weight: 600;">{{ $akaStr }}</td>
-                                <td style="color: #1e40af; font-weight: 600;">{{ $shiroStr }}</td>
-                                <td style="text-align: center;">
-                                    @if($juriSig)
-                                        <img src="{{ $juriSig }}" style="max-height: 35px; max-width: 90px; display: block; margin: 0 auto;" />
-                                    @else
-                                        <span style="color: #cbd5e1; font-size: 10px;">(Belum TTD)</span>
-                                    @endif
-                                </td>
+                                <th style="width: 140px;">Juri</th>
+                                <th>Nama Juri</th>
+                                <th style="background: #b22234; color: white; width: 200px;">AKA (Merah)</th>
+                                <th style="background: #1e40af; color: white; width: 200px;">SHIRO (Biru)</th>
+                                <th style="width: 150px;">Tanda Tangan</th>
                             </tr>
-                        @endfor
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @php
+                                $refereeScores = $randoriScoresMap->get($res->id) ?? collect();
+                            @endphp
+                            @for($ji = 1; $ji <= 4; $ji++)
+                                @php
+                                    $juriScore = $refereeScores->where('judge_index', $ji)->first();
+                                    $assignedJuri = $referees->where('judge_index', $ji)->first();
+                                    $juriName = $juriScore?->referee?->name ?? $juriScore?->referee?->user?->name ?? $assignedJuri?->referee?->name ?? $assignedJuri?->referee?->user?->name ?? '-';
+                                    $juriSig = $juriScore?->signature ?? null;
+                                    $details = $juriScore?->details ?? null;
+                                    
+                                    $akaDetails = [];
+                                    $shiroDetails = [];
+                                    if ($details) {
+                                        if (isset($details['aka'])) {
+                                            if (($details['aka']['ippon'] ?? 0) > 0) $akaDetails[] = 'Ippon: ' . $details['aka']['ippon'];
+                                            if (($details['aka']['wazaari'] ?? 0) > 0) $akaDetails[] = 'Waza-ari: ' . $details['aka']['wazaari'];
+                                            if (($details['aka']['batsu5'] ?? 0) > 0) $akaDetails[] = 'Batsu 5: ' . $details['aka']['batsu5'];
+                                            if (($details['aka']['batsu10'] ?? 0) > 0) $akaDetails[] = 'Batsu 10: ' . $details['aka']['batsu10'];
+                                            if (($details['aka']['mujoken'] ?? 0) > 0) $akaDetails[] = 'Mujoken: ' . $details['aka']['mujoken'];
+                                            if (($details['aka']['yusei'] ?? 0) > 0) $akaDetails[] = 'Yusei: ' . $details['aka']['yusei'];
+                                        }
+                                        if (isset($details['shiro'])) {
+                                            if (($details['shiro']['ippon'] ?? 0) > 0) $shiroDetails[] = 'Ippon: ' . $details['shiro']['ippon'];
+                                            if (($details['shiro']['wazaari'] ?? 0) > 0) $shiroDetails[] = 'Waza-ari: ' . $details['shiro']['wazaari'];
+                                            if (($details['shiro']['batsu5'] ?? 0) > 0) $shiroDetails[] = 'Batsu 5: ' . $details['shiro']['batsu5'];
+                                            if (($details['shiro']['batsu10'] ?? 0) > 0) $shiroDetails[] = 'Batsu 10: ' . $details['shiro']['batsu10'];
+                                            if (($details['shiro']['mujoken'] ?? 0) > 0) $shiroDetails[] = 'Mujoken: ' . $details['shiro']['mujoken'];
+                                            if (($details['shiro']['yusei'] ?? 0) > 0) $shiroDetails[] = 'Yusei: ' . $details['shiro']['yusei'];
+                                        }
+                                    }
+                                    $akaStr = count($akaDetails) > 0 ? implode(', ', $akaDetails) : '-';
+                                    $shiroStr = count($shiroDetails) > 0 ? implode(', ', $shiroDetails) : '-';
+                                @endphp
+                                <tr>
+                                    <td style="font-weight: 700;">Juri Lapangan {{ $ji }}</td>
+                                    <td style="text-align: left;">{{ $juriName }}</td>
+                                    <td style="color: #b22234; font-weight: 600;">{{ $akaStr }}</td>
+                                    <td style="color: #1e40af; font-weight: 600;">{{ $shiroStr }}</td>
+                                    <td style="text-align: center;">
+                                        @if($juriSig)
+                                            <img src="{{ $juriSig }}" style="max-height: 35px; max-width: 90px; display: block; margin: 0 auto;" />
+                                        @else
+                                            <span style="color: #cbd5e1; font-size: 10px;">(Belum TTD)</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endfor
+                        </tbody>
+                    </table>
+                </div>
 
                 {{-- SIGNATURES WITH IMAGES --}}
                 @php

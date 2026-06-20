@@ -101,7 +101,7 @@ class NewRekapitulasiEmbuDetailIndex extends Component
         }
         $firstDrawing = $firstDrawingQuery->first();
 
-        $sessionDate = $firstDrawing?->sessionTime?->date ?? now();
+        $sessionDate = $firstDrawing?->schedule_date ?? $firstDrawing?->rundown?->date ?? $firstDrawing?->sessionTime?->date ?? now();
         $courtOrder = $firstDrawing?->court?->order ?? '-';
         $poolName = $firstDrawing?->pool?->name ?? ($firstDrawing?->metadata['pool'] ?? '-');
 

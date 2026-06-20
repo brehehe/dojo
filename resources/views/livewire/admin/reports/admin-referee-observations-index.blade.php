@@ -428,7 +428,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="{{ asset('vendor/chartjs/chart.umd.min.js') }}"></script>
     <script>
         document.addEventListener('livewire:initialized', () => {
             let categoryChartInstance = null;

@@ -73,6 +73,21 @@
     .std-score-val { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--ink); }
     .std-score-lbl { font-size: 9px; color: var(--smoke); text-transform: uppercase; font-weight: 700; }
 
+    /* ── SUB FILTERS ── */
+    .std-sub-filters {
+        display: flex; gap: 8px; padding: 0 16px 12px; background: #fff; border-bottom: 1px solid var(--paper2);
+    }
+    .std-sub-filter-btn {
+        flex: 1; padding: 8px 4px; border-radius: 8px; border: 1px solid var(--paper2);
+        background: var(--paper); color: var(--smoke); font-size: 10px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .05em; transition: all .2s;
+        cursor: pointer; font-family: 'DM Sans', sans-serif;
+    }
+    .std-sub-filter-btn.active {
+        background: var(--ink); color: #fff; border-color: var(--ink);
+        box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    }
+
     /* ── EMPTY ── */
     .std-empty { padding: 60px 24px; text-align: center; }
     .std-empty i { font-size: 40px; color: var(--paper2); margin-bottom: 16px; display: block; }
@@ -89,8 +104,8 @@
 
     {{-- ── FILTERS ── --}}
     <div class="std-filters">
-        <button wire:click=\"$set('filterType', 'embu')\" class="std-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
-        <button wire:click=\"$set('filterType', 'randori')\" class="std-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
+        <button wire:click="$set('filterType', 'embu')" class="std-filter-btn {{ $filterType === 'embu' ? 'active' : '' }}">Embu</button>
+        <button wire:click="$set('filterType', 'randori')" class="std-filter-btn {{ $filterType === 'randori' ? 'active' : '' }}">Randori</button>
     </div>
 
     <div class="std-container">
@@ -112,13 +127,40 @@
                                 <div class="std-ctg-info">
                                     <p class="std-ctg-name {{ $isMine ? 'mine' : '' }}">
                                         {{ $score->registration->contingent->name ?? '-' }}
+                                        @if(! empty($score->team_label))
+                                            <span style="font-size: 11px; font-weight: 500; color: var(--smoke);">({{ $score->team_label }})</span>
+                                        @endif
                                         @if($isMine) <span style="font-size:8px; background:var(--red); color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">ANDA</span> @endif
                                     </p>
-                                    <p class="std-ctg-sub">{{ $score->round_label ?? 'Penyisihan' }}</p>
+                                    <p class="std-ctg-sub">
+                                        @if($score->drawing && is_array($score->drawing->metadata) && ! empty($score->drawing->metadata['athlete_name']))
+                                            {{ $score->drawing->metadata['athlete_name'] }}
+                                        @elseif($score->registration && $score->registration->athletes)
+                                            {{ $score->registration->athletes->pluck('name')->join(' & ') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </p>
                                 </div>
-                                <div class="std-score">
-                                    <div class="std-score-val">{{ number_format($score->nilai_akhir ?? $score->total_score ?? 0, 2) }}</div>
-                                    <div class="std-score-lbl">Skor</div>
+                                <div style="display: flex; gap: 14px; text-align: right; flex-shrink: 0; align-items: center;">
+                                    <div class="std-score" style="min-width: 45px;">
+                                        <div class="std-score-val" style="font-size: 11px; color: var(--smoke);">
+                                            {{ $score->penyisihan_score !== null ? number_format($score->penyisihan_score, 2) : '-' }}
+                                        </div>
+                                        <div class="std-score-lbl" style="font-size: 7px; color: var(--smoke); letter-spacing: 0.05em;">Penyisihan</div>
+                                    </div>
+                                    <div class="std-score" style="min-width: 45px;">
+                                        <div class="std-score-val" style="font-size: 11px; color: var(--smoke);">
+                                            {{ $score->final_score !== null ? number_format($score->final_score, 2) : '-' }}
+                                        </div>
+                                        <div class="std-score-lbl" style="font-size: 7px; color: var(--smoke); letter-spacing: 0.05em;">Final</div>
+                                    </div>
+                                    <div class="std-score" style="min-width: 50px; border-left: 1px solid var(--paper2); padding-left: 10px;">
+                                        <div class="std-score-val" style="color: var(--red); font-size: 13px; font-weight: 800;">
+                                            {{ number_format($score->nilai_akhir, 2) }}
+                                        </div>
+                                        <div class="std-score-lbl" style="color: var(--red);">Akhir</div>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach

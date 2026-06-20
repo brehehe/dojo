@@ -639,11 +639,16 @@ class RefereeScoringDashboard extends Component
                 $registrationId = $drawing?->registration_id;
             }
 
+            $activeDrawing = $drawingId ? DrawingMatchNumber::find($drawingId) : null;
+            $roundLabel = $activeDrawing?->round ?? ($this->activeMatch?->round ?? 'Penyisihan');
+
             EmbuScore::updateOrCreate(
                 [
                     'match_number_id' => $targetMatchId,
                     'registration_id' => $registrationId,
                     'drawing_id' => $drawingId ?? null,
+                    'round_label' => $roundLabel,
+                    'tiebreak_round' => 0,
                 ],
                 [$column => $this->totalScore]
             );
@@ -827,11 +832,16 @@ class RefereeScoringDashboard extends Component
                     $registrationId = $drawing?->registration_id;
                 }
 
+                $activeDrawing = $drawingId ? DrawingMatchNumber::find($drawingId) : null;
+                $roundLabel = $activeDrawing?->round ?? ($this->activeMatch?->round ?? 'Penyisihan');
+
                 EmbuScore::updateOrCreate(
                     [
                         'match_number_id' => $targetMatchId,
                         'registration_id' => $registrationId,
                         'drawing_id' => $drawingId ?? null,
+                        'round_label' => $roundLabel,
+                        'tiebreak_round' => 0,
                     ],
                     [$column => $this->totalScore]
                 );

@@ -3,8 +3,10 @@
 namespace App\Livewire\Contingent;
 
 use App\Models\DrawingMatchNumber;
+use App\Models\MatchNumber\MatchNumber;
 use App\Models\Registration;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -13,7 +15,9 @@ class Schedule extends Component
 {
     public string $filterType = 'all';
 
-    protected ?int $contingentId = null;
+    public string $activeTab = 'schedule'; // schedule, bracket
+
+    public ?int $selectedBracketMatchId = null;
 
     public function mount(): void
     {
@@ -24,8 +28,6 @@ class Schedule extends Component
 
             return;
         }
-
-        $this->contingentId = $user->contingent->id;
     }
 
     public function render()
@@ -39,6 +41,8 @@ class Schedule extends Component
         $query = DrawingMatchNumber::whereIn('registration_id', $registrationIds)
             ->with([
                 'matchNumber.ageGroup',
+                'registration.contingent',
+                'registration.athletes',
                 'court',
                 'pool',
                 'rundown',
@@ -53,9 +57,32 @@ class Schedule extends Component
 
         $schedules = $query->get()->groupBy(fn ($d) => $d->schedule_date ?? 'Belum Dijadwalkan');
 
+        // Fetch Randori match numbers that this contingent's registered athletes participate in
+        $matchNumberIds = DB::table('athlete_match_number')
+            ->whereIn('registration_id', $registrationIds)
+            ->pluck('match_number_id')
+            ->unique()
+            ->toArray();
+
+        $randoriMatchNumbers = MatchNumber::whereIn('id', $matchNumberIds)
+            ->where('draft_type', 'randori')
+            ->whereNotNull('drawing_generated_at')
+            ->with('ageGroup')
+            ->get();
+
+        if ($this->selectedBracketMatchId === null && $randoriMatchNumbers->isNotEmpty()) {
+            $this->selectedBracketMatchId = $randoriMatchNumbers->first()->id;
+        }
+
+        $selectedBracketMatch = $this->selectedBracketMatchId
+            ? MatchNumber::with('ageGroup')->find($this->selectedBracketMatchId)
+            : null;
+
         return view('livewire.contingent.schedule', [
             'contingent' => $contingent,
             'schedules' => $schedules,
+            'randoriMatchNumbers' => $randoriMatchNumbers,
+            'selectedBracketMatch' => $selectedBracketMatch,
         ]);
     }
 }

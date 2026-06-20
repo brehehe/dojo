@@ -52,7 +52,7 @@
         {{-- ====== INFO BAR ====== --}}
         @php
             $drawing = $firstDrawing;
-            $sessionDate = $drawing?->sessionTime?->date ?? now();
+            $sessionDate = $drawing?->schedule_date ?? $drawing?->rundown?->date ?? $drawing?->sessionTime?->date ?? now();
             $courtOrder = $drawing?->court?->order ?? '-';
             $poolName = $drawing?->pool?->name ?? $drawing?->metadata['pool'] ?? '-';
             $round = $drawing?->round ?? '-';
@@ -491,7 +491,7 @@
 
                         <div class="flex items-center gap-1.5 flex-shrink-0">
                             @if($isActive)
-                                <button wire:click="callParticipant({{ $item['id'] }})"
+                                <button wire:click="callParticipant({{ $item['drawing_id'] }})"
                                     class="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition-all shadow-sm border border-amber-100" title="Panggil Ulang">
                                     <i class="fas fa-redo text-sm"></i>
                                 </button>
@@ -584,9 +584,11 @@
                                             this.time = expected;
                                             let currentSecond = Math.floor(this.time / 1000);
                                             
+                                            let isPemula = {{ ($matchNumber->age_group_id == 1 || ($matchNumber->ageGroup && strtolower($matchNumber->ageGroup->name) === 'pemula')) ? 'true' : 'false' }};
                                             let isTandoku = {{ $item['is_group'] ? 'false' : 'true' }};
+                                            let isShortDuration = isPemula || isTandoku;
                                             let buzzerSound = '/music/freesound_community-buzzerwav-14908.mp3';
-                                            if (isTandoku) {
+                                            if (isShortDuration) {
                                                 if ((currentSecond === 60 && !this.playedIntervals.has(60)) ||
                                                     (currentSecond === 90 && !this.playedIntervals.has(90)) ||
                                                     (currentSecond === 120 && !this.playedIntervals.has(120))) {
@@ -683,7 +685,12 @@
                             </div>
                             <div class="mt-3 text-center">
                                 <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">
-                                    Target Waktu: {{ $item['is_group'] ? '1:30 - 2:00' : '1:30' }}
+                                    @php
+                                        $isPemula = $matchNumber->age_group_id == 1 || ($matchNumber->ageGroup && strtolower($matchNumber->ageGroup->name) === 'pemula');
+                                        $isGroup = $item['is_group'];
+                                        $isShortDuration = $isPemula || !$isGroup;
+                                    @endphp
+                                    Target Waktu: {{ $isShortDuration ? '1:00 - 1:30' : '1:30 - 2:00' }}
                                 </span>
                             </div>
                         </div>

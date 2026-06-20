@@ -312,6 +312,9 @@
                 <p>Atur pembagian koordinator lapangan dan panitera per lapangan</p>
             </div>
             <div style="display:flex; gap:10px;">
+                <button wire:click="export" class="btn-prem-outline">
+                    <i class="fa-solid fa-file-excel" style="color:#10b981; margin-right:4px;"></i> Export Excel
+                </button>
                 <button wire:click="clearAllAssignments"
                     onclick="confirm('Sistem akan menghapus SEMUA penugasan petugas pada sesi-sesi ini. Lanjutkan?') || event.stopImmediatePropagation()"
                     class="btn-prem-outline">

@@ -37,6 +37,8 @@ class NewLaporanWasitJuriIndex extends Component
 
     public string $rundownFilter = '';
 
+    public string $roundFilter = 'Penyisihan';
+
     protected $queryString = [
         'search' => ['except' => ''],
         'ageGroupFilter' => ['except' => ''],
@@ -46,6 +48,7 @@ class NewLaporanWasitJuriIndex extends Component
         'courtFilter' => ['except' => ''],
         'poolFilter' => ['except' => ''],
         'rundownFilter' => ['except' => ''],
+        'roundFilter' => ['except' => 'Penyisihan'],
     ];
 
     public function updated($property): void
@@ -65,15 +68,28 @@ class NewLaporanWasitJuriIndex extends Component
         $query = RefereeScoreDetail::with([
             'referee',
             'matchNumber.ageGroup',
+            'scorable',
         ])
-            ->where('scorable_type', Registration::class)
-            // Inner-join to drawing_match_numbers to get context (court, pool, etc.)
-            ->join('drawing_match_numbers as dmn', function ($join) {
+            ->whereIn('referee_score_details.scorable_type', [Registration::class, DrawingMatchNumber::class])
+            // Left-join to drawing_match_numbers to get context (court, pool, etc.)
+            ->leftJoin('drawing_match_numbers as dmn', function ($join) {
                 $join->on('referee_score_details.match_number_id', '=', 'dmn.match_number_id')
-                    ->on('referee_score_details.scorable_id', '=', 'dmn.registration_id');
+                    ->where(function ($q) {
+                        $q->on('referee_score_details.scorable_id', '=', 'dmn.id')
+                            ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                            ->orOn('referee_score_details.scorable_id', '=', 'dmn.registration_id')
+                            ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    });
             })
-            ->join('registrations', 'referee_score_details.scorable_id', '=', 'registrations.id')
-            ->join('contingents', 'registrations.contingent_id', '=', 'contingents.id')
+            ->leftJoin('registrations', function ($join) {
+                $join->on(function ($q) {
+                    $q->on('registrations.id', '=', 'referee_score_details.scorable_id')
+                        ->where('referee_score_details.scorable_type', '=', Registration::class)
+                        ->orOn('registrations.id', '=', 'dmn.registration_id')
+                        ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class);
+                });
+            })
+            ->leftJoin('contingents', 'registrations.contingent_id', '=', 'contingents.id')
             ->select(
                 'referee_score_details.*',
                 'dmn.id as drawing_id',
@@ -119,6 +135,9 @@ class NewLaporanWasitJuriIndex extends Component
         }
         if (! empty($this->rundownFilter)) {
             $query->where('dmn.rundown_id', $this->rundownFilter);
+        }
+        if (! empty($this->roundFilter)) {
+            $query->where('dmn.round', $this->roundFilter);
         }
         if (! empty($this->search)) {
             $search = $this->search;

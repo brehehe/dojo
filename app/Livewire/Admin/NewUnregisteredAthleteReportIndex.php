@@ -241,9 +241,16 @@ class NewUnregisteredAthleteReportIndex extends Component
                 return $athlete->contingent ? $athlete->contingent->name : 'Tanpa Kontingen';
             })->unique();
             $distinctContingentsCount = $uniqueContingents->count();
-            $totalEntries = count($contingents);
 
-            $hasDuplicateContingent = ($distinctContingentsCount > 1 && $totalEntries <= 4);
+            // Hitung frekuensi kontingen untuk mengecek duplikat (2 atau lebih atlet dari kontingen yang sama)
+            $contingentNames = collect($mn->athletes)->map(function ($athlete) {
+                return $athlete->contingent ? $athlete->contingent->name : 'Tanpa Kontingen';
+            });
+            $contingentCounts = $contingentNames->groupBy(fn ($name) => $name)->map->count();
+            $hasDuplicate = $contingentCounts->contains(fn ($count) => $count >= 2);
+
+            // Warna kuning jika jumlah kontingen <= 3 ATAU ada kontingen yang duplikat
+            $hasDuplicateContingent = ($distinctContingentsCount <= 3) || $hasDuplicate;
 
             $this->matchData[] = [
                 'id' => $mn->id,

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\SmartWasit;
 
+use App\Models\DrawingMatchNumber;
 use App\Models\Group\AgeGroup;
 use App\Models\MatchNumber\MatchNumber;
 use App\Models\Referee;
@@ -51,8 +52,12 @@ class NewLaporanPerbabakIndex extends Component
         // 1. Get raw scores joined with round info from drawings
         $detailsQuery = RefereeScoreDetail::join('drawing_match_numbers', function ($join) {
             $join->on('referee_score_details.match_number_id', '=', 'drawing_match_numbers.match_number_id')
-                ->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
-                ->where('referee_score_details.scorable_type', '=', Registration::class);
+                ->where(function ($q) {
+                    $q->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.id')
+                        ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                        ->orOn('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
+                        ->where('referee_score_details.scorable_type', '=', Registration::class);
+                });
         })
             ->where('referee_score_details.total_calculated_score', '>', 0)
             ->select('referee_score_details.*', 'drawing_match_numbers.round as round_name');
@@ -106,11 +111,25 @@ class NewLaporanPerbabakIndex extends Component
         }
 
         // Also get detailed assessments for the bottom table
-        $assessmentsQuery = RefereeScoreDetail::with(['referee', 'matchNumber.ageGroup', 'matchNumber.athletes', 'scorable.contingent'])
+        $assessmentsQuery = RefereeScoreDetail::with([
+            'referee',
+            'matchNumber.ageGroup',
+            'matchNumber.athletes',
+            'scorable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    Registration::class => ['contingent'],
+                    DrawingMatchNumber::class => ['registration.contingent'],
+                ]);
+            },
+        ])
             ->join('drawing_match_numbers', function ($join) {
                 $join->on('referee_score_details.match_number_id', '=', 'drawing_match_numbers.match_number_id')
-                    ->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
-                    ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    ->where(function ($q) {
+                        $q->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.id')
+                            ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                            ->orOn('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
+                            ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    });
             })
             ->where('referee_score_details.total_calculated_score', '>', 0)
             ->whereHas('matchNumber', function ($q) {
@@ -138,8 +157,16 @@ class NewLaporanPerbabakIndex extends Component
             });
         }
         if ($this->search) {
-            $assessmentsQuery->whereHas('scorable.athletes', function ($sub) {
-                $sub->where('name', 'ilike', '%'.$this->search.'%');
+            $assessmentsQuery->where(function ($q) {
+                $q->whereHasMorph('scorable', [Registration::class], function ($sub) {
+                    $sub->whereHas('athletes', function ($ath) {
+                        $ath->where('name', 'ilike', '%'.$this->search.'%');
+                    });
+                })->orWhereHasMorph('scorable', [DrawingMatchNumber::class], function ($sub) {
+                    $sub->whereHas('registration.athletes', function ($ath) {
+                        $ath->where('name', 'ilike', '%'.$this->search.'%');
+                    });
+                });
             });
         }
 
@@ -157,11 +184,25 @@ class NewLaporanPerbabakIndex extends Component
 
     public function exportExcel()
     {
-        $assessmentsQuery = RefereeScoreDetail::with(['referee', 'matchNumber.ageGroup', 'matchNumber.athletes', 'scorable.contingent'])
+        $assessmentsQuery = RefereeScoreDetail::with([
+            'referee',
+            'matchNumber.ageGroup',
+            'matchNumber.athletes',
+            'scorable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    Registration::class => ['contingent'],
+                    DrawingMatchNumber::class => ['registration.contingent'],
+                ]);
+            },
+        ])
             ->join('drawing_match_numbers', function ($join) {
                 $join->on('referee_score_details.match_number_id', '=', 'drawing_match_numbers.match_number_id')
-                    ->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
-                    ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    ->where(function ($q) {
+                        $q->on('referee_score_details.scorable_id', '=', 'drawing_match_numbers.id')
+                            ->where('referee_score_details.scorable_type', '=', DrawingMatchNumber::class)
+                            ->orOn('referee_score_details.scorable_id', '=', 'drawing_match_numbers.registration_id')
+                            ->where('referee_score_details.scorable_type', '=', Registration::class);
+                    });
             })
             ->where('referee_score_details.total_calculated_score', '>', 0)
             ->whereHas('matchNumber', function ($q) {
@@ -189,8 +230,16 @@ class NewLaporanPerbabakIndex extends Component
             });
         }
         if ($this->search) {
-            $assessmentsQuery->whereHas('scorable.athletes', function ($sub) {
-                $sub->where('name', 'ilike', '%'.$this->search.'%');
+            $assessmentsQuery->where(function ($q) {
+                $q->whereHasMorph('scorable', [Registration::class], function ($sub) {
+                    $sub->whereHas('athletes', function ($ath) {
+                        $ath->where('name', 'ilike', '%'.$this->search.'%');
+                    });
+                })->orWhereHasMorph('scorable', [DrawingMatchNumber::class], function ($sub) {
+                    $sub->whereHas('registration.athletes', function ($ath) {
+                        $ath->where('name', 'ilike', '%'.$this->search.'%');
+                    });
+                });
             });
         }
 
@@ -198,15 +247,25 @@ class NewLaporanPerbabakIndex extends Component
 
         $exportData = [];
         foreach ($assessments as $a) {
-            $athletes = $a->matchNumber->athletes->where('pivot.registration_id', $a->scorable_id)->pluck('name')->join(' & ');
+            $regId = $a->scorable instanceof DrawingMatchNumber ? $a->scorable->registration_id : $a->scorable_id;
+            $athletes = $a->matchNumber->athletes->where('pivot.registration_id', $regId)->pluck('name')->join(' & ');
+
+            $contingentName = '-';
+            if ($a->scorable) {
+                if ($a->scorable instanceof DrawingMatchNumber) {
+                    $contingentName = $a->scorable->registration->contingent->name ?? '-';
+                } else {
+                    $contingentName = $a->scorable->contingent->name ?? '-';
+                }
+            }
 
             $exportData[] = [
                 'Waktu' => $a->created_at->format('H:i'),
                 'Babak' => $a->round_name,
                 'Wasit' => $a->referee->name,
                 'Nomor Pertandingan' => $a->matchNumber->name,
-                'Atlet' => $athletes ?: ($a->scorable->athletes->pluck('name')->join(' & ') ?? '-'),
-                'Kontingen' => $a->scorable->contingent->name ?? '-',
+                'Atlet' => $athletes ?: ($a->scorable instanceof DrawingMatchNumber ? ($a->scorable->registration->athletes->pluck('name')->join(' & ') ?? '-') : ($a->scorable->athletes->pluck('name')->join(' & ') ?? '-')),
+                'Kontingen' => $contingentName,
                 'Nilai Teknik' => (float) $a->total_teknik_score,
                 'Nilai Ekspresi' => (float) $a->total_ekspresi_score,
                 'Total' => (float) $a->total_calculated_score,

@@ -1,5 +1,7 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { createAdaptivePolling } from '../lib/adaptivePolling';
+    import { conditionalJsonFetch } from '../lib/conditionalFetch';
 
     let { courtId } = $props();
 
@@ -9,13 +11,37 @@
     let contextSession = $state(null);
     let currentTime = $state(new Date());
 
-    let pollInterval;
     let timeInterval;
 
+    let destroyed = false;
+    let syncInFlight = false;
+    let syncQueued = false;
+    let queuedTimeout = null;
+    let polling = null;
+    const pollDelay = 3000;
+
+    function scheduleQueuedSync() {
+        if (destroyed) return;
+        if (queuedTimeout) clearTimeout(queuedTimeout);
+        queuedTimeout = setTimeout(() => {
+            queuedTimeout = null;
+            if (!destroyed) sync();
+        }, pollDelay);
+    }
+
     async function sync() {
+        if (destroyed) return;
+        if (syncInFlight) {
+            syncQueued = true;
+            return;
+        }
+
+        syncInFlight = true;
         try {
-            let res = await fetch(`/api/svelte-monitor/referee/court/${courtId}/state`);
-            let data = await res.json();
+            let { data, notModified } = await conditionalJsonFetch(`/api/svelte-monitor/referee/court/${courtId}/state`);
+            if (destroyed) return;
+            if (notModified) return;
+            if (destroyed) return;
             if (!data) return;
 
             court = data.court;
@@ -24,12 +50,36 @@
             contextSession = data.contextSession;
         } catch (e) {
             console.error('Error syncing referee monitor state:', e);
+        } finally {
+            syncInFlight = false;
+            if (syncQueued && !destroyed) {
+                syncQueued = false;
+                scheduleQueuedSync();
+            } else if (destroyed) {
+                syncQueued = false;
+            }
         }
     }
 
     onMount(() => {
+        destroyed = false;
         sync();
-        pollInterval = setInterval(sync, 1000); // Poll every 1s for near-instant updates
+        if (window.Echo) {
+            window.Echo.channel(`court.${courtId}`).listen('CourtUpdated', (e) => {
+                if (destroyed) return;
+                polling?.markRealtimeHealthy();
+                sync();
+            });
+        }
+
+        polling = createAdaptivePolling({
+            fetchNow: sync,
+            normalInterval: pollDelay,
+            healthyInterval: 20000,
+            staleAfter: 20000,
+            immediate: false,
+        });
+        polling.start();
 
         timeInterval = setInterval(() => {
             currentTime = new Date();
@@ -37,8 +87,14 @@
     });
 
     onDestroy(() => {
-        clearInterval(pollInterval);
+        destroyed = true;
+        syncQueued = false;
+        if (window.Echo) {
+            window.Echo.leave(`court.${courtId}`);
+        }
+        polling?.stop();
         clearInterval(timeInterval);
+        if (queuedSyncTimeout) clearTimeout(queuedSyncTimeout);
     });
 
     function getJudgeLabel(index) {

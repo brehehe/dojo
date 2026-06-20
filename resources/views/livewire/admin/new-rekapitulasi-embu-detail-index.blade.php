@@ -506,7 +506,7 @@
 
                 @php
                     $drawing = $firstDrawing;
-                    $sessionDate = $drawing?->sessionTime?->date ?? now();
+                    $sessionDate = $drawing?->schedule_date ?? $drawing?->rundown?->date ?? $drawing?->sessionTime?->date ?? now();
                     $courtOrder = $drawing?->court?->order ?? '-';
                     $poolName = $drawing?->pool?->name ?? ($drawing?->metadata['pool'] ?? '-');
                 @endphp
@@ -520,7 +520,7 @@
             </div>
 
             <!-- STATUS WASIT & METODE PENILAIAN -->
-            <div class="wasit-status">
+            {{--<div class="wasit-status">
                 @foreach([1,2,3,4,5] as $idx)
                     @php
                         $ref = $referees->firstWhere('judge_index', $idx);
@@ -537,7 +537,7 @@
                     <div class="legend-item"><span class="legend-hitung-color"></span> Dihitung</div>
                     <span class="rumus-badge"><i class="fas fa-calculator"></i> Jumlah 3 nilai tengah</span>
                 </div>
-            </div>
+            </div>--}}
 
             <!-- Contoh Perhitungan -->
             <div class="contoh-box">
