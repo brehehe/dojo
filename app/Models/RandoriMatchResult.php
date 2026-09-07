@@ -22,6 +22,18 @@ class RandoriMatchResult extends Model
         'metadata',
     ];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'metadata' => 'array',
+        ];
+    }
+
     public function matchNumber()
     {
         return $this->belongsTo(MatchNumber\MatchNumber::class);

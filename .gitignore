@@ -21,3 +21,40 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database dumps & backups
+*.sql
+*.sql.gz
+*.sqlite
+*.db
+/db-dumps/
+/smart_perkemi_backup.sql
+
+# Temporary & Scratch files
+/tmp/
+/scratch/
+*.tmp
+*.bak
+*.swp
+
+# One-off development / generator scripts
+/generate_scoring_blades.php
+/update_script.php
+/update_ui.py
+/update_view.php
+/procbt-installation.html
+
+# Local server vhost configuration
+/smart-perkemi.id
+
+# Internal documentation (not web assets)
+/public/docs/

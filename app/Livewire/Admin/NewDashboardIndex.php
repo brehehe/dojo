@@ -110,11 +110,11 @@ class NewDashboardIndex extends Component
     public function getMedalStats(): array
     {
         // Single aggregate query instead of 3 separate COUNT queries
-        $stats = TournamentResult::selectRaw("
+        $stats = TournamentResult::selectRaw('
             SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) as gold,
             SUM(CASE WHEN rank = 2 THEN 1 ELSE 0 END) as silver,
             SUM(CASE WHEN rank IN (3, 4) THEN 1 ELSE 0 END) as bronze
-        ")->first();
+        ')->first();
 
         return [
             'gold' => (int) $stats->gold,

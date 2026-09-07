@@ -600,7 +600,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
 
         {{-- KOP SURAT --}}
         <div class="doc-header">
-            <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+            <div class="org-name">Persaudaraan Shorinji Kempo Indonesia (Perkemi)</div>
             <div class="event-name">Laporan Rekapitulasi Hasil Penilaian Pertandingan</div>
         </div>
 
@@ -937,7 +937,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
             <div class="document {{ !$loop->last ? 'page-break' : '' }}" style="margin-bottom: 24px;">
                 {{-- KOP SURAT --}}
                 <div class="doc-header">
-                    <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+                    <div class="org-name">Persaudaraan Shorinji Kempo Indonesia (Perkemi)</div>
                     <div class="event-name">Lembar Penilaian Juri / Wasit</div>
                 </div>
 
@@ -1104,7 +1104,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
             <div class="document {{ !$loop->last ? 'page-break' : '' }}" style="margin-bottom: 24px;">
                 {{-- KOP SURAT --}}
                 <div class="doc-header">
-                    <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+                    <div class="org-name">Persaudaraan Shorinji Kempo Indonesia (Perkemi)</div>
                     <div class="event-name">Lembar Penilaian Atlet / Pasangan</div>
                 </div>
 
@@ -1285,7 +1285,7 @@ body { background: #f0f2f5; font-family: 'Inter', 'Arial', sans-serif; color: #0
             <div class="document {{ !$loop->last ? 'page-break' : '' }}" style="margin-bottom: 24px;">
                 {{-- KOP SURAT --}}
                 <div class="doc-header">
-                    <div class="org-name">Persatuan Kempo Indonesia (Perkemi)</div>
+                    <div class="org-name">Persaudaraan Shorinji Kempo Indonesia (Perkemi)</div>
                     <div class="event-name">Berita Acara Pertandingan Randori</div>
                 </div>
 

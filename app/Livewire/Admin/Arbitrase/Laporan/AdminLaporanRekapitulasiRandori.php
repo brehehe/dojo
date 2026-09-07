@@ -203,7 +203,7 @@ class AdminLaporanRekapitulasiRandori extends Component
                 'Batsu 10' => $scoringAka['hasil_batsu_10'] ?? 0,
                 'Total Nilai' => $res->score_red,
                 'Status' => $res->winner_color === 'athlete1' ? 'Menang' : 'Kalah',
-                'Keterangan' => $res->winner_color === 'athlete1' ? ($scoringAka['mujoken_kachi'] > 0 ? 'Mujoken' : '') : '',
+                'Keterangan' => $res->winner_color === 'athlete1' ? (($scoringAka['mujoken_kachi'] ?? 0) > 0 ? 'Mujoken' : '') : '',
             ];
 
             // White
@@ -221,7 +221,7 @@ class AdminLaporanRekapitulasiRandori extends Component
                 'Batsu 10' => $scoringShiro['hasil_batsu_10'] ?? 0,
                 'Total Nilai' => $res->score_blue,
                 'Status' => $res->winner_color === 'athlete2' ? 'Menang' : 'Kalah',
-                'Keterangan' => $res->winner_color === 'athlete2' ? ($scoringShiro['mujoken_kachi'] > 0 ? 'Mujoken' : '') : '',
+                'Keterangan' => $res->winner_color === 'athlete2' ? (($scoringShiro['mujoken_kachi'] ?? 0) > 0 ? 'Mujoken' : '') : '',
             ];
         }
 
@@ -346,7 +346,7 @@ class AdminLaporanRekapitulasiRandori extends Component
                 'total_nilai' => $res->score_red,
                 'status' => $res->winner_color === 'athlete1' ? 'Menang' : 'Kalah',
                 'status_color' => $res->winner_color === 'athlete1' ? 'emerald' : 'rose',
-                'win_method' => $res->winner_color === 'athlete1' ? ($scoringAka['mujoken_kachi'] > 0 ? 'Mujoken' : '') : '',
+                'win_method' => $res->winner_color === 'athlete1' ? (($scoringAka['mujoken_kachi'] ?? 0) > 0 ? 'Mujoken' : '') : '',
             ];
 
             // Row Shiro (White)
@@ -370,7 +370,7 @@ class AdminLaporanRekapitulasiRandori extends Component
                 'total_nilai' => $res->score_blue,
                 'status' => $res->winner_color === 'athlete2' ? 'Menang' : 'Kalah',
                 'status_color' => $res->winner_color === 'athlete2' ? 'emerald' : 'rose',
-                'win_method' => $res->winner_color === 'athlete2' ? ($scoringShiro['mujoken_kachi'] > 0 ? 'Mujoken' : '') : '',
+                'win_method' => $res->winner_color === 'athlete2' ? (($scoringShiro['mujoken_kachi'] ?? 0) > 0 ? 'Mujoken' : '') : '',
             ];
         }
 
