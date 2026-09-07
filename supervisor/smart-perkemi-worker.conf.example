@@ -1,0 +1,27 @@
+# ==============================================================================
+# Supervisor Configuration for Laravel Queue Worker (Smart Perkemi)
+# ==============================================================================
+# Lokasi file di server Ubuntu/Debian:
+# /etc/supervisor/conf.d/smart-perkemi-worker.conf
+#
+# Perintah aktivasi di server:
+# sudo supervisorctl reread
+# sudo supervisorctl update
+# sudo supervisorctl start smart-perkemi-worker:*
+#
+# Cek status worker:
+# sudo supervisorctl status
+# ==============================================================================
+
+[program:smart-perkemi-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/smart-perkemi/artisan queue:work database --sleep=3 --tries=3 --max-time=3600 --timeout=90
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/smart-perkemi/storage/logs/supervisor-worker.log
+stopwaitsecs=3600

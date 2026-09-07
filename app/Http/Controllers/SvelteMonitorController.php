@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Monitor\ActivateMatchRequest;
+use App\Http\Requests\Monitor\SaveRefereeAssignmentRequest;
 use App\Models\ActiveCourtReferee;
 use App\Models\Athlete;
 use App\Models\Contingent;
@@ -21,6 +23,7 @@ use App\Models\SchedulePanitera;
 use App\Models\ScheduleReferee;
 use App\Models\SessionTime;
 use App\Models\TournamentResult;
+use App\Services\CourtMonitorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -30,6 +33,10 @@ use Inertia\Response;
 
 class SvelteMonitorController extends Controller
 {
+    public function __construct(
+        protected CourtMonitorService $courtMonitorService,
+    ) {}
+
     // --- Inertia Page Renders ---
 
     public function monitorCourt(Court $court): Response
@@ -83,32 +90,7 @@ class SvelteMonitorController extends Controller
 
     public function monitorCourtState(Court $court): JsonResponse
     {
-        $court->load([
-            'activeMatch.athletes.registrations.contingent',
-            'activeMatch.drawings',
-            'activeMatch.ageGroup',
-            'activeDrawing.matchNumber.ageGroup',
-            'activeDrawing.matchNumber.athletes.registrations.contingent',
-            'activeDrawing.registration.athletes',
-            'activeDrawing.registration.contingent',
-            'activeDrawing.pool',
-            'activeDrawing.sessionTime',
-            'activeDrawing.rundown',
-            'activeDrawing.court',
-        ]);
-
-        $timerState = Cache::get("court_{$court->id}_timer", [
-            'status' => 'stopped',
-            'elapsed_ms' => 0,
-            'started_at_ms' => null,
-            'countdown_end_ms' => null,
-        ]);
-        $timerState['server_time_ms'] = floor(microtime(true) * 1000);
-
-        return response()->json([
-            'court' => $court,
-            'timer_state' => $timerState,
-        ]);
+        return response()->json($this->courtMonitorService->getCourtState($court));
     }
 
     public function monitorHasilCourtState(Request $request, Court $court): JsonResponse
@@ -116,84 +98,24 @@ class SvelteMonitorController extends Controller
         $court->load(['activeMatch', 'activeDrawing']);
         $match = $court->activeMatch ? MatchNumber::with(['athletes', 'embuScores'])->find($court->active_match_id) : null;
 
-        return $this->getHasilState($match, $court->id, $court, $request);
+        return response()->json($this->courtMonitorService->getHasilState($match, $court->id, $court, $request));
     }
 
     public function monitorHasilMatchState(Request $request, MatchNumber $match): JsonResponse
     {
         $match->load(['athletes', 'embuScores']);
 
-        return $this->getHasilState($match, null, null, $request);
+        return response()->json($this->courtMonitorService->getHasilState($match, null, null, $request));
     }
 
     private function getHasilState($match, $courtId, $court, Request $request): JsonResponse
     {
-        $drawingData = null;
-        $randoriResults = collect();
-        $embuRanking = collect();
-        $activeNodeKey = null;
-
-        if ($match) {
-            if ($match->draft_type === 'randori') {
-                $drawingData = $match->drawing_data;
-                $randoriResults = RandoriMatchResult::where('match_number_id', $match->id)
-                    ->get()
-                    ->keyBy('bracket_node');
-                $activeNodeKey = $court?->active_bracket_node ?? $match->active_bracket_node;
-            } elseif ($match->draft_type === 'embu') {
-                $embuRanking = $this->getPenyisihanRanking($match, $courtId, $request);
-            }
-        }
-
-        return response()->json([
-            'court' => $court,
-            'match' => $match,
-            'drawingData' => $drawingData,
-            'randoriResults' => $randoriResults,
-            'embuRanking' => $embuRanking,
-            'activeNodeKey' => $activeNodeKey,
-        ]);
+        return response()->json($this->courtMonitorService->getHasilState($match, $courtId, $court, $request));
     }
 
     public function monitorRefereeState(Request $request, Court $court): JsonResponse
     {
-        $rundownId = $request->query('rundown_id');
-        $sessionId = $request->query('session_time_id');
-
-        if ($rundownId && $sessionId) {
-            $referees = ScheduleReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->where('rundown_id', $rundownId)
-                ->where('session_time_id', $sessionId)
-                ->where('judge_index', '>', 0)
-                ->orderBy('judge_index')
-                ->get();
-        } else {
-            $referees = ActiveCourtReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->orderBy('judge_index')
-                ->get();
-
-            if ($referees->isEmpty()) {
-                $activeDrawing = $court->activeDrawing;
-                if ($activeDrawing) {
-                    $referees = ScheduleReferee::with('referee.user')
-                        ->where('court_id', $court->id)
-                        ->where('rundown_id', $activeDrawing->rundown_id)
-                        ->where('session_time_id', $activeDrawing->session_time_id)
-                        ->where('judge_index', '>', 0)
-                        ->orderBy('judge_index')
-                        ->get();
-                }
-            }
-        }
-
-        return response()->json([
-            'court' => $court,
-            'referees' => $referees,
-            'contextRundown' => $court->activeDrawing?->rundown,
-            'contextSession' => $court->activeDrawing?->sessionTime,
-        ]);
+        return response()->json($this->courtMonitorService->getRefereeState($request, $court));
     }
 
     public function monitorRekapitulasiHasilState(Court $court): JsonResponse
@@ -316,213 +238,14 @@ class SvelteMonitorController extends Controller
 
     public function monitorTimerState(Court $court): JsonResponse
     {
-        $court->load(['activeMatch.ageGroup', 'activeDrawing.registration.contingent']);
-        $state = Cache::get("court_{$court->id}_timer", [
-            'status' => 'stopped',
-            'elapsed_ms' => 0,
-            'started_at_ms' => null,
-            'countdown_end_ms' => null,
-        ]);
-        $state['server_time_ms'] = floor(microtime(true) * 1000);
-
-        return response()->json([
-            'court' => $court,
-            'timer_state' => $state,
-        ]);
+        return response()->json($this->courtMonitorService->getTimerState($court));
     }
 
     // --- Helper methods copied from Livewire controllers ---
 
     private function getPenyisihanRanking($match, $courtId, Request $request)
     {
-        if (! $match || $match->draft_type !== 'embu') {
-            return collect();
-        }
-
-        $activeDrawing = null;
-        if ($courtId) {
-            $court = Court::with('activeDrawing')->find($courtId);
-            $activeDrawing = $court?->activeDrawing;
-        }
-
-        $matchIds = [$match->id];
-        if ($match->mergeDetail) {
-            $matchIds = MatchNumberMergeDetail::where('match_number_merge_id', $match->mergeDetail->match_number_merge_id)
-                ->pluck('match_number_id')
-                ->toArray();
-        }
-
-        $query = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
-            ->where('draft_type', 'embu');
-
-        $currentRound = 'Penyisihan';
-
-        if ($request->filled('round')) {
-            $currentRound = $request->query('round');
-            $query->where('round', $currentRound);
-
-            if ($request->filled('pool_id')) {
-                $query->where('pool_id', $request->query('pool_id'));
-            } else {
-                $firstDrawing = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
-                    ->where('round', $currentRound)
-                    ->whereNotNull('pool_id')
-                    ->first();
-                if ($firstDrawing) {
-                    $query->where('pool_id', $firstDrawing->pool_id);
-                }
-            }
-        }
-
-        $validActiveDrawing = $activeDrawing && in_array($activeDrawing->match_number_id, $matchIds);
-
-        if ($validActiveDrawing) {
-            if ($activeDrawing->pool_id) {
-                $query->where('pool_id', $activeDrawing->pool_id);
-            }
-            if ($activeDrawing->court_id) {
-                $query->where('court_id', $activeDrawing->court_id);
-            }
-            if ($activeDrawing->round) {
-                $query->where('round', $activeDrawing->round);
-            }
-        } elseif ($courtId) {
-            $query->where('court_id', $courtId);
-            $firstDrawingOnCourt = DrawingMatchNumber::whereIn('match_number_id', $matchIds)
-                ->where('court_id', $courtId)
-                ->where('round', 'Penyisihan')
-                ->whereNotNull('pool_id')
-                ->first();
-            if ($firstDrawingOnCourt) {
-                $query->where('pool_id', $firstDrawingOnCourt->pool_id);
-                $currentRound = $firstDrawingOnCourt->round ?? 'Penyisihan';
-            }
-        }
-
-        if ($validActiveDrawing && $activeDrawing->round) {
-            $currentRound = $activeDrawing->round;
-        }
-
-        $drawings = $query->get();
-        $drawingRegIds = $drawings->pluck('registration_id')->unique()->filter()->toArray();
-
-        $registrations = Registration::with(['contingent', 'athletes'])->whereIn('id', $drawingRegIds)->get()->keyBy('id');
-        $allScores = EmbuScore::whereIn('match_number_id', $matchIds)
-            ->where('round_label', $currentRound)
-            ->get();
-
-        $penyisihanScores = collect();
-        if ($currentRound === 'Final') {
-            $penyisihanScores = EmbuScore::whereIn('match_number_id', $matchIds)
-                ->where('round_label', 'Penyisihan')
-                ->get();
-        }
-
-        return $drawings->map(function ($drawing) use ($currentRound, $registrations, $allScores, $penyisihanScores) {
-            $regId = $drawing->registration_id;
-            $reg = $registrations->get($regId);
-            $specificMatchId = $drawing->match_number_id;
-
-            $athleteIds = $drawing->metadata['athlete_ids'] ?? [];
-            $athletes = collect();
-            if (! empty($athleteIds)) {
-                $athletes = $reg?->athletes->whereIn('id', $athleteIds)->values() ?? collect();
-            } elseif ($reg) {
-                $athletes = $reg->athletes;
-            }
-
-            $score = $allScores->where('registration_id', $regId)
-                ->where('match_number_id', $specificMatchId)
-                ->where('drawing_id', $drawing->id)
-                ->filter(fn ($s) => (int) $s->tiebreak_round === 0 || is_null($s->tiebreak_round))
-                ->first();
-
-            if (! $score) {
-                $score = $allScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->whereNull('drawing_id')
-                    ->filter(fn ($s) => (int) $s->tiebreak_round === 0 || is_null($s->tiebreak_round))
-                    ->first();
-            }
-
-            $tiebreakScore = $allScores->where('registration_id', $regId)
-                ->where('match_number_id', $specificMatchId)
-                ->where('drawing_id', $drawing->id)
-                ->where('tiebreak_round', '>', 0)
-                ->sortByDesc('tiebreak_round')
-                ->first();
-
-            if (! $tiebreakScore) {
-                $tiebreakScore = $allScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->whereNull('drawing_id')
-                    ->where('tiebreak_round', '>', 0)
-                    ->sortByDesc('tiebreak_round')
-                    ->first();
-            }
-
-            $effectiveScore = $tiebreakScore ?? $score;
-            $accumulatedScore = 0;
-
-            $penyisihanScore = null;
-            if ($currentRound === 'Final') {
-                $pScore = $penyisihanScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->where('drawing_id', $drawing->id)
-                    ->filter(fn ($s) => (int) $s->tiebreak_round === 0 || is_null($s->tiebreak_round))
-                    ->first();
-
-                if (! $pScore) {
-                    $pScore = $penyisihanScores->where('registration_id', $regId)
-                        ->where('match_number_id', $specificMatchId)
-                        ->whereNull('drawing_id')
-                        ->filter(fn ($s) => (int) $s->tiebreak_round === 0 || is_null($s->tiebreak_round))
-                        ->first();
-                }
-
-                $pTiebreak = $penyisihanScores->where('registration_id', $regId)
-                    ->where('match_number_id', $specificMatchId)
-                    ->where('drawing_id', $drawing->id)
-                    ->where('tiebreak_round', '>', 0)
-                    ->sortByDesc('tiebreak_round')
-                    ->first();
-
-                if (! $pTiebreak) {
-                    $pTiebreak = $penyisihanScores->where('registration_id', $regId)
-                        ->where('match_number_id', $specificMatchId)
-                        ->whereNull('drawing_id')
-                        ->where('tiebreak_round', '>', 0)
-                        ->sortByDesc('tiebreak_round')
-                        ->first();
-                }
-
-                $penyisihanScore = $pTiebreak ?? $pScore;
-                if ($penyisihanScore) {
-                    $accumulatedScore += $penyisihanScore->effective_score;
-                }
-            }
-
-            if ($effectiveScore) {
-                $accumulatedScore += $effectiveScore->effective_score;
-            }
-
-            $matchRecord = MatchNumber::find($specificMatchId);
-
-            return [
-                'id' => $regId,
-                'drawing_id' => $drawing->id,
-                'athletes' => $athletes,
-                'contingent' => $reg?->contingent,
-                'match_number_id' => $specificMatchId,
-                'match_name' => $matchRecord?->name,
-                'score' => $score,
-                'tiebreak_score' => $tiebreakScore,
-                'effective_score' => $effectiveScore,
-                'penyisihan_score' => $penyisihanScore,
-                'accumulated_score' => $accumulatedScore,
-            ];
-        })
-            ->values();
+        return $this->courtMonitorService->getPenyisihanRanking($match, $courtId, $request);
     }
 
     public function panggilDrawingIndex(): Response
@@ -631,26 +354,7 @@ class SvelteMonitorController extends Controller
         });
 
         // Other filters lists
-        $courtQuery = Court::with([
-            'activeMatch',
-            'activeDrawing.pool',
-            'activeDrawing.sessionTime',
-            'activeDrawing.rundown',
-            'activeDrawing.registration.contingent',
-        ])->orderBy('order');
-
-        if (auth()->user()->court_id) {
-            $courtQuery->where('id', auth()->user()->court_id);
-        }
-
-        $courts = $courtQuery->get();
-
-        foreach ($courts as $court) {
-            $court->current_referees = ActiveCourtReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->orderBy('judge_index')
-                ->get();
-        }
+        $courts = $this->courtMonitorService->getCourtsWithReferees(auth()->user()->court_id);
         $sessions = SessionTime::orderBy('start_time')->get();
         $rundowns = Rundown::orderBy('date')->get();
         $pools = Pool::orderBy('order')->get();
@@ -734,26 +438,7 @@ class SvelteMonitorController extends Controller
         $filterGender = $request->input('filterGender', '');
         $searchReferee = $request->input('searchReferee', '');
 
-        $query = Court::with([
-            'activeMatch',
-            'activeDrawing.pool',
-            'activeDrawing.sessionTime',
-            'activeDrawing.rundown',
-            'activeDrawing.registration.contingent',
-        ])->orderBy('order');
-
-        if (auth()->user()->court_id) {
-            $query->where('id', auth()->user()->court_id);
-        }
-
-        $courts = $query->get();
-
-        foreach ($courts as $court) {
-            $court->current_referees = ActiveCourtReferee::with('referee.user')
-                ->where('court_id', $court->id)
-                ->orderBy('judge_index')
-                ->get();
-        }
+        $courts = $this->courtMonitorService->getCourtsWithReferees(auth()->user()->court_id);
 
         $sessions = SessionTime::orderBy('start_time')->get();
         $rundowns = Rundown::orderBy('date')->get();
@@ -894,7 +579,7 @@ class SvelteMonitorController extends Controller
         ]);
     }
 
-    public function activateMatch(Request $request): JsonResponse
+    public function activateMatch(ActivateMatchRequest $request): JsonResponse
     {
         $drawingId = $request->input('drawing_id');
         $drawing = DrawingMatchNumber::with([
@@ -1001,18 +686,8 @@ class SvelteMonitorController extends Controller
         ]);
     }
 
-    public function saveRefereeAssignment(Request $request): JsonResponse
+    public function saveRefereeAssignment(SaveRefereeAssignmentRequest $request): JsonResponse
     {
-        $request->validate([
-            'court_id' => 'required',
-            'rundown_id' => 'required',
-            'session_time_id' => 'required',
-            'referees' => 'required|array|min:5|max:5',
-        ], [
-            'referees.min' => 'Wajib memilih tepat 5 wasit.',
-            'referees.max' => 'Wajib memilih tepat 5 wasit.',
-        ]);
-
         $courtId = $request->input('court_id');
         $rundownId = $request->input('rundown_id');
         $sessionId = $request->input('session_time_id');

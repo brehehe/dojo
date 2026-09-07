@@ -90,12 +90,12 @@
           <label class="block text-xs font-semibold tracking-widest uppercase label-text dark:text-smoke">
             Username / Email
           </label>
-          <div class="relative">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 input-icon text-sm pointer-events-none">
+          <div class="relative kempo-input-group">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 input-icon text-sm pointer-events-none flex items-center justify-center w-5">
               <i class="fa-solid fa-user"></i>
             </span>
-            <input wire:model="email" type="text" placeholder="admin@perkemi.or.id"
-              class="kempo-input w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm font-dm">
+            <input wire:model="email" type="text" placeholder="admin@perkemi.or.id" autocomplete="username"
+              class="kempo-input w-full border rounded-xl pl-12 pr-4 py-3.5 text-sm font-dm">
           </div>
           @error('email') <p class="text-red text-[10px] mt-1">{{ $message }}</p> @enderror
         </div>
@@ -105,14 +105,15 @@
           <label class="block text-xs font-semibold tracking-widest uppercase label-text dark:text-smoke">
             Kata Sandi
           </label>
-          <div class="relative" x-data="{ show: false }">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 input-icon text-sm pointer-events-none">
+          <div class="relative kempo-input-group" x-data="{ show: false }">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 input-icon text-sm pointer-events-none flex items-center justify-center w-5">
               <i class="fa-solid fa-lock"></i>
             </span>
-            <input wire:model="password" :type="show ? 'text' : 'password'" placeholder="••••••••"
-              class="kempo-input w-full border rounded-xl pl-11 pr-12 py-3.5 text-sm font-dm">
+            <input wire:model="password" :type="show ? 'text' : 'password'" placeholder="••••••••" autocomplete="current-password"
+              class="kempo-input w-full border rounded-xl pl-12 pr-12 py-3.5 text-sm font-dm">
             <button type="button" @click="show = !show"
-              class="eye-btn absolute right-4 top-1/2 -translate-y-1/2 text-sm">
+              class="eye-btn absolute right-3.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              aria-label="Tampilkan atau sembunyikan kata sandi">
               <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
             </button>
           </div>
@@ -120,12 +121,13 @@
         </div>
 
         <!-- remember + forgot -->
-        <div class="flex items-center justify-between animate-fade-up-3">
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input wire:model="remember" type="checkbox" class="w-3.5 h-3.5 rounded">
-            <span class="label-text dark:text-smoke text-xs">Ingat saya</span>
+        <div class="flex items-center justify-between pt-1 animate-fade-up-3">
+          <label class="flex items-center gap-2.5 cursor-pointer select-none group">
+            <input wire:model="remember" type="checkbox"
+              class="w-4 h-4 rounded border-gray-300 dark:border-white/20 text-red focus:ring-red focus:ring-offset-0 cursor-pointer">
+            <span class="label-text dark:text-smoke text-xs group-hover:text-stone-900 dark:group-hover:text-white transition-colors">Ingat saya</span>
           </label>
-          <a href="#" class="text-xs font-medium transition-colors hover:opacity-80" style="color:#d4a843;">
+          <a href="#" class="text-xs font-medium transition-colors hover:underline hover:opacity-90" style="color:#d4a843;">
             Lupa kata sandi?
           </a>
         </div>
@@ -148,27 +150,27 @@
         </button>
 
         <!-- sso divider -->
-        <div class="flex items-center gap-3 animate-fade-up-4">
+        {{--<div class="flex items-center gap-3 animate-fade-up-4">
           <div class="flex-1 h-px or-line"></div>
           <span class="label-text dark:text-smoke/50 text-[10px] tracking-wider uppercase">atau</span>
           <div class="flex-1 h-px or-line"></div>
-        </div>
+        </div>--}}
 
         <!-- SSO button -->
-        <button type="button" class="sso-btn w-full py-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-3
+        {{--<button type="button" class="sso-btn w-full py-3 rounded-xl border text-sm font-medium flex items-center justify-center gap-3
                  transition-all duration-200 animate-fade-up-4">
           <i class="fa-solid fa-shield-halved text-gold text-xs"></i>
           Masuk dengan SSO Perkemi
-        </button>
+        </button>--}}
 
       </form>
 
       <!-- card footer -->
-      <div class="px-8 py-5 card-divider border-t flex items-center justify-between">
-        <p class="label-text dark:text-smoke/50 text-[10px] tracking-wide">
-          Butuh akses? Hubungi <span class="t-sub dark:text-smoke">admin@perkemi.or.id</span>
+      <div class="px-8 py-5 card-divider border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+        <p class="label-text dark:text-smoke/80 text-xs tracking-wide">
+          Belum punya akun? <a href="{{ route('register') }}" class="font-bold hover:underline transition-colors" style="color:#d4a843;">Daftar di sini</a>
         </p>
-        <div class="flex items-center gap-1.5 animate-shimmer">
+        <div class="flex items-center gap-1.5 animate-shimmer shrink-0">
           <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
           <span class="text-[10px] text-emerald-500 dark:text-emerald-400/80">Sistem Aktif</span>
         </div>
@@ -176,8 +178,14 @@
 
     </div>
 
+    <!-- back to home -->
+    <a href="/" class="text-center block panel-footer dark:text-smoke/40 text-[10px] tracking-wider mt-4 uppercase animate-fade-up-4 hover:dark:text-white transition-colors">
+      <i class="fa-solid fa-arrow-left text-[8px] mr-1"></i>
+      Kembali ke Beranda
+    </a>
+
     <!-- security notice -->
-    <p class="text-center panel-footer dark:text-smoke/40 text-[10px] tracking-wider mt-5 uppercase animate-fade-up-4">
+    <p class="text-center panel-footer dark:text-smoke/40 text-[10px] tracking-wider mt-2.5 uppercase animate-fade-up-4">
       <i class="fa-solid fa-lock text-[8px] mr-1"></i>
       Koneksi aman · TLS 1.3 · Akses terbatas
     </p>

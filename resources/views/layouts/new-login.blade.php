@@ -154,21 +154,58 @@
     background: var(--input-bg);
     border-color: var(--input-bd);
     color: var(--text);
-    transition: border-color .2s, box-shadow .2s, background .3s;
+    padding-left: 3rem !important;
+    transition: border-color .2s, box-shadow .2s, background-color .3s;
   }
   .kempo-input::placeholder { color: var(--text-muted); }
   .kempo-input:focus {
     outline: none;
-    border-color: #c0392b;
-    box-shadow: 0 0 0 3px rgba(192,57,43,.18);
+    border-color: #c0392b !important;
+    box-shadow: 0 0 0 3px rgba(192,57,43,.18) !important;
+    padding-left: 3rem !important;
+  }
+  .kempo-input.is-invalid,
+  .kempo-input.is-invalid:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+    background-color: rgba(239, 68, 68, 0.04) !important;
+  }
+  .kempo-input-group:has(.is-invalid) .input-icon {
+    color: #ef4444 !important;
+  }
+  .kempo-error-msg {
+    color: #ef4444 !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    margin-top: 0.35rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.375rem !important;
+  }
+
+  /* ── browser autofill styling ── */
+  .kempo-input:-webkit-autofill,
+  .kempo-input:-webkit-autofill:hover, 
+  .kempo-input:-webkit-autofill:focus, 
+  .kempo-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg2) inset !important;
+    -webkit-text-fill-color: var(--text) !important;
+    caret-color: var(--text) !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   /* ── password eye btn ── */
-  .eye-btn { color: var(--text-sub); transition: color .15s; }
+  .eye-btn { color: var(--text-sub); transition: color .15s, background-color .15s; }
   .eye-btn:hover { color: #c0392b; }
 
   /* ── icon prefix in input ── */
-  .input-icon { color: var(--text-sub); }
+  .input-icon { 
+    color: var(--text-muted);
+    transition: color .2s;
+  }
+  .kempo-input-group:focus-within .input-icon {
+    color: #c0392b;
+  }
 
   /* ── sso button ── */
   .sso-btn {
@@ -241,7 +278,7 @@
 </style>
 @livewireStyles
 </head>
-<body class="font-dm min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="font-dm min-h-screen flex flex-col items-center justify-center p-4 py-8 md:py-12 relative overflow-x-hidden overflow-y-auto">
 
   <!-- ── theme toggle ── -->
   <button id="modeToggle" onclick="toggleMode()" title="Ganti tema">

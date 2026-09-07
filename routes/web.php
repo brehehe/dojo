@@ -152,9 +152,10 @@ Route::match(['get', 'post'], 'logout', function () {
     return redirect('/login');
 })->name('logout');
 
+Route::get('setup', Setup::class)->name('contingent.setup');
+
 Route::middleware('auth')->group(function () {
     Route::get('dashboard', GeneralDashboard::class)->name('dashboard');
-    Route::get('setup', Setup::class)->name('contingent.setup');
     Route::get('contingent/dashboard', Dashboard::class)->name('contingent.dashboard');
     Route::get('contingent/jadwal', Schedule::class)->name('contingent.schedule');
     Route::get('contingent/hasil', Results::class)->name('contingent.results');

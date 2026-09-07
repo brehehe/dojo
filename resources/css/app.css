@@ -25,22 +25,17 @@
 
 /* Global Input Enhancements */
 input, select, textarea {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-input:focus {
-    padding-left: 1rem !important;
+input:not([class*="pl-"]):focus {
+    padding-left: 1rem;
 }
 
 input::placeholder {
-    transition: all 0.3s ease;
+    transition: opacity 0.2s ease;
     opacity: 0.5;
-    color: #94a3b8 !important; /* slate-400 */
-}
-
-input:focus::placeholder {
-    transform: translateX(4px);
-    opacity: 0.3;
+    color: #94a3b8; /* slate-400 */
 }
 
 /* Global Select2 Customization */

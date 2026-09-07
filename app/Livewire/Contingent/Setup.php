@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.premium')] // Using premium layout for better experience
+#[Layout('layouts.new-login')]
 class Setup extends Component
 {
     public string $contingent_name = '';
@@ -20,11 +20,20 @@ class Setup extends Component
 
     public string $address = '';
 
+    public ?string $email = '';
+
     public function mount()
     {
-        // Redirect if profile already exists
-        if (Auth::user()->contingent()->exists()) {
-            return redirect()->route('dashboard');
+        // Redirect if profile already exists for logged in user
+        if (Auth::check()) {
+            if (Auth::user()->contingent()->exists()) {
+                return redirect()->route('dashboard');
+            }
+
+            $this->email = Auth::user()->email;
+            if (empty($this->leader_name)) {
+                $this->leader_name = Auth::user()->name;
+            }
         }
     }
 
@@ -36,6 +45,7 @@ class Setup extends Component
             'leader_name' => 'required|min:3',
             'leader_phone' => 'required',
             'address' => 'required',
+            'email' => Auth::check() ? 'nullable|email' : 'nullable|email',
         ];
     }
 
@@ -62,11 +72,15 @@ class Setup extends Component
             'kab_kota' => $this->contingent_city,
             'leader_name' => $this->leader_name,
             'leader_phone' => $this->leader_phone,
-            'email' => Auth::user()->email,
+            'email' => Auth::check() ? Auth::user()->email : $this->email,
             'address' => $this->address,
         ]);
 
-        return redirect()->route('dashboard');
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
+        return redirect()->route('register')->with('success', 'Data profil kontingen berhasil disimpan! Silakan daftarkan akun untuk mengelolanya.');
     }
 
     public function render()

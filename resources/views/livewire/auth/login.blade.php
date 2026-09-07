@@ -52,7 +52,13 @@
         </div>
     </form>
 
-    <div class="mt-10 pt-10 border-t border-white/5 text-center">
+    <div class="mt-8 text-center">
+        <p class="text-[14px] text-white/60">
+            Belum punya akun? <a href="{{ route('register') }}" class="text-orange-400 hover:underline font-bold">Daftar di sini</a>
+        </p>
+    </div>
+
+    <div class="mt-8 pt-8 border-t border-white/5 text-center">
         <a href="/"
             class="text-[15px] font-black text-white/30 uppercase tracking-widest hover:text-white transition-colors leading-none block">
             <i class="fas fa-arrow-left mr-1"></i> Kembali ke Beranda
